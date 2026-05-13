@@ -386,15 +386,19 @@ deck-stage { background: #111; }
 .code-block {
   --code-bg: var(--rule);
   --code-radius: 8px;
+  --code-size: 1.6em;
   background: var(--code-bg);
   border-radius: var(--code-radius);
   padding: 40px 48px;
   margin: 0;
   overflow: auto;
-  font-size: var(--fs-eyebrow);
+  font-size: var(--code-size);
   line-height: 1.6;
 }
+/* Explicit override for both pre and code — beats Prism's attribute selectors */
+.code-block,
 .code-block code {
+  font-size: var(--code-size);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   background: none;
   padding: 0;
