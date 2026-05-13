@@ -77,24 +77,17 @@ function slideNum(index) {
 
 function TitleSlide({ meta, content, deckConfig, index }) {
   const { headings, paragraphs } = extractContent(content)
-  const year = deckConfig.meta?.date?.split('-')[0] ?? new Date().getFullYear()
-  const authorParts = [deckConfig.meta?.author, deckConfig.meta?.role].filter(Boolean)
 
   return (
     <section class="slide slide--title" data-label={`${slideNum(index)} Title`}>
-      <SlideHeader deckConfig={deckConfig} right={String(year)} />
+      <SlideHeader deckConfig={deckConfig} />
       <div class="slide-body">
-        <div class="title-rule" />
         {headings[1] && <h1 class="display" dangerouslySetInnerHTML={{ __html: headings[1] }} />}
         {(headings[2] || paragraphs[0]) && (
           <p class="subtitle" dangerouslySetInnerHTML={{ __html: headings[2] ?? paragraphs[0] }} />
         )}
       </div>
-      <SlideFooter
-        deckConfig={deckConfig}
-        left={authorParts.join(' · ')}
-        right={deckConfig.meta?.date ?? ''}
-      />
+      <SlideFooter deckConfig={deckConfig} right={slideNum(index)} />
     </section>
   )
 }
@@ -202,9 +195,10 @@ function FullBleedImageSlide({ meta, content, deckConfig, index }) {
 
   return (
     <section class={classes} data-label={`${slideNum(index)} Image`}>
-      {meta.image && (
-        <div class="slide-bg" style={{ backgroundImage: `url(${meta.image})` }} />
-      )}
+      <div
+        class="slide-bg"
+        style={meta.image ? { backgroundImage: `url(${meta.image})` } : undefined}
+      />
       <div class="slide-body">
         {headings[1] && (
           <h2 class="overlay-title" dangerouslySetInnerHTML={{ __html: headings[1] }} />

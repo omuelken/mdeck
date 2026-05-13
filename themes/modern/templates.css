@@ -119,6 +119,10 @@ deck-stage { background: #111; }
   font-size: var(--fs-small);
   color: var(--muted);
 }
+em {
+  font-style: normal;
+  color: var(--accent);
+}
 
 /* ─────────────────────────────────────────────
    LAYOUT: TITLE
@@ -136,12 +140,6 @@ deck-stage { background: #111; }
 .slide--title .subtitle {
   margin-top: 40px;
   max-width: 1100px;
-}
-.title-rule {
-  width: 120px;
-  height: 2px;
-  background: var(--ink);
-  margin-bottom: 56px;
 }
 
 /* ─────────────────────────────────────────────
@@ -352,6 +350,7 @@ deck-stage { background: #111; }
 .slide--full-bleed-image .slide-bg {
   position: absolute;
   inset: 0;
+  background: var(--ink);  /* dark fallback when no image is supplied */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -381,6 +380,29 @@ deck-stage { background: #111; }
 }
 
 /* ─────────────────────────────────────────────
+   SYNTAX TOKEN COLORS — override via palette
+   ───────────────────────────────────────────── */
+:root {
+  --token-default:  var(--ink);
+  --token-comment:  #708090;
+  --token-string:   #669900;
+  --token-number:   #905050;
+  --token-keyword:  #0077aa;
+  --token-function: #dd4a68;
+  --token-operator: #9a6e3a;
+}
+code[class*="language-"] { color: var(--token-default); }
+.token.comment, .token.prolog, .token.doctype, .token.cdata { color: var(--token-comment); font-style: italic; }
+.token.punctuation { color: var(--token-default); opacity: 0.7; }
+.token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted { color: var(--token-number); }
+.token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { color: var(--token-string); }
+.token.operator, .token.entity, .token.url, .token.regex, .token.variable { color: var(--token-operator); }
+.token.atrule, .token.attr-value, .token.keyword { color: var(--token-keyword); }
+.token.function, .token.class-name { color: var(--token-function); }
+.token.important, .token.bold { font-weight: bold; }
+.token.italic { font-style: italic; }
+
+/* ─────────────────────────────────────────────
    CODE BLOCK COMPONENT
    ───────────────────────────────────────────── */
 .code-block {
@@ -388,7 +410,8 @@ deck-stage { background: #111; }
   --code-radius: 8px;
   --code-size: 1.6em;
   background: var(--code-bg);
-  border-radius: var(--code-radius);
+  border-radius: 0 var(--code-radius) var(--code-radius) 0;
+  border-left: 6px solid var(--accent);
   padding: 40px 48px;
   margin: 0;
   overflow: auto;

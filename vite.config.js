@@ -5,10 +5,9 @@ import preact from '@preact/preset-vite'
 import { slidesPlugin } from './src/slidesPlugin.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const defaultSlides = resolve(__dirname, 'examples/demo.md')
 
-// This config is used by `npm run dev/build` against the demo deck.
-// For compiling arbitrary decks use: node bin/deck.js dev <file.md>
+// Used by `npm run dev/build` against the demo deck.
+// For arbitrary decks use: node cli.js dev <file.md>
 export default defineConfig({
-  plugins: [preact(), slidesPlugin(defaultSlides)],
+  plugins: [preact(), slidesPlugin(resolve(__dirname, 'examples/demo.md'))],
 })

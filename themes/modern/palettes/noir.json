@@ -1,0 +1,11 @@
+{
+  "name": "Noir",
+  "tokens": {
+    "--bg":       "#0a0908",
+    "--ink":      "#eae0d5",
+    "--ink-soft": "#c6ac8f",
+    "--muted":    "#5e503f",
+    "--rule":     "#22333b",
+    "--accent":   "#c6ac8f"
+  }
+}

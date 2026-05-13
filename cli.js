@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 import { createServer, build, preview } from 'vite'
 import { existsSync, copyFileSync, mkdtempSync } from 'fs'
-import { rm } from 'fs/promises'
+import { cp, rm } from 'fs/promises'
 import { resolve, dirname } from 'path'
 import { tmpdir } from 'os'
 import { fileURLToPath } from 'url'
 import preact from '@preact/preset-vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
-import { slidesPlugin } from '../src/slidesPlugin.js'
+import { slidesPlugin } from './src/slidesPlugin.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const frameworkRoot = resolve(__dirname, '..')
+const frameworkRoot = __dirname
 
 function baseConfig(slidesPath) {
   const abs = resolve(slidesPath)
@@ -24,12 +24,19 @@ function baseConfig(slidesPath) {
   }
 }
 
+async function copyImages(slidesPath, outDir) {
+  const imgSrc = resolve(dirname(resolve(slidesPath)), 'img')
+  if (existsSync(imgSrc)) {
+    await cp(imgSrc, resolve(outDir, 'img'), { recursive: true })
+  }
+}
+
 const HELP = `
   deck — markdown slide deck compiler
 
   Usage:
     deck dev <slides.md>                Start dev server with live reload
-    deck build <slides.md>              Build → dist/index.html
+    deck build <slides.md>              Build → dist/index.html + img/
     deck build <slides.md> -o out.html  Build to a specific file
     deck preview                        Preview the last build
     deck --help                         Show this message
@@ -42,7 +49,7 @@ if (!command || command === '--help' || command === '-h') {
   process.exit(0)
 }
 
-// ── dev ──────────────────────────────────────────────────────────────────────
+// ── dev ───────────────────────────────────────────────────────────────────────
 if (command === 'dev') {
   const input = argv[0]
   if (!input) { console.error('Error: specify a slides file\n  deck dev <slides.md>'); process.exit(1) }
@@ -67,9 +74,7 @@ if (command === 'dev') {
 
   const outputFlagIdx = argv.findIndex(a => a === '--output' || a === '-o')
   const outputPath = outputFlagIdx !== -1 ? resolve(process.cwd(), argv[outputFlagIdx + 1]) : null
-  const defaultOut = resolve(process.cwd(), 'dist/index.html')
 
-  // When a custom output path is given, build into a temp dir then move the file
   const tempDir = outputPath ? mkdtempSync(resolve(tmpdir(), 'deck-')) : null
   const outDir = tempDir ?? resolve(process.cwd(), 'dist')
 
@@ -84,12 +89,14 @@ if (command === 'dev') {
     },
   })
 
+  await copyImages(input, outputPath ? dirname(outputPath) : outDir)
+
   if (outputPath && tempDir) {
     copyFileSync(resolve(tempDir, 'index.html'), outputPath)
     await rm(tempDir, { recursive: true })
     console.log('\n  Built:', outputPath, '\n')
   } else {
-    console.log('\n  Built:', defaultOut, '\n')
+    console.log('\n  Built:', resolve(outDir, 'index.html'), '\n')
   }
 
 // ── preview ───────────────────────────────────────────────────────────────────

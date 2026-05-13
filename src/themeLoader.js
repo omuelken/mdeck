@@ -2,11 +2,11 @@ const THEMES = {
   modern: () => import('../themes/modern/index.js'),
 }
 
-export async function loadTheme({ design = 'modern', params = {}, meta = {} } = {}) {
+export async function loadTheme({ design = 'modern', palette, params = {}, meta = {} } = {}) {
   const loader = THEMES[design]
   if (!loader) throw new Error(`Unknown theme: "${design}". Available: ${Object.keys(THEMES).join(', ')}`)
 
-  const { tokensCSS, templatesCSS, themeMeta } = await loader()
+  const { tokensCSS, templatesCSS, themeMeta, palettes } = await loader()
 
   // Inject base theme CSS
   const baseStyle = document.createElement('style')
@@ -22,6 +22,17 @@ export async function loadTheme({ design = 'modern', params = {}, meta = {} } = 
     document.head.appendChild(link)
   }
 
+  // Inject palette overrides (sits between base tokens and per-deck params)
+  const resolvedPalette = palette ? palettes?.[palette] : null
+  if (resolvedPalette) {
+    const paletteStyle = document.createElement('style')
+    paletteStyle.id = 'deck-palette'
+    paletteStyle.textContent = `:root {\n  ${Object.entries(resolvedPalette.tokens).map(([k, v]) => `${k}: ${v};`).join('\n  ')}\n}`
+    document.head.appendChild(paletteStyle)
+  } else if (palette) {
+    console.warn(`Unknown palette "${palette}" for theme "${design}". Available: ${Object.keys(palettes ?? {}).join(', ')}`)
+  }
+
   // Build override vars: user params + deck meta values
   const overrides = []
 
@@ -31,7 +42,6 @@ export async function loadTheme({ design = 'modern', params = {}, meta = {} } = 
   }
 
   for (const [key, value] of Object.entries(meta)) {
-    // CSS custom properties accept strings via JSON.stringify for quoted values
     overrides.push(`--meta-${key}: ${JSON.stringify(String(value))};`)
   }
 

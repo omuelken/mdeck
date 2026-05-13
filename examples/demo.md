@@ -1,7 +1,6 @@
 ---
 design: modern
-params:
-  primaryColor: "#0A0A0A"
+palette: black-cherry
 meta:
   title: "Slide Framework Demo"
   author: "Tilman Schieber"
@@ -14,7 +13,7 @@ height: 1080
 layout: title
 ---
 # A clean presentation framework.
-## Markdown-driven slides with swappable design systems.
+## Markdown-driven slides with *swappable* design systems.
 
 ---
 layout: chapter
@@ -29,15 +28,16 @@ layout: focus
 eyebrow: Core principle
 attribution: Tilman Schieber
 ---
-# Separate content from design from behaviour.
+# Separate *content* from *design* from behaviour.
 
 ---
 layout: image-text
 section: Design System
+image: ./img/image.jpg
 ---
 ## Tokens all the way down.
 
-Change `primaryColor` in the deck frontmatter and the whole deck repaints. Each design system declares its own configurable params mapped to CSS custom properties.
+Change `primaryColor` in the deck frontmatter and the *whole deck* repaints. Each design system declares its own configurable params mapped to CSS custom properties.
 
 ---
 layout: bullet-list
@@ -47,7 +47,7 @@ section: Components
 
 - `<codeblock>` — syntax-highlighted code via Prism
 - Add `<animation>` or `<iframe>` by creating a component and registering it in `src/registry.jsx`
-- Components are styled by the design system but have neutral defaults
+- Components are styled by the design system but have *neutral defaults*
 
 ---
 layout: focus
@@ -64,6 +64,6 @@ function parseSlides(markdown) {
 
 ---
 layout: full-bleed-image
-overlay: true
+image: ./img/image.jpg
 ---
 # Design systems are swappable — just change `design:` in the frontmatter.

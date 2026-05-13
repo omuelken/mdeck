@@ -4,7 +4,7 @@ import { parseSlides } from './parseSlides'
 import { loadTheme } from './themeLoader'
 import { SlideRenderer } from './renderSlide'
 import './markedSetup'
-import '../deck-stage.js'
+import './deck-stage.js'
 
 async function init() {
   const { deckConfig, slides } = parseSlides(slidesContent)

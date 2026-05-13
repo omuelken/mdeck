@@ -1,0 +1,11 @@
+{
+  "name": "Black Cherry",
+  "tokens": {
+    "--bg":       "#ffffff",
+    "--ink":      "#540b0e",
+    "--ink-soft": "#9e2a2b",
+    "--muted":    "#335c67",
+    "--rule":     "#fff3b0",
+    "--accent":   "#e09f3e"
+  }
+}

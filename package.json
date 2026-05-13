@@ -4,12 +4,12 @@
   "type": "module",
   "description": "Markdown-driven slide deck framework with swappable design systems",
   "bin": {
-    "deck": "./bin/deck.js"
+    "deck": "./cli.js"
   },
   "scripts": {
-    "dev": "node bin/deck.js dev examples/demo.md",
-    "build": "node bin/deck.js build examples/demo.md",
-    "preview": "node bin/deck.js preview"
+    "dev": "node cli.js dev examples/demo.md",
+    "build": "node cli.js build examples/demo.md",
+    "preview": "node cli.js preview"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",

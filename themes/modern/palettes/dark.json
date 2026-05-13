@@ -1,0 +1,11 @@
+{
+  "name": "Dark",
+  "tokens": {
+    "--bg":       "#0D0D0D",
+    "--ink":      "#F0F0F0",
+    "--ink-soft": "#C0C0C0",
+    "--muted":    "#888888",
+    "--rule":     "#2A2A2A",
+    "--accent":   "#60A5FA"
+  }
+}

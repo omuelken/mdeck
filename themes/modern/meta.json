@@ -4,7 +4,7 @@
     "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@300;400;500;600;700&display=swap"
   ],
   "params": {
-    "primaryColor":     { "token": "--accent",       "default": "#0A0A0A" },
+    "primaryColor":     { "token": "--accent",       "default": "#2563EB" },
     "backgroundColor":  { "token": "--bg",            "default": "#FFFFFF" },
     "inkColor":         { "token": "--ink",           "default": "#0A0A0A" },
     "mutedColor":       { "token": "--muted",         "default": "#6B6B6B" },
