@@ -1,0 +1,25 @@
+{
+  "name": "deck",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Markdown-driven slide deck framework with swappable design systems",
+  "bin": {
+    "deck": "./bin/deck.js"
+  },
+  "scripts": {
+    "dev": "node bin/deck.js dev examples/demo.md",
+    "build": "node bin/deck.js build examples/demo.md",
+    "preview": "node bin/deck.js preview"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "marked": "^12.0.0",
+    "preact": "^10.23.0",
+    "prismjs": "^1.29.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.8.1",
+    "vite": "^5.4.0",
+    "vite-plugin-singlefile": "^2.0.0"
+  }
+}

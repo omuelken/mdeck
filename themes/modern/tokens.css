@@ -1,0 +1,32 @@
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS — override via deck.json params
+   ───────────────────────────────────────────── */
+:root {
+  /* Palette */
+  --bg:       #FFFFFF;
+  --ink:      #0A0A0A;
+  --ink-soft: #2A2A2A;
+  --muted:    #6B6B6B;
+  --rule:     #E5E5E5;
+  --accent:   #0A0A0A;
+
+  /* Type scale (px) — projection-appropriate at 1920×1080 */
+  --fs-display: 128px;
+  --fs-title:    88px;
+  --fs-focus:    72px;
+  --fs-h:        64px;
+  --fs-sub:      44px;
+  --fs-body:     34px;
+  --fs-small:    28px;
+  --fs-eyebrow:  24px;
+
+  /* Spacing */
+  --pad-x:     140px;
+  --pad-y:     110px;
+  --gap-title:  52px;
+  --gap-item:   28px;
+
+  /* Type families */
+  --font-display: "Inter Tight", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body:    "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
