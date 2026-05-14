@@ -6,6 +6,8 @@ import { registry } from './registry'
 
 // ─── Content extraction ────────────────────────────────────────────────────
 
+const FN_RE = /<section[^>]*data-footnotes[^>]*>[\s\S]*?<\/section>/i
+
 function extractContent(markdown) {
   const tokens = marked.lexer(markdown)
   const headings = {}
@@ -22,7 +24,12 @@ function extractContent(markdown) {
     }
   }
 
-  return { headings, paragraphs, lists, fullHtml: marked.parse(markdown) }
+  const raw = marked.parse(markdown)
+  const fnMatch = raw.match(FN_RE)
+  const footnotesHtml = fnMatch ? fnMatch[0] : ''
+  const fullHtml = fnMatch ? raw.replace(fnMatch[0], '') : raw
+
+  return { headings, paragraphs, lists, fullHtml, footnotesHtml }
 }
 
 // ─── Hydration for inline components ──────────────────────────────────────
@@ -46,7 +53,7 @@ function HtmlContent({ html, class: className }) {
   return <div class={className} ref={ref} dangerouslySetInnerHTML={{ __html: html }} />
 }
 
-// ─── Header / footer rails ─────────────────────────────────────────────────
+// ─── Header / footer / footnotes rails ────────────────────────────────────
 
 function SlideHeader({ deckConfig, right, logo }) {
   const org = deckConfig.meta?.organization ?? ''
@@ -70,6 +77,11 @@ function SlideFooter({ deckConfig, left, right }) {
   )
 }
 
+function SlideFootnotes({ html }) {
+  if (!html) return null
+  return <div class="slide-footnotes" dangerouslySetInnerHTML={{ __html: html }} />
+}
+
 function slideNum(index) {
   return String(index + 1).padStart(2, '0')
 }
@@ -77,7 +89,7 @@ function slideNum(index) {
 // ─── Slide layout components ───────────────────────────────────────────────
 
 function TitleSlide({ meta, content, deckConfig, index }) {
-  const { headings, paragraphs } = extractContent(content)
+  const { headings, paragraphs, footnotesHtml } = extractContent(content)
   const logo = deckConfig.meta?.logo
 
   return (
@@ -89,13 +101,14 @@ function TitleSlide({ meta, content, deckConfig, index }) {
           <p class="subtitle" dangerouslySetInnerHTML={{ __html: headings[2] ?? paragraphs[0] }} />
         )}
       </div>
+      <SlideFootnotes html={footnotesHtml} />
       <SlideFooter deckConfig={deckConfig} right={slideNum(index)} />
     </section>
   )
 }
 
 function ChapterSlide({ meta, content, deckConfig, index }) {
-  const { headings, paragraphs } = extractContent(content)
+  const { headings, paragraphs, footnotesHtml } = extractContent(content)
   const num = meta.number != null ? String(meta.number).padStart(2, '0') : null
   const desc = meta.description ?? paragraphs[0]
 
@@ -112,13 +125,14 @@ function ChapterSlide({ meta, content, deckConfig, index }) {
           <p class="chapter-desc" dangerouslySetInnerHTML={{ __html: desc }} />
         )}
       </div>
+      <SlideFootnotes html={footnotesHtml} />
       <SlideFooter deckConfig={deckConfig} right={slideNum(index)} />
     </section>
   )
 }
 
 function FocusSlide({ meta, content, deckConfig, index }) {
-  const { fullHtml } = extractContent(content)
+  const { fullHtml, footnotesHtml } = extractContent(content)
 
   return (
     <section class="slide slide--focus" data-label={`${slideNum(index)} Focus`}>
@@ -130,13 +144,14 @@ function FocusSlide({ meta, content, deckConfig, index }) {
           <div class="focus-attribution">— {meta.attribution}</div>
         )}
       </div>
+      <SlideFootnotes html={footnotesHtml} />
       <SlideFooter deckConfig={deckConfig} right={slideNum(index)} />
     </section>
   )
 }
 
 function ImageTextSlide({ meta, content, deckConfig, index }) {
-  const { headings, paragraphs } = extractContent(content)
+  const { headings, paragraphs, footnotesHtml } = extractContent(content)
 
   return (
     <section class="slide slide--image-text" data-label={`${slideNum(index)} Image+Text`}>
@@ -160,13 +175,14 @@ function ImageTextSlide({ meta, content, deckConfig, index }) {
           ))}
         </div>
       </div>
+      <SlideFootnotes html={footnotesHtml} />
       <SlideFooter deckConfig={deckConfig} right={slideNum(index)} />
     </section>
   )
 }
 
 function BulletListSlide({ meta, content, deckConfig, index }) {
-  const { headings, lists } = extractContent(content)
+  const { headings, lists, footnotesHtml } = extractContent(content)
   const items = lists[0]?.items ?? []
 
   return (
@@ -184,13 +200,14 @@ function BulletListSlide({ meta, content, deckConfig, index }) {
           </ul>
         )}
       </div>
+      <SlideFootnotes html={footnotesHtml} />
       <SlideFooter deckConfig={deckConfig} right={slideNum(index)} />
     </section>
   )
 }
 
 function FullBleedImageSlide({ meta, content, deckConfig, index }) {
-  const { headings } = extractContent(content)
+  const { headings, footnotesHtml } = extractContent(content)
   const hasOverlay = !!meta.overlay
   const classes = ['slide', 'slide--full-bleed-image', hasOverlay && 'has-overlay']
     .filter(Boolean).join(' ')
@@ -206,17 +223,19 @@ function FullBleedImageSlide({ meta, content, deckConfig, index }) {
           <h2 class="overlay-title" dangerouslySetInnerHTML={{ __html: headings[1] }} />
         )}
       </div>
+      <SlideFootnotes html={footnotesHtml} />
     </section>
   )
 }
 
 // Fallback: renders raw markdown with component hydration support
 function GenericSlide({ meta, content, deckConfig, index }) {
-  const { fullHtml } = extractContent(content)
+  const { fullHtml, footnotesHtml } = extractContent(content)
   return (
     <section class="slide" data-label={`${slideNum(index)}`}>
       <SlideHeader deckConfig={deckConfig} right={meta.section ?? ''} />
       <HtmlContent class="slide-body" html={fullHtml} />
+      <SlideFootnotes html={footnotesHtml} />
       <SlideFooter deckConfig={deckConfig} right={slideNum(index)} />
     </section>
   )

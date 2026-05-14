@@ -488,8 +488,14 @@
       if (this._countEl) this._countEl.textContent = String(curr + 1);
 
       if (broadcast) {
-        // (1) Legacy: host-window postMessage for speaker-notes renderers.
-        try { window.postMessage({ slideIndexChanged: curr }, '*'); } catch (e) {}
+        // (1) Legacy: postMessage bridge for presenter/speaker-note renderers.
+        const note = this._notes[curr] ?? null;
+        try { window.postMessage({ slideIndexChanged: curr, note }, '*'); } catch (e) {}
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ slideIndexChanged: curr, note }, '*');
+          }
+        } catch (e) {}
 
         // (2) In-page CustomEvent on the <deck-stage> element itself.
         //     Bubbles and composes out of shadow DOM so slide code can listen:

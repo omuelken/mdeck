@@ -426,6 +426,27 @@ em {
 }
 
 /* ─────────────────────────────────────────────
+   FOOTNOTES
+   ───────────────────────────────────────────── */
+.slide-footnotes {
+  font-size: var(--fs-small);
+  color: var(--muted);
+  border-top: 1px solid var(--rule);
+  padding-top: 20px;
+  margin-top: auto;
+}
+.slide-footnotes ol {
+  margin: 0;
+  padding-left: 1.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.slide-footnotes li { line-height: 1.4; }
+.slide-footnotes p  { margin: 0; }
+.slide-footnotes .footnote-backref { display: none; }
+
+/* ─────────────────────────────────────────────
    CODE BLOCK COMPONENT
    ───────────────────────────────────────────── */
 .code-block {
@@ -454,7 +475,7 @@ em {
    MATH (KaTeX)
    ───────────────────────────────────────────── */
 .slide .katex-display {
-  font-size: var(--fs-h);
+  font-size: var(--fs-sub);
   margin: 48px 0;
   overflow-x: auto;
   overflow-y: hidden;

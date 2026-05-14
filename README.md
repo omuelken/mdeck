@@ -14,6 +14,7 @@ npm run build        # build examples/demo.md → dist/index.html
 
 ```bash
 node bin/deck.js dev   my-talk.md              # dev server with live reload
+node bin/deck.js present my-talk.md            # speaker view with notes + switches
 node bin/deck.js build my-talk.md              # build → dist/index.html
 node bin/deck.js build my-talk.md -o talk.html # custom output path
 node bin/deck.js preview                       # preview last build
@@ -97,6 +98,17 @@ overlay: true
 | `image-text` | `image: path`, optional `section:` | `# Heading` + paragraphs |
 | `bullet-list` | optional `section:` | `## Heading` + `- list items` |
 | `full-bleed-image` | `image: path`, optional `overlay: true` | Optional `# Overlay title` |
+
+You can add speaker notes per slide via frontmatter:
+
+```yaml
+---
+layout: focus
+notes: Keep this slide under 90 seconds.
+---
+```
+
+`note:` also works as a synonym for `notes:`.
 
 Slides without a recognised `layout:` fall back to a generic layout that renders all content with component hydration.
 

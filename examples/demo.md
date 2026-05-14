@@ -38,7 +38,9 @@ image: ./img/image.jpg
 ---
 ## Tokens all the way down.
 
-Change `primaryColor` in the deck frontmatter and the *whole deck* repaints. Each design system declares its own configurable params mapped to CSS custom properties.
+Change `primaryColor` in the deck frontmatter and the *whole deck* repaints.[^1] Each design system declares its own configurable params mapped to CSS custom properties.
+
+[^1]: Palette overrides are injected as a `:root {}` block after the theme CSS, so they win by document order.
 
 ---
 layout: bullet-list

@@ -36,6 +36,7 @@ const HELP = `
 
   Usage:
     deck dev <slides.md>                Start dev server with live reload
+    deck present <slides.md>            Start speaker view (notes + switches)
     deck build <slides.md>              Build → dist/index.html + img/
     deck build <slides.md> -o out.html  Build to a specific file
     deck preview                        Preview the last build
@@ -66,6 +67,24 @@ if (command === 'dev') {
   await server.listen()
   server.printUrls()
   console.log('\n  Watching', resolve(input), '— edit and save to reload\n')
+
+// ── present ───────────────────────────────────────────────────────────────────
+} else if (command === 'present') {
+  const input = argv[0]
+  if (!input) { console.error('Error: specify a slides file\n  deck present <slides.md>'); process.exit(1) }
+  if (!existsSync(input)) { console.error(`Error: file not found: ${input}`); process.exit(1) }
+
+  const server = await createServer({
+    ...baseConfig(input),
+    publicDir: dirname(resolve(input)),
+    server: {
+      open: '/?presenter=1',
+      fs: { allow: [frameworkRoot, dirname(resolve(input))] },
+    },
+  })
+  await server.listen()
+  server.printUrls()
+  console.log('\n  Speaker view at /?presenter=1 — presentation updates live\n')
 
 // ── build ─────────────────────────────────────────────────────────────────────
 } else if (command === 'build') {
