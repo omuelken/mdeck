@@ -48,11 +48,12 @@ function HtmlContent({ html, class: className }) {
 
 // ─── Header / footer rails ─────────────────────────────────────────────────
 
-function SlideHeader({ deckConfig, right }) {
+function SlideHeader({ deckConfig, right, logo }) {
   const org = deckConfig.meta?.organization ?? ''
   return (
     <div class="slide-header">
       <span class="brand">{org}</span>
+      {logo && <img class="slide-logo" src={logo} alt="" />}
       {right != null && <span>{right}</span>}
     </div>
   )
@@ -77,10 +78,11 @@ function slideNum(index) {
 
 function TitleSlide({ meta, content, deckConfig, index }) {
   const { headings, paragraphs } = extractContent(content)
+  const logo = deckConfig.meta?.logo
 
   return (
     <section class="slide slide--title" data-label={`${slideNum(index)} Title`}>
-      <SlideHeader deckConfig={deckConfig} />
+      <SlideHeader deckConfig={deckConfig} logo={logo} />
       <div class="slide-body">
         {headings[1] && <h1 class="display" dangerouslySetInnerHTML={{ __html: headings[1] }} />}
         {(headings[2] || paragraphs[0]) && (

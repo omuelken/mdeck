@@ -40,6 +40,13 @@ deck-stage { background: #111; }
 }
 .slide-header .brand { color: var(--ink); }
 .slide-header > span { white-space: nowrap; flex-shrink: 0; }
+.slide-logo {
+  height: 96px;
+  width: auto;
+  max-width: 360px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 
 .slide-footer {
   display: flex;
@@ -220,7 +227,7 @@ em {
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 1500px;
+  width: 100%;
 }
 .focus-content h1,
 .focus-content p {
@@ -233,6 +240,7 @@ em {
   margin: 0;
   text-wrap: balance;
   text-align: center;
+  max-width: 1500px;
 }
 
 .focus-attribution {
@@ -380,12 +388,45 @@ em {
 }
 
 /* ─────────────────────────────────────────────
+   GENERIC / CONTENT SLIDE
+   Applies to the no-layout fallback (GenericSlide).
+   Layout-specific rules below have higher specificity and take over.
+   ───────────────────────────────────────────── */
+.slide-body h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0 0 var(--gap-title) 0;
+}
+.slide-body h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-sub);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 var(--gap-item) 0;
+}
+.slide-body p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0 0 var(--gap-item) 0;
+  text-wrap: pretty;
+}
+
+/* ─────────────────────────────────────────────
    CODE BLOCK COMPONENT
    ───────────────────────────────────────────── */
 .code-block {
   --code-bg: var(--rule);
   --code-radius: 8px;
-  --code-size: 1.6em;
+  --code-size: 36px;
   background: var(--code-bg);
   border-radius: 0 var(--code-radius) var(--code-radius) 0;
   border-left: 6px solid var(--accent);
@@ -393,15 +434,25 @@ em {
   margin: 0;
   overflow: auto;
   font-size: var(--code-size);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   line-height: 1.6;
 }
-/* Explicit override for both pre and code — beats Prism's attribute selectors */
-.code-block,
+/* Reset inner <code> only — do not zero out the <pre> itself */
 .code-block code {
-  font-size: var(--code-size);
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: inherit;
+  font-size: inherit;
   background: none;
   padding: 0;
+}
+
+/* ─────────────────────────────────────────────
+   MATH (KaTeX)
+   ───────────────────────────────────────────── */
+.slide .katex-display {
+  font-size: var(--fs-h);
+  margin: 48px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* ─────────────────────────────────────────────

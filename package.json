@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "js-yaml": "^4.1.0",
+    "katex": "^0.16.46",
     "marked": "^12.0.0",
+    "marked-katex-extension": "^5.1.8",
     "preact": "^10.23.0",
     "prismjs": "^1.29.0"
   },

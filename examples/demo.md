@@ -6,6 +6,7 @@ meta:
   author: "Tilman Schieber"
   organization: "FHNW"
   date: "2026-05-13"
+  logo: ./img/logo.png
 width: 1920
 height: 1080
 ---
@@ -82,6 +83,17 @@ squares = [x**2 for x in range(1, 11)]
 print(squares)
 print(f"Sum: {sum(squares)}")
 ```
+
+---
+section: Mathematics
+---
+# Inline and block math.
+
+The quadratic formula $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$ works inline.
+
+$$
+\int_0^\infty e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}
+$$
 
 ---
 layout: full-bleed-image

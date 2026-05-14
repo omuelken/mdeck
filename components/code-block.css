@@ -22,6 +22,8 @@ code[class*="language-"] { color: var(--token-default); }
 /* ── Wrapper ────────────────────────────────────────────────────────────── */
 .code-block-wrapper {
   position: relative;
+  margin: 40px 0;
+  width: 100%;
 }
 
 /* ── Action buttons ─────────────────────────────────────────────────────── */
@@ -55,17 +57,34 @@ code[class*="language-"] { color: var(--token-default); }
 }
 .code-btn--run:hover:not(:disabled) { opacity: 0.85; }
 
-/* ── Editable textarea ──────────────────────────────────────────────────── */
-.code-block--editable {
-  color: var(--token-default, #0a0a0a);
+/* ── Editable: highlighted pre + transparent textarea overlay ───────────── */
+.code-editable-container {
+  position: relative;
+}
+.code-editable-highlight {
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  margin: 0;
+}
+/* The textarea sits on top; transparent so the highlighted pre shows through */
+.code-editable-input {
+  position: absolute;
+  inset: 0;
+  padding: 40px 48px;       /* must match .code-block padding exactly */
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: var(--code-size, 36px);
+  line-height: 1.6;         /* must match .code-block line-height exactly */
+  background: transparent;
+  color: transparent;
   caret-color: var(--ink, #0a0a0a);
-  resize: vertical;
-  width: 100%;
-  box-sizing: border-box;
-  outline: none;
-  white-space: pre;
+  border: none;
+  resize: none;
   overflow: auto;
   tab-size: 2;
+  outline: none;
+  white-space: pre;
+  word-break: normal;
 }
 
 /* ── Output area ────────────────────────────────────────────────────────── */

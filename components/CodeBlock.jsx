@@ -1,5 +1,5 @@
 import { h } from 'preact'
-import { useState, useMemo } from 'preact/hooks'
+import { useState, useMemo, useRef } from 'preact/hooks'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-javascript'
 import 'prismjs/components/prism-typescript'
@@ -105,6 +105,14 @@ export default function CodeBlock({ lang = 'text', children = '', live, copy, ed
   const [copied, setCopied]   = useState(false)
 
   const highlighted = useMemo(() => hl(code, lang), [code, lang])
+  const highlightRef = useRef(null)
+
+  function syncScroll(e) {
+    if (highlightRef.current) {
+      highlightRef.current.scrollTop  = e.currentTarget.scrollTop
+      highlightRef.current.scrollLeft = e.currentTarget.scrollLeft
+    }
+  }
 
   async function handleRun() {
     setRunning(true)
@@ -125,16 +133,21 @@ export default function CodeBlock({ lang = 'text', children = '', live, copy, ed
   return (
     <div class="code-block-wrapper">
       {isEditable ? (
-        <textarea
-          class={`code-block code-block--editable language-${lang}`}
-          value={code}
-          onInput={e => setCode(e.currentTarget.value)}
-          rows={Math.max(3, code.split('\n').length)}
-          spellcheck={false}
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="off"
-        />
+        <div class="code-editable-container">
+          <pre ref={highlightRef} class={`code-block code-editable-highlight language-${lang}`} aria-hidden="true">
+            <code dangerouslySetInnerHTML={{ __html: highlighted }} />
+          </pre>
+          <textarea
+            class="code-editable-input"
+            value={code}
+            onInput={e => setCode(e.currentTarget.value)}
+            onScroll={syncScroll}
+            spellcheck={false}
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+          />
+        </div>
       ) : (
         <pre class={`code-block language-${lang}`}>
           <code dangerouslySetInnerHTML={{ __html: highlighted }} />
