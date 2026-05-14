@@ -137,7 +137,10 @@ deck-stage { background: #111; }
 }
 em {
   font-style: normal;
-  color: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* ─────────────────────────────────────────────
@@ -546,13 +549,24 @@ em {
   --code-size: 36px;
   background: var(--code-bg);
   border-radius: 0 var(--code-radius) var(--code-radius) 0;
-  border-left: 6px solid var(--accent);
-  padding: 40px 48px;
+  border-left: none;
+  padding: 40px 48px 40px calc(48px + 6px);
+  position: relative;
   margin: 0;
   overflow: auto;
   font-size: var(--code-size);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   line-height: 1.6;
+}
+.code-block::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: linear-gradient(to bottom, var(--accent), var(--accent-2));
+  border-radius: var(--code-radius) 0 0 var(--code-radius);
 }
 .code-block code {
   font-family: inherit;
