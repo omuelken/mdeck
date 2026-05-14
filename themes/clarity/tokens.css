@@ -1,0 +1,33 @@
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS — Clarity theme
+   ───────────────────────────────────────────── */
+:root {
+  /* Palette */
+  --bg:        #f8f9fa;
+  --ink:       #191c1d;
+  --ink-soft:  #434656;
+  --muted:     #737688;
+  --rule:      #c3c5d9;
+  --accent:    #003ec7;
+  --accent-2:  oklch(from var(--accent) l c calc(h + 60));
+
+  /* Type scale (px) — projection-appropriate at 1920×1080 */
+  --fs-display: 136px;
+  --fs-title:    88px;
+  --fs-focus:    76px;
+  --fs-h:        64px;
+  --fs-sub:      44px;
+  --fs-body:     34px;
+  --fs-small:    26px;
+  --fs-eyebrow:  20px;
+
+  /* Spacing */
+  --pad-x:     120px;
+  --pad-y:      72px;
+  --gap-title:  48px;
+  --gap-item:   24px;
+
+  /* Type families */
+  --font-display: "Plus Jakarta Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body:    "Plus Jakarta Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}

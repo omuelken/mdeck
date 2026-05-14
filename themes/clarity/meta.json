@@ -1,0 +1,11 @@
+{
+  "name": "Clarity",
+  "fonts": [
+    "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap"
+  ],
+  "params": {
+    "primaryColor":    { "token": "--accent",   "default": "#003ec7" },
+    "backgroundColor": { "token": "--bg",        "default": "#f8f9fa" },
+    "inkColor":        { "token": "--ink",       "default": "#191c1d" }
+  }
+}

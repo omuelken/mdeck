@@ -1,6 +1,6 @@
 ---
-design: modern
-palette: noir 
+design: clarity
+palette: default
 meta:
   title: "Slide Framework Demo"
   author: "Tilman Schieber"

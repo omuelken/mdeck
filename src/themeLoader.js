@@ -9,7 +9,8 @@ const DARK_TOKENS = {
 }
 
 const THEMES = {
-  modern: () => import('../themes/modern/index.js'),
+  modern:  () => import('../themes/modern/index.js'),
+  clarity: () => import('../themes/clarity/index.js'),
 }
 
 const PALETTES = Object.fromEntries(
