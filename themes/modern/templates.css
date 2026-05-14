@@ -41,11 +41,16 @@ deck-stage { background: #111; }
 .slide-header .brand { color: var(--ink); }
 .slide-header > span { white-space: nowrap; flex-shrink: 0; }
 .slide-logo {
-  height: 96px;
+  position: absolute;
+  top: var(--pad-y);
+  right: var(--pad-x);
+  height: 128px;
   width: auto;
-  max-width: 360px;
+  max-width: 480px;
   object-fit: contain;
-  flex-shrink: 0;
+  /* Vertically center logo with the eyebrow text row:
+     shift up by (logo-height/2 - eyebrow-line-height/2) */
+  transform: translateY(calc(var(--fs-eyebrow) * 0.5 - 50%));
 }
 
 .slide-footer {
