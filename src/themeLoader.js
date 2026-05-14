@@ -2,11 +2,19 @@ const THEMES = {
   modern: () => import('../themes/modern/index.js'),
 }
 
+const PALETTES = Object.fromEntries(
+  Object.entries(import.meta.glob('../palettes/*.json', { eager: true }))
+    .map(([path, mod]) => [
+      path.replace('../palettes/', '').replace('.json', ''),
+      mod.default ?? mod,
+    ])
+)
+
 export async function loadTheme({ design = 'modern', palette, params = {}, meta = {} } = {}) {
   const loader = THEMES[design]
   if (!loader) throw new Error(`Unknown theme: "${design}". Available: ${Object.keys(THEMES).join(', ')}`)
 
-  const { tokensCSS, templatesCSS, themeMeta, palettes } = await loader()
+  const { tokensCSS, templatesCSS, themeMeta } = await loader()
 
   // Inject base theme CSS
   const baseStyle = document.createElement('style')
@@ -23,14 +31,14 @@ export async function loadTheme({ design = 'modern', palette, params = {}, meta 
   }
 
   // Inject palette overrides (sits between base tokens and per-deck params)
-  const resolvedPalette = palette ? palettes?.[palette] : null
+  const resolvedPalette = palette ? PALETTES[palette] : null
   if (resolvedPalette) {
     const paletteStyle = document.createElement('style')
     paletteStyle.id = 'deck-palette'
     paletteStyle.textContent = `:root {\n  ${Object.entries(resolvedPalette.tokens).map(([k, v]) => `${k}: ${v};`).join('\n  ')}\n}`
     document.head.appendChild(paletteStyle)
   } else if (palette) {
-    console.warn(`Unknown palette "${palette}" for theme "${design}". Available: ${Object.keys(palettes ?? {}).join(', ')}`)
+    console.warn(`Unknown palette "${palette}". Available: ${Object.keys(PALETTES).join(', ')}`)
   }
 
   // Build override vars: user params + deck meta values

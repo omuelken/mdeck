@@ -36,7 +36,7 @@ function HtmlContent({ html, class: className }) {
       for (const el of [...ref.current.querySelectorAll(name)]) {
         const props = Object.fromEntries([...el.attributes].map(a => [a.name, a.value]))
         const children = el.textContent
-        const wrapper = document.createElement('span')
+        const wrapper = document.createElement('div')
         el.replaceWith(wrapper)
         render(h(Component, { ...props, children }), wrapper)
       }

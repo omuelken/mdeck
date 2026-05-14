@@ -1,6 +1,6 @@
 ---
 design: modern
-palette: black-cherry
+palette: default
 meta:
   title: "Slide Framework Demo"
   author: "Tilman Schieber"
@@ -61,6 +61,27 @@ function parseSlides(markdown) {
   return segments.map(s => yaml.load(s.trim()))
 }
 </codeblock>
+
+---
+layout: focus
+eyebrow: JavaScript — live & editable
+---
+
+```js live copy editable
+const fib = n => n < 2 ? n : fib(n - 1) + fib(n - 2)
+console.log(Array.from({ length: 10 }, (_, i) => fib(i)))
+```
+
+---
+layout: focus
+eyebrow: Python — live
+---
+
+```python live copy
+squares = [x**2 for x in range(1, 11)]
+print(squares)
+print(f"Sum: {sum(squares)}")
+```
 
 ---
 layout: full-bleed-image

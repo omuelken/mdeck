@@ -1,0 +1,11 @@
+{
+  "name": "Fiery Ocean",
+  "tokens": {
+    "--bg": "#fdf0d5",
+    "--ink": "#003049",
+    "--ink-soft": "#003049",
+    "--muted": "#669bbc",
+    "--rule": "#c1121f",
+    "--accent": "#780000"
+  }
+}

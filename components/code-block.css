@@ -1,0 +1,88 @@
+:root {
+  --token-default:  #0a0a0a;
+  --token-comment:  #708090;
+  --token-string:   #669900;
+  --token-number:   #905050;
+  --token-keyword:  #0077aa;
+  --token-function: #dd4a68;
+  --token-operator: #9a6e3a;
+}
+
+code[class*="language-"] { color: var(--token-default); }
+.token.comment, .token.prolog, .token.doctype, .token.cdata { color: var(--token-comment); font-style: italic; }
+.token.punctuation { color: var(--token-default); opacity: 0.7; }
+.token.property, .token.tag, .token.boolean, .token.number, .token.constant, .token.symbol, .token.deleted { color: var(--token-number); }
+.token.selector, .token.attr-name, .token.string, .token.char, .token.builtin, .token.inserted { color: var(--token-string); }
+.token.operator, .token.entity, .token.url, .token.regex, .token.variable { color: var(--token-operator); }
+.token.atrule, .token.attr-value, .token.keyword { color: var(--token-keyword); }
+.token.function, .token.class-name { color: var(--token-function); }
+.token.important, .token.bold { font-weight: bold; }
+.token.italic { font-style: italic; }
+
+/* ── Wrapper ────────────────────────────────────────────────────────────── */
+.code-block-wrapper {
+  position: relative;
+}
+
+/* ── Action buttons ─────────────────────────────────────────────────────── */
+.code-block-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.code-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg, #fff);
+  color: var(--ink, #0a0a0a);
+  border: 1.5px solid var(--rule, #e5e5e5);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.code-btn:hover { background: var(--rule, #e5e5e5); }
+.code-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.code-btn--run {
+  background: var(--accent, #2563eb);
+  color: #fff;
+  border-color: transparent;
+}
+.code-btn--run:hover:not(:disabled) { opacity: 0.85; }
+
+/* ── Editable textarea ──────────────────────────────────────────────────── */
+.code-block--editable {
+  color: var(--token-default, #0a0a0a);
+  caret-color: var(--ink, #0a0a0a);
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  white-space: pre;
+  overflow: auto;
+  tab-size: 2;
+}
+
+/* ── Output area ────────────────────────────────────────────────────────── */
+.code-output {
+  margin: 0;
+  padding: 28px 48px;
+  background: #111;
+  color: #d4d4d4;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 1.4em;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border-radius: 0 8px 8px 8px;
+  border-left: 6px solid #444;
+}
+.code-output--error {
+  color: #f87171;
+  border-left-color: #ef4444;
+}

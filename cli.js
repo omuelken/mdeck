@@ -57,6 +57,7 @@ if (command === 'dev') {
 
   const server = await createServer({
     ...baseConfig(input),
+    publicDir: dirname(resolve(input)),
     server: {
       open: true,
       fs: { allow: [frameworkRoot, dirname(resolve(input))] },

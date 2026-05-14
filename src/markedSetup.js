@@ -1,17 +1,15 @@
 import { marked } from 'marked'
 
-// Convert fenced code blocks to <codeblock> elements so the component
-// registry can hydrate them with syntax highlighting.
 marked.use({
   renderer: {
-    code({ text, lang }) {
-      const safeLang = lang || 'text'
-      // HTML-encode content so angle brackets in code aren't parsed as tags
-      const encoded = text
+    code(code, infoString) {
+      const [lang = 'text', ...flags] = (infoString || '').split(/\s+/).filter(Boolean)
+      const attrs = flags.map(f => `${f}=""`).join(' ')
+      const encoded = (code || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-      return `<codeblock lang="${safeLang}">${encoded}</codeblock>`
+      return `<codeblock lang="${lang}"${attrs ? ' ' + attrs : ''}>${encoded}</codeblock>`
     },
   },
 })
