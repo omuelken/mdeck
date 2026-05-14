@@ -1,11 +1,12 @@
 {
   "name": "Noir",
+  "dark": true,
   "tokens": {
-    "--bg":       "#0a0908",
-    "--ink":      "#eae0d5",
+    "--bg": "#121005",
+    "--ink": "#eae0d5",
     "--ink-soft": "#c6ac8f",
-    "--muted":    "#5e503f",
-    "--rule":     "#22333b",
-    "--accent":   "#c6ac8f"
+    "--muted": "#C6AC8F",
+    "--rule": "#2b2a29",
+    "--accent": "#eb5e28"
   }
 }

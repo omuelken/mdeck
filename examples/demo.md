@@ -1,6 +1,6 @@
 ---
 design: modern
-palette: fiery-ocean 
+palette: noir 
 meta:
   title: "Slide Framework Demo"
   author: "Tilman Schieber"
