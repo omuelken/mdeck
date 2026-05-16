@@ -1,10 +1,8 @@
 import { marked } from 'marked'
 import markedKatex from 'marked-katex-extension'
-import markedFootnote from 'marked-footnote'
 import 'katex/dist/katex.min.css'
 
 marked.use(markedKatex({ throwOnError: false, output: 'html' }))
-marked.use(markedFootnote())
 
 marked.use({
   renderer: {

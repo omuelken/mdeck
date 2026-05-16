@@ -46,7 +46,7 @@ Change `primaryColor` in the deck frontmatter and the *whole deck* repaints.[^1]
 layout: bullet-list
 section: Components
 ---
-## Built-in component types
+# Built-in component types
 
 - `<codeblock>` — syntax-highlighted code via Prism
 - Add `<animation>` or `<iframe>` by creating a component and registering it in `src/registry.jsx`

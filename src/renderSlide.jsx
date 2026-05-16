@@ -1,34 +1,55 @@
 import { h } from 'preact'
 import { useEffect, useRef } from 'preact/hooks'
 import { render } from 'preact'
-import { marked } from 'marked'
+import { marked, Parser } from 'marked'
 import { registry } from './registry'
 
 // ─── Content extraction ────────────────────────────────────────────────────
 
-const FN_RE = /<section[^>]*data-footnotes[^>]*>[\s\S]*?<\/section>/i
+const FN_DEF_RE = /^\[\^([^\]\n]+)\]:\s+([^\n]+)/gm
+const FN_REF_RE = /\[\^([^\]\n]+)\]/g
+
+function preprocessFootnotes(markdown) {
+  const defs = {}
+  const stripped = markdown.replace(FN_DEF_RE, (_, label, text) => {
+    defs[label] = text.trim()
+    return ''
+  })
+
+  let counter = 0
+  const labelToNum = {}
+  const processed = stripped.replace(FN_REF_RE, (_, label) => {
+    if (labelToNum[label] === undefined) labelToNum[label] = ++counter
+    return `<sup>${labelToNum[label]}</sup>`
+  })
+
+  if (counter === 0) return { processed: markdown, footnotesHtml: '' }
+
+  const items = Object.keys(labelToNum)
+    .map(label => `<li>${marked.parseInline(defs[label] ?? label)}</li>`)
+    .join('')
+
+  return { processed, footnotesHtml: `<ol>${items}</ol>` }
+}
 
 function extractContent(markdown) {
-  const tokens = marked.lexer(markdown)
+  const { processed, footnotesHtml } = preprocessFootnotes(markdown)
+  const tokens = marked.lexer(processed)
   const headings = {}
   const paragraphs = []
   const lists = []
 
   for (const token of tokens) {
     if (token.type === 'heading') {
-      headings[token.depth] = marked.parseInline(token.text)
+      headings[token.depth] = Parser.parseInline(token.tokens)
     } else if (token.type === 'paragraph') {
-      paragraphs.push(marked.parseInline(token.text))
+      paragraphs.push(Parser.parseInline(token.tokens))
     } else if (token.type === 'list') {
       lists.push(token)
     }
   }
 
-  const raw = marked.parse(markdown)
-  const fnMatch = raw.match(FN_RE)
-  const footnotesHtml = fnMatch ? fnMatch[0] : ''
-  const fullHtml = fnMatch ? raw.replace(fnMatch[0], '') : raw
-
+  const fullHtml = marked.parse(processed)
   return { headings, paragraphs, lists, fullHtml, footnotesHtml }
 }
 
