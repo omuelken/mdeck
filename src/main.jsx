@@ -26,11 +26,10 @@ function injectSpeakerNotes(slides) {
     tag.type = 'application/json'
     document.body.appendChild(tag)
   }
-  const notes = slides.map(slide => slide.meta?.notes ?? slide.meta?.note ?? '')
-  tag.textContent = JSON.stringify(notes)
+  tag.textContent = JSON.stringify(slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''))
 }
 
-function buildChildUrl(design, palette) {
+function buildChildUrl(design, palette, slideIndex = null) {
   const url = new URL(window.location.href)
   url.searchParams.delete('presenter')
   url.searchParams.set('embedded', '1')
@@ -38,7 +37,49 @@ function buildChildUrl(design, palette) {
   else url.searchParams.delete('design')
   if (palette) url.searchParams.set('palette', palette)
   else url.searchParams.delete('palette')
+  if (slideIndex != null) url.hash = String(slideIndex + 1)
   return url.toString()
+}
+
+function sendTo(win, command, value) {
+  if (!win || win.closed) return
+  win.postMessage({ deckControl: { command, value } }, '*')
+}
+
+const S = {
+  btn: {
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    padding: '5px 12px',
+    borderRadius: '5px',
+    border: '1px solid #1e293b',
+    background: '#0f172a',
+    color: '#94a3b8',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: 'inherit',
+    lineHeight: '1.5',
+    outline: 'none',
+  },
+  select: {
+    padding: '5px 8px',
+    borderRadius: '5px',
+    border: '1px solid #1e293b',
+    background: '#0f172a',
+    color: '#94a3b8',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: 'inherit',
+    width: '100%',
+  },
+  label: {
+    color: '#334155',
+    fontSize: '11px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    marginBottom: '5px',
+    display: 'block',
+  },
 }
 
 function PresenterView({ deckConfig, slides }) {
@@ -46,95 +87,179 @@ function PresenterView({ deckConfig, slides }) {
   const [design, setDesign] = useState(deckConfig.design ?? 'modern')
   const [palette, setPalette] = useState(deckConfig.palette ?? '')
   const [audienceConnected, setAudienceConnected] = useState(false)
+
   const iframeRef = useRef(null)
-  const audienceWindowRef = useRef(null)
+  const previewRef = useRef(null)
+  const audienceRef = useRef(null)
+  const indexRef = useRef(0)
+  indexRef.current = index
 
-  const notes = useMemo(() => slides.map(slide => slide.meta?.notes ?? slide.meta?.note ?? ''), [slides])
+  const notes = useMemo(() => slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''), [slides])
   const iframeSrc = useMemo(() => buildChildUrl(design, palette), [design, palette])
+  // previewSrc only recomputes on design/palette change; index changes use postMessage
+  const previewSrc = useMemo(
+    () => buildChildUrl(design, palette, indexRef.current + 1),
+    [design, palette]
+  )
 
-  function sendCommand(targetWindow, command, value) {
-    if (!targetWindow || targetWindow.closed) return
-    targetWindow.postMessage({ deckControl: { command, value } }, '*')
-  }
-
-  function broadcastCommand(command, value) {
-    const iframeWindow = iframeRef.current?.contentWindow
-    sendCommand(iframeWindow, command, value)
-    sendCommand(audienceWindowRef.current, command, value)
-  }
-
-  function openAudienceWindow() {
-    const url = buildChildUrl(design, palette)
-    const audience = window.open(url, 'deck-audience-view')
-    if (!audience) return
-    audienceWindowRef.current = audience
-    setAudienceConnected(true)
-    setTimeout(() => broadcastCommand('goTo', index), 250)
-  }
-
-  function syncAudienceThemePalette() {
-    if (!audienceWindowRef.current || audienceWindowRef.current.closed) {
-      setAudienceConnected(false)
-      return
-    }
-    audienceWindowRef.current.location.href = buildChildUrl(design, palette)
-  }
-
+  // Receive nav events from presenter iframe → update index display + sync audience + preview
   useEffect(() => {
-    function onMessage(event) {
-      const data = event.data
+    function onMessage({ data }) {
       if (!data || typeof data.slideIndexChanged !== 'number') return
-      setIndex(data.slideIndexChanged)
+      const i = data.slideIndexChanged
+      setIndex(i)
+      sendTo(audienceRef.current, 'goTo', i)
+      sendTo(previewRef.current?.contentWindow, 'goTo', i + 1)
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
+  // Keyboard nav when focus is in the presenter sidebar
   useEffect(() => {
-    if (!audienceWindowRef.current || audienceWindowRef.current.closed) return
-    syncAudienceThemePalette()
+    function onKey(e) {
+      if (e.target?.matches?.('input, select, textarea')) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const cmd =
+        (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') ? 'next' :
+        (e.key === 'ArrowLeft'  || e.key === 'PageUp')                    ? 'prev' :
+        (e.key === 'Home' || e.key === 'r' || e.key === 'R')              ? 'reset' : null
+      if (!cmd) return
+      e.preventDefault()
+      sendTo(iframeRef.current?.contentWindow, cmd)
+      const aw = audienceRef.current
+      if (aw && !aw.closed) aw.postMessage({ deckControl: { command: cmd } }, '*')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // When design/palette changes, reload audience at the current slide
+  useEffect(() => {
+    const aw = audienceRef.current
+    if (!aw || aw.closed) { setAudienceConnected(false); return }
+    aw.location.href = buildChildUrl(design, palette, indexRef.current)
   }, [design, palette])
 
+  function broadcastNav(cmd) {
+    sendTo(iframeRef.current?.contentWindow, cmd)
+    sendTo(audienceRef.current, cmd)
+  }
+
+  function openAudienceWindow() {
+    const aw = window.open(buildChildUrl(design, palette, indexRef.current), 'deck-audience-view')
+    if (!aw) return
+    audienceRef.current = aw
+    setAudienceConnected(true)
+  }
+
+  const note = notes[index] || ''
+  const hasNext = index + 1 < slides.length
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', height: '100vh', background: '#0f172a' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', height: '100vh', background: '#020817', overflow: 'hidden' }}>
       <iframe
         ref={iframeRef}
         title="Presenter deck"
         src={iframeSrc}
-        style={{ width: '100%', height: '100%', border: '0', background: '#000' }}
+        style={{ width: '100%', height: '100%', border: '0' }}
       />
-      <aside style={{ color: '#e2e8f0', padding: '20px', fontFamily: 'ui-sans-serif, system-ui, sans-serif', overflow: 'auto' }}>
-        <h2 style={{ margin: '0 0 12px 0' }}>Speaker View</h2>
-        <div style={{ display: 'grid', gap: '12px', marginBottom: '18px' }}>
-          <label style={{ display: 'grid', gap: '6px' }}>
-            <span>Theme</span>
-            <select value={design} onChange={e => setDesign(e.currentTarget.value)}>
-              {THEME_NAMES.map(name => <option value={name}>{name}</option>)}
-            </select>
-          </label>
-          <label style={{ display: 'grid', gap: '6px' }}>
-            <span>Palette</span>
-            <select value={palette} onChange={e => setPalette(e.currentTarget.value)}>
-              <option value="">(theme default)</option>
-              {PALETTE_NAMES.map(name => <option value={name}>{name}</option>)}
-            </select>
-          </label>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button onClick={openAudienceWindow}>
-              {audienceConnected ? 'Reconnect audience' : 'Open audience window'}
+      <aside style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '14px',
+        padding: '16px',
+        borderLeft: '1px solid #1e293b',
+        background: '#020817',
+        color: '#e2e8f0',
+        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+        fontSize: '13px',
+        overflow: 'hidden',
+      }}>
+
+        {/* Header row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+          <span style={{ fontWeight: 600, color: '#f1f5f9', fontSize: '14px' }}>Speaker View</span>
+          <span style={{ color: '#475569', fontVariantNumeric: 'tabular-nums' }}>
+            {String(index + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+          </span>
+        </div>
+
+        {/* Next slide preview */}
+        {hasNext && (
+          <div style={{ flexShrink: 0 }}>
+            <span style={S.label}>Next slide</span>
+            <div style={{ aspectRatio: '16/9', borderRadius: '4px', overflow: 'hidden', border: '1px solid #1e293b', background: '#000' }}>
+              <iframe
+                ref={previewRef}
+                title="Next slide preview"
+                src={previewSrc}
+                scrolling="no"
+                style={{ width: '100%', height: '100%', border: '0', pointerEvents: 'none' }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Speaker notes */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <span style={S.label}>Notes</span>
+          <pre style={{
+            flex: 1,
+            margin: 0,
+            padding: '10px 12px',
+            whiteSpace: 'pre-wrap',
+            lineHeight: 1.6,
+            background: '#0a0f1e',
+            border: '1px solid #1e293b',
+            borderRadius: '5px',
+            fontSize: '13px',
+            color: note ? '#cbd5e1' : '#1e3a5f',
+            fontFamily: 'inherit',
+            overflow: 'auto',
+          }}>
+            {note || 'No notes — add note: in the slide frontmatter.'}
+          </pre>
+        </div>
+
+        {/* Controls */}
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <label style={{ flex: 1 }}>
+              <span style={S.label}>Theme</span>
+              <select value={design} onChange={e => setDesign(e.currentTarget.value)} style={S.select}>
+                {THEME_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+            <label style={{ flex: 1 }}>
+              <span style={S.label}>Palette</span>
+              <select value={palette} onChange={e => setPalette(e.currentTarget.value)} style={S.select}>
+                <option value="">default</option>
+                {PALETTE_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+          </div>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <button style={S.btn} onClick={() => broadcastNav('prev')}>← Prev</button>
+            <button style={S.btn} onClick={() => broadcastNav('next')}>Next →</button>
+            <button style={S.btn} onClick={() => broadcastNav('reset')}>Reset</button>
+            <button
+              style={{
+                ...S.btn,
+                marginLeft: 'auto',
+                borderColor: audienceConnected ? '#1e293b' : '#1d4ed8',
+                color: audienceConnected ? '#64748b' : '#93c5fd',
+              }}
+              onClick={openAudienceWindow}
+            >
+              {audienceConnected ? 'Reconnect' : 'Audience'}
             </button>
-            <button onClick={() => broadcastCommand('prev')}>Prev</button>
-            <button onClick={() => broadcastCommand('next')}>Next</button>
-            <button onClick={() => broadcastCommand('reset')}>Reset</button>
+          </div>
+          <div style={{ color: '#334155', fontSize: '11px', textAlign: 'center' }}>
+            Arrow keys · Space · PgUp/PgDn · R to reset
           </div>
         </div>
-        <div style={{ opacity: 0.8, marginBottom: '10px' }}>Slide {index + 1} / {slides.length}</div>
-        <pre style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, background: '#111827', border: '1px solid #334155', borderRadius: '8px', padding: '12px' }}>
-          {notes[index] || '(no speaker notes for this slide)'}
-        </pre>
-        <p style={{ opacity: 0.7, marginTop: '16px', fontSize: '14px' }}>
-          Add notes with <code>note:</code> or <code>notes:</code> in each slide frontmatter.
-        </p>
+
       </aside>
     </div>
   )
@@ -173,15 +298,15 @@ async function init() {
 
   render(app, document.body)
 
-  window.addEventListener('message', (event) => {
-    const control = event.data?.deckControl
-    if (!control) return
+  window.addEventListener('message', event => {
+    const ctrl = event.data?.deckControl
+    if (!ctrl) return
     const stage = document.querySelector('deck-stage')
     if (!stage) return
-    if (control.command === 'next') stage.next()
-    else if (control.command === 'prev') stage.prev()
-    else if (control.command === 'reset') stage.reset()
-    else if (control.command === 'goTo' && Number.isInteger(control.value)) stage.goTo(control.value)
+    if (ctrl.command === 'next') stage.next()
+    else if (ctrl.command === 'prev') stage.prev()
+    else if (ctrl.command === 'reset') stage.reset()
+    else if (ctrl.command === 'goTo' && Number.isInteger(ctrl.value)) stage.goTo(ctrl.value)
   })
 }
 
