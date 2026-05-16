@@ -2,8 +2,9 @@
   "name": "Noir",
   "dark": true,
   "tokens": {
-    "--bg": "#121005",
-    "--ink": "#eae0d5",
+    "--bg":      "#121005",
+    "--surface": "#1f1e19",
+    "--ink":     "#eae0d5",
     "--ink-soft": "#c6ac8f",
     "--muted": "#C6AC8F",
     "--rule": "#2b2a29",

@@ -4,6 +4,7 @@
 :root {
   /* Palette */
   --bg:        #f8f9fa;
+  --surface:   #f0f1f5;   /* raised surface: code blocks, glass pill */
   --ink:       #191c1d;
   --ink-soft:  #434656;
   --muted:     #737688;

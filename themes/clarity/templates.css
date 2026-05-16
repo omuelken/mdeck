@@ -308,10 +308,10 @@ em {
   gap: 12px;
   padding: 10px 28px 10px 20px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.75);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(195, 197, 217, 0.5);
+  border: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);
@@ -401,7 +401,7 @@ em {
 .image-placeholder {
   width: 100%;
   height: 100%;
-  background: repeating-linear-gradient(135deg, #e4e6ea 0 22px, #eceef1 22px 44px);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--rule) 40%, var(--bg)) 0 22px, var(--bg) 22px 44px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -565,7 +565,7 @@ em {
    CODE BLOCK COMPONENT
    ───────────────────────────────────────────── */
 .code-block {
-  --code-bg: #f3f4f5;
+  --code-bg: var(--surface);
   --code-radius: 12px;
   --code-size: 36px;
   background: var(--code-bg);
