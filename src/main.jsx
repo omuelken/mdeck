@@ -1,5 +1,5 @@
 import { h, render } from 'preact'
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import slidesContent from 'virtual:slides'
 import { parseSlides } from './parseSlides'
 import { loadTheme, THEME_NAMES, PALETTE_NAMES } from './themeLoader'
@@ -45,9 +45,40 @@ function PresenterView({ deckConfig, slides }) {
   const [index, setIndex] = useState(0)
   const [design, setDesign] = useState(deckConfig.design ?? 'modern')
   const [palette, setPalette] = useState(deckConfig.palette ?? '')
+  const [audienceConnected, setAudienceConnected] = useState(false)
+  const iframeRef = useRef(null)
+  const audienceWindowRef = useRef(null)
 
   const notes = useMemo(() => slides.map(slide => slide.meta?.notes ?? slide.meta?.note ?? ''), [slides])
   const iframeSrc = useMemo(() => buildChildUrl(design, palette), [design, palette])
+
+  function sendCommand(targetWindow, command, value) {
+    if (!targetWindow || targetWindow.closed) return
+    targetWindow.postMessage({ deckControl: { command, value } }, '*')
+  }
+
+  function broadcastCommand(command, value) {
+    const iframeWindow = iframeRef.current?.contentWindow
+    sendCommand(iframeWindow, command, value)
+    sendCommand(audienceWindowRef.current, command, value)
+  }
+
+  function openAudienceWindow() {
+    const url = buildChildUrl(design, palette)
+    const audience = window.open(url, 'deck-audience-view')
+    if (!audience) return
+    audienceWindowRef.current = audience
+    setAudienceConnected(true)
+    setTimeout(() => broadcastCommand('goTo', index), 250)
+  }
+
+  function syncAudienceThemePalette() {
+    if (!audienceWindowRef.current || audienceWindowRef.current.closed) {
+      setAudienceConnected(false)
+      return
+    }
+    audienceWindowRef.current.location.href = buildChildUrl(design, palette)
+  }
 
   useEffect(() => {
     function onMessage(event) {
@@ -59,9 +90,15 @@ function PresenterView({ deckConfig, slides }) {
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
+  useEffect(() => {
+    if (!audienceWindowRef.current || audienceWindowRef.current.closed) return
+    syncAudienceThemePalette()
+  }, [design, palette])
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', height: '100vh', background: '#0f172a' }}>
       <iframe
+        ref={iframeRef}
         title="Presenter deck"
         src={iframeSrc}
         style={{ width: '100%', height: '100%', border: '0', background: '#000' }}
@@ -82,6 +119,14 @@ function PresenterView({ deckConfig, slides }) {
               {PALETTE_NAMES.map(name => <option value={name}>{name}</option>)}
             </select>
           </label>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={openAudienceWindow}>
+              {audienceConnected ? 'Reconnect audience' : 'Open audience window'}
+            </button>
+            <button onClick={() => broadcastCommand('prev')}>Prev</button>
+            <button onClick={() => broadcastCommand('next')}>Next</button>
+            <button onClick={() => broadcastCommand('reset')}>Reset</button>
+          </div>
         </div>
         <div style={{ opacity: 0.8, marginBottom: '10px' }}>Slide {index + 1} / {slides.length}</div>
         <pre style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5, background: '#111827', border: '1px solid #334155', borderRadius: '8px', padding: '12px' }}>
@@ -127,6 +172,17 @@ async function init() {
   )
 
   render(app, document.body)
+
+  window.addEventListener('message', (event) => {
+    const control = event.data?.deckControl
+    if (!control) return
+    const stage = document.querySelector('deck-stage')
+    if (!stage) return
+    if (control.command === 'next') stage.next()
+    else if (control.command === 'prev') stage.prev()
+    else if (control.command === 'reset') stage.reset()
+    else if (control.command === 'goTo' && Number.isInteger(control.value)) stage.goTo(control.value)
+  })
 }
 
 init()
