@@ -7,6 +7,8 @@ import { SlideRenderer } from './renderSlide'
 import './markedSetup'
 import './deck-stage.js'
 
+const DECK_CHANNEL = 'deck-control'
+
 function withConfigOverrides(deckConfig) {
   const url = new URL(window.location.href)
   const design = url.searchParams.get('design')
@@ -29,10 +31,26 @@ function injectSpeakerNotes(slides) {
   tag.textContent = JSON.stringify(slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''))
 }
 
+// URL for the presenter's own iframe and preview pane (uses postMessage)
 function buildChildUrl(design, palette, slideIndex = null) {
   const url = new URL(window.location.href)
   url.searchParams.delete('presenter')
+  url.searchParams.delete('audience')
   url.searchParams.set('embedded', '1')
+  if (design) url.searchParams.set('design', design)
+  else url.searchParams.delete('design')
+  if (palette) url.searchParams.set('palette', palette)
+  else url.searchParams.delete('palette')
+  if (slideIndex != null) url.hash = String(slideIndex + 1)
+  return url.toString()
+}
+
+// URL for the audience window — ?audience=1 makes it listen on BroadcastChannel
+function buildAudienceUrl(design, palette, slideIndex = null) {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('presenter')
+  url.searchParams.delete('embedded')
+  url.searchParams.set('audience', '1')
   if (design) url.searchParams.set('design', design)
   else url.searchParams.delete('design')
   if (palette) url.searchParams.set('palette', palette)
@@ -91,31 +109,39 @@ function PresenterView({ deckConfig, slides }) {
   const iframeRef = useRef(null)
   const previewRef = useRef(null)
   const audienceRef = useRef(null)
+  const bcRef = useRef(null)
   const indexRef = useRef(0)
   indexRef.current = index
 
   const notes = useMemo(() => slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''), [slides])
   const iframeSrc = useMemo(() => buildChildUrl(design, palette), [design, palette])
-  // previewSrc only recomputes on design/palette change; index changes use postMessage
+  // previewSrc only recomputes on design/palette change; slide changes use postMessage
   const previewSrc = useMemo(
     () => buildChildUrl(design, palette, indexRef.current + 1),
     [design, palette]
   )
 
-  // Receive nav events from presenter iframe → update index display + sync audience + preview
+  // BroadcastChannel for audience sync — more reliable than cross-window postMessage
+  useEffect(() => {
+    bcRef.current = new BroadcastChannel(DECK_CHANNEL)
+    return () => bcRef.current?.close()
+  }, [])
+
+  // When the presenter iframe navigates: update displayed index, sync audience + preview
   useEffect(() => {
     function onMessage({ data }) {
       if (!data || typeof data.slideIndexChanged !== 'number') return
       const i = data.slideIndexChanged
       setIndex(i)
-      sendTo(audienceRef.current, 'goTo', i)
+      bcRef.current?.postMessage({ deckControl: { command: 'goTo', value: i } })
       sendTo(previewRef.current?.contentWindow, 'goTo', i + 1)
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
-  // Keyboard nav when focus is in the presenter sidebar
+  // Keyboard nav in the presenter sidebar → drive the iframe only;
+  // audience follows automatically via the slideIndexChanged → BroadcastChannel path
   useEffect(() => {
     function onKey(e) {
       if (e.target?.matches?.('input, select, textarea')) return
@@ -127,27 +153,28 @@ function PresenterView({ deckConfig, slides }) {
       if (!cmd) return
       e.preventDefault()
       sendTo(iframeRef.current?.contentWindow, cmd)
-      const aw = audienceRef.current
-      if (aw && !aw.closed) aw.postMessage({ deckControl: { command: cmd } }, '*')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // When design/palette changes, reload audience at the current slide
+  // When design/palette changes, reload the audience window at the current slide
   useEffect(() => {
     const aw = audienceRef.current
     if (!aw || aw.closed) { setAudienceConnected(false); return }
-    aw.location.href = buildChildUrl(design, palette, indexRef.current)
+    aw.location.href = buildAudienceUrl(design, palette, indexRef.current)
   }, [design, palette])
 
-  function broadcastNav(cmd) {
+  // Nav buttons drive the presenter iframe; audience follows via slideIndexChanged
+  function navCommand(cmd) {
     sendTo(iframeRef.current?.contentWindow, cmd)
-    sendTo(audienceRef.current, cmd)
   }
 
   function openAudienceWindow() {
-    const aw = window.open(buildChildUrl(design, palette, indexRef.current), 'deck-audience-view')
+    const aw = window.open(
+      buildAudienceUrl(design, palette, indexRef.current),
+      'deck-audience-view'
+    )
     if (!aw) return
     audienceRef.current = aw
     setAudienceConnected(true)
@@ -177,7 +204,6 @@ function PresenterView({ deckConfig, slides }) {
         overflow: 'hidden',
       }}>
 
-        {/* Header row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontWeight: 600, color: '#f1f5f9', fontSize: '14px' }}>Speaker View</span>
           <span style={{ color: '#475569', fontVariantNumeric: 'tabular-nums' }}>
@@ -185,7 +211,6 @@ function PresenterView({ deckConfig, slides }) {
           </span>
         </div>
 
-        {/* Next slide preview */}
         {hasNext && (
           <div style={{ flexShrink: 0 }}>
             <span style={S.label}>Next slide</span>
@@ -201,7 +226,6 @@ function PresenterView({ deckConfig, slides }) {
           </div>
         )}
 
-        {/* Speaker notes */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <span style={S.label}>Notes</span>
           <pre style={{
@@ -222,7 +246,6 @@ function PresenterView({ deckConfig, slides }) {
           </pre>
         </div>
 
-        {/* Controls */}
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', gap: '6px' }}>
             <label style={{ flex: 1 }}>
@@ -240,9 +263,9 @@ function PresenterView({ deckConfig, slides }) {
             </label>
           </div>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <button style={S.btn} onClick={() => broadcastNav('prev')}>← Prev</button>
-            <button style={S.btn} onClick={() => broadcastNav('next')}>Next →</button>
-            <button style={S.btn} onClick={() => broadcastNav('reset')}>Reset</button>
+            <button style={S.btn} onClick={() => navCommand('prev')}>← Prev</button>
+            <button style={S.btn} onClick={() => navCommand('next')}>Next →</button>
+            <button style={S.btn} onClick={() => navCommand('reset')}>Reset</button>
             <button
               style={{
                 ...S.btn,
@@ -269,7 +292,9 @@ async function init() {
   const parsed = parseSlides(slidesContent)
   const deckConfig = withConfigOverrides(parsed.deckConfig)
   const { slides } = parsed
-  const presenterMode = new URL(window.location.href).searchParams.get('presenter') === '1'
+  const url = new URL(window.location.href)
+  const presenterMode = url.searchParams.get('presenter') === '1'
+  const audienceMode  = url.searchParams.get('audience')  === '1'
 
   injectSpeakerNotes(slides)
 
@@ -298,8 +323,7 @@ async function init() {
 
   render(app, document.body)
 
-  window.addEventListener('message', event => {
-    const ctrl = event.data?.deckControl
+  function handleDeckControl(ctrl) {
     if (!ctrl) return
     const stage = document.querySelector('deck-stage')
     if (!stage) return
@@ -307,7 +331,17 @@ async function init() {
     else if (ctrl.command === 'prev') stage.prev()
     else if (ctrl.command === 'reset') stage.reset()
     else if (ctrl.command === 'goTo' && Number.isInteger(ctrl.value)) stage.goTo(ctrl.value)
-  })
+  }
+
+  // Embedded iframes (presenter view + preview pane) receive commands via postMessage
+  window.addEventListener('message', event => handleDeckControl(event.data?.deckControl))
+
+  // Audience window receives commands via BroadcastChannel — reliable same-origin sync
+  // that doesn't depend on keeping a live cross-window reference
+  if (audienceMode) {
+    const bc = new BroadcastChannel(DECK_CHANNEL)
+    bc.onmessage = ({ data }) => handleDeckControl(data?.deckControl)
+  }
 }
 
 init()
