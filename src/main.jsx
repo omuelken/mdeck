@@ -70,9 +70,9 @@ const S = {
     WebkitAppearance: 'none',
     padding: '5px 12px',
     borderRadius: '5px',
-    border: '1px solid #1e293b',
-    background: '#0f172a',
-    color: '#94a3b8',
+    border: '1px solid #2e2e2e',
+    background: '#1e1e1e',
+    color: '#999',
     cursor: 'pointer',
     fontSize: '13px',
     fontFamily: 'inherit',
@@ -82,16 +82,16 @@ const S = {
   select: {
     padding: '5px 8px',
     borderRadius: '5px',
-    border: '1px solid #1e293b',
-    background: '#0f172a',
-    color: '#94a3b8',
+    border: '1px solid #2e2e2e',
+    background: '#1e1e1e',
+    color: '#999',
     cursor: 'pointer',
     fontSize: '13px',
     fontFamily: 'inherit',
     width: '100%',
   },
   label: {
-    color: '#334155',
+    color: '#555',
     fontSize: '11px',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
@@ -184,7 +184,7 @@ function PresenterView({ deckConfig, slides }) {
   const hasNext = index + 1 < slides.length
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', height: '100vh', background: '#020817', overflow: 'hidden' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', height: '100vh', background: '#111', overflow: 'hidden' }}>
       <iframe
         ref={iframeRef}
         title="Presenter deck"
@@ -196,17 +196,17 @@ function PresenterView({ deckConfig, slides }) {
         flexDirection: 'column',
         gap: '14px',
         padding: '16px',
-        borderLeft: '1px solid #1e293b',
-        background: '#020817',
-        color: '#e2e8f0',
+        borderLeft: '1px solid #2a2a2a',
+        background: '#111',
+        color: '#ccc',
         fontFamily: 'ui-sans-serif, system-ui, sans-serif',
         fontSize: '13px',
         overflow: 'hidden',
       }}>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <span style={{ fontWeight: 600, color: '#f1f5f9', fontSize: '14px' }}>Speaker View</span>
-          <span style={{ color: '#475569', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontWeight: 600, color: '#f0f0f0', fontSize: '14px' }}>Speaker View</span>
+          <span style={{ color: '#666', fontVariantNumeric: 'tabular-nums' }}>
             {String(index + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
           </span>
         </div>
@@ -214,7 +214,7 @@ function PresenterView({ deckConfig, slides }) {
         {hasNext && (
           <div style={{ flexShrink: 0 }}>
             <span style={S.label}>Next slide</span>
-            <div style={{ aspectRatio: '16/9', borderRadius: '4px', overflow: 'hidden', border: '1px solid #1e293b', background: '#000' }}>
+            <div style={{ aspectRatio: '16/9', borderRadius: '4px', overflow: 'hidden', border: '1px solid #2a2a2a', background: '#000' }}>
               <iframe
                 ref={previewRef}
                 title="Next slide preview"
@@ -234,11 +234,11 @@ function PresenterView({ deckConfig, slides }) {
             padding: '10px 12px',
             whiteSpace: 'pre-wrap',
             lineHeight: 1.6,
-            background: '#0a0f1e',
-            border: '1px solid #1e293b',
+            background: '#0a0a0a',
+            border: '1px solid #2a2a2a',
             borderRadius: '5px',
             fontSize: '13px',
-            color: note ? '#cbd5e1' : '#1e3a5f',
+            color: note ? '#c8c8c8' : '#3a3a3a',
             fontFamily: 'inherit',
             overflow: 'auto',
           }}>
@@ -270,15 +270,14 @@ function PresenterView({ deckConfig, slides }) {
               style={{
                 ...S.btn,
                 marginLeft: 'auto',
-                borderColor: audienceConnected ? '#1e293b' : '#1d4ed8',
-                color: audienceConnected ? '#64748b' : '#93c5fd',
+                color: audienceConnected ? '#444' : '#bbb',
               }}
               onClick={openAudienceWindow}
             >
               {audienceConnected ? 'Reconnect' : 'Audience'}
             </button>
           </div>
-          <div style={{ color: '#334155', fontSize: '11px', textAlign: 'center' }}>
+          <div style={{ color: '#444', fontSize: '11px', textAlign: 'center' }}>
             Arrow keys · Space · PgUp/PgDn · R to reset
           </div>
         </div>
