@@ -1,0 +1,670 @@
+/* ─────────────────────────────────────────────
+   FHNW THEME — templates.css
+   Strict CD-Manual rendering: white bg, pure black ink,
+   FHNW-yellow as the single accent. Flush-left, square
+   corners, no gradients, no shadows. The yellow Akzentfläche
+   is the signature compositional element.
+   ───────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────────
+   BASE
+   ───────────────────────────────────────────── */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  font-family: var(--font-body);
+  font-weight: 300;             /* CD-Manual: Inter Light default body */
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+deck-stage { background: #000; }
+
+.slide {
+  background: var(--bg);
+  color: var(--ink);
+  padding: var(--pad-y) var(--pad-x);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ─────────────────────────────────────────────
+   HEADER / FOOTER RAILS
+   The brand logo lives top-LEFT, always. Section / chapter
+   labels go top-RIGHT in the rail. The org "brand text" is
+   hidden when a logo is supplied — the logo is the brand.
+   ───────────────────────────────────────────── */
+.slide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 56px;
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  position: relative;
+  z-index: 2;
+}
+.slide-header > span { white-space: nowrap; flex-shrink: 0; }
+
+/* When no logo, the org text acts as a wordmark, top-left, in display style. */
+.slide-header .brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--ink);
+}
+/* When a logo IS provided, hide the brand text — logo is the wordmark. */
+.slide-header:has(.slide-logo) .brand {
+  visibility: hidden;
+  width: 0;
+}
+
+/* Logo: top-LEFT (override the framework default of top-right). */
+.slide-logo {
+  position: absolute;
+  top: var(--pad-y);
+  left: var(--pad-x);
+  right: auto;
+  height: 56px;
+  width: auto;
+  max-width: 320px;
+  object-fit: contain;
+  transform: none;
+}
+
+/* Footer: a small yellow Akzentlinie (signature element) replaces the
+   conventional hairline border-top. Rendered as a background-image
+   so it survives DOM-to-image capture pipelines (PPTX export, html-to-image). */
+.slide-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 40px;
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border-top: none;
+  padding-top: 28px;
+  position: relative;
+  z-index: 2;
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-size: 64px 6px;
+  background-repeat: no-repeat;
+  background-position: left top;
+}
+.slide-footer > span { white-space: nowrap; flex-shrink: 0; }
+.slide-footer > span:last-child {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+.slide-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+}
+
+/* ─────────────────────────────────────────────
+   TYPOGRAPHY HELPERS
+   ───────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 var(--gap-title) 0;
+}
+.display {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.025em;
+  margin: 0;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.subtitle {
+  font-family: var(--font-body);
+  font-size: var(--fs-sub);
+  font-weight: 300;              /* Inter Light — CD-Manual lead-text rule */
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  color: var(--ink-soft);
+  margin: 0;
+  text-wrap: pretty;
+}
+.body-text {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0;
+  text-wrap: pretty;
+}
+.meta {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+
+/* The signature FHNW move: <em> renders as a yellow highlighter.
+   Same effect as the link-hover sweep on www.fhnw.ch. */
+em {
+  font-style: normal;
+  background: var(--accent);
+  color: var(--ink);
+  padding: 0.04em 0.18em 0.08em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Inline links carry the same hover behaviour — yellow background sweep. */
+a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  transition: background-color 140ms cubic-bezier(0.16, 1, 0.3, 1),
+              color 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+a:hover { background: var(--accent); text-decoration: none; }
+
+::selection { background: var(--accent); color: var(--ink); }
+
+/* Serif italic — testimonials and pull-quotes only (CD-Manual §2.2). */
+blockquote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--fs-sub);
+  line-height: 1.35;
+  color: var(--ink);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: TITLE
+   Composition: logo top-left · subtitle on white · big H1
+   inside a yellow Akzentfläche that bleeds to the slide edge.
+   The slide's left padding is cancelled with negative margin
+   so the akzentfläche touches the corner.
+   ───────────────────────────────────────────── */
+.slide--title .slide-body {
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding-bottom: 32px;
+  gap: 32px;
+}
+.slide--title .subtitle {
+  font-size: var(--fs-sub);
+  font-weight: 300;
+  max-width: 1300px;
+  color: var(--ink-soft);
+}
+.slide--title .display {
+  background: var(--accent);
+  color: var(--ink);
+  display: inline-block;
+  /* Pull left edge to the slide corner; keep interior text at pad-x. */
+  margin-left: calc(var(--pad-x) * -1);
+  padding: var(--akzent-pad-y) var(--akzent-pad-x) calc(var(--akzent-pad-y) + 6px) var(--pad-x);
+  font-size: 132px;
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.03em;
+  max-width: calc(100% + var(--pad-x));
+  /* The akzentfläche must remain 100% opaque — no shadow, no transparency. */
+  box-shadow: none;
+}
+/* If the slide also has a subtitle, let the akzentfläche hug content. */
+.slide--title .display + .subtitle {
+  padding-left: 0;
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: CHAPTER
+   Composition: oversized chapter numeral in black, then the
+   yellow Akzentlinie (band) as separator, then chapter title.
+   Flush-left, no centering.
+   ───────────────────────────────────────────── */
+.slide--chapter .slide-body {
+  justify-content: center;
+  align-items: flex-start;
+}
+.chapter-num {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 320px;
+  font-weight: 700;
+  line-height: 0.85;
+  letter-spacing: -0.05em;
+  color: var(--ink);
+  margin: 0 0 40px 0;
+  padding-bottom: 28px;
+  border-bottom: var(--akzentlinie-h) solid var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.chapter-meta {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 16px 0;
+}
+.chapter-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 0 0 32px 0;
+  color: var(--ink);
+  max-width: 1300px;
+}
+.chapter-desc {
+  font-family: var(--font-body);
+  font-size: var(--fs-sub);
+  font-weight: 300;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  max-width: 1100px;
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: FOCUS
+   FHNW typography is always flush-left, ragged-right. Override
+   the framework's centred default. The statement is set in
+   Inter Bold; any emphasised word picks up the yellow
+   highlighter from the global <em> rule.
+   ───────────────────────────────────────────── */
+.slide--focus .slide-body {
+  justify-content: center;
+  align-items: flex-start;
+  text-align: left;
+}
+.focus-eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 40px 0;
+  padding-left: 48px;
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-size: 32px 6px;
+  background-repeat: no-repeat;
+  background-position: left 0.55em;
+}
+.focus-statement {
+  font-family: var(--font-display);
+  font-size: var(--fs-focus);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  max-width: 1500px;
+  margin: 0;
+  text-wrap: balance;
+}
+.focus-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+}
+.focus-content h1,
+.focus-content p {
+  font-family: var(--font-display);
+  font-size: var(--fs-focus);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+  text-align: left;
+  max-width: 1500px;
+}
+.focus-content p + p,
+.focus-content p + h1,
+.focus-content h1 + p {
+  margin-top: 24px;
+}
+.focus-attribution {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+  margin: 56px 0 0 0;
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: IMAGE + TEXT
+   Photography is hard-edged (square corners, no radius).
+   Eyebrow in tracked uppercase, title in Inter Bold, body in
+   Inter Light.
+   ───────────────────────────────────────────── */
+.slide--image-text .slide-body {
+  flex-direction: row;
+  gap: 96px;
+  align-items: stretch;
+  justify-content: stretch;
+}
+.image-pane {
+  flex: 1.05;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--grey-100);
+  overflow: hidden;
+  position: relative;
+  border-radius: 0;
+}
+.image-pane img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(135deg,
+    var(--grey-100) 0 24px,
+    var(--grey-200) 24px 48px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.image-placeholder span {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--bg);
+  padding: 12px 20px;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+}
+.text-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--gap-item);
+}
+.text-pane .eyebrow { margin-bottom: 12px; }
+.text-pane .title { font-size: 72px; font-weight: 700; }
+.text-pane .body-text + .body-text { margin-top: 8px; }
+
+/* ─────────────────────────────────────────────
+   LAYOUT: BULLET LIST
+   FHNW-style markers: square 16×16 yellow tiles (matches the
+   Akzentlinie's geometry). No dots, no chevrons.
+   ───────────────────────────────────────────── */
+.slide--bullet-list .slide-body { justify-content: center; }
+.slide--bullet-list h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  margin: 0 0 var(--gap-title) 0;
+  color: var(--ink);
+  max-width: 1400px;
+}
+.slide--bullet-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-item);
+  max-width: 1500px;
+}
+.slide--bullet-list ul li {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 300;
+  line-height: 1.4;
+  color: var(--ink);
+  padding-left: 44px;
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-size: 18px 18px;
+  background-repeat: no-repeat;
+  background-position: left 0.5em;
+}
+.slide--bullet-list ul li strong,
+.slide--bullet-list ul li b {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: FULL-BLEED IMAGE
+   Photo fills the slide. Title (if any) sits inside a yellow
+   Akzentfläche flush to the bottom-left corner — never a
+   gradient or rgba overlay, per CD-Manual §2.4.
+   ───────────────────────────────────────────── */
+.slide--full-bleed-image {
+  padding: 0;
+}
+.slide--full-bleed-image .slide-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--grey-800);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+/* The framework's optional dark wash is suppressed; the
+   Akzentfläche is the only legibility layer FHNW permits. */
+.slide--full-bleed-image.has-overlay .slide-bg::after {
+  display: none;
+}
+.slide--full-bleed-image .slide-body {
+  position: relative;
+  z-index: 1;
+  padding: 0;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+.slide--full-bleed-image .overlay-title {
+  font-family: var(--font-display);
+  font-size: 80px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  background: var(--accent);
+  margin: 0 0 var(--pad-y) 0;
+  padding: var(--akzent-pad-y) var(--akzent-pad-x) calc(var(--akzent-pad-y) + 4px) var(--pad-x);
+  max-width: 1500px;
+  text-wrap: balance;
+}
+/* If there is NO overlay title, drop a small Akzentlinie in the
+   corner instead — keeps the brand signature on plain photos.
+   Rendered as a background-image for capture-pipeline robustness. */
+.slide--full-bleed-image:not(:has(.overlay-title)) .slide-body {
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-size: 240px var(--akzentlinie-h);
+  background-repeat: no-repeat;
+  background-position: left bottom;
+}
+
+/* ─────────────────────────────────────────────
+   GENERIC / CONTENT SLIDE FALLBACK
+   ───────────────────────────────────────────── */
+.slide-body h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0 0 var(--gap-title) 0;
+}
+.slide-body h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 var(--gap-item) 0;
+}
+.slide-body h3 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 12px 0;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+.slide-body p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0 0 var(--gap-item) 0;
+  text-wrap: pretty;
+}
+.slide-body strong, .slide-body b { font-weight: 700; color: var(--ink); }
+
+/* Inline tables — Swiss-style hairline rules */
+.slide-body table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--fs-small);
+  font-weight: 300;
+}
+.slide-body th, .slide-body td {
+  text-align: left;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--rule);
+}
+.slide-body th {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 18px;
+  border-bottom-width: 2px;
+  border-bottom-color: var(--ink);
+}
+
+/* ─────────────────────────────────────────────
+   FOOTNOTES
+   ───────────────────────────────────────────── */
+.slide-footnotes {
+  font-size: var(--fs-small);
+  font-weight: 300;
+  color: var(--muted);
+  border-top: 1px solid var(--rule);
+  padding-top: 18px;
+  margin-top: auto;
+}
+.slide-footnotes ol {
+  margin: 0;
+  padding-left: 1.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.slide-footnotes li { line-height: 1.45; }
+.slide-footnotes p  { margin: 0; }
+.slide-footnotes .footnote-backref { display: none; }
+
+/* ─────────────────────────────────────────────
+   CODE BLOCK COMPONENT
+   FHNW is squared-off; the code block keeps the brand's
+   yellow accent rule on the left edge but drops all corner
+   radius and shadows.
+   ───────────────────────────────────────────── */
+.code-block {
+  --code-bg: var(--grey-100);
+  --code-radius: 0;
+  --code-size: 32px;
+  background: var(--code-bg);
+  border-radius: 0;
+  border-left: 8px solid var(--accent);
+  padding: 32px 40px;
+  margin: 0;
+  overflow: auto;
+  font-size: var(--code-size);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.code-block code {
+  font-family: inherit;
+  font-size: inherit;
+  background: none;
+  padding: 0;
+}
+
+/* ─────────────────────────────────────────────
+   MATH (KaTeX)
+   ───────────────────────────────────────────── */
+.slide .katex-display {
+  font-size: var(--fs-sub);
+  margin: 40px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: left;
+}
+
+/* ─────────────────────────────────────────────
+   PRINT
+   ───────────────────────────────────────────── */
+@media print {
+  html, body, deck-stage { background: #fff !important; }
+}

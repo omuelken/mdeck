@@ -1,0 +1,15 @@
+{
+  "name": "FHNW",
+  "fonts": [
+    "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Spectral:ital,wght@0,400;1,400&display=swap"
+  ],
+  "params": {
+    "primaryColor":    { "token": "--accent",       "default": "#FDE70E" },
+    "backgroundColor": { "token": "--bg",            "default": "#FFFFFF" },
+    "inkColor":        { "token": "--ink",           "default": "#000000" },
+    "mutedColor":      { "token": "--muted",         "default": "#767573" },
+    "ruleColor":       { "token": "--rule",          "default": "#DEDED9" },
+    "fontDisplay":     { "token": "--font-display",  "default": "\"Inter\", system-ui, -apple-system, \"Helvetica Neue\", Arial, sans-serif" },
+    "fontBody":        { "token": "--font-body",     "default": "\"Inter\", system-ui, -apple-system, \"Helvetica Neue\", Arial, sans-serif" }
+  }
+}

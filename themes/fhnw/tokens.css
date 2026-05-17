@@ -1,0 +1,50 @@
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS — FHNW theme
+   Fachhochschule Nordwestschweiz Corporate Design.
+   Reference: CD-Manual (Jan 2023) + Web Styleguide v4.
+   ───────────────────────────────────────────── */
+:root {
+  /* Core palette tokens (palette-overridable) */
+  --bg:        #FFFFFF;
+  --ink:       #000000;
+  --ink-soft:  #1A1A1A;
+  --muted:     #767573;   /* grey-600: "Text & Border Grau" */
+  --rule:      #DEDED9;   /* grey-200: "Mouseover Grau" */
+  --accent:    #FDE70E;   /* FHNW-Gelb — Pantone 3955 */
+
+  /* Theme-specific extras (not palette-overridable) */
+  --grey-100:  #F1F1EE;
+  --grey-200:  #DEDED9;
+  --grey-300:  #BEBDB9;
+  --grey-800:  #4C4C4C;
+  --highlight: var(--accent);  /* used for em / link-hover sweep */
+
+  /* Type scale (px) — projection-appropriate at 1920×1080.
+     FHNW pairs very bold display with very light body. */
+  --fs-display: 152px;
+  --fs-title:    96px;
+  --fs-focus:    80px;
+  --fs-h:        64px;
+  --fs-sub:      40px;
+  --fs-body:     32px;
+  --fs-small:    24px;
+  --fs-eyebrow:  24px;
+
+  /* Spacing */
+  --pad-x:      112px;
+  --pad-y:       72px;
+  --gap-title:   48px;
+  --gap-item:    20px;
+
+  /* Akzentfläche interior padding */
+  --akzent-pad-x: 56px;
+  --akzent-pad-y: 40px;
+
+  /* Akzentlinie band height — CD-Manual §2.4 (≈ ½ logo height). */
+  --akzentlinie-h: 12px;
+
+  /* Type families — Inter only, per CD-Manual §2.2 */
+  --font-display: "Inter", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-body:    "Inter", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-serif:   "Spectral", Georgia, "Times New Roman", serif;
+}
