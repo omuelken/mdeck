@@ -114,7 +114,8 @@ function PresenterView({ deckConfig, slides }) {
   indexRef.current = index
 
   const notes = useMemo(() => slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''), [slides])
-  const iframeSrc = useMemo(() => buildChildUrl(design, palette), [design, palette])
+  // Preserve current slide when design/palette causes an iframe reload
+  const iframeSrc = useMemo(() => buildChildUrl(design, palette, indexRef.current), [design, palette])
   // previewSrc only recomputes on design/palette change; slide changes use postMessage
   const previewSrc = useMemo(
     () => buildChildUrl(design, palette, indexRef.current + 1),
@@ -129,7 +130,8 @@ function PresenterView({ deckConfig, slides }) {
 
   // When the presenter iframe navigates: update displayed index, sync audience + preview
   useEffect(() => {
-    function onMessage({ data }) {
+    function onMessage({ data, source }) {
+      if (source !== iframeRef.current?.contentWindow) return
       if (!data || typeof data.slideIndexChanged !== 'number') return
       const i = data.slideIndexChanged
       setIndex(i)
@@ -158,11 +160,9 @@ function PresenterView({ deckConfig, slides }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // When design/palette changes, reload the audience window at the current slide
+  // When design/palette changes, tell the audience to hot-swap its theme without a reload
   useEffect(() => {
-    const aw = audienceRef.current
-    if (!aw || aw.closed) { setAudienceConnected(false); return }
-    aw.location.href = buildAudienceUrl(design, palette, indexRef.current)
+    bcRef.current?.postMessage({ deckControl: { command: 'setTheme', design, palette } })
   }, [design, palette])
 
   // Nav buttons drive the presenter iframe; audience follows via slideIndexChanged
@@ -340,7 +340,15 @@ async function init() {
   // that doesn't depend on keeping a live cross-window reference
   if (audienceMode) {
     const bc = new BroadcastChannel(DECK_CHANNEL)
-    bc.onmessage = ({ data }) => handleDeckControl(data?.deckControl)
+    bc.onmessage = ({ data }) => {
+      const ctrl = data?.deckControl
+      if (!ctrl) return
+      if (ctrl.command === 'setTheme') {
+        loadTheme({ design: ctrl.design, palette: ctrl.palette })
+      } else {
+        handleDeckControl(ctrl)
+      }
+    }
   }
 }
 
