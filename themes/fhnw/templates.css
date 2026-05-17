@@ -182,8 +182,8 @@ deck-stage { background: #000; }
    Same effect as the link-hover sweep on www.fhnw.ch. */
 em {
   font-style: normal;
-  background: var(--accent);
-  color: var(--ink);
+  background: var(--fhnw-yellow);
+  color: #000;
   padding: 0.04em 0.18em 0.08em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
@@ -236,7 +236,7 @@ blockquote {
 }
 .slide--title .display {
   background: var(--fhnw-yellow);
-  color: var(--ink);
+  color: #000;
   display: inline-block;
   /* Pull left edge to the slide corner; keep interior text at pad-x. */
   margin-left: calc(var(--pad-x) * -1);
@@ -397,7 +397,7 @@ blockquote {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--grey-100);
+  background: var(--surface);
   overflow: hidden;
   position: relative;
   border-radius: 0;
@@ -412,8 +412,8 @@ blockquote {
   width: 100%;
   height: 100%;
   background: repeating-linear-gradient(135deg,
-    var(--grey-100) 0 24px,
-    var(--grey-200) 24px 48px);
+    var(--surface) 0 24px,
+    var(--rule) 24px 48px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -520,7 +520,7 @@ blockquote {
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: -0.025em;
-  color: var(--ink);
+  color: #000;
   background: var(--fhnw-yellow);
   margin: 0 0 var(--pad-y) 0;
   padding: var(--akzent-pad-y) var(--akzent-pad-x) calc(var(--akzent-pad-y) + 4px) var(--pad-x);
@@ -630,7 +630,7 @@ blockquote {
    radius and shadows.
    ───────────────────────────────────────────── */
 .code-block {
-  --code-bg: var(--grey-100);
+  --code-bg: var(--surface);
   --code-radius: 0;
   --code-size: 32px;
   background: var(--code-bg);

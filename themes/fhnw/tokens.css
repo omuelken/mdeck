@@ -6,6 +6,7 @@
 :root {
   /* Core palette tokens (palette-overridable) */
   --bg:        #FFFFFF;
+  --surface:   #F1F1EE;   /* raised surface: code blocks, image pane — same as grey-100 */
   --ink:       #000000;
   --ink-soft:  #1A1A1A;
   --muted:     #767573;   /* grey-600: "Text & Border Grau" */
