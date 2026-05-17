@@ -1,5 +1,6 @@
 import { h, render } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { marked } from 'marked'
 import slidesContent from 'virtual:slides'
 import { parseSlides } from './parseSlides'
 import { loadTheme, THEME_NAMES, PALETTE_NAMES } from './themeLoader'
@@ -228,11 +229,10 @@ function PresenterView({ deckConfig, slides }) {
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <span style={S.label}>Notes</span>
-          <pre style={{
+          <div class="notes-md" style={{
             flex: 1,
             margin: 0,
             padding: '10px 12px',
-            whiteSpace: 'pre-wrap',
             lineHeight: 1.6,
             background: '#0a0a0a',
             border: '1px solid #2a2a2a',
@@ -241,9 +241,13 @@ function PresenterView({ deckConfig, slides }) {
             color: note ? '#c8c8c8' : '#3a3a3a',
             fontFamily: 'inherit',
             overflow: 'auto',
-          }}>
-            {note || 'No notes — add note: in the slide frontmatter.'}
-          </pre>
+          }}
+            dangerouslySetInnerHTML={{
+              __html: note
+                ? marked.parse(note)
+                : '<p>No notes — add <code>note:</code> in the slide frontmatter.</p>',
+            }}
+          />
         </div>
 
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -299,6 +303,18 @@ async function init() {
 
   if (presenterMode) {
     document.body.style.margin = '0'
+    const s = document.createElement('style')
+    s.textContent = `
+      .notes-md p { margin: 0 0 6px; }
+      .notes-md p:last-child { margin-bottom: 0; }
+      .notes-md ul, .notes-md ol { margin: 0 0 6px; padding-left: 1.4em; }
+      .notes-md li { margin-bottom: 2px; }
+      .notes-md strong, .notes-md b { color: #f0f0f0; font-weight: 600; }
+      .notes-md em, .notes-md i { font-style: italic; color: #bbb; }
+      .notes-md code { font-family: ui-monospace, monospace; font-size: 0.9em; background: #222; padding: 1px 4px; border-radius: 3px; }
+      .notes-md a { color: #aaa; }
+    `
+    document.head.appendChild(s)
     render(<PresenterView deckConfig={deckConfig} slides={slides} />, document.body)
     return
   }
