@@ -12,7 +12,12 @@
   --rule:      #DEDED9;   /* grey-200: "Mouseover Grau" */
   --accent:    #FDE70E;   /* FHNW-Gelb — Pantone 3955 */
 
-  /* Theme-specific extras (not palette-overridable) */
+  /* Theme-specific extras (NOT palette-overridable) */
+  /* --fhnw-yellow is the structural CD colour — Akzentfläche, Akzentlinie,
+     bullet squares, footer band. It is intentionally separate from --accent
+     so dark/custom palettes can recolour semantic emphasis (em, links) while
+     keeping the brand geometry anchored to Pantone 3955. */
+  --fhnw-yellow: #FDE70E;
   --grey-100:  #F1F1EE;
   --grey-200:  #DEDED9;
   --grey-300:  #BEBDB9;

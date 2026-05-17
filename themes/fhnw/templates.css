@@ -100,7 +100,7 @@ deck-stage { background: #000; }
   padding-top: 28px;
   position: relative;
   z-index: 2;
-  background-image: linear-gradient(var(--accent), var(--accent));
+  background-image: linear-gradient(var(--fhnw-yellow), var(--fhnw-yellow));
   background-size: 64px 6px;
   background-repeat: no-repeat;
   background-position: left top;
@@ -235,7 +235,7 @@ blockquote {
   color: var(--ink-soft);
 }
 .slide--title .display {
-  background: var(--accent);
+  background: var(--fhnw-yellow);
   color: var(--ink);
   display: inline-block;
   /* Pull left edge to the slide corner; keep interior text at pad-x. */
@@ -274,7 +274,7 @@ blockquote {
   color: var(--ink);
   margin: 0 0 40px 0;
   padding-bottom: 28px;
-  border-bottom: var(--akzentlinie-h) solid var(--accent);
+  border-bottom: var(--akzentlinie-h) solid var(--fhnw-yellow);
   font-variant-numeric: tabular-nums;
 }
 .chapter-meta {
@@ -327,7 +327,7 @@ blockquote {
   color: var(--muted);
   margin: 0 0 40px 0;
   padding-left: 48px;
-  background-image: linear-gradient(var(--accent), var(--accent));
+  background-image: linear-gradient(var(--fhnw-yellow), var(--fhnw-yellow));
   background-size: 32px 6px;
   background-repeat: no-repeat;
   background-position: left 0.55em;
@@ -474,7 +474,7 @@ blockquote {
   line-height: 1.4;
   color: var(--ink);
   padding-left: 44px;
-  background-image: linear-gradient(var(--accent), var(--accent));
+  background-image: linear-gradient(var(--fhnw-yellow), var(--fhnw-yellow));
   background-size: 18px 18px;
   background-repeat: no-repeat;
   background-position: left 0.5em;
@@ -521,7 +521,7 @@ blockquote {
   line-height: 1.05;
   letter-spacing: -0.025em;
   color: var(--ink);
-  background: var(--accent);
+  background: var(--fhnw-yellow);
   margin: 0 0 var(--pad-y) 0;
   padding: var(--akzent-pad-y) var(--akzent-pad-x) calc(var(--akzent-pad-y) + 4px) var(--pad-x);
   max-width: 1500px;
@@ -531,7 +531,7 @@ blockquote {
    corner instead — keeps the brand signature on plain photos.
    Rendered as a background-image for capture-pipeline robustness. */
 .slide--full-bleed-image:not(:has(.overlay-title)) .slide-body {
-  background-image: linear-gradient(var(--accent), var(--accent));
+  background-image: linear-gradient(var(--fhnw-yellow), var(--fhnw-yellow));
   background-size: 240px var(--akzentlinie-h);
   background-repeat: no-repeat;
   background-position: left bottom;
@@ -635,7 +635,7 @@ blockquote {
   --code-size: 32px;
   background: var(--code-bg);
   border-radius: 0;
-  border-left: 8px solid var(--accent);
+  border-left: 8px solid var(--fhnw-yellow);
   padding: 32px 40px;
   margin: 0;
   overflow: auto;
