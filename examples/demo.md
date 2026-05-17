@@ -13,9 +13,13 @@ height: 1080
 ---
 layout: title
 note: |
-  Welcome everyone. Today I'll walk you through the slide framework — how it's structured, what it can do, and why we built it this way.
-  
-  The core idea: write your talk in plain Markdown, pick a design system, and the framework handles the rest. No PowerPoint, no Keynote lock-in.
+  Welcome everyone. Today I'll walk through the slide framework.
+
+  - **Content** in plain Markdown — readable, diffable, version-controllable
+  - **Design** via swappable theme CSS — no per-slide formatting
+  - **Components** in Preact — live code, syntax highlighting, math
+
+  The pitch: *write your talk once, change the design system, the whole deck repaints.*
 ---
 # A clean presentation framework.
 ## Markdown-driven slides with *swappable* design systems.
@@ -25,7 +29,14 @@ layout: chapter
 number: 1
 part: Part One
 description: How content, design, and components fit together.
-note: "Three layers: (1) content in Markdown, (2) design via theme CSS + tokens, (3) interactive components in Preact. Each layer is independently replaceable."
+note: |
+  Three independently replaceable layers:
+
+  1. **Content** — Markdown frontmatter + body, parsed at build time
+  2. **Design** — theme `tokens.css` + `templates.css`, zero JS
+  3. **Behaviour** — Preact components registered in `registry.jsx`
+
+  *Changing any one layer doesn't touch the others.*
 ---
 # The three-part architecture.
 
@@ -34,11 +45,13 @@ layout: focus
 eyebrow: Core principle
 attribution: Tilman Schieber
 note: |
-  This is the central design decision. Content lives in Markdown — it's readable, diffable, version-controllable.
-  
-  Design lives in CSS tokens — swap the theme file and every slide repaints instantly.
-  
-  Behaviour (interactive components, live code) is isolated in Preact components that the theme never touches.
+  This is the central design decision. Pause here — it's the thesis of the whole framework.
+
+  - **Content** is readable without tooling. A `.md` file is the source of truth.
+  - **Design** is a CSS file. Designers can own it entirely.
+  - **Behaviour** is isolated — themes never import component code.
+
+  Ask: *"what breaks if you swap the theme?"* — the answer should be *nothing*.
 ---
 # Separate *content* from *design* from behaviour.
 
@@ -81,7 +94,14 @@ function parseSlides(markdown) {
 ---
 layout: focus
 eyebrow: JavaScript — live & editable
-note: "Live + editable: attendees can modify the code directly in the slide. 'copy' adds a clipboard button. The code runs in the browser — no server needed. Pyodide powers Python execution."
+note: |
+  Flags on the fenced code block:
+
+  - **`live`** — adds a Run button, captures `console.log` output below
+  - **`editable`** — overlays a transparent textarea so attendees can type
+  - **`copy`** — adds a clipboard button
+
+  *Python uses Pyodide (loads on first run, ~10 MB). JS runs instantly in a sandboxed `Function`.*
 ---
 
 ```js live copy editable

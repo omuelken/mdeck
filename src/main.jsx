@@ -106,6 +106,7 @@ function PresenterView({ deckConfig, slides }) {
   const [design, setDesign] = useState(deckConfig.design ?? 'modern')
   const [palette, setPalette] = useState(deckConfig.palette ?? '')
   const [audienceConnected, setAudienceConnected] = useState(false)
+  const [noteSize, setNoteSize] = useState(13)
 
   const iframeRef = useRef(null)
   const previewRef = useRef(null)
@@ -228,7 +229,13 @@ function PresenterView({ deckConfig, slides }) {
         )}
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <span style={S.label}>Notes</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span style={{ ...S.label, marginBottom: 0 }}>Notes</span>
+            <div style={{ display: 'flex', gap: '3px' }}>
+              <button style={{ ...S.btn, padding: '1px 7px', fontSize: '14px' }} onClick={() => setNoteSize(s => Math.max(9, s - 1))}>−</button>
+              <button style={{ ...S.btn, padding: '1px 7px', fontSize: '14px' }} onClick={() => setNoteSize(s => Math.min(24, s + 1))}>+</button>
+            </div>
+          </div>
           <div class="notes-md" style={{
             flex: 1,
             margin: 0,
@@ -237,7 +244,7 @@ function PresenterView({ deckConfig, slides }) {
             background: '#0a0a0a',
             border: '1px solid #2a2a2a',
             borderRadius: '5px',
-            fontSize: '13px',
+            fontSize: `${noteSize}px`,
             color: note ? '#c8c8c8' : '#3a3a3a',
             fontFamily: 'inherit',
             overflow: 'auto',
