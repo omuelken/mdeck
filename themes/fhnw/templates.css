@@ -70,17 +70,15 @@ deck-stage { background: #000; }
   width: 0;
 }
 
-/* Logo: top-LEFT (override the framework default of top-right). */
 .slide-logo {
   position: absolute;
   top: var(--pad-y);
   left: var(--pad-x);
-  right: auto;
-  height: 56px;
+  height: 128px;
   width: auto;
-  max-width: 320px;
+  max-width: 480px;
   object-fit: contain;
-  transform: none;
+  transform: translateY(calc(var(--fs-eyebrow) * 0.5 - 50%));
 }
 
 /* Footer: a small yellow Akzentlinie (signature element) replaces the
