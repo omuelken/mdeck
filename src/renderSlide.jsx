@@ -258,11 +258,10 @@ function SplitSlide({ meta, content, deckConfig, index }) {
   const rightTokens = Object.assign(restTokens, { links: allTokens.links })
   const leftHtml = marked.parser(leftTokens)
   const rightHtml = marked.parser(rightTokens)
-  const logo = deckConfig.meta?.logo
 
   return (
     <section class="slide slide--split" data-label={`${slideNum(index)} Split`}>
-      <SlideHeader deckConfig={deckConfig} right={meta.section ?? ''} logo={logo} />
+      <SlideHeader deckConfig={deckConfig} right={meta.section ?? ''} />
       <div class="slide-body">
         <div class="split-left">
           <HtmlContent html={leftHtml} />

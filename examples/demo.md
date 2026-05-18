@@ -81,6 +81,7 @@ note: "Register custom components in src/registry.jsx. The component receives al
 ---
 layout: focus
 eyebrow: Example component
+section: Components
 ---
 # Code with syntax highlighting.
 
@@ -94,6 +95,7 @@ function parseSlides(markdown) {
 ---
 layout: focus
 eyebrow: JavaScript — live & editable
+section: Components
 note: |
   Flags on the fenced code block:
 
@@ -112,6 +114,7 @@ console.log(Array.from({ length: 10 }, (_, i) => fib(i)))
 ---
 layout: focus
 eyebrow: Python — live
+section: Components
 ---
 
 ```python live copy

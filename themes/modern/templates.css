@@ -373,6 +373,7 @@ em {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  --code-size: 26px;
 }
 .split-right {
   flex: 1;
