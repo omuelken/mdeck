@@ -138,6 +138,20 @@ image: ./img/image.jpg
 # Design systems are swappable — just change `design:` in the frontmatter.
 
 ---
+layout: split
+section: Custom Layouts
+---
+<codeblock lang="js">
+function parseSlides(markdown) {
+  const segments = markdown.split(/^---$/m)
+  return segments.map(s => yaml.load(s.trim()))
+}
+</codeblock>
+
+# Split layout.
+The first block — any component, image, or paragraph — goes left. Everything else flows to the right automatically.
+
+---
 layout: four-columns
 section: Custom Layouts
 ---

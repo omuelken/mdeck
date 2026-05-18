@@ -489,6 +489,30 @@ blockquote {
 }
 
 /* ─────────────────────────────────────────────
+   LAYOUT: SPLIT
+   ───────────────────────────────────────────── */
+.slide--split .slide-body {
+  flex-direction: row;
+  align-items: stretch;
+  gap: 100px;
+}
+.split-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.split-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--gap-item);
+}
+
+/* ─────────────────────────────────────────────
    LAYOUT: FULL-BLEED IMAGE
    Photo fills the slide. Title (if any) sits inside a yellow
    Akzentfläche flush to the bottom-left corner — never a

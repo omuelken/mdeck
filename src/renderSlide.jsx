@@ -249,6 +249,34 @@ function FullBleedImageSlide({ meta, content, deckConfig, index }) {
   )
 }
 
+// Split: first block token goes left, remaining tokens go right
+function SplitSlide({ meta, content, deckConfig, index }) {
+  const { processed, footnotesHtml } = preprocessFootnotes(content)
+  const allTokens = marked.lexer(processed)
+  const [firstToken, ...restTokens] = allTokens
+  const leftTokens = Object.assign(firstToken ? [firstToken] : [], { links: allTokens.links })
+  const rightTokens = Object.assign(restTokens, { links: allTokens.links })
+  const leftHtml = marked.parser(leftTokens)
+  const rightHtml = marked.parser(rightTokens)
+  const logo = deckConfig.meta?.logo
+
+  return (
+    <section class="slide slide--split" data-label={`${slideNum(index)} Split`}>
+      <SlideHeader deckConfig={deckConfig} right={meta.section ?? ''} logo={logo} />
+      <div class="slide-body">
+        <div class="split-left">
+          <HtmlContent html={leftHtml} />
+        </div>
+        <div class="split-right">
+          <HtmlContent html={rightHtml} />
+        </div>
+      </div>
+      <SlideFootnotes html={footnotesHtml} />
+      <SlideFooter deckConfig={deckConfig} right={slideNum(index)} />
+    </section>
+  )
+}
+
 // Fallback: renders raw markdown with component hydration support
 function GenericSlide({ meta, content, deckConfig, index }) {
   const { fullHtml, footnotesHtml } = extractContent(content)
@@ -271,6 +299,7 @@ const LAYOUTS = {
   'image-text': ImageTextSlide,
   'bullet-list': BulletListSlide,
   'full-bleed-image': FullBleedImageSlide,
+  split: SplitSlide,
 }
 
 export function SlideRenderer({ meta, content, deckConfig, index, total }) {
