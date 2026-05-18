@@ -446,22 +446,10 @@ blockquote {
 .text-pane .body-text + .body-text { margin-top: 8px; }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: BULLET LIST
-   FHNW-style markers: square 16×16 yellow tiles (matches the
-   Akzentlinie's geometry). No dots, no chevrons.
+   LISTS (global — any slide with a ul)
+   FHNW-style markers: square accent tiles (matches Akzentlinie geometry).
    ───────────────────────────────────────────── */
-.slide--bullet-list .slide-body { justify-content: center; }
-.slide--bullet-list h2 {
-  font-family: var(--font-display);
-  font-size: var(--fs-h);
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
-  margin: 0 0 var(--gap-title) 0;
-  color: var(--ink);
-  max-width: 1400px;
-}
-.slide--bullet-list ul {
+.slide-body ul {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -470,9 +458,7 @@ blockquote {
   gap: var(--gap-item);
   max-width: 1500px;
 }
-.slide--bullet-list ul li {
-  font-family: var(--font-body);
-  font-size: var(--fs-body);
+.slide-body ul li {
   font-weight: 300;
   line-height: 1.4;
   color: var(--ink);
@@ -482,10 +468,44 @@ blockquote {
   background-repeat: no-repeat;
   background-position: left 0.5em;
 }
-.slide--bullet-list ul li strong,
-.slide--bullet-list ul li b {
+.slide-body ul li strong,
+.slide-body ul li b {
   font-weight: 700;
   color: var(--ink);
+}
+.slide-body ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: slide-ol;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-item);
+  max-width: 1500px;
+}
+.slide-body ol li {
+  counter-increment: slide-ol;
+  padding-left: 56px;
+  position: relative;
+  font-weight: 300;
+  line-height: 1.4;
+  color: var(--ink);
+}
+/* Accent square badge with number */
+.slide-body ol li::before {
+  content: counter(slide-ol);
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  width: 36px;
+  height: 36px;
+  background: var(--accent);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.8em;
+  line-height: 36px;
+  text-align: center;
 }
 
 /* ─────────────────────────────────────────────

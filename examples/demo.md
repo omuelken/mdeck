@@ -68,7 +68,6 @@ Change `primaryColor` in the deck frontmatter and the *whole deck* repaints.[^1]
 [^1]: Palette overrides are injected as a `:root {}` block after the theme CSS, so they win by document order.
 
 ---
-layout: bullet-list
 section: Components
 note: "Register custom components in src/registry.jsx. The component receives all HTML attributes as props — so <codeblock lang='js'> gives you { lang: 'js' } in Preact. Keep component styling in the theme so swapping themes still works."
 ---
@@ -139,6 +138,15 @@ layout: full-bleed-image
 image: ./img/image.jpg
 ---
 # Design systems are swappable — just change `design:` in the frontmatter.
+
+---
+section: Content
+---
+# Three key principles
+
+1. **Simplicity** — one idea per slide, one slide per idea
+2. **Contrast** — keep content, design, and behaviour in separate layers
+3. **Rhythm** — consistent spacing and typography throughout the deck
 
 ---
 layout: split

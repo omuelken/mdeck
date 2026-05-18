@@ -1,0 +1,34 @@
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS — Terminal theme
+   Dark by default. Syntax highlighting tokens are
+   applied automatically via themeMeta.dark in themeLoader.
+   ───────────────────────────────────────────── */
+:root {
+  /* Core color tokens — dark defaults */
+  --bg:       #0d0f12;   /* near-black */
+  --ink:      #f1f5f9;   /* off-white */
+  --ink-soft: #cbd5e1;   /* slate */
+  --muted:    #718096;   /* dim — lightened for legibility on dark bg */
+  --rule:     #1a202c;   /* subtle separator */
+  --accent:   #4ade80;   /* terminal green */
+
+  /* Type families — monospace throughout */
+  --font-display: 'JetBrains Mono', ui-monospace, monospace;
+  --font-body:    'JetBrains Mono', ui-monospace, monospace;
+
+  /* Type scale (px) — projection-appropriate at 1920×1080 */
+  --fs-display: 100px;
+  --fs-h:        52px;
+  --fs-sub:      36px;
+  --fs-body:     30px;
+  --fs-eyebrow:  22px;
+  --fs-small:    20px;
+  --fs-focus:    68px;
+  --fs-title:    60px;
+
+  /* Spacing */
+  --pad-x:    120px;
+  --pad-y:     80px;
+  --gap-title: 32px;
+  --gap-item:  20px;
+}

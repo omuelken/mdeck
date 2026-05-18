@@ -14,6 +14,7 @@ const THEMES = {
   clarity:   () => import('../themes/clarity/index.js'),
   fhnw:      () => import('../themes/fhnw/index.js'),
   editorial: () => import('../themes/editorial/index.js'),
+  terminal:  () => import('../themes/terminal/index.js'),
 }
 
 const PALETTES = Object.fromEntries(
@@ -72,6 +73,9 @@ export async function loadTheme({ design = 'modern', palette, accent, params = {
   } else if (palette) {
     console.warn(`Unknown palette "${palette}". Available: ${Object.keys(PALETTES).join(', ')}`)
     upsertStyle('deck-palette', '')
+  } else if (themeMeta.dark) {
+    // Dark-by-default theme with no palette — apply dark utility tokens (syntax colours, logo inversion)
+    upsertStyle('deck-palette', `:root {\n  ${Object.entries(DARK_TOKENS).map(([k, v]) => `${k}: ${v};`).join('\n  ')}\n}`)
   } else {
     upsertStyle('deck-palette', '')
   }

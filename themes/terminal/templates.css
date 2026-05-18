@@ -4,14 +4,14 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: #111;
+  background: #0d0f12;
   font-family: var(--font-body);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-deck-stage { background: #111; }
+deck-stage { background: #0d0f12; }
 
 .slide {
   background: var(--bg);
@@ -34,20 +34,26 @@ deck-stage { background: #111; }
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);
   font-weight: 400;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
 }
-.slide-header .brand { color: var(--ink); }
+/* // comment prefix before org name */
+.slide-header .brand::before {
+  content: '// ';
+  color: var(--accent);
+  opacity: 0.6;
+}
+.slide-header .brand { color: var(--ink-soft); }
 .slide-header > span { white-space: nowrap; flex-shrink: 0; }
 
 .slide-logo {
   position: absolute;
   top: var(--pad-y);
   right: var(--pad-x);
-  height: 96px;
+  height: 128px;
   width: auto;
-  max-width: 360px;
+  max-width: 480px;
   object-fit: contain;
   filter: var(--logo-filter, none);
   transform: translateY(calc(var(--fs-eyebrow) * 0.5 - 50%));
@@ -61,10 +67,9 @@ deck-stage { background: #111; }
   font-family: var(--font-body);
   font-size: var(--fs-small);
   font-weight: 400;
-  letter-spacing: 0.08em;
   color: var(--muted);
   border-top: 1px solid var(--rule);
-  padding-top: 20px;
+  padding-top: 24px;
 }
 .slide-footer > span { white-space: nowrap; flex-shrink: 0; }
 
@@ -87,179 +92,119 @@ deck-stage { background: #111; }
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);
   font-weight: 400;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
   margin: 0 0 var(--gap-title) 0;
 }
-
-/* Playfair 900 upright — the signature editorial headline */
 .display {
   font-family: var(--font-display);
   font-size: var(--fs-display);
-  font-weight: 900;
-  font-optical-sizing: auto;
+  font-weight: 800;
   line-height: 1.0;
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 700;
+  line-height: 1.1;
   letter-spacing: -0.02em;
   margin: 0;
   color: var(--ink);
   text-wrap: balance;
 }
-
-.title {
-  font-family: var(--font-display);
-  font-size: var(--fs-h);
-  font-weight: 700;
-  font-optical-sizing: auto;
-  line-height: 1.1;
-  letter-spacing: -0.015em;
-  margin: 0;
-  color: var(--ink);
-  text-wrap: balance;
-}
-
-/* Lora italic — elegant contrast against the upright display */
 .subtitle {
   font-family: var(--font-body);
   font-size: var(--fs-sub);
-  font-weight: 400;
-  font-style: italic;
-  line-height: 1.35;
-  letter-spacing: 0;
+  font-weight: 300;
+  line-height: 1.3;
   color: var(--ink-soft);
   margin: 0;
   text-wrap: pretty;
 }
-
 .body-text {
   font-family: var(--font-body);
   font-size: var(--fs-body);
   font-weight: 400;
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--ink-soft);
   margin: 0;
   text-wrap: pretty;
 }
-
 .meta {
   font-family: var(--font-body);
   font-size: var(--fs-small);
   color: var(--muted);
 }
-
-/* em: italic + accent color — Playfair/Lora italics are genuine drawn italics */
 em {
-  font-style: italic;
+  font-style: normal;
   color: var(--accent);
 }
 
 /* ─────────────────────────────────────────────
    LAYOUT: TITLE
-   Centered headline + italic subtitle with a 2px
-   accent rule between them as the editorial ornament.
    ───────────────────────────────────────────── */
 .slide--title .slide-body {
-  justify-content: center;
-  align-items: center;
-  text-align: center;
+  justify-content: flex-end;
+  padding-bottom: 40px;
 }
-
 .slide--title .display {
-  font-size: var(--fs-display);
-  font-weight: 900;
-  letter-spacing: -0.02em;
+  font-size: 128px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
   max-width: 1500px;
 }
-
 .slide--title .subtitle {
-  margin-top: calc(var(--gap-title) + 2px);
+  margin-top: 32px;
   max-width: 1100px;
-  font-style: italic;
-  position: relative;
-}
-/* 2px × 80px accent rule centered between title and subtitle */
-.slide--title .subtitle::before {
-  content: '';
-  position: absolute;
-  top: calc(var(--gap-title) * -0.5 - 1px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 2px;
-  background: var(--accent);
 }
 
 /* ─────────────────────────────────────────────
    LAYOUT: CHAPTER
-   Ghost italic numeral (opacity on --ink, adapts
-   to dark palettes automatically) + short accent
-   rule above the chapter label.
    ───────────────────────────────────────────── */
 .slide--chapter .slide-body {
   justify-content: center;
   align-items: flex-start;
 }
-
-/* Ghost numeral — stays in flow so flex centering works naturally.
-   z-index: 0 lets the content above it render on top, so the accent
-   rule is always visible rather than hidden behind the numeral. */
 .chapter-num {
   font-family: var(--font-display);
-  font-size: 320px;
-  font-weight: 900;
-  font-style: italic;
-  font-optical-sizing: auto;
+  font-size: 260px;
+  font-weight: 800;
   line-height: 0.85;
-  letter-spacing: -0.04em;
-  color: var(--ink);
-  opacity: 0.06;
-  margin: 0 0 -40px 0;
-  position: relative;
-  z-index: 0;
-  user-select: none;
-  pointer-events: none;
+  letter-spacing: -0.05em;
+  color: var(--accent);
+  opacity: 0.25;
+  margin: 0 0 40px 0;
 }
-.slide--chapter .chapter-meta,
-.slide--chapter .chapter-title,
-.slide--chapter .chapter-desc {
-  position: relative;
-  z-index: 1;
-}
-
-/* display:inline-block constrains the border-top to text width,
-   giving a short editorial rule rather than a full-width line */
 .chapter-meta {
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);
   font-weight: 400;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
-  margin: 0 0 28px 0;
-  padding-bottom: 16px;
-  border-bottom: 2px solid var(--accent);
-  display: inline-block;
+  color: var(--accent);
+  margin: 0 0 16px 0;
 }
-
 .chapter-title {
   font-family: var(--font-display);
   font-size: var(--fs-title);
-  font-weight: 900;
-  font-optical-sizing: auto;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  margin: 0 0 32px 0;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 0 0 40px 0;
   color: var(--ink);
-  max-width: 1300px;
+  max-width: 1200px;
   text-wrap: balance;
 }
-
 .chapter-desc {
   font-family: var(--font-body);
   font-size: var(--fs-sub);
-  font-weight: 400;
-  font-style: italic;
-  line-height: 1.4;
+  font-weight: 300;
+  line-height: 1.3;
   color: var(--ink-soft);
   max-width: 1100px;
   margin: 0;
@@ -267,90 +212,72 @@ em {
 
 /* ─────────────────────────────────────────────
    LAYOUT: FOCUS
-   Left-aligned for editorial authority. Short accent
-   rule ornament on the eyebrow via background-image.
+   Left-aligned with accent left border — like a
+   terminal block quote.
    ───────────────────────────────────────────── */
 .slide--focus .slide-body {
   justify-content: center;
   align-items: flex-start;
-  text-align: left;
 }
-
-/* 28px accent rule sits to the left of the eyebrow label */
 .focus-eyebrow {
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);
   font-weight: 400;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
   margin: 0 0 48px 0;
-  padding-left: 44px;
-  background-image: linear-gradient(var(--accent), var(--accent));
-  background-size: 28px 3px;
-  background-repeat: no-repeat;
-  background-position: left 0.6em;
 }
-
 .focus-statement {
   font-family: var(--font-display);
   font-size: var(--fs-focus);
-  font-weight: 900;
-  font-optical-sizing: auto;
-  line-height: 1.15;
+  font-weight: 700;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   color: var(--ink);
-  max-width: 1500px;
+  max-width: 1400px;
   margin: 0;
   text-wrap: balance;
 }
-
 .focus-content {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  border-left: 4px solid var(--accent);
+  padding-left: 56px;
   width: 100%;
-  text-align: left;
 }
 .focus-content h1,
 .focus-content p {
   font-family: var(--font-display);
   font-size: var(--fs-focus);
-  font-weight: 900;
-  font-optical-sizing: auto;
-  line-height: 1.15;
+  font-weight: 700;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   color: var(--ink);
   margin: 0;
   text-wrap: balance;
-  text-align: left;
-  max-width: 1500px;
 }
-
-/* Lora italic pullquote credit */
 .focus-attribution {
   font-family: var(--font-body);
   font-size: var(--fs-small);
   font-weight: 400;
-  font-style: italic;
-  letter-spacing: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--muted);
-  margin: 56px 0 0 0;
+  margin: 48px 0 0 0;
 }
 
 /* ─────────────────────────────────────────────
    LAYOUT: IMAGE + TEXT
-   Square corners — editorial photography is uncropped.
    ───────────────────────────────────────────── */
 .slide--image-text .slide-body {
   flex-direction: row;
-  gap: 96px;
+  gap: 100px;
   align-items: stretch;
   justify-content: stretch;
 }
-
 .image-pane {
-  flex: 1.1;
+  flex: 1.15;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -358,7 +285,6 @@ em {
   background: var(--rule);
   overflow: hidden;
   position: relative;
-  border-radius: 0;
 }
 .image-pane img {
   width: 100%;
@@ -366,30 +292,24 @@ em {
   object-fit: cover;
   display: block;
 }
-
 .image-placeholder {
   width: 100%;
   height: 100%;
-  background: repeating-linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--rule) 50%, var(--bg)) 0 24px,
-    var(--bg) 24px 48px
-  );
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--rule) 60%, var(--bg)) 0 22px, var(--bg) 22px 44px);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .image-placeholder span {
   font-family: var(--font-body);
-  font-size: 20px;
-  font-style: italic;
+  font-size: 22px;
   color: var(--muted);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   background: var(--bg);
-  padding: 14px 24px;
+  padding: 14px 20px;
   border: 1px solid var(--rule);
 }
-
 .text-pane {
   flex: 1;
   min-width: 0;
@@ -398,13 +318,12 @@ em {
   justify-content: center;
   gap: var(--gap-item);
 }
-.text-pane .title { font-size: 60px; }
+.text-pane .title { font-size: 52px; }
 .text-pane .body-text + .body-text { margin-top: 8px; }
-.text-pane .eyebrow { margin-bottom: 12px; }
+.text-pane .eyebrow { margin-bottom: 8px; }
 
 /* ─────────────────────────────────────────────
-   LISTS (global — any slide with a ul)
-   Bullet marker: 28px × 3px accent rule at item top.
+   LISTS (global — any slide with a ul or ol)
    ───────────────────────────────────────────── */
 .slide-body ul {
   list-style: none;
@@ -413,26 +332,21 @@ em {
   display: flex;
   flex-direction: column;
   gap: var(--gap-item);
-  max-width: 1500px;
 }
-
 .slide-body ul li {
   font-weight: 400;
-  line-height: 1.6;
-  padding-top: 16px;
-  padding-left: 0;
+  line-height: 1.4;
+  padding-left: 40px;
   position: relative;
 }
-
-/* 28px × 3px accent top rule — the editorial bullet ornament */
+/* > chevron bullet — classic terminal list marker */
 .slide-body ul li::before {
-  content: '';
+  content: '>';
   position: absolute;
-  top: 4px;
   left: 0;
-  width: 28px;
-  height: 3px;
-  background: var(--accent);
+  top: 0;
+  color: var(--accent);
+  font-weight: 700;
 }
 .slide-body ol {
   list-style: none;
@@ -442,26 +356,24 @@ em {
   display: flex;
   flex-direction: column;
   gap: var(--gap-item);
-  max-width: 1500px;
 }
 .slide-body ol li {
   counter-increment: slide-ol;
-  padding-left: 72px;
+  padding-left: 64px;
   position: relative;
-  line-height: 1.6;
+  font-weight: 400;
+  line-height: 1.4;
 }
-/* Large ghost numeral in display font — matches chapter number aesthetic */
 .slide-body ol li::before {
-  content: counter(slide-ol);
+  content: counter(slide-ol, decimal-leading-zero);
   position: absolute;
   left: 0;
-  top: -0.15em;
+  top: 0;
   font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 1.8em;
+  font-size: 1em;
+  font-weight: 700;
   color: var(--accent);
-  opacity: 0.35;
-  line-height: 1;
+  line-height: 1.4;
 }
 
 /* ─────────────────────────────────────────────
@@ -503,17 +415,11 @@ em {
   background-position: center;
   background-repeat: no-repeat;
 }
-/* Bottom-to-top gradient for photo caption legibility */
 .slide--full-bleed-image.has-overlay .slide-bg::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.65) 0%,
-    rgba(0, 0, 0, 0.20) 50%,
-    transparent 100%
-  );
+  background: rgba(0, 0, 0, 0.5);
 }
 .slide--full-bleed-image .slide-body {
   position: relative;
@@ -525,65 +431,53 @@ em {
   font-family: var(--font-display);
   font-size: var(--fs-title);
   font-weight: 700;
-  font-optical-sizing: auto;
   line-height: 1.1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: #fff;
   margin: 0;
-  max-width: 1300px;
+  max-width: 1200px;
   text-wrap: balance;
 }
 
 /* ─────────────────────────────────────────────
-   GENERIC / CONTENT SLIDE FALLBACK
+   GENERIC / CONTENT SLIDE
    ───────────────────────────────────────────── */
 .slide-body h1 {
   font-family: var(--font-display);
   font-size: var(--fs-h);
-  font-weight: 900;
-  font-optical-sizing: auto;
+  font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--ink);
   margin: 0 0 var(--gap-title) 0;
-  text-wrap: balance;
 }
 .slide-body h2 {
   font-family: var(--font-display);
   font-size: var(--fs-sub);
-  font-weight: 700;
-  font-optical-sizing: auto;
+  font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.015em;
   color: var(--ink);
   margin: 0 0 var(--gap-item) 0;
-  text-wrap: balance;
 }
 .slide-body p {
   font-family: var(--font-body);
   font-size: var(--fs-body);
   font-weight: 400;
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--ink-soft);
   margin: 0 0 var(--gap-item) 0;
   text-wrap: pretty;
-}
-.slide-body strong,
-.slide-body b {
-  font-weight: 700;
-  color: var(--ink);
 }
 
 /* ─────────────────────────────────────────────
    FOOTNOTES
    ───────────────────────────────────────────── */
 .slide-footnotes {
-  font-family: var(--font-body);
   font-size: var(--fs-small);
-  font-style: italic;
   color: var(--muted);
   border-top: 1px solid var(--rule);
-  padding-top: 18px;
+  padding-top: 20px;
   margin-top: auto;
 }
 .slide-footnotes ol {
@@ -593,27 +487,27 @@ em {
   flex-direction: column;
   gap: 4px;
 }
-.slide-footnotes li { line-height: 1.45; }
+.slide-footnotes li { line-height: 1.4; }
 .slide-footnotes p  { margin: 0; }
 .slide-footnotes .footnote-backref { display: none; }
 
 /* ─────────────────────────────────────────────
    CODE BLOCK COMPONENT
+   Minimal styling — code feels native on dark bg.
    ───────────────────────────────────────────── */
 .code-block {
-  --code-bg: color-mix(in srgb, var(--rule) 40%, var(--bg));
-  --code-radius: 0;
-  --code-size: 30px;
+  --code-bg: var(--rule);
+  --code-radius: 4px;
+  --code-size: 28px;
   background: var(--code-bg);
-  border-radius: 0;
-  border-left: 6px solid var(--accent);
-  padding: 36px 44px;
+  border-radius: var(--code-radius);
+  border-left: 4px solid var(--accent);
+  padding: 32px 40px;
   margin: 0;
   overflow: auto;
   font-size: var(--code-size);
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-body);
   line-height: 1.6;
-  color: var(--ink);
 }
 .code-block code {
   font-family: inherit;
@@ -627,7 +521,7 @@ em {
    ───────────────────────────────────────────── */
 .slide .katex-display {
   font-size: var(--fs-sub);
-  margin: 40px 0;
+  margin: 48px 0;
   overflow-x: auto;
   overflow-y: hidden;
 }

@@ -1,0 +1,10 @@
+{
+  "name": "Terminal",
+  "dark": true,
+  "fonts": [
+    "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&display=swap"
+  ],
+  "params": {
+    "primaryColor": { "token": "--accent", "default": "#4ade80" }
+  }
+}

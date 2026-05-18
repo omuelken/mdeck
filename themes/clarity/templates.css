@@ -180,19 +180,6 @@ em {
   pointer-events: none;
 }
 
-/* Ghost brand mark — large, faint, decorative */
-.slide--title .slide-header .brand {
-  position: absolute;
-  font-size: var(--fs-title);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  text-transform: none;
-  color: var(--accent);
-  opacity: 0.08;
-  line-height: 1;
-  pointer-events: none;
-  user-select: none;
-}
 
 .slide--title .slide-body {
   justify-content: center;
@@ -435,19 +422,9 @@ em {
 .text-pane .eyebrow { margin-bottom: 8px; }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: BULLET LIST
+   LISTS (global — any slide with a ul)
    ───────────────────────────────────────────── */
-.slide--bullet-list .slide-body { justify-content: center; }
-.slide--bullet-list h2 {
-  font-family: var(--font-display);
-  font-size: var(--fs-h);
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
-  margin: 0 0 var(--gap-title) 0;
-  color: var(--ink);
-}
-.slide--bullet-list ul {
+.slide-body ul {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -455,17 +432,14 @@ em {
   flex-direction: column;
   gap: var(--gap-item);
 }
-.slide--bullet-list ul li {
-  font-family: var(--font-body);
-  font-size: var(--fs-body);
+.slide-body ul li {
   font-weight: 400;
   line-height: 1.35;
-  color: var(--ink-soft);
   padding-left: 44px;
   position: relative;
 }
 /* Gradient circle bullet */
-.slide--bullet-list ul li::before {
+.slide-body ul li::before {
   content: '';
   position: absolute;
   left: 0;
@@ -474,6 +448,34 @@ em {
   height: 10px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+}
+.slide-body ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: slide-ol;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-item);
+}
+.slide-body ol li {
+  counter-increment: slide-ol;
+  padding-left: 56px;
+  position: relative;
+}
+/* Gradient number */
+.slide-body ol li::before {
+  content: counter(slide-ol);
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.35;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* ─────────────────────────────────────────────

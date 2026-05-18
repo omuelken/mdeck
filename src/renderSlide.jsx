@@ -202,30 +202,6 @@ function ImageTextSlide({ meta, content, deckConfig, index }) {
   )
 }
 
-function BulletListSlide({ meta, content, deckConfig, index }) {
-  const { headings, lists, footnotesHtml } = extractContent(content)
-  const items = lists[0]?.items ?? []
-
-  return (
-    <section class="slide slide--bullet-list" data-label={`${slideNum(index)} List`}>
-      <SlideHeader deckConfig={deckConfig} right={meta.section ?? ''} />
-      <div class="slide-body">
-        {headings[1] && (
-          <h2 dangerouslySetInnerHTML={{ __html: headings[1] }} />
-        )}
-        {items.length > 0 && (
-          <ul>
-            {items.map((item, i) => (
-              <li key={i} dangerouslySetInnerHTML={{ __html: marked.parseInline(item.text) }} />
-            ))}
-          </ul>
-        )}
-      </div>
-      <SlideFootnotes html={footnotesHtml} />
-      <SlideFooter deckConfig={deckConfig} right={slideNum(index)} />
-    </section>
-  )
-}
 
 function FullBleedImageSlide({ meta, content, deckConfig, index }) {
   const { headings, footnotesHtml } = extractContent(content)
@@ -296,7 +272,6 @@ const LAYOUTS = {
   chapter: ChapterSlide,
   focus: FocusSlide,
   'image-text': ImageTextSlide,
-  'bullet-list': BulletListSlide,
   'full-bleed-image': FullBleedImageSlide,
   split: SplitSlide,
 }
