@@ -7,8 +7,8 @@
     "deck": "./cli.js"
   },
   "scripts": {
-    "dev": "node cli.js dev examples/demo.md",
-    "build": "node cli.js build examples/demo.md",
+    "dev": "node cli.js dev",
+    "build": "node cli.js build",
     "preview": "node cli.js preview"
   },
   "dependencies": {

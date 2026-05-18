@@ -12,6 +12,17 @@ import { slidesPlugin } from './src/slidesPlugin.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const frameworkRoot = __dirname
 
+// ── ANSI helpers ──────────────────────────────────────────────────────────────
+const tty = process.stdout.isTTY
+const c = tty
+  ? { reset: '\x1b[0m', bold: '\x1b[1m', dim: '\x1b[2m', green: '\x1b[32m', cyan: '\x1b[36m', yellow: '\x1b[33m', red: '\x1b[31m' }
+  : Object.fromEntries(['reset','bold','dim','green','cyan','yellow','red'].map(k => [k, '']))
+
+const ok  = msg => console.log(`  ${c.green}✓${c.reset}  ${msg}`)
+const err = msg => console.error(`  ${c.red}✗${c.reset}  ${msg}`)
+const tip = msg => console.log(`  ${c.dim}${msg}${c.reset}`)
+
+// ── Vite config ───────────────────────────────────────────────────────────────
 function baseConfig(slidesPath) {
   const abs = resolve(slidesPath)
   return {
@@ -19,8 +30,6 @@ function baseConfig(slidesPath) {
     root: frameworkRoot,
     plugins: [preact(), slidesPlugin(abs)],
     server: {
-      // Explicit HMR config so popup windows (audience view) receive the correct
-      // __HMR_PORT__ constant and never fall back to `ws://localhost:undefined`.
       hmr: { host: 'localhost', clientPort: 5173 },
       port: 5173,
       strictPort: false,
@@ -36,18 +45,25 @@ async function copyImages(slidesPath, outDir) {
   }
 }
 
+// ── Help ──────────────────────────────────────────────────────────────────────
 const HELP = `
-  deck — markdown slide deck compiler
+  ${c.bold}deck${c.reset} — markdown slide deck
 
-  Usage:
-    deck dev <slides.md>                Start dev server with live reload
-    deck present <slides.md>            Start speaker view (notes + switches)
-    deck build <slides.md>              Build → dist/index.html + img/
-    deck build <slides.md> -o out.html  Build to a specific file
-    deck preview                        Preview the last build
-    deck --help                         Show this message
+  ${c.dim}Usage:${c.reset}
+    ${c.green}deck dev${c.reset} <slides.md>                  Start dev server with live reload
+    ${c.green}deck present${c.reset} <slides.md>              Open speaker/presenter view
+    ${c.green}deck build${c.reset} <slides.md> [-o out.html]  Build self-contained HTML
+    ${c.green}deck preview${c.reset}                          Preview the last build
+
+  ${c.dim}Install the${c.reset} ${c.bold}deck${c.reset} ${c.dim}command globally:${c.reset}
+    npm link
+
+  ${c.dim}Or run without installing:${c.reset}
+    npm run dev -- slides.md
+    npm run build -- slides.md
 `
 
+// ── Argument parsing ──────────────────────────────────────────────────────────
 const [command, ...argv] = process.argv.slice(2)
 
 if (!command || command === '--help' || command === '-h') {
@@ -55,47 +71,63 @@ if (!command || command === '--help' || command === '-h') {
   process.exit(0)
 }
 
+function requireInput(cmd) {
+  const input = argv[0]
+  if (!input) {
+    err(`No slides file specified.`)
+    tip(`Usage: deck ${cmd} <slides.md>`)
+    tip(`       npm run ${cmd} -- slides.md`)
+    process.exit(1)
+  }
+  if (!existsSync(input)) {
+    err(`File not found: ${input}`)
+    process.exit(1)
+  }
+  return input
+}
+
 // ── dev ───────────────────────────────────────────────────────────────────────
 if (command === 'dev') {
-  const input = argv[0]
-  if (!input) { console.error('Error: specify a slides file\n  deck dev <slides.md>'); process.exit(1) }
-  if (!existsSync(input)) { console.error(`Error: file not found: ${input}`); process.exit(1) }
+  const input = requireInput('dev')
+  const base = baseConfig(input)
 
   const server = await createServer({
-    ...baseConfig(input),
+    ...base,
     publicDir: dirname(resolve(input)),
     server: {
+      ...base.server,
       open: true,
-      fs: { allow: [frameworkRoot, dirname(resolve(input))] },
     },
   })
   await server.listen()
   server.printUrls()
-  console.log('\n  Watching', resolve(input), '— edit and save to reload\n')
+  console.log()
+  ok(`Watching ${c.cyan}${resolve(input)}${c.reset}`)
+  tip('Edit and save to reload.\n')
 
 // ── present ───────────────────────────────────────────────────────────────────
 } else if (command === 'present') {
-  const input = argv[0]
-  if (!input) { console.error('Error: specify a slides file\n  deck present <slides.md>'); process.exit(1) }
-  if (!existsSync(input)) { console.error(`Error: file not found: ${input}`); process.exit(1) }
+  const input = requireInput('present')
+  const base = baseConfig(input)
 
   const server = await createServer({
-    ...baseConfig(input),
+    ...base,
     publicDir: dirname(resolve(input)),
     server: {
+      ...base.server,
       open: '/?presenter=1',
-      fs: { allow: [frameworkRoot, dirname(resolve(input))] },
     },
   })
   await server.listen()
   server.printUrls()
-  console.log('\n  Speaker view at /?presenter=1 — presentation updates live\n')
+  console.log()
+  ok(`Speaker view opened`)
+  tip('Audience view: /')
+  tip('Presenter view: /?presenter=1\n')
 
 // ── build ─────────────────────────────────────────────────────────────────────
 } else if (command === 'build') {
-  const input = argv[0]
-  if (!input) { console.error('Error: specify a slides file\n  deck build <slides.md>'); process.exit(1) }
-  if (!existsSync(input)) { console.error(`Error: file not found: ${input}`); process.exit(1) }
+  const input = requireInput('build')
 
   const outputFlagIdx = argv.findIndex(a => a === '--output' || a === '-o')
   const outputPath = outputFlagIdx !== -1 ? resolve(process.cwd(), argv[outputFlagIdx + 1]) : null
@@ -119,9 +151,9 @@ if (command === 'dev') {
   if (outputPath && tempDir) {
     copyFileSync(resolve(tempDir, 'index.html'), outputPath)
     await rm(tempDir, { recursive: true })
-    console.log('\n  Built:', outputPath, '\n')
+    ok(`Built: ${c.cyan}${outputPath}${c.reset}\n`)
   } else {
-    console.log('\n  Built:', resolve(outDir, 'index.html'), '\n')
+    ok(`Built: ${c.cyan}${resolve(outDir, 'index.html')}${c.reset}\n`)
   }
 
 // ── preview ───────────────────────────────────────────────────────────────────
@@ -135,6 +167,7 @@ if (command === 'dev') {
   server.printUrls()
 
 } else {
-  console.error(`Unknown command: "${command}". Run deck --help for usage.`)
+  err(`Unknown command: "${command}"`)
+  tip('Run deck --help for usage.\n')
   process.exit(1)
 }
