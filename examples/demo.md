@@ -136,3 +136,28 @@ layout: full-bleed-image
 image: ./img/image.jpg
 ---
 # Design systems are swappable — just change `design:` in the frontmatter.
+
+---
+layout: four-columns
+section: Custom Layouts
+---
+# Four pillars
+
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 48px; margin-top: 40px;">
+  <div>
+    <strong style="display: block; margin-bottom: 12px;">Speed</strong>
+    Process thousands of records per second with zero configuration.
+  </div>
+  <div>
+    <strong style="display: block; margin-bottom: 12px;">Cost</strong>
+    Linear pricing with no per-seat fees or hidden platform charges.
+  </div>
+  <div>
+    <strong style="display: block; margin-bottom: 12px;">Quality</strong>
+    Validated against fifty thousand test cases before every release.
+  </div>
+  <div>
+    <strong style="display: block; margin-bottom: 12px;">Scale</strong>
+    Distributed across any number of nodes without rewriting your code.
+  </div>
+</div>

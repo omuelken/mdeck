@@ -1,4 +1,5 @@
 const DARK_TOKENS = {
+  '--logo-filter':    'invert(1)',
   '--token-default':  '#e2e8f0',
   '--token-comment':  '#718096',
   '--token-string':   '#68d391',
@@ -9,9 +10,10 @@ const DARK_TOKENS = {
 }
 
 const THEMES = {
-  modern:  () => import('../themes/modern/index.js'),
-  clarity: () => import('../themes/clarity/index.js'),
-  fhnw:    () => import('../themes/fhnw/index.js'),
+  modern:    () => import('../themes/modern/index.js'),
+  clarity:   () => import('../themes/clarity/index.js'),
+  fhnw:      () => import('../themes/fhnw/index.js'),
+  editorial: () => import('../themes/editorial/index.js'),
 }
 
 const PALETTES = Object.fromEntries(
@@ -48,7 +50,7 @@ function syncThemeFonts(urls) {
   }
 }
 
-export async function loadTheme({ design = 'modern', palette, params = {}, meta = {} } = {}) {
+export async function loadTheme({ design = 'modern', palette, accent, params = {}, meta = {} } = {}) {
   const loader = THEMES[design]
   if (!loader) throw new Error(`Unknown theme: "${design}". Available: ${Object.keys(THEMES).join(', ')}`)
 
@@ -81,6 +83,8 @@ export async function loadTheme({ design = 'modern', palette, params = {}, meta 
     const def = themeMeta.params?.[paramName]
     if (def) overrides.push(`${def.token}: ${value};`)
   }
+
+  if (accent) overrides.push(`--accent: ${accent};`)
 
   for (const [key, value] of Object.entries(meta)) {
     overrides.push(`--meta-${key}: ${JSON.stringify(String(value))};`)

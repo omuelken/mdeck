@@ -49,6 +49,7 @@ deck-stage { background: #111; }
   width: auto;
   max-width: 360px;
   object-fit: contain;
+  filter: var(--logo-filter, none);
   transform: translateY(calc(var(--fs-eyebrow) * 0.5 - 50%));
 }
 
@@ -77,6 +78,10 @@ deck-stage { background: #111; }
   flex-direction: column;
   justify-content: center;
   min-height: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--ink-soft);
 }
 
 /* ─────────────────────────────────────────────

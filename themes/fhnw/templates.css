@@ -78,6 +78,7 @@ deck-stage { background: #000; }
   width: auto;
   max-width: 480px;
   object-fit: contain;
+  filter: var(--logo-filter, none);
   transform: translateY(calc(var(--fs-eyebrow) * 0.5 - 50%));
 }
 
@@ -98,7 +99,7 @@ deck-stage { background: #000; }
   padding-top: 28px;
   position: relative;
   z-index: 2;
-  background-image: linear-gradient(var(--fhnw-yellow), var(--fhnw-yellow));
+  background-image: linear-gradient(var(--accent), var(--accent));
   background-size: 64px 6px;
   background-repeat: no-repeat;
   background-position: left top;
@@ -117,6 +118,10 @@ deck-stage { background: #000; }
   flex-direction: column;
   justify-content: center;
   min-height: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--ink-soft);
 }
 
 /* ─────────────────────────────────────────────
@@ -180,8 +185,8 @@ deck-stage { background: #000; }
    Same effect as the link-hover sweep on www.fhnw.ch. */
 em {
   font-style: normal;
-  background: var(--fhnw-yellow);
-  color: #000;
+  background: var(--accent);
+  color: var(--ink);
   padding: 0.04em 0.18em 0.08em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
@@ -233,8 +238,8 @@ blockquote {
   color: var(--ink-soft);
 }
 .slide--title .display {
-  background: var(--fhnw-yellow);
-  color: #000;
+  background: var(--accent);
+  color: var(--ink);
   display: inline-block;
   /* Pull left edge to the slide corner; keep interior text at pad-x. */
   margin-left: calc(var(--pad-x) * -1);
@@ -272,7 +277,7 @@ blockquote {
   color: var(--ink);
   margin: 0 0 40px 0;
   padding-bottom: 28px;
-  border-bottom: var(--akzentlinie-h) solid var(--fhnw-yellow);
+  border-bottom: var(--akzentlinie-h) solid var(--accent);
   font-variant-numeric: tabular-nums;
 }
 .chapter-meta {
@@ -325,7 +330,7 @@ blockquote {
   color: var(--muted);
   margin: 0 0 40px 0;
   padding-left: 48px;
-  background-image: linear-gradient(var(--fhnw-yellow), var(--fhnw-yellow));
+  background-image: linear-gradient(var(--accent), var(--accent));
   background-size: 32px 6px;
   background-repeat: no-repeat;
   background-position: left 0.55em;
@@ -472,7 +477,7 @@ blockquote {
   line-height: 1.4;
   color: var(--ink);
   padding-left: 44px;
-  background-image: linear-gradient(var(--fhnw-yellow), var(--fhnw-yellow));
+  background-image: linear-gradient(var(--accent), var(--accent));
   background-size: 18px 18px;
   background-repeat: no-repeat;
   background-position: left 0.5em;
@@ -495,7 +500,7 @@ blockquote {
 .slide--full-bleed-image .slide-bg {
   position: absolute;
   inset: 0;
-  background: var(--grey-800);
+  background: var(--ink);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -518,8 +523,8 @@ blockquote {
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: -0.025em;
-  color: #000;
-  background: var(--fhnw-yellow);
+  color: var(--ink);
+  background: var(--accent);
   margin: 0 0 var(--pad-y) 0;
   padding: var(--akzent-pad-y) var(--akzent-pad-x) calc(var(--akzent-pad-y) + 4px) var(--pad-x);
   max-width: 1500px;
@@ -529,7 +534,7 @@ blockquote {
    corner instead — keeps the brand signature on plain photos.
    Rendered as a background-image for capture-pipeline robustness. */
 .slide--full-bleed-image:not(:has(.overlay-title)) .slide-body {
-  background-image: linear-gradient(var(--fhnw-yellow), var(--fhnw-yellow));
+  background-image: linear-gradient(var(--accent), var(--accent));
   background-size: 240px var(--akzentlinie-h);
   background-repeat: no-repeat;
   background-position: left bottom;
@@ -633,7 +638,7 @@ blockquote {
   --code-size: 32px;
   background: var(--code-bg);
   border-radius: 0;
-  border-left: 8px solid var(--fhnw-yellow);
+  border-left: 8px solid var(--accent);
   padding: 32px 40px;
   margin: 0;
   overflow: auto;

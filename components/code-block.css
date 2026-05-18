@@ -50,12 +50,6 @@ code[class*="language-"] { color: var(--token-default); }
 .code-btn:hover { background: var(--rule, #e5e5e5); }
 .code-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-.code-btn--run {
-  background: var(--accent, #2563eb);
-  color: #fff;
-  border-color: transparent;
-}
-.code-btn--run:hover:not(:disabled) { opacity: 0.85; }
 
 /* ── Editable: highlighted pre + transparent textarea overlay ───────────── */
 .code-editable-container {

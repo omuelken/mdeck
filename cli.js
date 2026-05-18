@@ -19,6 +19,11 @@ function baseConfig(slidesPath) {
     root: frameworkRoot,
     plugins: [preact(), slidesPlugin(abs)],
     server: {
+      // Explicit HMR config so popup windows (audience view) receive the correct
+      // __HMR_PORT__ constant and never fall back to `ws://localhost:undefined`.
+      hmr: { host: 'localhost', clientPort: 5173 },
+      port: 5173,
+      strictPort: false,
       fs: { allow: [frameworkRoot, dirname(abs)] },
     },
   }

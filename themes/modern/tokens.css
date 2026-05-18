@@ -2,13 +2,13 @@
    DESIGN TOKENS — override via deck.json params
    ───────────────────────────────────────────── */
 :root {
-  /* Palette */
-  --bg:       #FFFFFF;
-  --ink:      #0A0A0A;
-  --ink-soft: #2A2A2A;
-  --muted:    #6B6B6B;
-  --rule:     #E5E5E5;
-  --accent:   #2563EB;
+  /* Palette — warm stone default; clearly distinct from the plain palette */
+  --bg:       #f8f8f6;   /* warm stone-white */
+  --ink:      #121210;   /* warm near-black */
+  --ink-soft: #383631;   /* warm dark */
+  --muted:    #888580;   /* warm medium gray */
+  --rule:     #e0deda;   /* warm light rule */
+  --accent:   #0d9488;   /* teal-600 — distinct from plain blue, Clarity violet, FHNW yellow */
 
   /* Type scale (px) — projection-appropriate at 1920×1080 */
   --fs-display: 128px;

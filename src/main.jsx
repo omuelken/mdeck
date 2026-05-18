@@ -14,10 +14,13 @@ function withConfigOverrides(deckConfig) {
   const url = new URL(window.location.href)
   const design = url.searchParams.get('design')
   const palette = url.searchParams.get('palette')
+  const accent = url.searchParams.get('accent')
   return {
     ...deckConfig,
-    ...(design ? { design } : {}),
-    ...(palette ? { palette } : {}),
+    // Use !== null so an explicit ?palette= / ?accent= (empty string) overrides the frontmatter value
+    ...(design  !== null ? { design }  : {}),
+    ...(palette !== null ? { palette } : {}),
+    ...(accent  !== null ? { accent }  : {}),
   }
 }
 
@@ -33,29 +36,30 @@ function injectSpeakerNotes(slides) {
 }
 
 // URL for the presenter's own iframe and preview pane (uses postMessage)
-function buildChildUrl(design, palette, slideIndex = null) {
+function buildChildUrl(design, palette, accent, slideIndex = null) {
   const url = new URL(window.location.href)
   url.searchParams.delete('presenter')
   url.searchParams.delete('audience')
   url.searchParams.set('embedded', '1')
   if (design) url.searchParams.set('design', design)
   else url.searchParams.delete('design')
-  if (palette) url.searchParams.set('palette', palette)
-  else url.searchParams.delete('palette')
+  // Always set ?palette= / ?accent= so an explicit "none" selection overrides the deck's frontmatter
+  url.searchParams.set('palette', palette ?? '')
+  url.searchParams.set('accent', accent ?? '')
   if (slideIndex != null) url.hash = String(slideIndex + 1)
   return url.toString()
 }
 
 // URL for the audience window — ?audience=1 makes it listen on BroadcastChannel
-function buildAudienceUrl(design, palette, slideIndex = null) {
+function buildAudienceUrl(design, palette, accent, slideIndex = null) {
   const url = new URL(window.location.href)
   url.searchParams.delete('presenter')
   url.searchParams.delete('embedded')
   url.searchParams.set('audience', '1')
   if (design) url.searchParams.set('design', design)
   else url.searchParams.delete('design')
-  if (palette) url.searchParams.set('palette', palette)
-  else url.searchParams.delete('palette')
+  url.searchParams.set('palette', palette ?? '')
+  url.searchParams.set('accent', accent ?? '')
   if (slideIndex != null) url.hash = String(slideIndex + 1)
   return url.toString()
 }
@@ -104,7 +108,8 @@ const S = {
 function PresenterView({ deckConfig, slides }) {
   const [index, setIndex] = useState(0)
   const [design, setDesign] = useState(deckConfig.design ?? 'modern')
-  const [palette, setPalette] = useState(deckConfig.palette ?? '')
+  const [palette, setPalette] = useState(PALETTE_NAMES.includes(deckConfig.palette) ? deckConfig.palette : '')
+  const [accent, setAccent] = useState(deckConfig.accent ?? '')
   const [audienceConnected, setAudienceConnected] = useState(false)
   const [noteSize, setNoteSize] = useState(13)
 
@@ -117,11 +122,11 @@ function PresenterView({ deckConfig, slides }) {
 
   const notes = useMemo(() => slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''), [slides])
   // Preserve current slide when design/palette causes an iframe reload
-  const iframeSrc = useMemo(() => buildChildUrl(design, palette, indexRef.current), [design, palette])
-  // previewSrc only recomputes on design/palette change; slide changes use postMessage
+  const iframeSrc = useMemo(() => buildChildUrl(design, palette, accent, indexRef.current), [design, palette, accent])
+  // previewSrc only recomputes on design/palette/accent change; slide changes use postMessage
   const previewSrc = useMemo(
-    () => buildChildUrl(design, palette, indexRef.current + 1),
-    [design, palette]
+    () => buildChildUrl(design, palette, accent, indexRef.current + 1),
+    [design, palette, accent]
   )
 
   // BroadcastChannel for audience sync — more reliable than cross-window postMessage
@@ -164,8 +169,8 @@ function PresenterView({ deckConfig, slides }) {
 
   // When design/palette changes, tell the audience to hot-swap its theme without a reload
   useEffect(() => {
-    bcRef.current?.postMessage({ deckControl: { command: 'setTheme', design, palette } })
-  }, [design, palette])
+    bcRef.current?.postMessage({ deckControl: { command: 'setTheme', design, palette, accent } })
+  }, [design, palette, accent])
 
   // Nav buttons drive the presenter iframe; audience follows via slideIndexChanged
   function navCommand(cmd) {
@@ -174,7 +179,7 @@ function PresenterView({ deckConfig, slides }) {
 
   function openAudienceWindow() {
     const aw = window.open(
-      buildAudienceUrl(design, palette, indexRef.current),
+      buildAudienceUrl(design, palette, accent, indexRef.current),
       'deck-audience-view'
     )
     if (!aw) return
@@ -267,10 +272,24 @@ function PresenterView({ deckConfig, slides }) {
             </label>
             <label style={{ flex: 1 }}>
               <span style={S.label}>Palette</span>
-              <select value={palette} onChange={e => setPalette(e.currentTarget.value)} style={S.select}>
-                <option value="">default</option>
+              <select value={palette} onChange={e => { setPalette(e.currentTarget.value); setAccent('') }} style={S.select}>
+                <option value="">none</option>
                 {PALETTE_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
+            </label>
+            <label style={{ flexShrink: 0 }}>
+              <span style={S.label}>Accent</span>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '28px' }}>
+                <input
+                  type="color"
+                  value={accent || '#888888'}
+                  onInput={e => setAccent(e.currentTarget.value)}
+                  style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent ? 1 : 0.35 }}
+                />
+                {accent && (
+                  <button onClick={() => setAccent('')} style={{ ...S.btn, padding: '3px 7px', fontSize: '14px', lineHeight: 1 }}>×</button>
+                )}
+              </div>
             </label>
           </div>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -366,7 +385,7 @@ async function init() {
       const ctrl = data?.deckControl
       if (!ctrl) return
       if (ctrl.command === 'setTheme') {
-        loadTheme({ design: ctrl.design, palette: ctrl.palette })
+        loadTheme({ design: ctrl.design, palette: ctrl.palette, accent: ctrl.accent })
       } else {
         handleDeckControl(ctrl)
       }

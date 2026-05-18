@@ -1,0 +1,36 @@
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS — Editorial theme
+   Premium magazine / newspaper editorial aesthetic.
+   Playfair Display for display, Lora for body.
+   ───────────────────────────────────────────── */
+:root {
+  /* Core palette tokens — all six overridable by palettes (dark, noir, etc.) */
+  --bg:       #FAFAF7;   /* warm white — premium paper */
+  --ink:      #111009;   /* near-black with warm tone */
+  --ink-soft: #3D3829;   /* warm dark brown */
+  --muted:    #7A7568;   /* warm gray */
+  --rule:     #D9D4C7;   /* warm rule — hairlines, separators */
+  --accent:   #B83A1A;   /* warm crimson — classic editorial red */
+
+  /* Type scale (px) — projection-appropriate at 1920×1080
+     Playfair's high x-height reads slightly larger than sans at the same px;
+     sizes run 2–4px smaller than Modern/Clarity to compensate. */
+  --fs-display: 128px;
+  --fs-title:    88px;
+  --fs-focus:    72px;
+  --fs-h:        60px;
+  --fs-sub:      40px;
+  --fs-body:     32px;
+  --fs-small:    24px;
+  --fs-eyebrow:  20px;
+
+  /* Spacing */
+  --pad-x:    120px;
+  --pad-y:     72px;
+  --gap-title: 48px;
+  --gap-item:  24px;
+
+  /* Type families */
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-body:    "Lora", Georgia, "Times New Roman", serif;
+}

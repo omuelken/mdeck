@@ -111,6 +111,30 @@ const THEMES = {
 
 The key becomes the value used in `design:` in the deck frontmatter.
 
+## Custom layouts
+
+Any slide with an unrecognised `layout:` value falls through to the generic renderer, which renders the full markdown body with the standard slide chrome (header, footer). The layout name is not used by the framework — it is purely informational.
+
+To style a custom layout, target `.slide--<layout-name>` in a CSS file loaded alongside your deck, or use inline styles in your markdown HTML.
+
+Because `.slide-body` sets baseline typography (`font-family`, `font-size`, `color`, `line-height`) as inheritable defaults, any raw HTML you write inside a custom slide automatically inherits the theme's body text style. You only need inline styles for structural concerns like grid layout:
+
+```markdown
+---
+layout: four-columns
+---
+# My heading
+
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 48px;">
+  <div><strong>One</strong> — description text</div>
+  <div><strong>Two</strong> — description text</div>
+  <div><strong>Three</strong> — description text</div>
+  <div><strong>Four</strong> — description text</div>
+</div>
+```
+
+Standard markdown elements (`h1`–`h6`, `p`, `ul`, `ol`, `strong`, `em`, `code`) are styled by the theme and work without any inline styles.
+
 ## Token contract
 
 Themes must define the six core color tokens listed in `tokens.css` above. This is what makes palettes work across themes — palettes override these exact variable names, so any theme that defines them will repaint correctly when a palette is applied.
