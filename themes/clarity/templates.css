@@ -454,7 +454,7 @@ em {
   padding: 40px 48px 40px calc(48px + 6px);
   position: relative;
   margin: 0;
-  overflow: auto;
+  overflow: hidden;
   font-size: var(--code-size);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   line-height: 1.6;

@@ -549,7 +549,7 @@ blockquote {
   border-left: 8px solid var(--accent);
   padding: 32px 40px;
   margin: 0;
-  overflow: auto;
+  overflow: hidden;
   font-size: var(--code-size);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   line-height: 1.55;

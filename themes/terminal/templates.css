@@ -352,7 +352,7 @@ em {
   border-left: 4px solid var(--accent);
   padding: 32px 40px;
   margin: 0;
-  overflow: auto;
+  overflow: hidden;
   font-size: var(--code-size);
   font-family: var(--font-body);
   line-height: 1.6;

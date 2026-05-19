@@ -464,7 +464,7 @@ em {
   border-left: 6px solid var(--accent);
   padding: 36px 44px;
   margin: 0;
-  overflow: auto;
+  overflow: hidden;
   font-size: var(--code-size);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   line-height: 1.6;
