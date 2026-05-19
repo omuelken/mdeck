@@ -6,6 +6,7 @@
 :root {
   /* Core palette tokens — all six overridable by palettes (dark, noir, etc.) */
   --bg:       #FAFAF7;   /* warm white — premium paper */
+  --surface:  #F2F0E8;   /* warm parchment — code blocks, raised panels */
   --ink:      #111009;   /* near-black with warm tone */
   --ink-soft: #3D3829;   /* warm dark brown */
   --muted:    #7A7568;   /* warm gray */

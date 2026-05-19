@@ -6,10 +6,11 @@
 :root {
   /* Core color tokens — dark defaults */
   --bg:       #0d0f12;   /* near-black */
+  --surface:  #141a24;   /* raised dark surface — code blocks */
   --ink:      #f1f5f9;   /* off-white */
   --ink-soft: #cbd5e1;   /* slate */
   --muted:    #718096;   /* dim — lightened for legibility on dark bg */
-  --rule:     #1a202c;   /* subtle separator */
+  --rule:     #222c3a;   /* visible separator — clearly distinct from bg */
   --accent:   #4ade80;   /* terminal green */
 
   /* Type families — monospace throughout */

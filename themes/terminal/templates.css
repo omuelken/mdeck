@@ -344,7 +344,7 @@ em {
    Minimal styling — code feels native on dark bg.
    ───────────────────────────────────────────── */
 .code-block {
-  --code-bg: var(--rule);
+  --code-bg: var(--surface);
   --code-radius: 4px;
   --code-size: 28px;
   background: var(--code-bg);

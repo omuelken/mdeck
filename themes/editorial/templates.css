@@ -456,7 +456,7 @@ em {
    CODE BLOCK COMPONENT
    ───────────────────────────────────────────── */
 .code-block {
-  --code-bg: color-mix(in srgb, var(--rule) 40%, var(--bg));
+  --code-bg: var(--surface);
   --code-radius: 0;
   --code-size: 30px;
   background: var(--code-bg);
