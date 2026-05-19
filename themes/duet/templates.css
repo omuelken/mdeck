@@ -175,14 +175,6 @@ em {
    Subtle gradient atmosphere from both accents.
    Eyebrow and attribution use --accent-2 (voice).
    ───────────────────────────────────────────── */
-.slide--focus::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  opacity: 0.06;
-  pointer-events: none;
-}
 .slide--focus .slide-body {
   justify-content: center;
   align-items: flex-start;
