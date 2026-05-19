@@ -72,6 +72,9 @@ html, body { font-weight: 300; }
   background-repeat: no-repeat;
   background-position: left top;
 }
+.slide-footer--no-meta {
+  background-image: none;
+}
 .slide-footer > span:last-child {
   font-variant-numeric: tabular-nums;
   font-weight: 500;
@@ -141,7 +144,7 @@ html, body { font-weight: 300; }
 em {
   font-style: normal;
   background: var(--accent);
-  color: var(--ink);
+  color: var(--on-accent);
   padding: 0.04em 0.18em 0.08em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
@@ -156,9 +159,9 @@ a {
   transition: background-color 140ms cubic-bezier(0.16, 1, 0.3, 1),
               color 140ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-a:hover { background: var(--accent); text-decoration: none; }
+a:hover { background: var(--accent); color: var(--on-accent); text-decoration: none; }
 
-::selection { background: var(--accent); color: var(--ink); }
+::selection { background: var(--accent); color: var(--on-accent); }
 
 /* Serif italic — testimonials and pull-quotes only (CD-Manual §2.2). */
 blockquote {
@@ -194,7 +197,7 @@ blockquote {
 }
 .slide--title .display {
   background: var(--accent);
-  color: var(--ink);
+  color: var(--on-accent);
   display: inline-block;
   /* Pull left edge to the slide corner; keep interior text at pad-x. */
   margin-left: calc(var(--pad-x) * -1);
@@ -417,7 +420,7 @@ blockquote {
   width: 36px;
   height: 36px;
   background: var(--accent);
-  color: var(--ink);
+  color: var(--on-accent);
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.8em;
@@ -447,7 +450,7 @@ blockquote {
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: -0.025em;
-  color: var(--ink);
+  color: var(--on-accent);
   background: var(--accent);
   margin: 0 0 var(--pad-y) 0;
   padding: var(--akzent-pad-y) var(--akzent-pad-x) calc(var(--akzent-pad-y) + 4px) var(--pad-x);
@@ -527,7 +530,7 @@ blockquote {
 .code-block {
   --code-bg: var(--surface);
   --code-radius: 0;
-  --code-size: 32px;
+  --code-size: 26px;
   background: var(--code-bg);
   border-radius: 0;
   border-left: 8px solid var(--accent);

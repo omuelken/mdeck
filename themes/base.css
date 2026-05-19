@@ -85,7 +85,7 @@ deck-stage { background: #000; }
 
 /* ── Split layout ────────────────────────────────────────────────────────── */
 .slide--split .slide-body { flex-direction: row; align-items: stretch; gap: 100px; }
-.split-left  { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; --code-size: 26px; }
+.split-left  { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; --code-size: 20px; }
 .split-right { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--gap-item); }
 
 /* ── List containers ─────────────────────────────────────────────────────── */
@@ -143,7 +143,7 @@ deck-stage { background: #000; }
 .slide-footnotes .footnote-backref { display: none; }
 
 /* ── Code blocks ─────────────────────────────────────────────────────────── */
-.code-block { white-space: pre-wrap; }
+.code-block { white-space: pre-wrap; overflow-x: hidden; }
 
 /* ── Tables ──────────────────────────────────────────────────────────────── */
 .slide-body table {

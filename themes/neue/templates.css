@@ -343,7 +343,7 @@ em {
 .code-block {
   --code-bg: var(--surface, var(--rule));
   --code-radius: 8px;
-  --code-size: 36px;
+  --code-size: 30px;
   background: var(--code-bg);
   border-radius: 0 var(--code-radius) var(--code-radius) 0;
   border-left: 6px solid var(--accent);

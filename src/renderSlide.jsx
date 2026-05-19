@@ -104,9 +104,12 @@ function SlideFooter({ deckConfig, left, right, isTitle = false }) {
   const pnSetting = deckConfig.pageNumbers ?? 'slides'
   const showRight = pnSetting === 'all' || (pnSetting === 'slides' && !isTitle)
 
+  const leftContent = left ?? (showAuthor ? authorStr : '')
+  const footerClass = leftContent ? 'slide-footer' : 'slide-footer slide-footer--no-meta'
+
   return (
-    <div class="slide-footer">
-      <span>{left ?? (showAuthor ? authorStr : '')}</span>
+    <div class={footerClass}>
+      <span>{leftContent}</span>
       {right != null && showRight && <span>{right}</span>}
     </div>
   )

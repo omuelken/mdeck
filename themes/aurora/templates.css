@@ -447,7 +447,7 @@ em {
 .code-block {
   --code-bg: var(--surface);
   --code-radius: 12px;
-  --code-size: 36px;
+  --code-size: 30px;
   background: var(--code-bg);
   border-radius: var(--code-radius);
   border-left: none;

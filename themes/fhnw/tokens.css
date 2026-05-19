@@ -12,6 +12,7 @@
   --muted:     #767573;   /* grey-600: "Text & Border Grau" */
   --rule:      #DEDED9;   /* grey-200: "Mouseover Grau" */
   --accent:    #FDE70E;   /* FHNW-Gelb — Pantone 3955 */
+  --on-accent: var(--ink); /* text color for content rendered on accent bg; override per palette */
 
   /* Theme-specific structural tokens */
   --grey-100:  #F1F1EE;

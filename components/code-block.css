@@ -67,14 +67,15 @@ code[class*="language-"] { color: var(--token-default); }
   inset: 0;
   padding: 40px 48px;       /* must match .code-block padding exactly */
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: var(--code-size, 36px);
+  font-size: var(--code-size, 30px);
   line-height: 1.6;         /* must match .code-block line-height exactly */
   background: transparent;
   color: transparent;
   caret-color: var(--ink, #0a0a0a);
   border: none;
   resize: none;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   tab-size: 2;
   outline: none;
   white-space: pre;
@@ -88,7 +89,7 @@ code[class*="language-"] { color: var(--token-default); }
   background: var(--surface, var(--rule));
   color: var(--ink);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: var(--code-size, 36px);
+  font-size: var(--code-size, 30px);
   line-height: 1.55;
   white-space: pre;
   max-height: 8em;

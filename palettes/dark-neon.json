@@ -1,0 +1,14 @@
+{
+  "name": "Dark Neon",
+  "dark": true,
+  "tokens": {
+    "--bg":       "#0d0d0d",
+    "--surface":  "#1a1a1a",
+    "--ink":      "#f0f0f0",
+    "--ink-soft": "#cccccc",
+    "--muted":    "#666666",
+    "--rule":     "#17FFC4",
+    "--accent":   "#CC17FF",
+    "--accent-2": "#FF1791"
+  }
+}
