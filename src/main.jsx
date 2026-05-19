@@ -140,6 +140,7 @@ function PresenterView({ deckConfig, slides }) {
 
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [designOpen, setDesignOpen] = useState(false)
+  const [themeModalOpen, setThemeModalOpen] = useState(false)
 
   const iframeRef = useRef(null)
   const previewRef = useRef(null)
@@ -200,6 +201,16 @@ function PresenterView({ deckConfig, slides }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  // Escape to close theme modal
+  useEffect(() => {
+    if (!themeModalOpen) return
+    function handler(e) {
+      if (e.key === 'Escape') setThemeModalOpen(false)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [themeModalOpen])
 
   // Close palette dropdown on outside click
   useEffect(() => {
@@ -280,10 +291,11 @@ function PresenterView({ deckConfig, slides }) {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
             <span style={{ ...S.label, marginBottom: 0 }}>Notes</span>
-            <div style={{ display: 'flex', gap: '3px' }}>
-              <button style={{ ...S.btn, padding: '1px 7px', fontSize: '14px' }} onClick={() => setNoteSize(s => Math.max(9, s - 1))}>−</button>
-              <button style={{ ...S.btn, padding: '1px 7px', fontSize: '14px' }} onClick={() => setNoteSize(s => Math.min(24, s + 1))}>+</button>
-            </div>
+            <input
+              type="range" min="11" max="22" step="1" value={noteSize}
+              onInput={e => setNoteSize(Number(e.currentTarget.value))}
+              style={{ width: '80px', accentColor: '#444', cursor: 'pointer', opacity: 0.6 }}
+            />
           </div>
           <div class="notes-md" style={{
             flex: 1,
@@ -318,9 +330,13 @@ function PresenterView({ deckConfig, slides }) {
             <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
               <label style={{ flex: 1 }}>
                 <span style={S.label}>Theme</span>
-                <select value={design} onChange={e => { setDesign(e.currentTarget.value); setAccent2('') }} style={S.select}>
-                  {THEME_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
+                <button
+                  onClick={() => setThemeModalOpen(true)}
+                  style={{ ...S.select, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', cursor: 'pointer' }}
+                >
+                  <span>{design}</span>
+                  <span style={{ opacity: 0.35, fontSize: '8px', flexShrink: 0 }}>▤</span>
+                </button>
               </label>
               <label style={{ flex: 1 }}>
                 <span style={S.label}>Palette</span>
@@ -411,6 +427,40 @@ function PresenterView({ deckConfig, slides }) {
         </div>
 
       </aside>
+
+      {themeModalOpen && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setThemeModalOpen(false)}
+        >
+          <div
+            style={{ background: '#161616', border: '1px solid #2a2a2a', borderRadius: '12px', padding: '24px', width: 'min(90vw, 1000px)', maxHeight: '85vh', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <span style={S.label}>Choose Theme</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+              {THEME_NAMES.map(n => (
+                <div
+                  key={n}
+                  onClick={() => { setDesign(n); setAccent2(''); setThemeModalOpen(false) }}
+                  style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: `2px solid ${n === design ? '#60a5fa' : '#2a2a2a'}`, background: '#111' }}
+                >
+                  <div style={{ aspectRatio: '16/9', overflow: 'hidden' }}>
+                    <iframe
+                      src={buildChildUrl(n, palette, accent, accent2, index)}
+                      scrolling="no"
+                      style={{ width: '100%', height: '100%', border: 0, pointerEvents: 'none', display: 'block' }}
+                    />
+                  </div>
+                  <div style={{ padding: '8px 10px', fontSize: '14px', fontFamily: 'inherit', color: n === design ? '#f0f0f0' : '#aaa', background: n === design ? '#1c2a3a' : 'transparent' }}>
+                    {n}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
