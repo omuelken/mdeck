@@ -2,7 +2,7 @@
   --callout-note:      #0969da;
   --callout-tip:       #1a7f37;
   --callout-important: #8250df;
-  --callout-warning:   #9a6700;
+  --callout-warning:   #eab308;
   --callout-caution:   #cf222e;
 }
 
@@ -10,7 +10,7 @@
   border-left: 4px solid var(--rule);
   padding: 20px 28px;
   background: var(--surface, var(--bg));
-  margin: 0;
+  margin: var(--gap-item) 0;
 }
 .callout-title {
   font-weight: 600;
@@ -19,7 +19,7 @@
   text-transform: uppercase;
   margin: 0 0 8px 0;
 }
-.callout p { margin: 0; color: var(--ink-soft); }
+.callout p { margin: 0; color: var(--ink-soft); padding-left: 28px; }
 
 .callout-note      { border-left-color: var(--callout-note); }
 .callout-tip       { border-left-color: var(--callout-tip); }

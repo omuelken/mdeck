@@ -21,7 +21,7 @@ marked.use({
     },
     renderer(token) {
       const title = token.title || CALLOUT_DEFAULTS[token.calloutType] || token.calloutType
-      return `<div class="callout callout-${token.calloutType}"><p class="callout-title">${title}</p>${this.parser.parse(token.tokens)}</div>\n`
+      return `<div class="callout callout-${token.calloutType}"><div class="callout-title">${title}</div>${this.parser.parse(token.tokens)}</div>\n`
     },
   }],
 })

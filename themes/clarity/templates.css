@@ -449,7 +449,7 @@ em {
   --code-radius: 12px;
   --code-size: 36px;
   background: var(--code-bg);
-  border-radius: 0 var(--code-radius) var(--code-radius) 0;
+  border-radius: var(--code-radius);
   border-left: none;
   padding: 40px 48px 40px calc(48px + 6px);
   position: relative;
@@ -458,6 +458,8 @@ em {
   font-size: var(--code-size);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   line-height: 1.6;
+  border: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
 }
 .code-block::before {
   content: '';
@@ -467,7 +469,6 @@ em {
   bottom: 0;
   width: 6px;
   background: linear-gradient(to bottom, var(--accent), var(--accent-2));
-  border-radius: var(--code-radius) 0 0 var(--code-radius);
 }
 .code-block code {
   font-family: inherit;
@@ -475,6 +476,53 @@ em {
   background: none;
   padding: 0;
 }
+
+/* ─────────────────────────────────────────────
+   CALLOUTS — card style with colored top accent
+   ───────────────────────────────────────────── */
+/* Callout: pill tag + plain body, no card wrapper */
+.callout {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.callout-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 28px 10px 20px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 20px 0;
+}
+.callout-title::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.callout-note      .callout-title { color: var(--callout-note); }
+.callout-tip       .callout-title { color: var(--callout-tip); }
+.callout-important .callout-title { color: var(--callout-important); }
+.callout-warning   .callout-title { color: var(--callout-warning); }
+.callout-caution   .callout-title { color: var(--callout-caution); }
 
 /* ─────────────────────────────────────────────
    MATH (KaTeX)
