@@ -76,11 +76,16 @@ function HtmlContent({ html, class: className }) {
 
 // ─── Header / footer / footnotes rails ────────────────────────────────────
 
-function SlideHeader({ deckConfig, right, logo }) {
+function SlideHeader({ deckConfig, right, logo, isTitle = false }) {
   const org = deckConfig.meta?.organization ?? ''
+
+  // institution: 'title' (default) | 'all' | 'none'
+  const instSetting = deckConfig.institution ?? 'title'
+  const showOrg = instSetting === 'all' || (instSetting === 'title' && isTitle)
+
   return (
     <div class="slide-header">
-      <span class="brand">{org}</span>
+      <span class="brand">{showOrg ? org : ''}</span>
       {logo && <img class="slide-logo" src={logo} alt="" />}
       {right != null && <span>{right}</span>}
     </div>
@@ -124,7 +129,7 @@ function TitleSlide({ meta, content, deckConfig, index }) {
 
   return (
     <section class="slide slide--title" data-label={`${slideNum(index)} Title`}>
-      <SlideHeader deckConfig={deckConfig} logo={logo} />
+      <SlideHeader deckConfig={deckConfig} logo={logo} isTitle={true} />
       <div class="slide-body">
         {headings[1] && <h1 class="display" dangerouslySetInnerHTML={{ __html: headings[1] }} />}
         {(headings[2] || paragraphs[0]) && (
