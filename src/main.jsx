@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { marked } from 'marked'
 import slidesContent from 'virtual:slides'
 import { parseSlides } from './parseSlides'
-import { loadTheme, THEME_NAMES, PALETTE_NAMES } from './themeLoader'
+import { loadTheme, THEME_NAMES, PALETTE_NAMES, THEME_METAS, PALETTES } from './themeLoader'
 import { SlideRenderer } from './renderSlide'
 import './markedSetup'
 import './deck-stage.js'
@@ -14,13 +14,15 @@ function withConfigOverrides(deckConfig) {
   const url = new URL(window.location.href)
   const design = url.searchParams.get('design')
   const palette = url.searchParams.get('palette')
-  const accent = url.searchParams.get('accent')
+  const accent  = url.searchParams.get('accent')
+  const accent2 = url.searchParams.get('accent2')
   return {
     ...deckConfig,
     // Use !== null so an explicit ?palette= / ?accent= (empty string) overrides the frontmatter value
     ...(design  !== null ? { design }  : {}),
     ...(palette !== null ? { palette } : {}),
     ...(accent  !== null ? { accent }  : {}),
+    ...(accent2 !== null ? { accent2 } : {}),
   }
 }
 
@@ -36,22 +38,23 @@ function injectSpeakerNotes(slides) {
 }
 
 // URL for the presenter's own iframe and preview pane (uses postMessage)
-function buildChildUrl(design, palette, accent, slideIndex = null) {
+function buildChildUrl(design, palette, accent, accent2, slideIndex = null) {
   const url = new URL(window.location.href)
   url.searchParams.delete('presenter')
   url.searchParams.delete('audience')
   url.searchParams.set('embedded', '1')
   if (design) url.searchParams.set('design', design)
   else url.searchParams.delete('design')
-  // Always set ?palette= / ?accent= so an explicit "none" selection overrides the deck's frontmatter
+  // Always set these params so an explicit "none" selection overrides the deck's frontmatter
   url.searchParams.set('palette', palette ?? '')
   url.searchParams.set('accent', accent ?? '')
+  url.searchParams.set('accent2', accent2 ?? '')
   if (slideIndex != null) url.hash = String(slideIndex + 1)
   return url.toString()
 }
 
 // URL for the audience window — ?audience=1 makes it listen on BroadcastChannel
-function buildAudienceUrl(design, palette, accent, slideIndex = null) {
+function buildAudienceUrl(design, palette, accent, accent2, slideIndex = null) {
   const url = new URL(window.location.href)
   url.searchParams.delete('presenter')
   url.searchParams.delete('embedded')
@@ -60,6 +63,7 @@ function buildAudienceUrl(design, palette, accent, slideIndex = null) {
   else url.searchParams.delete('design')
   url.searchParams.set('palette', palette ?? '')
   url.searchParams.set('accent', accent ?? '')
+  url.searchParams.set('accent2', accent2 ?? '')
   if (slideIndex != null) url.hash = String(slideIndex + 1)
   return url.toString()
 }
@@ -105,11 +109,20 @@ const S = {
   },
 }
 
+function themeParamDefault(themeMeta, token) {
+  if (!themeMeta?.params) return null
+  for (const param of Object.values(themeMeta.params)) {
+    if (param.token === token) return param.default
+  }
+  return null
+}
+
 function PresenterView({ deckConfig, slides }) {
   const [index, setIndex] = useState(0)
   const [design, setDesign] = useState(deckConfig.design ?? 'modern')
   const [palette, setPalette] = useState(PALETTE_NAMES.includes(deckConfig.palette) ? deckConfig.palette : '')
   const [accent, setAccent] = useState(deckConfig.accent ?? '')
+  const [accent2, setAccent2] = useState(deckConfig.accent2 ?? '')
   const [audienceConnected, setAudienceConnected] = useState(false)
   const [noteSize, setNoteSize] = useState(13)
 
@@ -120,13 +133,18 @@ function PresenterView({ deckConfig, slides }) {
   const indexRef = useRef(0)
   indexRef.current = index
 
+  const usesAccent2 = THEME_METAS[design]?.usesAccent2 ?? false
+  const themeMeta = THEME_METAS[design]
+  const paletteTokens = PALETTES[palette]?.tokens ?? {}
+  const effectiveAccent  = accent  || paletteTokens['--accent']   || themeParamDefault(themeMeta, '--accent')   || '#888888'
+  const effectiveAccent2 = accent2 || paletteTokens['--accent-2'] || themeParamDefault(themeMeta, '--accent-2') || '#888888'
   const notes = useMemo(() => slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''), [slides])
   // Preserve current slide when design/palette causes an iframe reload
-  const iframeSrc = useMemo(() => buildChildUrl(design, palette, accent, indexRef.current), [design, palette, accent])
+  const iframeSrc = useMemo(() => buildChildUrl(design, palette, accent, accent2, indexRef.current), [design, palette, accent, accent2])
   // previewSrc only recomputes on design/palette/accent change; slide changes use postMessage
   const previewSrc = useMemo(
-    () => buildChildUrl(design, palette, accent, indexRef.current + 1),
-    [design, palette, accent]
+    () => buildChildUrl(design, palette, accent, accent2, indexRef.current + 1),
+    [design, palette, accent, accent2]
   )
 
   // BroadcastChannel for audience sync — more reliable than cross-window postMessage
@@ -169,8 +187,8 @@ function PresenterView({ deckConfig, slides }) {
 
   // When design/palette changes, tell the audience to hot-swap its theme without a reload
   useEffect(() => {
-    bcRef.current?.postMessage({ deckControl: { command: 'setTheme', design, palette, accent } })
-  }, [design, palette, accent])
+    bcRef.current?.postMessage({ deckControl: { command: 'setTheme', design, palette, accent, accent2 } })
+  }, [design, palette, accent, accent2])
 
   // Nav buttons drive the presenter iframe; audience follows via slideIndexChanged
   function navCommand(cmd) {
@@ -179,7 +197,7 @@ function PresenterView({ deckConfig, slides }) {
 
   function openAudienceWindow() {
     const aw = window.open(
-      buildAudienceUrl(design, palette, accent, indexRef.current),
+      buildAudienceUrl(design, palette, accent, accent2, indexRef.current),
       'deck-audience-view'
     )
     if (!aw) return
@@ -266,7 +284,7 @@ function PresenterView({ deckConfig, slides }) {
           <div style={{ display: 'flex', gap: '6px' }}>
             <label style={{ flex: 1 }}>
               <span style={S.label}>Theme</span>
-              <select value={design} onChange={e => setDesign(e.currentTarget.value)} style={S.select}>
+              <select value={design} onChange={e => { setDesign(e.currentTarget.value); setAccent2('') }} style={S.select}>
                 {THEME_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </label>
@@ -282,15 +300,31 @@ function PresenterView({ deckConfig, slides }) {
               <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '28px' }}>
                 <input
                   type="color"
-                  value={accent || '#888888'}
+                  value={effectiveAccent}
                   onInput={e => setAccent(e.currentTarget.value)}
-                  style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent ? 1 : 0.35 }}
+                  style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent ? 1 : 0.6 }}
                 />
                 {accent && (
                   <button onClick={() => setAccent('')} style={{ ...S.btn, padding: '3px 7px', fontSize: '14px', lineHeight: 1 }}>×</button>
                 )}
               </div>
             </label>
+            {usesAccent2 && (
+              <label style={{ flexShrink: 0 }}>
+                <span style={S.label}>Accent 2</span>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '28px' }}>
+                  <input
+                    type="color"
+                    value={effectiveAccent2}
+                    onInput={e => setAccent2(e.currentTarget.value)}
+                    style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent2 ? 1 : 0.6 }}
+                  />
+                  {accent2 && (
+                    <button onClick={() => setAccent2('')} style={{ ...S.btn, padding: '3px 7px', fontSize: '14px', lineHeight: 1 }}>×</button>
+                  )}
+                </div>
+              </label>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             <button style={S.btn} onClick={() => navCommand('prev')}>← Prev</button>
@@ -385,7 +419,7 @@ async function init() {
       const ctrl = data?.deckControl
       if (!ctrl) return
       if (ctrl.command === 'setTheme') {
-        loadTheme({ design: ctrl.design, palette: ctrl.palette, accent: ctrl.accent })
+        loadTheme({ design: ctrl.design, palette: ctrl.palette, accent: ctrl.accent, accent2: ctrl.accent2 })
       } else {
         handleDeckControl(ctrl)
       }

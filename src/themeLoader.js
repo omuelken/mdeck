@@ -29,6 +29,16 @@ const PALETTES = Object.fromEntries(
 
 export const THEME_NAMES = Object.keys(THEMES)
 export const PALETTE_NAMES = Object.keys(PALETTES)
+export { PALETTES }
+
+export const THEME_METAS = Object.fromEntries(
+  Object.entries(import.meta.glob('../themes/*/meta.json', { eager: true }))
+    .map(([path, mod]) => {
+      const name = path.match(/themes\/([^/]+)\/meta\.json/)?.[1]
+      return [name, mod.default ?? mod]
+    })
+    .filter(([name]) => name)
+)
 
 function upsertStyle(id, textContent) {
   let el = document.getElementById(id)
@@ -53,7 +63,7 @@ function syncThemeFonts(urls) {
   }
 }
 
-export async function loadTheme({ design = 'modern', palette, accent, params = {}, meta = {} } = {}) {
+export async function loadTheme({ design = 'modern', palette, accent, accent2, params = {}, meta = {} } = {}) {
   const loader = THEMES[design]
   if (!loader) throw new Error(`Unknown theme: "${design}". Available: ${Object.keys(THEMES).join(', ')}`)
 
@@ -90,7 +100,8 @@ export async function loadTheme({ design = 'modern', palette, accent, params = {
     if (def) overrides.push(`${def.token}: ${value};`)
   }
 
-  if (accent) overrides.push(`--accent: ${accent};`)
+  if (accent)  overrides.push(`--accent: ${accent};`)
+  if (accent2) overrides.push(`--accent-2: ${accent2};`)
 
   for (const [key, value] of Object.entries(meta)) {
     overrides.push(`--meta-${key}: ${JSON.stringify(String(value))};`)
