@@ -27,6 +27,42 @@ marked.use({
 })
 
 marked.use({
+  extensions: [{
+    name: 'steps',
+    level: 'block',
+    start(src) { return src.match(/^:::steps/)?.index },
+    tokenizer(src) {
+      const m = src.match(/^:::steps\s*\n([\s\S]*?)\n:::\s*(?:\n|$)/)
+      if (!m) return
+      const token = { type: 'steps', raw: m[0], tokens: [] }
+      this.lexer.blockTokens(m[1], token.tokens)
+      return token
+    },
+    renderer(token) {
+      let counter = 0
+      const links = token.tokens.links || {}
+      const parts = []
+      for (const t of token.tokens) {
+        if (t.type === 'list') {
+          const tag = t.ordered ? 'ol' : 'ul'
+          const items = t.items.map(item => {
+            const body = item.loose
+              ? this.parser.parse(Object.assign([...item.tokens], { links }))
+              : this.parser.parseInline(item.tokens[0]?.tokens ?? [])
+            return `<li data-step="${counter++}">${body}</li>`
+          })
+          parts.push(`<${tag}>${items.join('')}</${tag}>`)
+        } else {
+          const html = this.parser.parse(Object.assign([t], { links }))
+          parts.push(`<div data-step="${counter++}">${html}</div>`)
+        }
+      }
+      return `<div class="steps-container">\n${parts.join('\n')}\n</div>\n`
+    },
+  }],
+})
+
+marked.use({
   renderer: {
     code(code, infoString) {
       const [lang = 'text', ...flags] = (infoString || '').split(/\s+/).filter(Boolean)

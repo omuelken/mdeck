@@ -164,7 +164,17 @@ deck-stage { background: #000; }
 }
 .slide-body td { color: var(--ink-soft); }
 
+/* ── Step reveals ────────────────────────────────────────────────────────── */
+[data-step] {
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+[data-step][data-step-visible] {
+  opacity: 1;
+}
+
 /* ── Print ───────────────────────────────────────────────────────────────── */
 @media print {
   html, body, deck-stage { background: #fff !important; }
+  [data-step] { opacity: 1 !important; }
 }

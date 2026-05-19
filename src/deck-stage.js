@@ -212,6 +212,7 @@
     }
     .count .sep { color: rgba(255,255,255,0.45); margin: 0 3px; font-weight: 400; }
     .count .total { color: rgba(255,255,255,0.55); }
+    .step-progress { color: rgba(255,255,255,0.55); font-size: 11px; margin: 0 2px; }
 
     .divider {
       width: 1px;
@@ -276,6 +277,7 @@
       this._notes = [];
       this._hideTimer = null;
       this._mouseIdleTimer = null;
+      this._stepMap = new Map();
 
       this._onKey = this._onKey.bind(this);
       this._onResize = this._onResize.bind(this);
@@ -366,7 +368,7 @@
         <button class="btn prev" type="button" aria-label="Previous slide" title="Previous (←)">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>
         </button>
-        <span class="count" aria-live="polite"><span class="current">1</span><span class="sep">/</span><span class="total">1</span></span>
+        <span class="count" aria-live="polite"><span class="current">1</span><span class="step-progress" hidden> · <span class="step-cur">0</span>/<span class="step-total">1</span></span><span class="sep">/</span><span class="total">1</span></span>
         <button class="btn next" type="button" aria-label="Next slide" title="Next (→)">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
         </button>
@@ -374,16 +376,19 @@
         <button class="btn reset" type="button" aria-label="Reset to first slide" title="Reset (R)">Reset<span class="kbd">R</span></button>
       `;
 
-      overlay.querySelector('.prev').addEventListener('click', () => this._go(this._index - 1, 'click'));
-      overlay.querySelector('.next').addEventListener('click', () => this._go(this._index + 1, 'click'));
-      overlay.querySelector('.reset').addEventListener('click', () => this._go(0, 'click'));
+      overlay.querySelector('.prev').addEventListener('click', () => this.prev('click'));
+      overlay.querySelector('.next').addEventListener('click', () => this.next('click'));
+      overlay.querySelector('.reset').addEventListener('click', () => this.reset());
 
       this._root.append(style, stage, tapzones, overlay);
       this._canvas = canvas;
       this._slot = slot;
       this._overlay = overlay;
-      this._countEl = overlay.querySelector('.current');
-      this._totalEl = overlay.querySelector('.total');
+      this._countEl        = overlay.querySelector('.current');
+      this._totalEl        = overlay.querySelector('.total');
+      this._stepProgressEl = overlay.querySelector('.step-progress');
+      this._stepCurEl      = overlay.querySelector('.step-cur');
+      this._stepTotalEl    = overlay.querySelector('.step-total');
     }
 
     /** @page must live in the document stylesheet — it's a no-op inside
@@ -485,6 +490,8 @@
         if (i === curr) s.setAttribute('data-deck-active', '');
         else s.removeAttribute('data-deck-active');
       });
+      this._stepMap.delete(curr);
+      this._applySteps(curr);
       if (this._countEl) this._countEl.textContent = String(curr + 1);
 
       if (broadcast) {
@@ -554,12 +561,12 @@
 
     _onTapBack(e) {
       e.preventDefault();
-      this._go(this._index - 1, 'tap');
+      this.prev('tap');
     }
 
     _onTapForward(e) {
       e.preventDefault();
-      this._go(this._index + 1, 'tap');
+      this.next('tap');
     }
 
     _onKey(e) {
@@ -572,9 +579,9 @@
       let handled = true;
 
       if (key === 'ArrowRight' || key === 'PageDown' || key === ' ' || key === 'Spacebar') {
-        this._go(this._index + 1, 'keyboard');
+        this.next('keyboard');
       } else if (key === 'ArrowLeft' || key === 'PageUp') {
-        this._go(this._index - 1, 'keyboard');
+        this.prev('keyboard');
       } else if (key === 'Home') {
         this._go(0, 'keyboard');
       } else if (key === 'End') {
@@ -606,17 +613,75 @@
       this._applyIndex({ showOverlay: true, broadcast: true, reason });
     }
 
+    // Step reveal helpers ---------------------------------------------------
+
+    _getSteps(slide) {
+      if (!slide) return [];
+      return [...slide.querySelectorAll('[data-step]')]
+        .sort((a, b) => Number(a.dataset.step) - Number(b.dataset.step));
+    }
+
+    _applySteps(slideIndex) {
+      const slide = this._slides[slideIndex];
+      if (!slide) return;
+      const steps = this._getSteps(slide);
+      const curr  = this._stepMap.get(slideIndex) ?? -1;
+      steps.forEach((el, i) =>
+        i <= curr ? el.setAttribute('data-step-visible', '') : el.removeAttribute('data-step-visible')
+      );
+      this._updateStepCount(slideIndex);
+    }
+
+    _updateStepCount(slideIndex) {
+      if (!this._stepProgressEl) return;
+      const steps = this._getSteps(this._slides[slideIndex]);
+      if (steps.length === 0) {
+        this._stepProgressEl.hidden = true;
+        return;
+      }
+      const curr = this._stepMap.get(slideIndex) ?? -1;
+      this._stepCurEl.textContent  = String(curr + 1);
+      this._stepTotalEl.textContent = String(steps.length);
+      this._stepProgressEl.hidden  = false;
+    }
+
     // Public API ------------------------------------------------------------
 
     /** Current slide index (0-based). */
     get index() { return this._index; }
     /** Total slide count. */
     get length() { return this._slides.length; }
-    /** Programmatically navigate. */
+    /** Programmatically navigate to a specific slide (no step checks). */
     goTo(i) { this._go(i, 'api'); }
-    next() { this._go(this._index + 1, 'api'); }
-    prev() { this._go(this._index - 1, 'api'); }
-    reset() { this._go(0, 'api'); }
+    /** Advance: reveals next step if the current slide has unrevealed steps, else goes to next slide. */
+    next(reason = 'api') {
+      const steps = this._getSteps(this._slides[this._index]);
+      const curr  = this._stepMap.get(this._index) ?? -1;
+      if (steps.length > 0 && curr < steps.length - 1) {
+        this._stepMap.set(this._index, curr + 1);
+        this._applySteps(this._index);
+        this._flashOverlay();
+        return;
+      }
+      this._go(this._index + 1, reason);
+    }
+    /** Go back: hides last revealed step if any, else goes to previous slide. */
+    prev(reason = 'api') {
+      const steps = this._getSteps(this._slides[this._index]);
+      const curr  = this._stepMap.get(this._index) ?? -1;
+      if (steps.length > 0 && curr >= 0) {
+        this._stepMap.set(this._index, curr - 1);
+        this._applySteps(this._index);
+        this._flashOverlay();
+        return;
+      }
+      this._go(this._index - 1, reason);
+    }
+    /** Reset to first slide and clear all step state. */
+    reset() {
+      this._stepMap.clear();
+      this._go(0, 'api');
+    }
   }
 
   if (!customElements.get('deck-stage')) {

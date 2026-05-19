@@ -229,6 +229,17 @@ section: Custom Layouts
 </div>
 
 ---
+section: Animations
+---
+# Step reveals — press → to advance.
+
+:::steps
+- First bullet appears on step 1
+- Second bullet appears on step 2
+- Third bullet appears on step 3
+:::
+
+---
 layout: focus
 eyebrow: Example component
 section: Components
