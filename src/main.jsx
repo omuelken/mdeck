@@ -137,7 +137,7 @@ function PresenterView({ deckConfig, slides }) {
   const themeMeta = THEME_METAS[design]
   const paletteTokens = PALETTES[palette]?.tokens ?? {}
   const effectiveAccent  = accent  || paletteTokens['--accent']   || themeParamDefault(themeMeta, '--accent')   || '#888888'
-  const effectiveAccent2 = accent2 || paletteTokens['--accent-2'] || themeParamDefault(themeMeta, '--accent-2') || '#888888'
+  const effectiveAccent2 = accent2 || paletteTokens['--accent-2'] || themeMeta?.defaultAccent2 || themeParamDefault(themeMeta, '--accent-2') || '#888888'
   const notes = useMemo(() => slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''), [slides])
   // Preserve current slide when design/palette causes an iframe reload
   const iframeSrc = useMemo(() => buildChildUrl(design, palette, accent, accent2, indexRef.current), [design, palette, accent, accent2])

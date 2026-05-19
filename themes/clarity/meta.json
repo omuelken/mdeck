@@ -1,12 +1,13 @@
 {
   "name": "Clarity",
   "usesAccent2": true,
+  "defaultAccent2": "#d946ef",
   "fonts": [
     "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap"
   ],
   "params": {
-    "primaryColor":    { "token": "--accent",   "default": "#003ec7" },
-    "backgroundColor": { "token": "--bg",        "default": "#f8f9fa" },
-    "inkColor":        { "token": "--ink",       "default": "#191c1d" }
+    "primaryColor":    { "token": "--accent",   "default": "#6d28d9" },
+    "backgroundColor": { "token": "--bg",        "default": "#fafafe" },
+    "inkColor":        { "token": "--ink",       "default": "#0f0c29" }
   }
 }
