@@ -123,6 +123,40 @@ print(f"Sum: {sum(squares)}")
 ```
 
 ---
+layout: focus
+eyebrow: Tables
+section: Components
+note: |
+  Standard GFM table syntax — pipes and dashes. No special component needed.
+  The header row gets a bold 2px bottom border using --ink; body rows use --rule.
+  Themes can override the sizing and weight (FHNW uses uppercase headers at fs-small).
+---
+
+| Layer   | Format     | Who owns it  |
+|---------|------------|--------------|
+| Content | Markdown   | Author       |
+| Design  | CSS        | Designer     |
+| Behaviour | Preact   | Developer    |
+
+---
+layout: focus
+eyebrow: Callouts
+section: Components
+note: |
+  GitHub-style alert syntax via marked-alert. Five types: NOTE, TIP, IMPORTANT, WARNING, CAUTION.
+  Each gets a coloured left border and title. Background uses --surface so dark palettes adapt automatically.
+---
+
+> [!NOTE]
+> Use callouts sparingly — one per slide at most.
+
+> [!TIP]
+> Combine with a code block on a split layout for step-by-step instructions.
+
+> [!WARNING]
+> Callouts interrupt reading flow. Reserve them for genuinely critical information.
+
+---
 section: Mathematics
 ---
 # Inline and block math.

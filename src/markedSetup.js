@@ -1,6 +1,6 @@
 import { marked } from 'marked'
 import markedKatex from 'marked-katex-extension'
-import { markedAlert } from 'marked-alert'
+import markedAlert from 'marked-alert'
 import 'katex/dist/katex.min.css'
 import '../components/callout.css'
 
