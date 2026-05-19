@@ -141,6 +141,9 @@ function PresenterView({ deckConfig, slides }) {
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [designOpen, setDesignOpen] = useState(false)
   const [themeModalOpen, setThemeModalOpen] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const [timerRunning, setTimerRunning] = useState(false)
+  const timerRef = useRef(null)
 
   const iframeRef = useRef(null)
   const previewRef = useRef(null)
@@ -212,6 +215,15 @@ function PresenterView({ deckConfig, slides }) {
     return () => window.removeEventListener('keydown', handler)
   }, [themeModalOpen])
 
+  useEffect(() => {
+    if (timerRunning) {
+      timerRef.current = setInterval(() => setElapsed(s => s + 1), 1000)
+    } else {
+      clearInterval(timerRef.current)
+    }
+    return () => clearInterval(timerRef.current)
+  }, [timerRunning])
+
   // Close palette dropdown on outside click
   useEffect(() => {
     if (!paletteOpen) return
@@ -271,6 +283,18 @@ function PresenterView({ deckConfig, slides }) {
           <span style={{ color: '#666', fontVariantNumeric: 'tabular-nums' }}>
             {String(index + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
           </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '22px', letterSpacing: '0.05em', color: timerRunning ? '#f0f0f0' : '#555', fontWeight: 300 }}>
+            {String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
+          </span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button style={S.btn} onClick={() => setTimerRunning(r => !r)}>
+              {timerRunning ? '⏸' : '▶'}
+            </button>
+            <button style={S.btn} onClick={() => { setTimerRunning(false); setElapsed(0) }}>↺</button>
+          </div>
         </div>
 
         {hasNext && (
