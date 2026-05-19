@@ -1,10 +1,10 @@
 {
-  "name": "deck",
+  "name": "mdeck",
   "version": "0.1.0",
   "type": "module",
   "description": "Markdown-driven slide deck framework with swappable design systems",
   "bin": {
-    "deck": "./cli.js"
+    "mdeck": "./cli.js"
   },
   "scripts": {
     "dev": "node cli.js dev",

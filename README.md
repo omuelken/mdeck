@@ -1,4 +1,4 @@
-# deck
+# mdeck
 
 A minimal Markdown-driven slide deck framework with swappable themes, palettes, and JSX components. Builds to a single self-contained HTML file.
 
@@ -6,10 +6,10 @@ A minimal Markdown-driven slide deck framework with swappable themes, palettes, 
 
 ```bash
 npm install
-npm link                          # install the deck command globally (once)
+npm link                          # install the mdeck command globally (once)
 
-deck dev my-talk.md               # dev server with live reload
-deck build my-talk.md             # build → dist/index.html
+mdeck dev my-talk.md               # dev server with live reload
+mdeck build my-talk.md             # build → dist/index.html
 ```
 
 Without `npm link`, pass the file via npm scripts:
@@ -24,17 +24,17 @@ npm run build -- my-talk.md
 ## CLI
 
 ```
-deck dev <slides.md>                  Start dev server with live reload
-deck present <slides.md>              Open speaker/presenter view
-deck build <slides.md> [-o out.html]  Build self-contained HTML
-deck preview                          Preview the last build
-deck --help                           Show usage
+mdeck dev <slides.md>                  Start dev server with live reload
+mdeck present <slides.md>              Open speaker/presenter view
+mdeck build <slides.md> [-o out.html]  Build self-contained HTML
+mdeck preview                          Preview the last build
+mdeck --help                           Show usage
 ```
 
 The `-o` flag builds to a specific file instead of `dist/index.html`:
 
 ```bash
-deck build my-talk.md -o ~/Desktop/talk.html
+mdeck build my-talk.md -o ~/Desktop/talk.html
 ```
 
 ---
@@ -349,7 +349,7 @@ Open the built HTML in any browser and use **File → Print → Save as PDF**. E
 ## Project structure
 
 ```
-deck/
+mdeck/
   cli.js                CLI entry point (dev / present / build / preview)
   components/
     CodeBlock.jsx        Syntax-highlighted code block (Prism)
@@ -357,11 +357,14 @@ deck/
   examples/
     demo.md              Example slide deck
   palettes/
-    dark.json            Built-in palettes
-    fiery-ocean.json
-    noir.json
-    plain.json
-    PALETTES.md          Palette authoring reference
+    paper.json           Built-in palettes
+    dark-slate.json
+    dark-ember.json
+    terra.json
+  docs/
+    authoring.md         Slide authoring reference
+    palettes.md          Palette authoring reference
+    themes.md            Theme authoring reference
   src/
     main.jsx             App entry — parses slides, loads theme, renders
     markedSetup.js       Overrides marked's code renderer → <codeblock>

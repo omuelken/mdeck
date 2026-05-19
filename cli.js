@@ -47,15 +47,15 @@ async function copyImages(slidesPath, outDir) {
 
 // ── Help ──────────────────────────────────────────────────────────────────────
 const HELP = `
-  ${c.bold}deck${c.reset} — markdown slide deck
+  ${c.bold}mdeck${c.reset} — markdown slide deck
 
   ${c.dim}Usage:${c.reset}
-    ${c.green}deck dev${c.reset} <slides.md>                  Start dev server with live reload
-    ${c.green}deck present${c.reset} <slides.md>              Open speaker/presenter view
-    ${c.green}deck build${c.reset} <slides.md> [-o out.html]  Build self-contained HTML
-    ${c.green}deck preview${c.reset}                          Preview the last build
+    ${c.green}mdeck dev${c.reset} <slides.md>                  Start dev server with live reload
+    ${c.green}mdeck present${c.reset} <slides.md>              Open speaker/presenter view
+    ${c.green}mdeck build${c.reset} <slides.md> [-o out.html]  Build self-contained HTML
+    ${c.green}mdeck preview${c.reset}                          Preview the last build
 
-  ${c.dim}Install the${c.reset} ${c.bold}deck${c.reset} ${c.dim}command globally:${c.reset}
+  ${c.dim}Install the${c.reset} ${c.bold}mdeck${c.reset} ${c.dim}command globally:${c.reset}
     npm link
 
   ${c.dim}Or run without installing:${c.reset}
@@ -75,7 +75,7 @@ function requireInput(cmd) {
   const input = argv[0]
   if (!input) {
     err(`No slides file specified.`)
-    tip(`Usage: deck ${cmd} <slides.md>`)
+    tip(`Usage: mdeck ${cmd} <slides.md>`)
     tip(`       npm run ${cmd} -- slides.md`)
     process.exit(1)
   }
@@ -132,7 +132,7 @@ if (command === 'dev') {
   const outputFlagIdx = argv.findIndex(a => a === '--output' || a === '-o')
   const outputPath = outputFlagIdx !== -1 ? resolve(process.cwd(), argv[outputFlagIdx + 1]) : null
 
-  const tempDir = outputPath ? mkdtempSync(resolve(tmpdir(), 'deck-')) : null
+  const tempDir = outputPath ? mkdtempSync(resolve(tmpdir(), 'mdeck-')) : null
   const outDir = tempDir ?? resolve(process.cwd(), 'dist')
 
   await build({
@@ -168,6 +168,6 @@ if (command === 'dev') {
 
 } else {
   err(`Unknown command: "${command}"`)
-  tip('Run deck --help for usage.\n')
+  tip('Run mdeck --help for usage.\n')
   process.exit(1)
 }
