@@ -1,38 +1,53 @@
 # deck
 
-A minimal Markdown-driven slide deck framework with swappable design systems and JSX components. Builds to a single self-contained HTML file.
+A minimal Markdown-driven slide deck framework with swappable themes, palettes, and JSX components. Builds to a single self-contained HTML file.
 
 ## Quick start
 
 ```bash
 npm install
-npm run dev          # dev server against examples/demo.md
-npm run build        # build examples/demo.md → dist/index.html
+npm link                          # install the deck command globally (once)
+
+deck dev my-talk.md               # dev server with live reload
+deck build my-talk.md             # build → dist/index.html
 ```
+
+Without `npm link`, pass the file via npm scripts:
+
+```bash
+npm run dev -- my-talk.md
+npm run build -- my-talk.md
+```
+
+---
 
 ## CLI
 
-```bash
-node bin/deck.js dev   my-talk.md              # dev server with live reload
-node bin/deck.js present my-talk.md            # speaker view with notes + switches
-node bin/deck.js build my-talk.md              # build → dist/index.html
-node bin/deck.js build my-talk.md -o talk.html # custom output path
-node bin/deck.js preview                       # preview last build
+```
+deck dev <slides.md>                  Start dev server with live reload
+deck present <slides.md>              Open speaker/presenter view
+deck build <slides.md> [-o out.html]  Build self-contained HTML
+deck preview                          Preview the last build
+deck --help                           Show usage
 ```
 
-After `npm link` the `deck` command is available globally.
+The `-o` flag builds to a specific file instead of `dist/index.html`:
+
+```bash
+deck build my-talk.md -o ~/Desktop/talk.html
+```
 
 ---
 
 ## Slide format
 
-A deck is a single `.md` file. The first `---` block is the deck config; each subsequent `---` pair is a slide frontmatter block followed by slide content.
+A deck is a single `.md` file. The first `---` block is the deck config; each subsequent `---` block is slide frontmatter followed by slide content.
 
 ```markdown
 ---
 design: modern
-params:
-  primaryColor: "#e63946"
+palette: dark
+accent: "#e63946"
 meta:
   title: My Talk
   author: Ada Lovelace
@@ -41,6 +56,7 @@ meta:
 width: 1920
 height: 1080
 ---
+
 ---
 layout: title
 ---
@@ -63,26 +79,29 @@ attribution: Someone Famous
 
 ---
 layout: image-text
-image: ./assets/photo.jpg
+image: ./img/photo.jpg
 section: Context
 ---
 # Heading beside the image
 
-First paragraph of supporting text.
+Supporting paragraph text.
 
 ---
-layout: bullet-list
-section: Summary
+layout: split
+section: Deep Dive
 ---
-## Key points
+```python
+def greet(name):
+    return f"Hello, {name}!"
+```
 
-- First item
-- Second item with **emphasis**
-- Third item
+- The left pane gets the first block
+- The right pane gets the rest
+- Any block type works — code, image, text
 
 ---
 layout: full-bleed-image
-image: ./assets/hero.jpg
+image: ./img/hero.jpg
 overlay: true
 ---
 # Optional overlay title
@@ -90,71 +109,174 @@ overlay: true
 
 ### Slide layouts
 
-| Layout | Key frontmatter | Content |
+| Layout | Required frontmatter | Content |
 |---|---|---|
 | `title` | — | `# Title` and/or `## Subtitle` |
 | `chapter` | `number:`, optional `part:`, `description:` | `# Chapter title` |
-| `focus` | optional `eyebrow:`, `attribution:` | `# Statement` or any content |
-| `image-text` | `image: path`, optional `section:` | `# Heading` + paragraphs |
-| `bullet-list` | optional `section:` | `## Heading` + `- list items` |
+| `focus` | optional `eyebrow:`, `attribution:` | `# Statement` or freeform content |
+| `image-text` | `image: path` | `# Heading` + paragraph text |
+| `split` | — | First block → left pane; remaining blocks → right pane |
 | `full-bleed-image` | `image: path`, optional `overlay: true` | Optional `# Overlay title` |
 
-You can add speaker notes per slide via frontmatter:
+Slides without a recognised `layout:` fall through to a generic renderer that renders the full markdown body with standard slide chrome. Use this for custom layouts with inline HTML.
+
+### Lists
+
+Unordered and ordered lists work on any slide — no special layout needed:
+
+```markdown
+---
+section: Summary
+---
+# Key points
+
+- First item
+- Second item with **emphasis**
+
+1. Ordered item one
+2. Ordered item two
+```
+
+### Speaker notes
+
+Add per-slide notes in frontmatter. Notes support **markdown** and appear in the presenter view.
 
 ```yaml
 ---
 layout: focus
-notes: Keep this slide under 90 seconds.
+notes: |
+  Keep this slide under 90 seconds.
+
+  - Hit the *demo* first
+  - Questions at the end
 ---
 ```
 
 `note:` also works as a synonym for `notes:`.
 
-Slides without a recognised `layout:` fall back to a generic layout that renders all content with component hydration.
+---
+
+## Deck config
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `design` | string | `modern` | Theme name |
+| `palette` | string | — | Color palette override |
+| `accent` | color | — | Accent color shorthand (overrides palette) |
+| `params` | map | — | Theme-specific param overrides |
+| `meta` | map | — | Metadata injected as `--meta-*` CSS vars |
+| `width` | number | `1920` | Slide width in px |
+| `height` | number | `1080` | Slide height in px |
+
+### `accent:` shorthand
+
+`accent:` sets `--accent` directly, without knowing theme param names:
+
+```yaml
+---
+design: editorial
+palette: dark
+accent: "#16a34a"
+---
+```
+
+It takes precedence over both palette and `params.primaryColor`.
 
 ---
 
-## Design systems
+## Themes
 
-Design systems live in `themes/<name>/`. Each theme has:
+Five themes are included:
 
-| File | Purpose |
+| Theme | Character |
 |---|---|
-| `tokens.css` | CSS custom properties (`--bg`, `--accent`, `--font-display`, …) |
-| `templates.css` | Layout classes for each slide type |
-| `meta.json` | Declares which tokens are user-overridable via `params:` |
-| `index.js` | Re-exports CSS as inline strings for Vite bundling |
+| `modern` | Clean geometric, Inter/Outfit, accent rule bullets |
+| `clarity` | Glassmorphism gradient, centered title, gradient bullets |
+| `fhnw` | FHNW brand identity, Univers, square accent tiles |
+| `editorial` | Serif editorial, Playfair Display, ghost numerals |
+| `terminal` | Dark-by-default, JetBrains Mono, terminal green, `>` bullets |
 
-Select a design and override params in the deck config:
+Set the theme in the deck config:
+
+```yaml
+design: terminal
+```
+
+Override a theme-specific param:
 
 ```yaml
 design: modern
 params:
   primaryColor: "#0066cc"
-  fontDisplay: "'Playfair Display', serif"
 ```
 
-To create a new theme, copy `themes/modern/` and edit the CSS files.
+### Palettes
+
+Palettes swap the six core color tokens independently of the theme. All themes are palette-compatible.
+
+| Palette | Character |
+|---|---|
+| `dark` | Near-black background, cool blue accent |
+| `noir` | Deep black, neutral whites |
+| `plain` | Clean white, minimal |
+| `fiery-ocean` | Warm cream background, deep navy, red accent |
+
+```yaml
+design: modern
+palette: fiery-ocean
+```
+
+Dark palettes (like `dark` and `noir`) automatically apply syntax highlighting colors and logo inversion. The `terminal` theme is dark by default and applies these without a palette.
+
+### Custom themes
+
+Copy any existing theme folder and edit the CSS. Register it in `src/themeLoader.js`:
+
+```js
+const THEMES = {
+  modern:   () => import('../themes/modern/index.js'),
+  mytheme:  () => import('../themes/mytheme/index.js'),
+}
+```
+
+See `themes/THEMES.md` for the full theme authoring reference.
+
+### Custom palettes
+
+Add a JSON file to `palettes/`. No registration needed — the filename becomes the palette key.
+
+```json
+{
+  "name": "Forest",
+  "tokens": {
+    "--bg":       "#f0f4ef",
+    "--ink":      "#1a2e1a",
+    "--ink-soft": "#2d4a2d",
+    "--muted":    "#5a7a5a",
+    "--rule":     "#d8e8d8",
+    "--accent":   "#2d7a2d"
+  }
+}
+```
+
+See `palettes/PALETTES.md` for the palette authoring reference.
 
 ### Deck metadata as CSS variables
 
-Everything under `meta:` in the deck config is injected as a CSS custom property:
+Everything under `meta:` is injected as CSS custom properties:
+
+```yaml
+meta:
+  title: My Talk
+  author: Ada Lovelace
+  date: "2026-05-13"
+```
 
 ```css
 /* Available automatically: */
 --meta-title
 --meta-author
---meta-organization
 --meta-date
-/* (any other keys you add) */
-```
-
-Templates can use these to populate headers and footers:
-
-```css
-.slide-footer::after {
-  content: var(--meta-author) " · " var(--meta-date);
-}
 ```
 
 ---
@@ -179,9 +301,25 @@ content here
 </mycomponent>
 ```
 
+Because `.slide-body` sets inheritable baseline typography, any raw HTML written in a slide automatically picks up the theme's body text style. You only need inline styles for structural layout:
+
+```markdown
+---
+layout: four-columns
+---
+# Heading
+
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 48px;">
+  <div><strong>One</strong> — description text</div>
+  <div><strong>Two</strong> — description text</div>
+  <div><strong>Three</strong> — description text</div>
+  <div><strong>Four</strong> — description text</div>
+</div>
+```
+
 ### Built-in: `<codeblock>`
 
-Fenced code blocks are automatically converted to `<codeblock>` elements:
+Fenced code blocks are automatically converted to `<codeblock>` elements with syntax highlighting:
 
 ````markdown
 ```js
@@ -200,13 +338,11 @@ def greet(name):
 
 Supported languages: `js`, `ts`, `jsx`, `python`, `bash`, `css`, `html`, `json`, `yaml`, `sql`.
 
-The `code-block` CSS class is themeable — override `--code-bg` and `--code-radius` in `templates.css`.
-
 ---
 
 ## Print / PDF
 
-Open the built HTML in any browser and use **File → Print → Save as PDF**. Each slide prints as one page at the correct aspect ratio (1920 × 1080). The `deck-stage` web component handles the print layout automatically.
+Open the built HTML in any browser and use **File → Print → Save as PDF**. Each slide prints as one page at the correct aspect ratio (1920 × 1080).
 
 ---
 
@@ -214,28 +350,33 @@ Open the built HTML in any browser and use **File → Print → Save as PDF**. E
 
 ```
 deck/
-  bin/
-    deck.js             CLI (dev / build / preview)
+  cli.js                CLI entry point (dev / present / build / preview)
   components/
-    CodeBlock.jsx       Syntax-highlighted code block (Prism)
+    CodeBlock.jsx        Syntax-highlighted code block (Prism)
+    code-block.css       Code block styles
   examples/
-    demo.md             Example slide deck
+    demo.md              Example slide deck
+  palettes/
+    dark.json            Built-in palettes
+    fiery-ocean.json
+    noir.json
+    plain.json
+    PALETTES.md          Palette authoring reference
   src/
-    main.jsx            App entry — parses slides, loads theme, renders
-    markedSetup.js      Overrides marked's code renderer → <codeblock>
-    parseSlides.js      Splits .md file into {deckConfig, slides[]}
-    registry.jsx        Maps tag names to Preact components
-    renderSlide.jsx     All slide layout components
-    slidesPlugin.js     Vite virtual-module plugin for the slides file
+    main.jsx             App entry — parses slides, loads theme, renders
+    markedSetup.js       Overrides marked's code renderer → <codeblock>
+    parseSlides.js       Splits .md into {deckConfig, slides[]}
+    registry.jsx         Maps tag names to Preact components
+    renderSlide.jsx      All slide layout components
+    slidesPlugin.js      Vite virtual-module plugin for the slides file
+    themeLoader.js       Loads theme + palette CSS into the document
   themes/
-    modern/
-      index.js          Theme module (exports CSS strings + meta)
-      meta.json         Overridable param → CSS token mapping
-      templates.css     Slide layout styles + typography helpers
-      tokens.css        CSS design tokens (:root block)
-  .gitignore
-  index.html            Vite HTML entry point
+    modern/              Modern geometric theme
+    clarity/             Glassmorphism gradient theme
+    fhnw/                FHNW brand theme
+    editorial/           Serif editorial theme
+    terminal/            Dark terminal theme
+    THEMES.md            Theme authoring reference
+  index.html             Vite HTML entry point
   package.json
-  README.md
-  vite.config.js        Framework dev config (uses examples/demo.md)
 ```
