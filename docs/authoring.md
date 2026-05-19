@@ -73,6 +73,7 @@ Available params depend on the theme — check the presenter sidebar for a list.
 |---|---|
 | `neue` | Clean sans-serif — Inter Tight headlines, neutral defaults |
 | `aurora` | Geometric modern — Plus Jakarta Sans, gradient accents |
+| `duet` | Two-accent system — Syne display, DM Sans body, structure vs. voice color roles |
 | `editorial` | High-contrast serif — Playfair Display headlines, Lora body |
 | `fhnw` | FHNW brand theme |
 | `terminal` | Dark monospace — code-first presentations |

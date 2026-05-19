@@ -1,0 +1,15 @@
+{
+  "name": "Duet",
+  "usesAccent2": true,
+  "fonts": [
+    "https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap"
+  ],
+  "params": {
+    "primaryColor":     { "token": "--accent",       "default": "#6d28d9" },
+    "secondaryColor":   { "token": "--accent-2",     "default": "#0891b2" },
+    "backgroundColor":  { "token": "--bg",           "default": "#f8f8f5" },
+    "inkColor":         { "token": "--ink",          "default": "#111110" },
+    "fontDisplay":      { "token": "--font-display", "default": "\"Zilla Slab\", Georgia, \"Times New Roman\", serif" },
+    "fontBody":         { "token": "--font-body",    "default": "\"DM Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif" }
+  }
+}

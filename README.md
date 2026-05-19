@@ -192,6 +192,7 @@ Five themes are included:
 |---|---|
 | `neue` | Clean sans-serif — Inter Tight headlines, neutral defaults |
 | `aurora` | Geometric modern — Plus Jakarta Sans, gradient accents |
+| `duet` | Two-accent system — Syne display, DM Sans body, structure vs. voice color roles |
 | `fhnw` | FHNW brand identity, Univers, square accent tiles |
 | `editorial` | Serif editorial, Playfair Display, ghost numerals |
 | `terminal` | Dark-by-default, JetBrains Mono, terminal green, `>` bullets |

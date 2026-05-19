@@ -14,6 +14,7 @@ const DARK_TOKENS = {
 const THEMES = {
   neue:      () => import('../themes/neue/index.js'),
   aurora:    () => import('../themes/aurora/index.js'),
+  duet:      () => import('../themes/duet/index.js'),
   fhnw:      () => import('../themes/fhnw/index.js'),
   editorial: () => import('../themes/editorial/index.js'),
   terminal:  () => import('../themes/terminal/index.js'),
