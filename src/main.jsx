@@ -109,6 +109,18 @@ const S = {
   },
 }
 
+function PaletteSwatches({ tokens }) {
+  const keys = ['--bg', '--surface', '--rule', '--accent', '--accent-2', '--ink']
+  return (
+    <div style={{ display: 'flex', gap: '2px', alignItems: 'center', flexShrink: 0 }}>
+      {keys.map(k => tokens[k]
+        ? <div key={k} style={{ width: '10px', height: '10px', borderRadius: '2px', background: tokens[k], border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }} />
+        : null
+      )}
+    </div>
+  )
+}
+
 function themeParamDefault(themeMeta, token) {
   if (!themeMeta?.params) return null
   for (const param of Object.values(themeMeta.params)) {
@@ -126,11 +138,15 @@ function PresenterView({ deckConfig, slides }) {
   const [audienceConnected, setAudienceConnected] = useState(false)
   const [noteSize, setNoteSize] = useState(13)
 
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [designOpen, setDesignOpen] = useState(false)
+
   const iframeRef = useRef(null)
   const previewRef = useRef(null)
   const audienceRef = useRef(null)
   const bcRef = useRef(null)
   const indexRef = useRef(0)
+  const paletteDropRef = useRef(null)
   indexRef.current = index
 
   const usesAccent2 = THEME_METAS[design]?.usesAccent2 ?? false
@@ -184,6 +200,16 @@ function PresenterView({ deckConfig, slides }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  // Close palette dropdown on outside click
+  useEffect(() => {
+    if (!paletteOpen) return
+    function handler(e) {
+      if (!paletteDropRef.current?.contains(e.target)) setPaletteOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [paletteOpen])
 
   // When design/palette changes, tell the audience to hot-swap its theme without a reload
   useEffect(() => {
@@ -280,52 +306,90 @@ function PresenterView({ deckConfig, slides }) {
           />
         </div>
 
-        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <label style={{ flex: 1 }}>
-              <span style={S.label}>Theme</span>
-              <select value={design} onChange={e => { setDesign(e.currentTarget.value); setAccent2('') }} style={S.select}>
-                {THEME_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </label>
-            <label style={{ flex: 1 }}>
-              <span style={S.label}>Palette</span>
-              <select value={palette} onChange={e => { setPalette(e.currentTarget.value); setAccent('') }} style={S.select}>
-                <option value="">none</option>
-                {PALETTE_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </label>
-            <label style={{ flexShrink: 0 }}>
-              <span style={S.label}>Accent</span>
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '28px' }}>
-                <input
-                  type="color"
-                  value={effectiveAccent}
-                  onInput={e => setAccent(e.currentTarget.value)}
-                  style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent ? 1 : 0.6 }}
-                />
-                {accent && (
-                  <button onClick={() => setAccent('')} style={{ ...S.btn, padding: '3px 7px', fontSize: '14px', lineHeight: 1 }}>×</button>
-                )}
-              </div>
-            </label>
-            {usesAccent2 && (
-              <label style={{ flexShrink: 0 }}>
-                <span style={S.label}>Accent 2</span>
-                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '28px' }}>
-                  <input
-                    type="color"
-                    value={effectiveAccent2}
-                    onInput={e => setAccent2(e.currentTarget.value)}
-                    style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent2 ? 1 : 0.6 }}
-                  />
-                  {accent2 && (
-                    <button onClick={() => setAccent2('')} style={{ ...S.btn, padding: '3px 7px', fontSize: '14px', lineHeight: 1 }}>×</button>
+        <div style={{ flexShrink: 0 }}>
+          <button
+            onClick={() => setDesignOpen(o => !o)}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', padding: '2px 0 6px', cursor: 'pointer', color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', width: '100%' }}
+          >
+            <span style={{ fontSize: '8px', opacity: 0.7 }}>{designOpen ? '▼' : '▶'}</span>
+            Theme & Palette
+          </button>
+          {designOpen && (
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+              <label style={{ flex: 1 }}>
+                <span style={S.label}>Theme</span>
+                <select value={design} onChange={e => { setDesign(e.currentTarget.value); setAccent2('') }} style={S.select}>
+                  {THEME_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </label>
+              <label style={{ flex: 1 }}>
+                <span style={S.label}>Palette</span>
+                <div ref={paletteDropRef} style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setPaletteOpen(o => !o)}
+                    style={{ ...S.select, display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', textAlign: 'left' }}
+                  >
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{palette || 'none'}</span>
+                    {palette && <PaletteSwatches tokens={PALETTES[palette]?.tokens ?? {}} />}
+                    <span style={{ opacity: 0.35, fontSize: '8px', flexShrink: 0 }}>▼</span>
+                  </button>
+                  {paletteOpen && (
+                    <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0, background: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '5px', zIndex: 100, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.6)' }}>
+                      <div
+                        onClick={() => { setPalette(''); setAccent(''); setPaletteOpen(false) }}
+                        style={{ padding: '6px 8px', cursor: 'pointer', fontSize: '13px', color: palette ? '#555' : '#ccc' }}
+                      >
+                        none
+                      </div>
+                      {PALETTE_NAMES.map(n => (
+                        <div
+                          key={n}
+                          onClick={() => { setPalette(n); setAccent(''); setPaletteOpen(false) }}
+                          style={{ padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', fontSize: '13px', color: palette === n ? '#f0f0f0' : '#aaa', background: palette === n ? '#2a2a2a' : 'transparent' }}
+                        >
+                          <span>{n}</span>
+                          <PaletteSwatches tokens={PALETTES[n]?.tokens ?? {}} />
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </label>
-            )}
-          </div>
+              <label style={{ flexShrink: 0 }}>
+                <span style={S.label}>Accent</span>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '28px' }}>
+                  <input
+                    type="color"
+                    value={effectiveAccent}
+                    onInput={e => setAccent(e.currentTarget.value)}
+                    style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent ? 1 : 0.6 }}
+                  />
+                  {accent && (
+                    <button onClick={() => setAccent('')} style={{ ...S.btn, padding: '3px 7px', fontSize: '14px', lineHeight: 1 }}>×</button>
+                  )}
+                </div>
+              </label>
+              {usesAccent2 && (
+                <label style={{ flexShrink: 0 }}>
+                  <span style={S.label}>Accent 2</span>
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '28px' }}>
+                    <input
+                      type="color"
+                      value={effectiveAccent2}
+                      onInput={e => setAccent2(e.currentTarget.value)}
+                      style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent2 ? 1 : 0.6 }}
+                    />
+                    {accent2 && (
+                      <button onClick={() => setAccent2('')} style={{ ...S.btn, padding: '3px 7px', fontSize: '14px', lineHeight: 1 }}>×</button>
+                    )}
+                  </div>
+                </label>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
             <button style={S.btn} onClick={() => navCommand('prev')}>← Prev</button>
             <button style={S.btn} onClick={() => navCommand('next')}>Next →</button>
