@@ -1,8 +1,11 @@
 import { marked } from 'marked'
 import markedKatex from 'marked-katex-extension'
+import { markedAlert } from 'marked-alert'
 import 'katex/dist/katex.min.css'
+import '../components/callout.css'
 
 marked.use(markedKatex({ throwOnError: false, output: 'html' }))
+marked.use(markedAlert())
 
 marked.use({
   renderer: {

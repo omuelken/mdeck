@@ -507,26 +507,10 @@ blockquote {
 }
 .slide-body strong, .slide-body b { font-weight: 700; color: var(--ink); }
 
-/* Inline tables — Swiss-style hairline rules */
-.slide-body table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: var(--fs-small);
-  font-weight: 300;
-}
-.slide-body th, .slide-body td {
-  text-align: left;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--rule);
-}
-.slide-body th {
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 18px;
-  border-bottom-width: 2px;
-  border-bottom-color: var(--ink);
-}
+/* Table overrides — FHNW uses smaller, lighter type with uppercase headers */
+.slide-body table { font-size: var(--fs-small); font-weight: 300; }
+.slide-body td    { font-weight: 300; }
+.slide-body th    { font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 18px; }
 
 /* ─────────────────────────────────────────────
    FOOTNOTES

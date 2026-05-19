@@ -142,6 +142,28 @@ deck-stage { background: #000; }
 .slide-footnotes p { margin: 0; }
 .slide-footnotes .footnote-backref { display: none; }
 
+/* ── Code blocks ─────────────────────────────────────────────────────────── */
+.code-block { white-space: pre-wrap; }
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+.slide-body table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--fs-body);
+}
+.slide-body th,
+.slide-body td {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rule);
+}
+.slide-body th {
+  font-weight: 600;
+  border-bottom: 2px solid var(--ink);
+  color: var(--ink);
+}
+.slide-body td { color: var(--ink-soft); }
+
 /* ── Print ───────────────────────────────────────────────────────────────── */
 @media print {
   html, body, deck-stage { background: #fff !important; }
