@@ -1,11 +1,12 @@
 {
   "name": "Plain",
   "tokens": {
-    "--bg":       "#FFFFFF",
-    "--ink":      "#0A0A0A",
+    "--bg": "#FFFFFF",
+    "--ink": "#0A0A0A",
     "--ink-soft": "#2A2A2A",
-    "--muted":    "#6B6B6B",
-    "--rule":     "#E5E5E5",
-    "--accent":   "#2563EB"
+    "--muted": "#6B6B6B",
+    "--rule": "#E5E5E5",
+    "--surface": "#F5F5F5",
+    "--accent": "#2563EB"
   }
 }

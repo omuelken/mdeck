@@ -5,7 +5,9 @@
     "--ink": "#003049",
     "--ink-soft": "#004163",
     "--muted": "#004163",
+    "--surface": "#FCEAC5",
     "--rule": "#fce7bd",
-    "--accent": "#c1121f"
+    "--accent": "#c1121f",
+    "--accent-2": "#e77903"
   }
 }

@@ -88,10 +88,11 @@ code[class*="language-"] { color: var(--token-default); }
   background: #111;
   color: #d4d4d4;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 1.4em;
+  font-size: var(--code-size, 36px);
   line-height: 1.55;
-  white-space: pre-wrap;
-  word-break: break-all;
+  white-space: pre;
+  max-height: 8em;
+  overflow-y: auto;
   border-radius: 0 8px 8px 8px;
   border-left: 6px solid #444;
 }

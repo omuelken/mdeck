@@ -26,7 +26,7 @@ function hl(code, lang) {
 async function execJS(code) {
   const lines = []
   const con = {
-    log:   (...a) => lines.push(a.map(v => typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)).join(' ')),
+    log:   (...a) => lines.push(a.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(' ')),
     error: (...a) => lines.push(a.map(String).join(' ')),
     warn:  (...a) => lines.push(a.map(String).join(' ')),
   }
