@@ -48,6 +48,9 @@ Some body text.
 | `meta.date` | — | Date string (shown in footer) |
 | `meta.logo` | — | Path to logo image |
 | `width` / `height` | `1920` / `1080` | Slide canvas dimensions in px |
+| `institution` | `title` | When to show the organization name: `title`, `all`, or `none` |
+| `authorDate` | `title` | When to show the author/date footer: `title`, `all`, or `none` |
+| `pageNumbers` | `slides` | Slide numbers: `slides` (all except title), `all`, or `none` |
 | `params` | — | Theme-specific color/font overrides (see below) |
 
 ### Theme params
@@ -80,10 +83,14 @@ Available params depend on the theme — check the presenter sidebar for a list.
 
 | Key | Style |
 |---|---|
-| `paper` | Warm white |
-| `dark-slate` | Dark neutral |
-| `dark-ember` | Dark warm amber |
+| `paper` | Clean white |
+| `sage` | Muted sage green |
+| `mono` | Pure monochrome |
 | `terra` | Warm sand and red |
+| `dark-slate` | Dark cool blue |
+| `dark-ember` | Dark warm amber |
+| `dark-neon` | Dark vivid neon |
+| `dark-mono` | Dark neutral grey |
 
 ---
 

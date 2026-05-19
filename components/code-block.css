@@ -61,25 +61,26 @@ code[class*="language-"] { color: var(--token-default); }
   user-select: none;
   margin: 0;
 }
-/* The textarea sits on top; transparent so the highlighted pre shows through */
-.code-editable-input {
+/* The textarea sits on top; .code-block class makes it inherit the theme's
+   padding/line-height/font so cursor positions align exactly with the highlight layer.
+   The double-class selector overrides any single-class .code-block theme rules. */
+.code-block.code-editable-input {
   position: absolute;
   inset: 0;
-  padding: 40px 48px;       /* must match .code-block padding exactly */
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: var(--code-size, 30px);
-  line-height: 1.6;         /* must match .code-block line-height exactly */
   background: transparent;
   color: transparent;
   caret-color: var(--ink, #0a0a0a);
-  border: none;
+  border-color: transparent;   /* keep border width for layout alignment, hide color */
+  box-shadow: none;
   resize: none;
-  overflow-x: hidden;
-  overflow-y: auto;
-  tab-size: 2;
+  overflow: hidden;
   outline: none;
-  white-space: pre;
-  word-break: normal;
+  tab-size: 2;
+}
+.code-block.code-editable-input::before { display: none; }
+.code-block.code-editable-input::selection {
+  color: transparent;
+  background-color: rgba(100, 150, 255, 0.25);
 }
 
 /* ── Output area ────────────────────────────────────────────────────────── */

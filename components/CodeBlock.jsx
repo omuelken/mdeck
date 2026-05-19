@@ -138,7 +138,7 @@ export default function CodeBlock({ lang = 'text', children = '', live, copy, ed
             <code dangerouslySetInnerHTML={{ __html: highlighted }} />
           </pre>
           <textarea
-            class="code-editable-input"
+            class="code-block code-editable-input"
             value={code}
             onInput={e => setCode(e.currentTarget.value)}
             onScroll={syncScroll}

@@ -45,8 +45,8 @@ A deck is a single `.md` file. The first `---` block is the deck config; each su
 
 ```markdown
 ---
-design: modern
-palette: dark
+design: neue
+palette: dark-slate
 accent: "#e63946"
 meta:
   title: My Talk
@@ -160,7 +160,7 @@ notes: |
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `design` | string | `modern` | Theme name |
+| `design` | string | `neue` | Theme name |
 | `palette` | string | — | Color palette override |
 | `accent` | color | — | Accent color shorthand (overrides palette) |
 | `params` | map | — | Theme-specific param overrides |
@@ -190,8 +190,8 @@ Five themes are included:
 
 | Theme | Character |
 |---|---|
-| `modern` | Clean geometric, Inter/Outfit, accent rule bullets |
-| `clarity` | Glassmorphism gradient, centered title, gradient bullets |
+| `neue` | Clean sans-serif — Inter Tight headlines, neutral defaults |
+| `aurora` | Geometric modern — Plus Jakarta Sans, gradient accents |
 | `fhnw` | FHNW brand identity, Univers, square accent tiles |
 | `editorial` | Serif editorial, Playfair Display, ghost numerals |
 | `terminal` | Dark-by-default, JetBrains Mono, terminal green, `>` bullets |
@@ -205,7 +205,7 @@ design: terminal
 Override a theme-specific param:
 
 ```yaml
-design: modern
+design: neue
 params:
   primaryColor: "#0066cc"
 ```
@@ -216,17 +216,21 @@ Palettes swap the six core color tokens independently of the theme. All themes a
 
 | Palette | Character |
 |---|---|
-| `dark` | Near-black background, cool blue accent |
-| `noir` | Deep black, neutral whites |
-| `plain` | Clean white, minimal |
-| `fiery-ocean` | Warm cream background, deep navy, red accent |
+| `paper` | Clean white |
+| `sage` | Muted sage green |
+| `mono` | Pure monochrome |
+| `terra` | Warm sand and red |
+| `dark-slate` | Dark cool blue |
+| `dark-ember` | Dark warm amber |
+| `dark-neon` | Dark vivid neon |
+| `dark-mono` | Dark neutral grey |
 
 ```yaml
-design: modern
-palette: fiery-ocean
+design: neue
+palette: dark-slate
 ```
 
-Dark palettes (like `dark` and `noir`) automatically apply syntax highlighting colors and logo inversion. The `terminal` theme is dark by default and applies these without a palette.
+Dark palettes automatically apply syntax highlighting colors and logo inversion. The `terminal` theme is dark by default and applies these without a palette.
 
 ### Custom themes
 
@@ -374,8 +378,8 @@ mdeck/
     slidesPlugin.js      Vite virtual-module plugin for the slides file
     themeLoader.js       Loads theme + palette CSS into the document
   themes/
-    modern/              Modern geometric theme
-    clarity/             Glassmorphism gradient theme
+    neue/                Clean sans-serif theme
+    aurora/              Geometric modern theme
     fhnw/                FHNW brand theme
     editorial/           Serif editorial theme
     terminal/            Dark terminal theme
