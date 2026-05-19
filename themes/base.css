@@ -9,14 +9,14 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg);        /* fixes hardcoded-background palette bug */
+  background: #000;
   font-family: var(--font-body);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-deck-stage { background: var(--bg); }
+deck-stage { background: #000; }
 
 /* ── Slide shell ─────────────────────────────────────────────────────────── */
 .slide {
