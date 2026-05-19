@@ -443,7 +443,7 @@ blockquote {
 }
 .slide--full-bleed-image .overlay-title {
   font-family: var(--font-display);
-  font-size: 80px;
+  font-size: var(--fs-h);
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: -0.025em;

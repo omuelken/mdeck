@@ -294,7 +294,7 @@ em {
 }
 .slide--full-bleed-image .overlay-title {
   font-family: var(--font-display);
-  font-size: var(--fs-title);
+  font-size: var(--fs-h);
   font-weight: 500;
   line-height: 1.1;
   letter-spacing: -0.03em;
