@@ -1,3 +1,5 @@
+import baseCSS from '../themes/base.css?inline'
+
 const DARK_TOKENS = {
   '--logo-filter':    'invert(1)',
   '--token-default':  '#e2e8f0',
@@ -58,7 +60,7 @@ export async function loadTheme({ design = 'modern', palette, accent, params = {
   const { tokensCSS, templatesCSS, themeMeta } = await loader()
 
   // Inject base theme CSS
-  upsertStyle('deck-theme', tokensCSS + '\n' + templatesCSS)
+  upsertStyle('deck-theme', baseCSS + '\n' + tokensCSS + '\n' + templatesCSS)
 
   // Load theme fonts
   syncThemeFonts(themeMeta.fonts)

@@ -1,0 +1,148 @@
+/* ─────────────────────────────────────────────
+   BASE — shared structural skeleton
+   Loaded before tokens.css and templates.css so themes
+   can override anything here. Only universally-identical
+   rules live here; visual styling belongs in each theme.
+   ───────────────────────────────────────────── */
+
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);        /* fixes hardcoded-background palette bug */
+  font-family: var(--font-body);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+deck-stage { background: var(--bg); }
+
+/* ── Slide shell ─────────────────────────────────────────────────────────── */
+.slide {
+  background: var(--bg);
+  color: var(--ink);
+  padding: var(--pad-y) var(--pad-x);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Header / footer rails ───────────────────────────────────────────────── */
+/* Flex skeleton only — typography (font-weight, letter-spacing, etc.) is theme-specific */
+.slide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  color: var(--muted);
+}
+.slide-header > span { white-space: nowrap; flex-shrink: 0; }
+
+.slide-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 40px;
+}
+.slide-footer > span { white-space: nowrap; flex-shrink: 0; }
+
+/* ── Slide body ──────────────────────────────────────────────────────────── */
+.slide-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+/* ── Image + text layout ─────────────────────────────────────────────────── */
+/* Gap default 100px — FHNW and editorial override to 96px in their templates.css */
+.slide--image-text .slide-body {
+  flex-direction: row;
+  gap: 100px;
+  align-items: stretch;
+  justify-content: stretch;
+}
+.image-pane img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Structural skeleton for placeholder — visual (background, colors) stays in theme */
+.image-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.text-pane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--gap-item);
+}
+
+/* ── Split layout ────────────────────────────────────────────────────────── */
+.slide--split .slide-body { flex-direction: row; align-items: stretch; gap: 100px; }
+.split-left  { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; --code-size: 26px; }
+.split-right { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--gap-item); }
+
+/* ── List containers ─────────────────────────────────────────────────────── */
+/* Markers (::before), padding, and font styling are visual — defined per theme */
+.slide-body ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-item);
+}
+.slide-body ul li { position: relative; }
+.slide-body ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: slide-ol;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-item);
+}
+.slide-body ol li { counter-increment: slide-ol; position: relative; }
+
+/* ── Full-bleed image ────────────────────────────────────────────────────── */
+.slide--full-bleed-image { padding: 0; }
+.slide--full-bleed-image .slide-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);      /* dark fallback before image loads */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+/* Default body: content at bottom with standard padding — FHNW overrides padding: 0 */
+.slide--full-bleed-image .slide-body {
+  position: relative;
+  z-index: 1;
+  padding: var(--pad-y) var(--pad-x);
+  justify-content: flex-end;
+}
+
+/* ── Footnotes ───────────────────────────────────────────────────────────── */
+/* FHNW and editorial override padding-top and add font-weight/style in their templates.css */
+.slide-footnotes {
+  font-size: var(--fs-small);
+  color: var(--muted);
+  border-top: 1px solid var(--rule);
+  padding-top: 20px;
+  margin-top: auto;
+}
+.slide-footnotes ol { margin: 0; padding-left: 1.5em; display: flex; flex-direction: column; gap: 4px; }
+.slide-footnotes li { line-height: 1.4; }
+.slide-footnotes p { margin: 0; }
+.slide-footnotes .footnote-backref { display: none; }
+
+/* ── Print ───────────────────────────────────────────────────────────────── */
+@media print {
+  html, body, deck-stage { background: #fff !important; }
+}

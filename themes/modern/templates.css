@@ -1,45 +1,12 @@
 /* ─────────────────────────────────────────────
-   BASE
-   ───────────────────────────────────────────── */
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #111;
-  font-family: var(--font-body);
-  color: var(--ink);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-deck-stage { background: #111; }
-
-.slide {
-  background: var(--bg);
-  color: var(--ink);
-  padding: var(--pad-y) var(--pad-x);
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-}
-
-/* ─────────────────────────────────────────────
    HEADER / FOOTER RAILS
    ───────────────────────────────────────────── */
 .slide-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: var(--font-body);
-  font-size: var(--fs-eyebrow);
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
 }
 .slide-header .brand { color: var(--ink); }
-.slide-header > span { white-space: nowrap; flex-shrink: 0; }
 .slide-logo {
   position: absolute;
   top: var(--pad-y);
@@ -55,29 +22,12 @@ deck-stage { background: #111; }
 }
 
 .slide-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 40px;
   font-family: var(--font-body);
   font-size: var(--fs-small);
   font-weight: 400;
   color: var(--muted);
   border-top: 1px solid var(--rule);
   padding-top: 32px;
-}
-.slide-footer > span { white-space: nowrap; flex-shrink: 0; }
-
-.slide-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 0;
-  font-family: var(--font-body);
-  font-size: var(--fs-body);
-  line-height: 1.45;
-  color: var(--ink-soft);
 }
 
 /* ─────────────────────────────────────────────
@@ -266,12 +216,6 @@ em {
 /* ─────────────────────────────────────────────
    LAYOUT: IMAGE + TEXT
    ───────────────────────────────────────────── */
-.slide--image-text .slide-body {
-  flex-direction: row;
-  gap: 100px;
-  align-items: stretch;
-  justify-content: stretch;
-}
 .image-pane {
   flex: 1.15;
   min-width: 0;
@@ -281,12 +225,6 @@ em {
   background: #F4F4F2;
   overflow: hidden;
   position: relative;
-}
-.image-pane img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
 }
 .image-placeholder {
   width: 100%;
@@ -306,14 +244,6 @@ em {
   padding: 14px 20px;
   border: 1px solid #DEDEDB;
 }
-.text-pane {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--gap-item);
-}
 .text-pane .title { font-size: 72px; }
 .text-pane .body-text + .body-text { margin-top: 8px; }
 .text-pane .eyebrow { margin-bottom: 8px; }
@@ -321,14 +251,6 @@ em {
 /* ─────────────────────────────────────────────
    LISTS (global — any slide with a ul)
    ───────────────────────────────────────────── */
-.slide-body ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-item);
-}
 .slide-body ul li {
   font-weight: 400;
   line-height: 1.3;
@@ -343,15 +265,6 @@ em {
   width: 16px;
   height: 2px;
   background: var(--accent);
-}
-.slide-body ol {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  counter-reset: slide-ol;
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-item);
 }
 .slide-body ol li {
   counter-increment: slide-ol;
@@ -371,55 +284,13 @@ em {
 }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: SPLIT
-   ───────────────────────────────────────────── */
-.slide--split .slide-body {
-  flex-direction: row;
-  align-items: stretch;
-  gap: 100px;
-}
-.split-left {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  --code-size: 26px;
-}
-.split-right {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--gap-item);
-}
-
-/* ─────────────────────────────────────────────
    LAYOUT: FULL-BLEED IMAGE
    ───────────────────────────────────────────── */
-.slide--full-bleed-image {
-  padding: 0;
-}
-.slide--full-bleed-image .slide-bg {
-  position: absolute;
-  inset: 0;
-  background: var(--ink);  /* dark fallback when no image is supplied */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
 .slide--full-bleed-image.has-overlay .slide-bg::after {
   content: '';
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-}
-.slide--full-bleed-image .slide-body {
-  position: relative;
-  z-index: 1;
-  padding: var(--pad-y) var(--pad-x);
-  justify-content: flex-end;
 }
 .slide--full-bleed-image .overlay-title {
   font-family: var(--font-display);
@@ -467,27 +338,6 @@ em {
 }
 
 /* ─────────────────────────────────────────────
-   FOOTNOTES
-   ───────────────────────────────────────────── */
-.slide-footnotes {
-  font-size: var(--fs-small);
-  color: var(--muted);
-  border-top: 1px solid var(--rule);
-  padding-top: 20px;
-  margin-top: auto;
-}
-.slide-footnotes ol {
-  margin: 0;
-  padding-left: 1.5em;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.slide-footnotes li { line-height: 1.4; }
-.slide-footnotes p  { margin: 0; }
-.slide-footnotes .footnote-backref { display: none; }
-
-/* ─────────────────────────────────────────────
    CODE BLOCK COMPONENT
    ───────────────────────────────────────────── */
 .code-block {
@@ -522,9 +372,3 @@ em {
   overflow-y: hidden;
 }
 
-/* ─────────────────────────────────────────────
-   PRINT
-   ───────────────────────────────────────────── */
-@media print {
-  html, body, deck-stage { background: #fff !important; }
-}

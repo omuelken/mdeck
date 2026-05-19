@@ -8,6 +8,7 @@
     "--ink-soft": "#c6ac8f",
     "--muted": "#C6AC8F",
     "--rule": "#2b2a29",
-    "--accent": "#eb5e28"
+    "--accent": "#eb5e28",
+    "--accent-2": "#fbbf24"
   }
 }
