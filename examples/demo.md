@@ -147,14 +147,17 @@ note: |
   Each gets a coloured left border and title. Background uses --surface so dark palettes adapt automatically.
 ---
 
-> [!NOTE]
-> Use callouts sparingly — one per slide at most.
+::: note
+Use callouts sparingly — one per slide at most.
+:::
 
-> [!TIP]
-> Combine with a code block on a split layout for step-by-step instructions.
+::: tip Combine with code
+Place next to a code block on a split layout for step-by-step instructions.
+:::
 
-> [!WARNING]
-> Callouts interrupt reading flow. Reserve them for genuinely critical information.
+::: warning
+Callouts interrupt reading flow. Reserve them for genuinely critical information.
+:::
 
 ---
 section: Mathematics
