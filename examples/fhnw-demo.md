@@ -11,6 +11,7 @@ height: 1080
 ---
 ---
 layout: title
+image: ./img/fhnw-life-sciences.jpg
 ---
 # Zehn Hochschulen, ein Ziel.
 ## Die Fachhochschule Nordwestschweiz bildet Zukünfte — praxisnah, vernetzt, evidenzbasiert.
@@ -53,6 +54,15 @@ section: Zukunftsfelder
 - Querverbunden über alle zehn Hochschulen der FHNW.
 
 ---
+layout: chapter
+number: 2
+part: Teil Zwei
+image: ./img/fhnw-campus.png
+description: Unsere Standorte, Infrastruktur und das Leben auf dem Campus.
+---
+# Orte, an denen Wissen entsteht.
+
+---
 layout: focus
 eyebrow: Beispiel · Codeblock
 ---
@@ -65,17 +75,6 @@ function isFHNWYellow(hex) {
 
 ---
 layout: full-bleed-image
-image: ./img/fhnw-campus.png
----
-# Campus Muttenz — Heimat der Hochschule für Life Sciences.
-
----
-layout: full-bleed-image
 image: ./img/fhnw-life-sciences.jpg
 ---
-
----
-layout: title
----
-# Mehr erfahren auf *fhnw.ch*.
-## Lehre, Forschung und Praxis — wir verbinden.
+# Campus Muttenz — Heimat der Hochschule für Life Sciences.

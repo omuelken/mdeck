@@ -129,15 +129,19 @@ function slideNum(index) {
 function TitleSlide({ meta, content, deckConfig, index }) {
   const { headings, paragraphs, footnotesHtml } = extractContent(content)
   const logo = deckConfig.meta?.logo
+  const image = meta?.image
 
   return (
-    <section class="slide slide--title" data-label={`${slideNum(index)} Title`}>
+    <section class={`slide slide--title${image ? ' has-image' : ''}`} data-label={`${slideNum(index)} Title`}>
       <SlideHeader deckConfig={deckConfig} logo={logo} isTitle={true} />
       <div class="slide-body">
-        {headings[1] && <h1 class="display" dangerouslySetInnerHTML={{ __html: headings[1] }} />}
-        {(headings[2] || paragraphs[0]) && (
-          <p class="subtitle" dangerouslySetInnerHTML={{ __html: headings[2] ?? paragraphs[0] }} />
-        )}
+        <div class="title-text">
+          {headings[1] && <h1 class="display" dangerouslySetInnerHTML={{ __html: headings[1] }} />}
+          {(headings[2] || paragraphs[0]) && (
+            <p class="subtitle" dangerouslySetInnerHTML={{ __html: headings[2] ?? paragraphs[0] }} />
+          )}
+        </div>
+        {image && <img class="title-image" src={image} alt="" />}
       </div>
       <SlideFootnotes html={footnotesHtml} />
       <SlideFooter deckConfig={deckConfig} right={slideNum(index)} isTitle={true} />
@@ -149,19 +153,23 @@ function ChapterSlide({ meta, content, deckConfig, index }) {
   const { headings, paragraphs, footnotesHtml } = extractContent(content)
   const num = meta.number != null ? String(meta.number).padStart(2, '0') : null
   const desc = meta.description ?? paragraphs[0]
+  const image = meta?.image
 
   return (
-    <section class="slide slide--chapter" data-label={`${slideNum(index)} Chapter`}>
+    <section class={`slide slide--chapter${image ? ' has-image' : ''}`} data-label={`${slideNum(index)} Chapter`}>
       <SlideHeader deckConfig={deckConfig} right={meta.part ?? ''} />
       <div class="slide-body">
-        {num && <div class="chapter-num">{num}</div>}
-        <div class="chapter-meta">{meta.label ?? 'Chapter'}</div>
-        {headings[1] && (
-          <h2 class="chapter-title" dangerouslySetInnerHTML={{ __html: headings[1] }} />
-        )}
-        {desc && (
-          <p class="chapter-desc" dangerouslySetInnerHTML={{ __html: desc }} />
-        )}
+        <div class="chapter-content">
+          {num && <div class="chapter-num">{num}</div>}
+          <div class="chapter-meta">{meta.label ?? 'Chapter'}</div>
+          {headings[1] && (
+            <h2 class="chapter-title" dangerouslySetInnerHTML={{ __html: headings[1] }} />
+          )}
+          {desc && (
+            <p class="chapter-desc" dangerouslySetInnerHTML={{ __html: desc }} />
+          )}
+        </div>
+        {image && <img class="chapter-image" src={image} alt="" />}
       </div>
       <SlideFootnotes html={footnotesHtml} />
       <SlideFooter deckConfig={deckConfig} right={slideNum(index)} />

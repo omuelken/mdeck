@@ -12,6 +12,7 @@ height: 1080
 ---
 ---
 layout: title
+image: ./img/image.jpg
 note: |
   Welcome everyone. Today I'll walk through the slide framework.
 
@@ -171,10 +172,13 @@ $$
 $$
 
 ---
-layout: full-bleed-image
+layout: chapter
+number: 2
+part: Part Two
 image: ./img/image.jpg
+description: Layouts, live components, and everything beyond the basics.
 ---
-# Design systems are swappable — just change `design:` in the frontmatter.
+# Advanced layouts and components.
 
 ---
 section: Content
