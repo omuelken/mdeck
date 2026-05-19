@@ -87,13 +87,22 @@ function SlideHeader({ deckConfig, right, logo }) {
   )
 }
 
-function SlideFooter({ deckConfig, left, right }) {
+function SlideFooter({ deckConfig, left, right, isTitle = false }) {
   const { author, date } = deckConfig.meta ?? {}
-  const defaultLeft = [author, date].filter(Boolean).join(' · ')
+  const authorStr = [author, date].filter(Boolean).join(' · ')
+
+  // authorDate: 'title' (default) | 'all' | 'none'
+  const adSetting = deckConfig.authorDate ?? 'title'
+  const showAuthor = adSetting === 'all' || (adSetting === 'title' && isTitle)
+
+  // pageNumbers: 'slides' (default = all-except-title) | 'all' | 'none'
+  const pnSetting = deckConfig.pageNumbers ?? 'slides'
+  const showRight = pnSetting === 'all' || (pnSetting === 'slides' && !isTitle)
+
   return (
     <div class="slide-footer">
-      <span>{left ?? defaultLeft}</span>
-      {right != null && <span>{right}</span>}
+      <span>{left ?? (showAuthor ? authorStr : '')}</span>
+      {right != null && showRight && <span>{right}</span>}
     </div>
   )
 }
@@ -123,7 +132,7 @@ function TitleSlide({ meta, content, deckConfig, index }) {
         )}
       </div>
       <SlideFootnotes html={footnotesHtml} />
-      <SlideFooter deckConfig={deckConfig} right={slideNum(index)} />
+      <SlideFooter deckConfig={deckConfig} right={slideNum(index)} isTitle={true} />
     </section>
   )
 }
