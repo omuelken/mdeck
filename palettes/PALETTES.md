@@ -8,8 +8,8 @@ Set `palette:` in the deck frontmatter:
 
 ```yaml
 ---
-design: modern
-palette: black-cherry
+design: neue
+palette: paper
 ---
 ```
 

@@ -9,6 +9,7 @@
   --muted:    #888580;   /* warm medium gray */
   --rule:     #e0deda;   /* warm light rule */
   --accent:   #0d9488;   /* teal-600 — distinct from plain blue, Clarity violet, FHNW yellow */
+  --surface:  #edede8;   /* parchment
 
   /* Type scale (px) — projection-appropriate at 1920×1080 */
   --fs-display: 128px;

@@ -234,7 +234,7 @@ Copy any existing theme folder and edit the CSS. Register it in `src/themeLoader
 
 ```js
 const THEMES = {
-  modern:   () => import('../themes/modern/index.js'),
+  neue:     () => import('../themes/neue/index.js'),
   mytheme:  () => import('../themes/mytheme/index.js'),
 }
 ```

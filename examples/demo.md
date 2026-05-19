@@ -1,5 +1,5 @@
 ---
-design: clarity
+design: aurora
 palette: default
 meta:
   title: "Slide Framework Demo"

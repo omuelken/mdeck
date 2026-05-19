@@ -119,7 +119,7 @@ function themeParamDefault(themeMeta, token) {
 
 function PresenterView({ deckConfig, slides }) {
   const [index, setIndex] = useState(0)
-  const [design, setDesign] = useState(deckConfig.design ?? 'modern')
+  const [design, setDesign] = useState(deckConfig.design ?? 'neue')
   const [palette, setPalette] = useState(PALETTE_NAMES.includes(deckConfig.palette) ? deckConfig.palette : '')
   const [accent, setAccent] = useState(deckConfig.accent ?? '')
   const [accent2, setAccent2] = useState(deckConfig.accent2 ?? '')

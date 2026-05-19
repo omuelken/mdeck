@@ -8,7 +8,7 @@ Set `design:` in the deck frontmatter:
 
 ```yaml
 ---
-design: modern
+design: neue
 ---
 ```
 
@@ -104,7 +104,7 @@ Add an entry to the `THEMES` dict in `src/themeLoader.js`:
 
 ```js
 const THEMES = {
-  modern:   () => import('../themes/modern/index.js'),
+  neue:     () => import('../themes/neue/index.js'),
   my-theme: () => import('../themes/my-theme/index.js'),
 }
 ```

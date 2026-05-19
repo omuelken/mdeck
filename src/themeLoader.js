@@ -12,8 +12,8 @@ const DARK_TOKENS = {
 }
 
 const THEMES = {
-  modern:    () => import('../themes/modern/index.js'),
-  clarity:   () => import('../themes/clarity/index.js'),
+  neue:      () => import('../themes/neue/index.js'),
+  aurora:    () => import('../themes/aurora/index.js'),
   fhnw:      () => import('../themes/fhnw/index.js'),
   editorial: () => import('../themes/editorial/index.js'),
   terminal:  () => import('../themes/terminal/index.js'),
@@ -63,7 +63,7 @@ function syncThemeFonts(urls) {
   }
 }
 
-export async function loadTheme({ design = 'modern', palette, accent, accent2, params = {}, meta = {} } = {}) {
+export async function loadTheme({ design = 'neue', palette, accent, accent2, params = {}, meta = {} } = {}) {
   const loader = THEMES[design]
   if (!loader) throw new Error(`Unknown theme: "${design}". Available: ${Object.keys(THEMES).join(', ')}`)
 
