@@ -223,3 +223,12 @@ section: Custom Layouts
     Distributed across any number of nodes without rewriting your code.
   </div>
 </div>
+
+---
+layout: focus
+eyebrow: Example component
+section: Components
+---
+# QR Code component.
+
+<qrcode url="https://gitlab.fhnw.ch/tilman.schieber/mdeck" size="380" />
