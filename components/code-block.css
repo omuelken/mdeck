@@ -85,8 +85,8 @@ code[class*="language-"] { color: var(--token-default); }
 .code-output {
   margin: 0;
   padding: 28px 48px;
-  background: #111;
-  color: #d4d4d4;
+  background: var(--surface, var(--rule));
+  color: var(--ink);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: var(--code-size, 36px);
   line-height: 1.55;
@@ -94,7 +94,7 @@ code[class*="language-"] { color: var(--token-default); }
   max-height: 8em;
   overflow-y: auto;
   border-radius: 0 8px 8px 8px;
-  border-left: 6px solid #444;
+  border-left: 4px solid var(--rule);
 }
 .code-output--error {
   color: #f87171;
