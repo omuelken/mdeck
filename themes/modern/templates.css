@@ -341,7 +341,7 @@ em {
    CODE BLOCK COMPONENT
    ───────────────────────────────────────────── */
 .code-block {
-  --code-bg: var(--rule);
+  --code-bg: var(--surface, var(--rule));
   --code-radius: 8px;
   --code-size: 36px;
   background: var(--code-bg);
