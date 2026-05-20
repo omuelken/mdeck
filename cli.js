@@ -32,6 +32,11 @@ const LAYOUT_LIBRARY = [
   { key: 'split', label: 'Split content' },
   { key: 'full-bleed-image', label: 'Full-bleed image' },
 ]
+const ASPECT_RATIOS = [
+  { label: '16:9 (widescreen)', w: 16, h: 9 },
+  { label: '16:10 (widescreen)', w: 16, h: 10 },
+  { label: '4:3 (classic)', w: 4, h: 3 },
+]
 
 // ── Vite config ───────────────────────────────────────────────────────────────
 function baseConfig(slidesPath) {
@@ -126,6 +131,24 @@ async function runNewWizard() {
     const author = (await rl.question('  Author [Your Name]: ')).trim() || 'Your Name'
     const org = (await rl.question('  Organization [FHNW]: ')).trim() || 'FHNW'
 
+    console.log('\n  Aspect ratio (uses 1920px width baseline):')
+    ASPECT_RATIOS.forEach((opt, i) => console.log(`    ${i + 1}) ${opt.label}`))
+    console.log(`    ${ASPECT_RATIOS.length + 1}) Custom`)
+    const rIdx = parseInt((await rl.question('  Pick an aspect ratio [1]: ')).trim() || '1', 10)
+    let width = 1920
+    let ratioW = ASPECT_RATIOS[0].w
+    let ratioH = ASPECT_RATIOS[0].h
+    if (rIdx >= 1 && rIdx <= ASPECT_RATIOS.length) {
+      ratioW = ASPECT_RATIOS[rIdx - 1].w
+      ratioH = ASPECT_RATIOS[rIdx - 1].h
+    } else if (rIdx === ASPECT_RATIOS.length + 1) {
+      const rawW = parseInt((await rl.question('  Ratio width [16]: ')).trim() || '16', 10)
+      const rawH = parseInt((await rl.question('  Ratio height [9]: ')).trim() || '9', 10)
+      ratioW = Number.isInteger(rawW) && rawW > 0 ? rawW : ratioW
+      ratioH = Number.isInteger(rawH) && rawH > 0 ? rawH : ratioH
+    }
+    const height = Math.round((width * ratioH) / ratioW)
+
     const lines = [
       '---',
       `design: ${theme}`,
@@ -136,8 +159,8 @@ async function runNewWizard() {
       `  organization: "${org.replace(/"/g, '\\"')}"`,
       `  date: "${new Date().toISOString().slice(0, 10)}"`,
       '  logo: ./img/logo.png',
-      'width: 1920',
-      'height: 1080',
+      `width: ${width}`,
+      `height: ${height}`,
       '---',
       '',
     ]

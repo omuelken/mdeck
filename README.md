@@ -39,7 +39,7 @@ Create a deck interactively:
 mdeck new
 ```
 
-The wizard asks for theme, palette, and starter slide templates, then creates your `.md` file plus an `img/` directory.
+The wizard asks for theme, palette, aspect ratio, and starter slide templates, then creates your `.md` file plus an `img/` directory.
 
 The `-o` flag builds to a specific file instead of `dist/index.html`:
 
