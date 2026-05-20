@@ -2,8 +2,36 @@ import { marked } from 'marked'
 import markedKatex from 'marked-katex-extension'
 import 'katex/dist/katex.min.css'
 import '../components/callout.css'
+import '../components/columns.css'
 
 marked.use(markedKatex({ throwOnError: false, output: 'html' }))
+
+// columns must be registered before callout so it wins the ::: prefix match
+marked.use({
+  extensions: [{
+    name: 'columns',
+    level: 'block',
+    start(src) { return src.match(/^:::columns/)?.index },
+    tokenizer(src) {
+      const m = src.match(/^:::columns[ \t]*\n([\s\S]*?)\n:::[ \t]*(?:\n|$)/)
+      if (!m) return
+      const colSrcs = m[1].split(/\n\+\+\+[ \t]*\n/)
+      const token = { type: 'columns', raw: m[0], columns: [] }
+      for (const colSrc of colSrcs) {
+        const colTokens = []
+        this.lexer.blockTokens(colSrc.trim(), colTokens)
+        token.columns.push(colTokens)
+      }
+      return token
+    },
+    renderer(token) {
+      const cols = token.columns
+        .map(colTokens => `<div class="column">${this.parser.parse(colTokens)}</div>`)
+        .join('\n')
+      return `<div class="columns">\n${cols}\n</div>\n`
+    },
+  }],
+})
 
 const CALLOUT_DEFAULTS = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution' }
 

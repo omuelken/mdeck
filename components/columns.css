@@ -1,0 +1,11 @@
+.columns {
+  display: flex;
+  gap: var(--gap-col, 4rem);
+  align-items: start;
+  width: 100%;
+}
+
+.column {
+  flex: 1;
+  min-width: 0;
+}

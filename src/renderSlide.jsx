@@ -83,11 +83,14 @@ function SlideHeader({ deckConfig, right, logo, isTitle = false }) {
   const instSetting = deckConfig.institution ?? 'title'
   const showOrg = instSetting === 'all' || (instSetting === 'title' && isTitle)
 
+  // sections: 'all' (default) | 'none'
+  const showSection = (deckConfig.sections ?? 'all') !== 'none'
+
   return (
     <div class="slide-header">
       <span class="brand">{showOrg ? org : ''}</span>
       {logo && <img class="slide-logo" src={logo} alt="" />}
-      {right != null && <span>{right}</span>}
+      {showSection && right != null && <span>{right}</span>}
     </div>
   )
 }
