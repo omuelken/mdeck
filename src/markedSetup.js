@@ -6,7 +6,29 @@ import '../components/columns.css'
 
 marked.use(markedKatex({ throwOnError: false, output: 'html' }))
 
-// columns must be registered before callout so it wins the ::: prefix match
+// marked.use() prepends via unshift, so last-registered = highest priority.
+// Register callout first (lowest priority) so columns and steps match before it.
+const CALLOUT_DEFAULTS = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution' }
+
+marked.use({
+  extensions: [{
+    name: 'callout',
+    level: 'block',
+    start(src) { return src.match(/^:::/)?.index },
+    tokenizer(src) {
+      const m = src.match(/^:::\s*(\w+)(.*?)\n([\s\S]*?)\n:::\s*(?:\n|$)/)
+      if (!m) return
+      const token = { type: 'callout', raw: m[0], calloutType: m[1].toLowerCase(), title: m[2].trim(), tokens: [] }
+      this.lexer.blockTokens(m[3], token.tokens)
+      return token
+    },
+    renderer(token) {
+      const title = token.title || CALLOUT_DEFAULTS[token.calloutType] || token.calloutType
+      return `<div class="callout callout-${token.calloutType}"><div class="callout-title">${title}</div>${this.parser.parse(token.tokens)}</div>\n`
+    },
+  }],
+})
+
 marked.use({
   extensions: [{
     name: 'columns',
@@ -29,27 +51,6 @@ marked.use({
         .map(colTokens => `<div class="column">${this.parser.parse(colTokens)}</div>`)
         .join('\n')
       return `<div class="columns">\n${cols}\n</div>\n`
-    },
-  }],
-})
-
-const CALLOUT_DEFAULTS = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution' }
-
-marked.use({
-  extensions: [{
-    name: 'callout',
-    level: 'block',
-    start(src) { return src.match(/^:::/)?.index },
-    tokenizer(src) {
-      const m = src.match(/^:::\s*(\w+)(.*?)\n([\s\S]*?)\n:::\s*(?:\n|$)/)
-      if (!m) return
-      const token = { type: 'callout', raw: m[0], calloutType: m[1].toLowerCase(), title: m[2].trim(), tokens: [] }
-      this.lexer.blockTokens(m[3], token.tokens)
-      return token
-    },
-    renderer(token) {
-      const title = token.title || CALLOUT_DEFAULTS[token.calloutType] || token.calloutType
-      return `<div class="callout callout-${token.calloutType}"><div class="callout-title">${title}</div>${this.parser.parse(token.tokens)}</div>\n`
     },
   }],
 })

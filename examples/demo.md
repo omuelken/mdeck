@@ -258,6 +258,14 @@ layout: focus
 eyebrow: Example component
 section: Components
 ---
+# Video component.
+
+<videoplayer url="https://www.youtube.com/watch?v=wDchsz8nmbo" />
+
+---
+layout: focus
+eyebrow: Example component
+---
 # QR Code component.
 
 <qrcode url="https://gitlab.fhnw.ch/tilman.schieber/mdeck" size="380" />

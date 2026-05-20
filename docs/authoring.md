@@ -474,6 +474,34 @@ Reference images with standard Markdown syntax or the `image:` frontmatter field
 
 ---
 
+## Video
+
+Embed video with the `<videoplayer>` component. It accepts local files and web video URLs.
+
+```markdown
+<!-- Local file — click to play (default) -->
+<videoplayer src="./demo.mp4" />
+
+<!-- Autoplay when slide becomes active (muted, as required by browsers) -->
+<videoplayer src="./demo.mp4" play="auto" />
+
+<!-- YouTube, Vimeo, or SwitchTube URL -->
+<videoplayer url="https://youtu.be/dQw4w9WgXcQ" />
+<videoplayer url="https://tube.switch.ch/videos/abc123" play="auto" />
+```
+
+| Attribute | Default | Description |
+|---|---|---|
+| `src` | — | Path to a local video file |
+| `url` | — | Web video URL (YouTube, Vimeo, SwitchTube, or direct embed URL) |
+| `play` | `click` | `click` — user controls playback; `auto` — plays when slide activates, pauses when leaving |
+| `aspect` | `16/9` | CSS `aspect-ratio` value, e.g. `4/3` |
+| `muted` | — | Mute the video (always muted in `auto` mode) |
+
+For `play="auto"` the video pauses and resets to the beginning when you navigate away. Local videos also pause automatically on slide leave in `click` mode to avoid unexpected audio.
+
+---
+
 ## Inline HTML
 
 You can write HTML directly in slide bodies. It inherits the theme's body text styles automatically. Use it for structural layouts the framework doesn't provide out of the box:
