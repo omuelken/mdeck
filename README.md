@@ -26,11 +26,20 @@ npm run build -- my-talk.md
 ```
 mdeck dev <slides.md>                  Start dev server with live reload
 mdeck present <slides.md>              Open speaker/presenter view
+mdeck new                              Interactive deck scaffolding wizard
 mdeck build <slides.md> [-o out.html]  Build self-contained HTML
 mdeck build <slides.md> --inline-images  Inline local images as data URLs
 mdeck preview                          Preview the last build
 mdeck --help                           Show usage
 ```
+
+Create a deck interactively:
+
+```bash
+mdeck new
+```
+
+The wizard asks for theme, palette, and starter slide templates, then creates your `.md` file plus an `img/` directory.
 
 The `-o` flag builds to a specific file instead of `dist/index.html`:
 

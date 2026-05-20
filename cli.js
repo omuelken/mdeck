@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { createServer, build, preview } from 'vite'
-import { existsSync, copyFileSync, mkdtempSync } from 'fs'
-import { cp, rm } from 'fs/promises'
-import { resolve, dirname } from 'path'
+import { existsSync, copyFileSync, mkdtempSync, readdirSync } from 'fs'
+import { cp, rm, mkdir, writeFile } from 'fs/promises'
+import { resolve, dirname, basename } from 'path'
 import { tmpdir } from 'os'
 import { fileURLToPath } from 'url'
+import readline from 'readline/promises'
 import preact from '@preact/preset-vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 import { slidesPlugin } from './src/slidesPlugin.js'
@@ -21,6 +22,16 @@ const c = tty
 const ok  = msg => console.log(`  ${c.green}✓${c.reset}  ${msg}`)
 const err = msg => console.error(`  ${c.red}✗${c.reset}  ${msg}`)
 const tip = msg => console.log(`  ${c.dim}${msg}${c.reset}`)
+
+const THEMES = ['neue', 'aurora', 'duet', 'fhnw', 'editorial', 'terminal']
+const LAYOUT_LIBRARY = [
+  { key: 'title', label: 'Title slide' },
+  { key: 'chapter', label: 'Chapter divider' },
+  { key: 'focus', label: 'Big statement' },
+  { key: 'image-text', label: 'Image + text' },
+  { key: 'split', label: 'Split content' },
+  { key: 'full-bleed-image', label: 'Full-bleed image' },
+]
 
 // ── Vite config ───────────────────────────────────────────────────────────────
 function baseConfig(slidesPath) {
@@ -41,6 +52,117 @@ function hasFlag(name, short = null) {
   return argv.includes(name) || (short ? argv.includes(short) : false)
 }
 
+function availablePalettes() {
+  const dir = resolve(frameworkRoot, 'palettes')
+  return readdirSync(dir)
+    .filter(name => name.endsWith('.json'))
+    .map(name => name.replace(/\.json$/, ''))
+    .sort()
+}
+
+function parseSelection(input, max) {
+  const picks = [...new Set(
+    String(input || '')
+      .split(',')
+      .map(v => parseInt(v.trim(), 10))
+      .filter(n => Number.isInteger(n) && n >= 1 && n <= max)
+  )]
+  return picks
+}
+
+function createSlideTemplate(layout, section, n) {
+  const idx = String(n + 1).padStart(2, '0')
+  if (layout === 'title') {
+    return `---\nlayout: title\n---\n# ${section}\n## A clear subtitle for your audience\n`
+  }
+  if (layout === 'chapter') {
+    return `---\nlayout: chapter\nnumber: ${n + 1}\npart: Part ${n + 1}\ndescription: What this chapter covers\n---\n# ${section}\n`
+  }
+  if (layout === 'focus') {
+    return `---\nlayout: focus\neyebrow: Key message\nattribution: Your Name\n---\n# One strong idea for this section.\n`
+  }
+  if (layout === 'image-text') {
+    return `---\nlayout: image-text\nsection: ${section}\nimage: ./img/image-${idx}.jpg\n---\n## Visual context\n\nExplain the visual and connect it to your story.\n`
+  }
+  if (layout === 'split') {
+    return `---\nlayout: split\nsection: ${section}\n---\n\n\`\`\`python\na = [1, 2, 3]\nprint(sum(a))\n\`\`\`\n\n- Explain the snippet\n- Add key takeaways\n`
+  }
+  return `---\nlayout: full-bleed-image\nsection: ${section}\nimage: ./img/hero-${idx}.jpg\noverlay: true\n---\n# Section highlight\n`
+}
+
+async function runNewWizard() {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+  const palettes = availablePalettes()
+  try {
+    console.log()
+    console.log(`  ${c.bold}Create a new deck${c.reset}`)
+    const rawPath = (await rl.question('  Deck file path (default: slides.md): ')).trim() || 'slides.md'
+    const outPath = resolve(process.cwd(), rawPath)
+    if (existsSync(outPath)) {
+      err(`File already exists: ${outPath}`)
+      process.exit(1)
+    }
+
+    console.log('\n  Theme:')
+    THEMES.forEach((name, i) => console.log(`    ${i + 1}) ${name}`))
+    const tIdx = parseInt((await rl.question('  Pick a theme [1]: ')).trim() || '1', 10)
+    const theme = THEMES[tIdx - 1] || THEMES[0]
+
+    console.log('\n  Palette:')
+    console.log('    0) none')
+    palettes.forEach((name, i) => console.log(`    ${i + 1}) ${name}`))
+    const pRaw = (await rl.question('  Pick a palette [0]: ')).trim() || '0'
+    const pIdx = parseInt(pRaw, 10)
+    const palette = pIdx > 0 ? (palettes[pIdx - 1] || '') : ''
+
+    console.log('\n  Slide templates (comma-separated numbers):')
+    LAYOUT_LIBRARY.forEach((opt, i) => console.log(`    ${i + 1}) ${opt.label}`))
+    const defaultLayouts = '1,2,3,4'
+    const picks = parseSelection((await rl.question(`  Pick templates [${defaultLayouts}]: `)).trim() || defaultLayouts, LAYOUT_LIBRARY.length)
+    const chosen = (picks.length ? picks : parseSelection(defaultLayouts, LAYOUT_LIBRARY.length))
+      .map(i => LAYOUT_LIBRARY[i - 1])
+
+    const title = (await rl.question('  Presentation title [My Talk]: ')).trim() || 'My Talk'
+    const author = (await rl.question('  Author [Your Name]: ')).trim() || 'Your Name'
+    const org = (await rl.question('  Organization [FHNW]: ')).trim() || 'FHNW'
+
+    const lines = [
+      '---',
+      `design: ${theme}`,
+      ...(palette ? [`palette: ${palette}`] : []),
+      'meta:',
+      `  title: "${title.replace(/"/g, '\\"')}"`,
+      `  author: "${author.replace(/"/g, '\\"')}"`,
+      `  organization: "${org.replace(/"/g, '\\"')}"`,
+      `  date: "${new Date().toISOString().slice(0, 10)}"`,
+      '  logo: ./img/logo.png',
+      'width: 1920',
+      'height: 1080',
+      '---',
+      '',
+    ]
+
+    chosen.forEach((opt, i) => {
+      lines.push(createSlideTemplate(opt.key, opt.label, i))
+      lines.push('')
+    })
+
+    await mkdir(dirname(outPath), { recursive: true })
+    await writeFile(outPath, lines.join('\n'), 'utf-8')
+
+    const assetDir = resolve(dirname(outPath), 'img')
+    await mkdir(assetDir, { recursive: true })
+    await writeFile(resolve(assetDir, '.gitkeep'), '', 'utf-8')
+
+    console.log()
+    ok(`Created ${c.cyan}${outPath}${c.reset}`)
+    tip(`Added assets folder: ${assetDir}`)
+    tip(`Next: mdeck dev ${basename(outPath)}\n`)
+  } finally {
+    rl.close()
+  }
+}
+
 async function copyImages(slidesPath, outDir) {
   const imgSrc = resolve(dirname(resolve(slidesPath)), 'img')
   if (existsSync(imgSrc)) {
@@ -55,6 +177,7 @@ const HELP = `
   ${c.dim}Usage:${c.reset}
     ${c.green}mdeck dev${c.reset} <slides.md>                  Start dev server with live reload
     ${c.green}mdeck present${c.reset} <slides.md>              Open speaker/presenter view
+    ${c.green}mdeck new${c.reset}                              Interactive deck scaffolding wizard
     ${c.green}mdeck build${c.reset} <slides.md> [-o out.html] [--inline-images]
                                               Build self-contained HTML
     ${c.green}mdeck preview${c.reset}                          Preview the last build
@@ -91,7 +214,11 @@ function requireInput(cmd) {
 }
 
 // ── dev ───────────────────────────────────────────────────────────────────────
-if (command === 'dev') {
+if (command === 'new') {
+  await runNewWizard()
+
+// ── dev ───────────────────────────────────────────────────────────────────────
+} else if (command === 'dev') {
   const input = requireInput('dev')
   const base = baseConfig(input)
 
