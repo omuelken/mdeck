@@ -15,7 +15,7 @@ $ARGUMENTS
 Follow these guidelines:
 
 **Structure**
-- Open with a deck frontmatter block: choose an appropriate `design` and `palette`, set `meta.title`, `meta.author`, `meta.date`
+- Open with a deck frontmatter block: choose an appropriate `design` and `palette`, set `meta.title`, `meta.author`, `meta.organization`, `meta.date`
 - First slide must be `layout: title` with an `h1` headline and an `h2` subtitle
 - Use `layout: chapter` slides to divide major sections
 - End with a closing title or focus slide
@@ -26,11 +26,16 @@ Follow these guidelines:
 - Use `layout: focus` for key principles, quotes, or conclusions
 - Use `layout: split` when pairing a code block or image with an explanation
 - Use `layout: full-bleed-image` only when a strong photograph carries the point
-- Add `note:` speaker notes with context, transitions, and points to emphasise — things the speaker needs but the audience shouldn't see
+- Add speaker notes using `:::notes ... :::` blocks with context, transitions, and points to emphasise — things the speaker needs but the audience shouldn't see
 
 **Formatting**
 - `*italic*` renders in the accent color — use it for emphasis on key terms, not decoration
 - Keep bullet lists to 3–5 items maximum
 - Prefer a short bold label + one sentence over long prose bullets
+
+**Practical defaults**
+- Prefer built-in layouts from the authoring docs (`title`, `chapter`, `focus`, `image-text`, `split`, `full-bleed-image`)
+- Use local image paths under `./img/` when referencing visuals
+- If the user asks for a single-file shareable output, mention `mdeck build <file>.md --inline-images`
 
 Write the result as a single `.md` file. Choose a filename based on the topic (e.g. `my-talk.md`).
