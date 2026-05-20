@@ -31,8 +31,10 @@ layout: title
 ---
 # Second slide.
 
-Some body text.
+Some body text here. No frontmatter needed for plain content slides.
 ```
+
+Each `---` line starts a new slide. Frontmatter is only needed when you want a specific layout or slide metadata (`section`, `note`, `image`, etc.). Plain content slides can follow the `---` separator directly with their markdown content.
 
 ### Deck frontmatter fields
 
@@ -51,6 +53,7 @@ Some body text.
 | `institution` | `title` | When to show the organization name: `title`, `all`, or `none` |
 | `authorDate` | `title` | When to show the author/date footer: `title`, `all`, or `none` |
 | `pageNumbers` | `slides` | Slide numbers: `slides` (all except title), `all`, or `none` |
+| `sections` | `all` | Whether to show section labels in the header: `all` or `none` |
 | `params` | — | Theme-specific color/font overrides (see below) |
 
 ### Theme params
@@ -97,7 +100,7 @@ Available params depend on the theme — check the presenter sidebar for a list.
 
 ## Slide frontmatter
 
-Each slide can have its own frontmatter block immediately after the `---` separator:
+Each slide can have its own frontmatter block immediately after the `---` separator. Frontmatter is only needed when a slide has specific metadata — layout, image, explicit section label, etc. Plain content slides can omit it entirely.
 
 ```markdown
 ---
@@ -105,10 +108,6 @@ layout: chapter
 number: 1
 part: Part One
 description: A short description shown under the title.
-section: Section Name
-note: |
-  Speaker notes go here.
-  Supports **markdown**.
 ---
 # Chapter title.
 ```
@@ -118,8 +117,53 @@ note: |
 | Field | Description |
 |---|---|
 | `layout` | Slide layout (see below) |
-| `note` | Speaker notes — shown in presenter view, supports Markdown |
-| `section` | Section label shown in the slide header |
+| `section` | Section label shown in the slide header (auto-propagated — see below) |
+
+### Section labels
+
+The `section:` field labels the top-right corner of the slide header. It auto-propagates: once set on a slide, all subsequent slides inherit it until a new `section:` is declared or a new chapter starts.
+
+`chapter` slides automatically set the current section to their `part:` value, so slides within a chapter inherit the chapter name without needing explicit `section:` fields.
+
+```markdown
+---
+layout: chapter
+number: 1
+part: Methodology
+---
+# Chapter title.
+
+---
+# First slide.
+This slide automatically shows "Methodology" in the header.
+
+---
+section: Results
+---
+# Second slide.
+This slide shows "Results" — and so does every slide after it until the next chapter or section override.
+```
+
+### Speaker notes
+
+Speaker notes are only visible in the presenter view. Use a `:::notes` fenced block anywhere in the slide body — typically at the end:
+
+```markdown
+---
+layout: focus
+eyebrow: Key point
+---
+# The main statement.
+
+:::notes
+This is the central idea. Pause here.
+
+- Bullet one
+- Bullet two
+:::
+```
+
+Notes support full Markdown. They replace the older `note:` frontmatter key, which still works but is less readable for multiline content.
 
 ---
 
@@ -237,11 +281,23 @@ The code block goes left. This heading and text go right.
 
 ### Generic (no layout) — Content slide
 
-No `layout:` field renders a standard content slide. `h1` is the heading; everything below is body content.
+No `layout:` field renders a standard content slide. `h1` is the heading; everything below is body content. Frontmatter is optional — omit it entirely for slides that need no metadata:
+
+```markdown
+---
+# Three key principles
+
+1. **Simplicity** — one idea per slide
+2. **Contrast** — separate layers
+3. **Rhythm** — consistent spacing
+```
+
+Add frontmatter only when you need slide-level metadata:
 
 ```markdown
 ---
 section: Content
+note: Speaker notes go here.
 ---
 # Three key principles
 
@@ -362,18 +418,49 @@ Available types: `note`, `tip`, `important`, `warning`, `caution`.
 
 ## Speaker notes
 
-Set `note:` in a slide's frontmatter. Notes support Markdown and are only visible in the presenter view — they never appear on the audience-facing slide.
+Use a `:::notes` fenced block in the slide body. Notes support Markdown and are only visible in the presenter view:
 
-```yaml
+```markdown
 ---
-note: |
-  This is the central design decision. Pause here.
+layout: focus
+eyebrow: Key point
+---
+# The main idea.
 
-  - **Content** is readable without tooling
-  - **Design** is just a CSS file
-  - Ask: *"what breaks if you swap the theme?"*
----
+:::notes
+This is the central design decision. Pause here.
+
+- **Content** is readable without tooling
+- **Design** is just a CSS file
+- Ask: *"what breaks if you swap the theme?"*
+:::
 ```
+
+The `:::notes` block can appear anywhere in the body, but placing it last keeps it visually separate from slide content. The older `note:` frontmatter key is also supported.
+
+---
+
+## Columns
+
+Place content side by side using `:::columns` with `+++` as the column separator:
+
+```markdown
+:::columns
+
+Left column content here.
+
++++
+
+Right column content here.
+
++++
+
+A third column, if needed.
+
+:::
+```
+
+Each column is an equal-width flex child, so three `+++` separators give four equal columns. Use `:::columns` inside any layout that has a body area — `GenericSlide`, `focus`, etc.
 
 ---
 
