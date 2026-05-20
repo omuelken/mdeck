@@ -173,15 +173,19 @@ function PresenterView({ deckConfig, slides }) {
     return () => bcRef.current?.close()
   }, [])
 
-  // When the presenter iframe navigates: update displayed index, sync audience + preview
+  // When the presenter iframe navigates: update displayed index, sync audience + preview.
+  // Skip audience/preview sync on 'init' (iframe load/reload) — the audience already
+  // opened at the correct slide, and previewSrc encodes the right hash on reload.
   useEffect(() => {
     function onMessage({ data, source }) {
       if (source !== iframeRef.current?.contentWindow) return
       if (!data || typeof data.slideIndexChanged !== 'number') return
       const i = data.slideIndexChanged
       setIndex(i)
-      bcRef.current?.postMessage({ deckControl: { command: 'goTo', value: i } })
-      sendTo(previewRef.current?.contentWindow, 'goTo', i + 1)
+      if (data.reason !== 'init') {
+        bcRef.current?.postMessage({ deckControl: { command: 'goTo', value: i } })
+        sendTo(previewRef.current?.contentWindow, 'goTo', i + 1)
+      }
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)

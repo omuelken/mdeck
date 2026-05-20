@@ -54,6 +54,7 @@
   const DESIGN_H_DEFAULT = 1080;
   const OVERLAY_HIDE_MS = 1800;
   const VALIDATE_ATTR = 'no_overflowing_text,no_overlapping_text,slide_sized_text';
+  const isEmbedded = new URLSearchParams(location.search).has('embedded');
 
   const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -497,10 +498,10 @@
       if (broadcast) {
         // (1) Legacy: postMessage bridge for presenter/speaker-note renderers.
         const note = this._notes[curr] ?? null;
-        try { window.postMessage({ slideIndexChanged: curr, note }, '*'); } catch (e) {}
+        try { window.postMessage({ slideIndexChanged: curr, note, reason }, '*'); } catch (e) {}
         try {
           if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ slideIndexChanged: curr, note }, '*');
+            window.parent.postMessage({ slideIndexChanged: curr, note, reason }, '*');
           }
         } catch (e) {}
 
@@ -529,7 +530,7 @@
     }
 
     _flashOverlay() {
-      if (!this._overlay) return;
+      if (!this._overlay || isEmbedded) return;
       this._overlay.setAttribute('data-visible', '');
       if (this._hideTimer) clearTimeout(this._hideTimer);
       this._hideTimer = setTimeout(() => {
