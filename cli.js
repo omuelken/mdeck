@@ -30,7 +30,6 @@ function baseConfig(slidesPath) {
     root: frameworkRoot,
     plugins: [preact(), slidesPlugin(abs)],
     server: {
-      hmr: { host: 'localhost', clientPort: 5173 },
       port: 5173,
       strictPort: false,
       fs: { allow: [frameworkRoot, dirname(abs)] },
