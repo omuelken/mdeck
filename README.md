@@ -27,6 +27,7 @@ npm run build -- my-talk.md
 mdeck dev <slides.md>                  Start dev server with live reload
 mdeck present <slides.md>              Open speaker/presenter view
 mdeck build <slides.md> [-o out.html]  Build self-contained HTML
+mdeck build <slides.md> --inline-images  Inline local images as data URLs
 mdeck preview                          Preview the last build
 mdeck --help                           Show usage
 ```
@@ -35,6 +36,12 @@ The `-o` flag builds to a specific file instead of `dist/index.html`:
 
 ```bash
 mdeck build my-talk.md -o ~/Desktop/talk.html
+```
+
+To produce a single-file deck with local `image:`/`logo:` and Markdown image references embedded directly into the HTML, use:
+
+```bash
+mdeck build my-talk.md --inline-images
 ```
 
 ---

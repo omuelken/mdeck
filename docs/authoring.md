@@ -472,6 +472,14 @@ Reference images with standard Markdown syntax or the `image:` frontmatter field
 ![Alt text](./img/diagram.png)
 ```
 
+For a fully self-contained output file, build with inline images:
+
+```bash
+mdeck build slides.md --inline-images
+```
+
+This inlines local Markdown images, `<img src="...">`, and frontmatter `image:` / `logo:` values as data URLs.
+
 ---
 
 ## Video

@@ -37,6 +37,10 @@ function baseConfig(slidesPath) {
   }
 }
 
+function hasFlag(name, short = null) {
+  return argv.includes(name) || (short ? argv.includes(short) : false)
+}
+
 async function copyImages(slidesPath, outDir) {
   const imgSrc = resolve(dirname(resolve(slidesPath)), 'img')
   if (existsSync(imgSrc)) {
@@ -51,7 +55,8 @@ const HELP = `
   ${c.dim}Usage:${c.reset}
     ${c.green}mdeck dev${c.reset} <slides.md>                  Start dev server with live reload
     ${c.green}mdeck present${c.reset} <slides.md>              Open speaker/presenter view
-    ${c.green}mdeck build${c.reset} <slides.md> [-o out.html]  Build self-contained HTML
+    ${c.green}mdeck build${c.reset} <slides.md> [-o out.html] [--inline-images]
+                                              Build self-contained HTML
     ${c.green}mdeck preview${c.reset}                          Preview the last build
 
   ${c.dim}Install the${c.reset} ${c.bold}mdeck${c.reset} ${c.dim}command globally:${c.reset}
@@ -127,6 +132,7 @@ if (command === 'dev') {
 // ── build ─────────────────────────────────────────────────────────────────────
 } else if (command === 'build') {
   const input = requireInput('build')
+  const inlineImages = hasFlag('--inline-images', '-I')
 
   const outputFlagIdx = argv.findIndex(a => a === '--output' || a === '-o')
   const outputPath = outputFlagIdx !== -1 ? resolve(process.cwd(), argv[outputFlagIdx + 1]) : null
@@ -136,7 +142,7 @@ if (command === 'dev') {
 
   await build({
     ...baseConfig(input),
-    plugins: [preact(), slidesPlugin(resolve(input)), viteSingleFile()],
+    plugins: [preact(), slidesPlugin(resolve(input), { inlineImages }), viteSingleFile()],
     build: {
       outDir,
       emptyOutDir: !tempDir,
@@ -145,14 +151,16 @@ if (command === 'dev') {
     },
   })
 
-  await copyImages(input, outputPath ? dirname(outputPath) : outDir)
+  if (!inlineImages) {
+    await copyImages(input, outputPath ? dirname(outputPath) : outDir)
+  }
 
   if (outputPath && tempDir) {
     copyFileSync(resolve(tempDir, 'index.html'), outputPath)
     await rm(tempDir, { recursive: true })
-    ok(`Built: ${c.cyan}${outputPath}${c.reset}\n`)
+    ok(`Built: ${c.cyan}${outputPath}${c.reset}${inlineImages ? ' (images inlined)' : ''}\n`)
   } else {
-    ok(`Built: ${c.cyan}${resolve(outDir, 'index.html')}${c.reset}\n`)
+    ok(`Built: ${c.cyan}${resolve(outDir, 'index.html')}${c.reset}${inlineImages ? ' (images inlined)' : ''}\n`)
   }
 
 // ── preview ───────────────────────────────────────────────────────────────────
