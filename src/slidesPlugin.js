@@ -1,8 +1,11 @@
-import { readFileSync, existsSync } from 'fs'
-import { resolve, dirname } from 'path'
+import { readFileSync, existsSync, readdirSync } from 'fs'
+import { resolve, dirname, basename } from 'path'
 
 const VIRTUAL_ID = 'virtual:slides'
 const RESOLVED_ID = '\0virtual:slides'
+
+const COMPONENTS_ID = 'virtual:deck-components'
+const RESOLVED_COMPONENTS_ID = '\0virtual:deck-components'
 
 const MIME_BY_EXT = {
   '.png': 'image/png',
@@ -71,6 +74,28 @@ function maybeInlineImages(markdown, abs, inlineImages) {
   return out
 }
 
+// ─── Deck-local components ────────────────────────────────────────────────
+// A deck may ship its own Preact components in a `components/` folder next to
+// the .md file. Each `*.jsx` file's default export is registered under its
+// lowercased filename, so `components/Tokenizer.jsx` becomes `<tokenizer>`.
+// Deck components override built-ins of the same name.
+
+function deckComponentsDir(abs) {
+  return resolve(dirname(abs), 'components')
+}
+
+function deckComponentFiles(abs) {
+  const dir = deckComponentsDir(abs)
+  if (!existsSync(dir)) return []
+  return readdirSync(dir)
+    .filter(name => /\.jsx$/.test(name))
+    .sort()
+    .map(name => ({
+      tag: basename(name, '.jsx').toLowerCase(),
+      file: resolve(dir, name),
+    }))
+}
+
 export function slidesPlugin(slidesPath, { inlineImages = false } = {}) {
   const abs = resolve(slidesPath)
 
@@ -78,6 +103,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false } = {}) {
     name: 'vite-plugin-slides',
     resolveId(id) {
       if (id === VIRTUAL_ID) return RESOLVED_ID
+      if (id === COMPONENTS_ID) return RESOLVED_COMPONENTS_ID
     },
     load(id) {
       if (id === RESOLVED_ID) {
@@ -85,9 +111,26 @@ export function slidesPlugin(slidesPath, { inlineImages = false } = {}) {
         const source = maybeInlineImages(raw, abs, inlineImages)
         return `export default ${JSON.stringify(source)}`
       }
+      if (id === RESOLVED_COMPONENTS_ID) {
+        const files = deckComponentFiles(abs)
+        const imports = files
+          .map((f, i) => `import C${i} from ${JSON.stringify(f.file)}`)
+          .join('\n')
+        const entries = files
+          .map((f, i) => `  ${JSON.stringify(f.tag)}: C${i},`)
+          .join('\n')
+        return `${imports}\nexport default {\n${entries}\n}\n`
+      }
     },
     handleHotUpdate({ file, server }) {
-      if (resolve(file) === abs) {
+      const changed = resolve(file)
+      if (changed.startsWith(deckComponentsDir(abs) + '/')) {
+        const mod = server.moduleGraph.getModuleById(RESOLVED_COMPONENTS_ID)
+        if (mod) server.moduleGraph.invalidateModule(mod)
+        server.ws.send({ type: 'full-reload' })
+        return
+      }
+      if (changed === abs) {
         const mod = server.moduleGraph.getModuleById(RESOLVED_ID)
         if (mod) server.moduleGraph.invalidateModule(mod)
         server.ws.send({ type: 'full-reload' })

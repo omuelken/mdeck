@@ -510,6 +510,39 @@ For `play="auto"` the video pauses and resets to the beginning when you navigate
 
 ---
 
+## Deck-local components
+
+Components registered in `src/registry.jsx` are part of *every* deck. When a
+widget is only needed by one talk, put it in a `components/` folder next to the
+deck file instead:
+
+```
+my-talk/
+  my-talk.md
+  components/
+    Tokenizer.jsx
+```
+
+Each `*.jsx` file's default export is registered automatically under its
+lowercased filename, so `Tokenizer.jsx` becomes `<tokenizer>`:
+
+```markdown
+<tokenizer text="Donaudampfschifffahrt" />
+```
+
+Attributes arrive as props, exactly like built-in components. Deck-local
+components override a built-in of the same name.
+
+Because they are only pulled in by the deck that ships them, a heavy dependency
+stays out of every other deck's bundle. Install such dependencies in a
+`node_modules` next to the deck, or in the framework itself.
+
+> Deck components are `.jsx` only, and are written against Preact — import
+> hooks from `preact/hooks`. The build resolves those imports back to the
+> framework's own Preact, so the deck folder needs no Preact install.
+
+---
+
 ## Inline HTML
 
 You can write HTML directly in slide bodies. It inherits the theme's body text styles automatically. Use it for structural layouts the framework doesn't provide out of the box:
