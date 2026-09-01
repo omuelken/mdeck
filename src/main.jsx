@@ -5,7 +5,7 @@ import slidesContent from 'virtual:slides'
 import { parseSlides } from './parseSlides'
 import { loadTheme, THEME_NAMES, PALETTE_NAMES, THEME_METAS, PALETTES } from './themeLoader'
 import { SlideRenderer } from './renderSlide'
-import './markedSetup'
+import { setCalloutLabels } from './markedSetup'
 import './deck-stage.js'
 
 const DECK_CHANNEL = 'deck-control'
@@ -496,6 +496,7 @@ function PresenterView({ deckConfig, slides }) {
 async function init() {
   const parsed = parseSlides(slidesContent)
   const deckConfig = withConfigOverrides(parsed.deckConfig)
+  setCalloutLabels(deckConfig)
   const { slides } = parsed
   const url = new URL(window.location.href)
   const presenterMode = url.searchParams.get('presenter') === '1'

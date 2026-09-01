@@ -8,7 +8,21 @@ marked.use(markedKatex({ throwOnError: false, output: 'html' }))
 
 // marked.use() prepends via unshift, so last-registered = highest priority.
 // Register callout first (lowest priority) so columns and steps match before it.
-const CALLOUT_DEFAULTS = { note: 'Note', tip: 'Tip', important: 'Important', warning: 'Warning', caution: 'Caution' }
+const CALLOUT_LABELS = {
+  en: { note: 'Note',    tip: 'Tip',  important: 'Important', warning: 'Warning', caution: 'Caution'  },
+  de: { note: 'Hinweis', tip: 'Tipp', important: 'Wichtig',   warning: 'Achtung', caution: 'Vorsicht' },
+}
+
+let calloutLabels = CALLOUT_LABELS.en
+
+// Ein Deck waehlt mit `lang` einen Satz Standardbeschriftungen und kann mit
+// `callouts` einzelne davon ueberschreiben. Ohne Angabe bleibt es bei
+// Englisch, damit bestehende Decks unveraendert aussehen. Ein Titel hinter
+// dem Typ (`::: tip Eigener Titel`) sticht beides.
+export function setCalloutLabels({ lang, callouts } = {}) {
+  const base = CALLOUT_LABELS[String(lang ?? '').toLowerCase()] ?? CALLOUT_LABELS.en
+  calloutLabels = { ...base, ...(callouts ?? {}) }
+}
 
 marked.use({
   extensions: [{
@@ -23,7 +37,7 @@ marked.use({
       return token
     },
     renderer(token) {
-      const title = token.title || CALLOUT_DEFAULTS[token.calloutType] || token.calloutType
+      const title = token.title || calloutLabels[token.calloutType] || token.calloutType
       return `<div class="callout callout-${token.calloutType}"><div class="callout-title">${title}</div>${this.parser.parse(token.tokens)}</div>\n`
     },
   }],

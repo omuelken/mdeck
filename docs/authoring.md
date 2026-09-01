@@ -54,6 +54,8 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `authorDate` | `title` | When to show the author/date footer: `title`, `all`, or `none` |
 | `pageNumbers` | `slides` | Slide numbers: `slides` (all except title), `all`, or `none` |
 | `sections` | `all` | Whether to show section labels in the header: `all` or `none` |
+| `lang` | `en` | Language for built-in labels such as callout titles: `en` or `de` |
+| `callouts` | — | Override individual callout titles (see below) |
 | `params` | — | Theme-specific color/font overrides (see below) |
 
 ### Theme params
@@ -413,6 +415,18 @@ Callouts interrupt reading flow.
 ```
 
 Available types: `note`, `tip`, `important`, `warning`, `caution`.
+
+### Callout titles
+
+Without a custom title, a callout is labelled after its type. Set `lang: de` in the deck frontmatter to get German defaults (`Hinweis`, `Tipp`, `Wichtig`, `Achtung`, `Vorsicht`), or override individual titles:
+
+```yaml
+lang: de
+callouts:
+  warning: "Vorsicht, Falle"
+```
+
+A title written after the type on the `:::` line still wins over both.
 
 ---
 
