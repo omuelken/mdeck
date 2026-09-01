@@ -83,7 +83,12 @@ export default function VideoPlayer({ src, url, play = 'click', aspect, muted })
     <div
       ref={containerRef}
       class="video-player-container"
-      style={fixedAspect ? { aspectRatio: aspect } : undefined}
+      // max-height: 800px würde das aspectRatio sonst überstimmen: der Kasten
+      // wird flacher als das Video und dieses innen eingepasst -> schwarze
+      // Ränder. Also die Breite passend zur Höhenbegrenzung mitdeckeln.
+      style={fixedAspect
+        ? { aspectRatio: aspect, maxWidth: `calc(800px * (${aspect}))`, margin: '0 auto' }
+        : undefined}
     >
       {url ? (
         iframeSrc
