@@ -1,5 +1,8 @@
 import baseCSS from '../themes/base.css?inline'
 
+const SELF_CONTAINED = typeof __MDECK_SELF_CONTAINED__ !== 'undefined'
+  && __MDECK_SELF_CONTAINED__
+
 const DARK_TOKENS = {
   '--logo-filter':    'invert(1)',
   '--token-default':  '#e2e8f0',
@@ -73,8 +76,9 @@ export async function loadTheme({ design = 'neue', palette, accent, accent2, par
   // Inject base theme CSS
   upsertStyle('deck-theme', baseCSS + '\n' + tokensCSS + '\n' + templatesCSS)
 
-  // Load theme fonts
-  syncThemeFonts(themeMeta.fonts)
+  // Offline-ready builds deliberately use the declared system-font fallbacks.
+  // Normal dev and bundle builds keep the authored web fonts.
+  syncThemeFonts(SELF_CONTAINED ? [] : themeMeta.fonts)
 
   // Inject palette overrides (sits between base tokens and per-deck params)
   const resolvedPalette = palette ? PALETTES[palette] : null

@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 import { createServer, build, preview } from 'vite'
-import { existsSync, copyFileSync, mkdtempSync, readdirSync } from 'fs'
-import { cp, rm, mkdir, writeFile } from 'fs/promises'
-import { resolve, dirname, basename } from 'path'
+import { existsSync, copyFileSync, mkdtempSync, readdirSync, readFileSync } from 'fs'
+import { chmod, rm, mkdir, writeFile } from 'fs/promises'
+import { resolve, dirname, basename, relative, isAbsolute } from 'path'
 import { tmpdir } from 'os'
 import { fileURLToPath } from 'url'
 import readline from 'readline/promises'
 import preact from '@preact/preset-vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
-import { slidesPlugin } from './src/slidesPlugin.js'
+import { collectLocalAssetRefs, slidesPlugin } from './src/slidesPlugin.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const frameworkRoot = __dirname
@@ -66,7 +66,7 @@ function preactAliases() {
 }
 
 // ── Vite config ───────────────────────────────────────────────────────────────
-function baseConfig(slidesPath) {
+function baseConfig(slidesPath, { selfContained = false } = {}) {
   const abs = resolve(slidesPath)
   return {
     configFile: false,
@@ -83,6 +83,9 @@ function baseConfig(slidesPath) {
       port: 5173,
       strictPort: false,
       fs: { allow: [frameworkRoot, dirname(abs)] },
+    },
+    define: {
+      __MDECK_SELF_CONTAINED__: JSON.stringify(selfContained),
     },
   }
 }
@@ -220,11 +223,123 @@ async function runNewWizard() {
   }
 }
 
-async function copyImages(slidesPath, outDir) {
-  const imgSrc = resolve(dirname(resolve(slidesPath)), 'img')
-  if (existsSync(imgSrc)) {
-    await cp(imgSrc, resolve(outDir, 'img'), { recursive: true })
+async function copyLocalAssets(slidesPath, outDir) {
+  const absSlides = resolve(slidesPath)
+  const deckDir = dirname(absSlides)
+  const absOutDir = resolve(outDir)
+  const markdown = readFileSync(absSlides, 'utf-8')
+
+  for (const ref of collectLocalAssetRefs(markdown)) {
+    const source = resolve(deckDir, ref)
+    const destination = resolve(absOutDir, ref)
+    const outputRelativePath = relative(absOutDir, destination)
+
+    // Preserve deck-relative paths, but never let a reference write outside
+    // the selected build directory.
+    if (outputRelativePath.startsWith('..') || isAbsolute(outputRelativePath)) continue
+    if (!existsSync(source)) continue
+
+    await mkdir(dirname(destination), { recursive: true })
+    copyFileSync(source, destination)
   }
+}
+
+function posixPresenterLauncher(htmlFilename) {
+  const page = encodeURIComponent(htmlFilename)
+  return [
+    '#!/usr/bin/env sh',
+    'set -eu',
+    '',
+    'SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)',
+    'cd "$SCRIPT_DIR"',
+    '',
+    'PORT=${1:-8765}',
+    'if command -v python3 >/dev/null 2>&1; then',
+    '  PYTHON=python3',
+    'elif command -v python >/dev/null 2>&1; then',
+    '  PYTHON=python',
+    'else',
+    '  echo "Python 3 is required to start the presenter view." >&2',
+    '  exit 1',
+    'fi',
+    '',
+    `URL="http://127.0.0.1:$PORT/${page}?presenter=1"`,
+    '"$PYTHON" -m http.server "$PORT" --bind 127.0.0.1 &',
+    'SERVER_PID=$!',
+    'cleanup() {',
+    '  kill "$SERVER_PID" 2>/dev/null || true',
+    '}',
+    'trap cleanup EXIT INT TERM',
+    '',
+    'sleep 1',
+    'case "$(uname -s)" in',
+    '  Darwin) open "$URL" ;;',
+    '  Linux)',
+    '    if command -v xdg-open >/dev/null 2>&1; then',
+    '      xdg-open "$URL"',
+    '    else',
+    '      echo "Open $URL in a browser."',
+    '    fi',
+    '    ;;',
+    '  *) echo "Open $URL in a browser." ;;',
+    'esac',
+    '',
+    'echo "Presenter server running at $URL"',
+    'echo "Press Ctrl+C to stop."',
+    'wait "$SERVER_PID"',
+    '',
+  ].join('\n')
+}
+
+function windowsPresenterLauncher(htmlFilename) {
+  return [
+    '@echo off',
+    'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0present.ps1" %*',
+    '',
+  ].join('\r\n')
+}
+
+function powershellPresenterLauncher(htmlFilename) {
+  const page = encodeURIComponent(htmlFilename)
+  return [
+    'param([int]$Port = 8765)',
+    '$ErrorActionPreference = "Stop"',
+    'Set-Location $PSScriptRoot',
+    '',
+    '$Py = Get-Command py -ErrorAction SilentlyContinue',
+    'if ($Py) {',
+    '  $Python = $Py.Source',
+    '  $Prefix = @("-3")',
+    '} else {',
+    '  $Py = Get-Command python -ErrorAction SilentlyContinue',
+    '  if (-not $Py) { throw "Python 3 is required to start the presenter view." }',
+    '  $Python = $Py.Source',
+    '  $Prefix = @()',
+    '}',
+    '',
+    `$Url = "http://127.0.0.1:$Port/${page}?presenter=1"`,
+    '$Arguments = $Prefix + @("-m", "http.server", "$Port", "--bind", "127.0.0.1")',
+    '$Server = Start-Process -FilePath $Python -ArgumentList $Arguments -PassThru -NoNewWindow',
+    'try {',
+    '  Start-Sleep -Milliseconds 750',
+    '  Start-Process $Url',
+    '  Write-Host "Presenter server running at $Url"',
+    '  Write-Host "Press Ctrl+C to stop."',
+    '  Wait-Process -Id $Server.Id',
+    '} finally {',
+    '  $Server.Refresh()',
+    '  if (-not $Server.HasExited) { Stop-Process -Id $Server.Id -Force }',
+    '}',
+    '',
+  ].join('\n')
+}
+
+async function writePresenterLaunchers(outDir, htmlFilename) {
+  const shellPath = resolve(outDir, 'present.sh')
+  await writeFile(shellPath, posixPresenterLauncher(htmlFilename), 'utf-8')
+  await chmod(shellPath, 0o755)
+  await writeFile(resolve(outDir, 'present.bat'), windowsPresenterLauncher(htmlFilename), 'utf-8')
+  await writeFile(resolve(outDir, 'present.ps1'), powershellPresenterLauncher(htmlFilename), 'utf-8')
 }
 
 // ── Help ──────────────────────────────────────────────────────────────────────
@@ -235,8 +350,12 @@ const HELP = `
     ${c.green}mdeck dev${c.reset} <slides.md>                  Start dev server with live reload
     ${c.green}mdeck present${c.reset} <slides.md>              Open speaker/presenter view
     ${c.green}mdeck new${c.reset}                              Interactive deck scaffolding wizard
-    ${c.green}mdeck build${c.reset} <slides.md> [-o out.html] [--inline-images]
-                                              Build self-contained HTML
+    ${c.green}mdeck build${c.reset} <slides.md> [-o out.html]
+                                              Build HTML + copied local assets
+    ${c.green}mdeck build${c.reset} <slides.md> [-o out.html] [--self-contained]
+                                              Inline local images/media into one HTML file
+    ${c.green}mdeck build${c.reset} <slides.md> [--presenter-launchers]
+                                              Add macOS/Linux and Windows launchers
     ${c.green}mdeck preview${c.reset}                          Preview the last build
 
   ${c.dim}Install the${c.reset} ${c.bold}mdeck${c.reset} ${c.dim}command globally:${c.reset}
@@ -316,17 +435,26 @@ if (command === 'new') {
 // ── build ─────────────────────────────────────────────────────────────────────
 } else if (command === 'build') {
   const input = requireInput('build')
-  const inlineImages = hasFlag('--inline-images', '-I')
+  const selfContained = hasFlag('--self-contained', '-S')
+  const inlineImages = selfContained || hasFlag('--inline-images', '-I')
+  const presenterLaunchers = hasFlag('--presenter-launchers')
+
+  if (selfContained && presenterLaunchers) {
+    err('--presenter-launchers is only available for directory bundles.')
+    process.exit(1)
+  }
 
   const outputFlagIdx = argv.findIndex(a => a === '--output' || a === '-o')
   const outputPath = outputFlagIdx !== -1 ? resolve(process.cwd(), argv[outputFlagIdx + 1]) : null
 
   const tempDir = outputPath ? mkdtempSync(resolve(tmpdir(), 'mdeck-')) : null
   const outDir = tempDir ?? resolve(process.cwd(), 'dist')
+  const finalOutDir = outputPath ? dirname(outputPath) : outDir
+  const htmlFilename = outputPath ? basename(outputPath) : 'index.html'
 
   await build({
-    ...baseConfig(input),
-    plugins: [preact(), slidesPlugin(resolve(input), { inlineImages }), viteSingleFile()],
+    ...baseConfig(input, { selfContained }),
+    plugins: [preact(), slidesPlugin(resolve(input), { inlineImages, inlineMedia: selfContained }), viteSingleFile()],
     build: {
       outDir,
       emptyOutDir: !tempDir,
@@ -335,16 +463,19 @@ if (command === 'new') {
     },
   })
 
-  if (!inlineImages) {
-    await copyImages(input, outputPath ? dirname(outputPath) : outDir)
+  await mkdir(finalOutDir, { recursive: true })
+
+  if (!selfContained) {
+    await copyLocalAssets(input, finalOutDir)
+    if (presenterLaunchers) await writePresenterLaunchers(finalOutDir, htmlFilename)
   }
 
   if (outputPath && tempDir) {
     copyFileSync(resolve(tempDir, 'index.html'), outputPath)
     await rm(tempDir, { recursive: true })
-    ok(`Built: ${c.cyan}${outputPath}${c.reset}${inlineImages ? ' (images inlined)' : ''}\n`)
+    ok(`Built: ${c.cyan}${outputPath}${c.reset}${selfContained ? ' (self-contained)' : inlineImages ? ' (images inlined)' : ' + local assets'}\n`)
   } else {
-    ok(`Built: ${c.cyan}${resolve(outDir, 'index.html')}${c.reset}${inlineImages ? ' (images inlined)' : ''}\n`)
+    ok(`Built: ${c.cyan}${resolve(outDir, 'index.html')}${c.reset}${selfContained ? ' (self-contained)' : inlineImages ? ' (images inlined + local assets)' : ' + local assets'}\n`)
   }
 
 // ── preview ───────────────────────────────────────────────────────────────────

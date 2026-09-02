@@ -1,6 +1,6 @@
 # mdeck
 
-A minimal Markdown-driven slide deck framework with swappable themes, palettes, and JSX components. Builds to a single self-contained HTML file.
+A minimal Markdown-driven slide deck framework with swappable themes, palettes, and JSX components. Builds either a portable directory bundle or one fully self-contained HTML file.
 
 ## Quick start
 
@@ -27,8 +27,10 @@ npm run build -- my-talk.md
 mdeck dev <slides.md>                  Start dev server with live reload
 mdeck present <slides.md>              Open speaker/presenter view
 mdeck new                              Interactive deck scaffolding wizard
-mdeck build <slides.md> [-o out.html]  Build self-contained HTML
+mdeck build <slides.md> [-o out.html]  Build HTML and copy referenced local assets
 mdeck build <slides.md> --inline-images  Inline local images as data URLs
+mdeck build <slides.md> --self-contained Inline local images/media into one offline file
+mdeck build <slides.md> --presenter-launchers Add portable presenter launchers
 mdeck preview                          Preview the last build
 mdeck --help                           Show usage
 ```
@@ -52,6 +54,36 @@ To produce a single-file deck with local `image:`/`logo:` and Markdown image ref
 ```bash
 mdeck build my-talk.md --inline-images
 ```
+
+The normal build is the recommended way to ship decks with substantial video.
+It preserves referenced deck-relative paths and copies local images, video, and
+audio next to the output HTML automatically.
+
+To produce one offline-ready file, including local images and media such as
+`<videoplayer src="./video/demo.mp4">`, use:
+
+```bash
+mdeck build my-talk.md --self-contained -o my-talk.html
+```
+
+Deck code, deck-local components, imported JSON/text data, styles, images, and
+local audio/video are then contained in the HTML. Theme web fonts use their
+system-font fallbacks so the file does not need a network connection.
+
+Self-contained video is base64-encoded, which adds roughly 33% to its size and
+is less friendly to browser loading, memory use, and seeking. Prefer the normal
+directory bundle unless a single file is operationally important.
+
+For a bundle that can launch the presenter view without installing mdeck, add:
+
+```bash
+mdeck build my-talk.md --presenter-launchers
+```
+
+This adds `present.sh` for macOS/Linux plus `present.bat` and `present.ps1` for
+Windows. Each launcher serves the bundle on `127.0.0.1:8765` and opens the
+presenter URL. Python 3 and a modern browser are the only target-computer
+requirements. Pass a different port as the first argument if `8765` is occupied.
 
 ---
 

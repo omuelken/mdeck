@@ -494,6 +494,26 @@ mdeck build slides.md --inline-images
 
 This inlines local Markdown images, `<img src="...">`, and frontmatter `image:` / `logo:` values as data URLs.
 
+A normal build copies referenced local images, video, and audio next to the HTML
+while preserving their deck-relative paths. This is the recommended distribution
+format for decks containing substantial video.
+
+To embed all local images and media in a single offline-ready HTML file, use:
+
+```bash
+mdeck build slides.md --self-contained -o slides.html
+```
+
+Theme web fonts are replaced by their declared system-font fallbacks in this mode.
+Self-contained video is base64-encoded and is therefore roughly 33% larger than
+the source file; loading, memory use, and seeking can also be worse than with a
+separate media file.
+
+To add target-computer launchers to a directory bundle, build with
+`--presenter-launchers`. The generated `present.sh` (macOS/Linux),
+`present.bat`, and `present.ps1` (Windows) require Python 3, start a local server
+bound to `127.0.0.1`, and open the presenter view in the default browser.
+
 ---
 
 ## Video

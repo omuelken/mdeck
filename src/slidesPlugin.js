@@ -15,6 +15,14 @@ const MIME_BY_EXT = {
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp',
   '.avif': 'image/avif',
+  '.mp4': 'video/mp4',
+  '.m4v': 'video/x-m4v',
+  '.webm': 'video/webm',
+  '.ogv': 'video/ogg',
+  '.mp3': 'audio/mpeg',
+  '.m4a': 'audio/mp4',
+  '.ogg': 'audio/ogg',
+  '.wav': 'audio/wav',
 }
 
 function isLocalAssetRef(ref = '') {
@@ -24,12 +32,16 @@ function isLocalAssetRef(ref = '') {
     && !ref.startsWith('#')
 }
 
-function toDataUrl(ref, baseDir) {
-  if (!isLocalAssetRef(ref)) return null
+function cleanAssetRef(ref) {
   const q = ref.indexOf('?')
   const h = ref.indexOf('#')
   const end = [q, h].filter(i => i !== -1).sort((a, b) => a - b)[0] ?? ref.length
-  const cleanRef = ref.slice(0, end)
+  return ref.slice(0, end)
+}
+
+function toDataUrl(ref, baseDir) {
+  if (!isLocalAssetRef(ref)) return null
+  const cleanRef = cleanAssetRef(ref)
   const abs = resolve(baseDir, cleanRef)
   if (!existsSync(abs)) return null
   const ext = cleanRef.toLowerCase().slice(cleanRef.lastIndexOf('.'))
@@ -55,6 +67,14 @@ function inlineHtmlImgSources(markdown, baseDir) {
   })
 }
 
+function inlineHtmlMediaSources(markdown, baseDir) {
+  return markdown.replace(/(<(?:video|audio|source|videoplayer)\b[^>]*\bsrc=)(["'])([^"']+)(\2)/gi, (m, pre, quote, src, endQuote) => {
+    const dataUrl = toDataUrl(src, baseDir)
+    if (!dataUrl) return m
+    return `${pre}${quote}${dataUrl}${endQuote}`
+  })
+}
+
 function inlineYamlImageFields(markdown, baseDir) {
   return markdown.replace(/^(\s*)(image|logo):\s*(["']?)([^"'\n]+)\3\s*$/gm, (m, indent, key, quote, value) => {
     const dataUrl = toDataUrl(value.trim(), baseDir)
@@ -64,13 +84,34 @@ function inlineYamlImageFields(markdown, baseDir) {
   })
 }
 
-function maybeInlineImages(markdown, abs, inlineImages) {
-  if (!inlineImages) return markdown
+export function collectLocalAssetRefs(markdown) {
+  const refs = new Set()
+  const add = ref => {
+    const clean = cleanAssetRef(String(ref || '').trim())
+    if (isLocalAssetRef(clean)) refs.add(clean)
+  }
+
+  for (const match of markdown.matchAll(/!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
+    add(match[1])
+  }
+  for (const match of markdown.matchAll(/<(?:img|video|audio|source|videoplayer)\b[^>]*\bsrc=(["'])([^"']+)\1/gi)) {
+    add(match[2])
+  }
+  for (const match of markdown.matchAll(/^\s*(?:image|logo):\s*(["']?)([^"'\n]+)\1\s*$/gm)) {
+    add(match[2])
+  }
+
+  return [...refs]
+}
+
+function maybeInlineAssets(markdown, abs, { inlineImages, inlineMedia }) {
+  if (!inlineImages && !inlineMedia) return markdown
   const baseDir = dirname(abs)
   let out = markdown
-  out = inlineMarkdownImages(out, baseDir)
-  out = inlineHtmlImgSources(out, baseDir)
-  out = inlineYamlImageFields(out, baseDir)
+  if (inlineImages) out = inlineMarkdownImages(out, baseDir)
+  if (inlineImages) out = inlineHtmlImgSources(out, baseDir)
+  if (inlineImages) out = inlineYamlImageFields(out, baseDir)
+  if (inlineMedia) out = inlineHtmlMediaSources(out, baseDir)
   return out
 }
 
@@ -96,7 +137,7 @@ function deckComponentFiles(abs) {
     }))
 }
 
-export function slidesPlugin(slidesPath, { inlineImages = false } = {}) {
+export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false } = {}) {
   const abs = resolve(slidesPath)
 
   return {
@@ -108,7 +149,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false } = {}) {
     load(id) {
       if (id === RESOLVED_ID) {
         const raw = readFileSync(abs, 'utf-8')
-        const source = maybeInlineImages(raw, abs, inlineImages)
+        const source = maybeInlineAssets(raw, abs, { inlineImages, inlineMedia })
         return `export default ${JSON.stringify(source)}`
       }
       if (id === RESOLVED_COMPONENTS_ID) {
