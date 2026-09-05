@@ -5,7 +5,7 @@ const PREVIEW_URL = '/?editor=1&embedded=1'
 
 // Hosts the deck runtime in editor mode and keeps it fed with the current
 // source. Navigation inside the preview reports back so the outline follows.
-export function Preview({ source, selection, width, height, onState, onRendered }) {
+export function Preview({ source, selection, config = null, overrides = null, reloadKey = 0, width, height, onState, onRendered }) {
   const frame = useRef(null)
   const [ready, setReady] = useState(false)
   const reported = useRef(null)
@@ -28,11 +28,16 @@ export function Preview({ source, selection, width, height, onState, onRendered 
 
   // Coalesce bursts of keystrokes into one push per tick. A timer rather than
   // requestAnimationFrame, which stalls in background tabs.
+  const overridesKey = JSON.stringify({ config, overrides })
   useEffect(() => {
     if (!ready) return
-    const id = setTimeout(() => post({ deckSource: { source, selection } }), 0)
+    const id = setTimeout(() => post({ deckSource: { source, selection, config, overrides } }), 0)
     return () => clearTimeout(id)
-  }, [ready, source])
+  }, [ready, source, overridesKey])
+
+  // Template layouts are code inside the preview's module graph: after they
+  // change on disk the frame reloads and reports ready again.
+  useEffect(() => { if (reloadKey && frame.current) { setReady(false); frame.current.contentWindow?.location.reload() } }, [reloadKey])
 
   useEffect(() => {
     if (ready && reported.current !== selection.index) post({ deckControl: { command: 'setState', value: { index: selection.index, slideId: selection.slideId, step: -1 } } })

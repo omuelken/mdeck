@@ -10,6 +10,20 @@ export const PALETTE_NAMES = Object.keys(palettes)
 export const THEME_METAS = Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.manifest]))
 export const PALETTES = Object.fromEntries(Object.entries(palettes).map(([id, palette]) => [id, palette.manifest]))
 
+// The editor previews unsaved themes and palettes by handing their manifests
+// (and, for themes, stylesheet text) to the runtime instead of the built
+// module. Overrides win over registered extensions of the same id.
+let overrides = { themes: {}, palettes: {} }
+export function setExtensionOverrides(next = {}) {
+  overrides = { themes: next.themes ?? {}, palettes: next.palettes ?? {} }
+}
+function themeEntry(id) {
+  const override = overrides.themes[id]
+  if (override) return { manifest: override.manifest ?? override, load: () => typeof override.styles === 'string' ? Promise.resolve(override.styles) : themes[id]?.load() ?? Promise.resolve('') }
+  return themes[id]
+}
+const paletteManifest = id => overrides.palettes[id]?.manifest ?? overrides.palettes[id] ?? PALETTES[id]
+
 function upsertStyle(id, textContent) {
   let el = document.getElementById(id)
   if (!el) {
@@ -34,12 +48,12 @@ function syncThemeFonts(urls) {
 }
 
 export async function loadTheme({ design = 'neue', palette, accent, accent2, params = {}, meta = {} } = {}) {
-  const theme = themes[design]
+  const theme = themeEntry(design)
   if (!theme) throw new Error(`Unknown theme: "${design}". Available: ${THEME_NAMES.join(', ')}`)
 
   const styles = await theme.load()
   const appearance = buildAppearance({
-    theme: theme.manifest, palette: PALETTES[palette] ?? null, paletteId: palette ?? '',
+    theme: theme.manifest, palette: paletteManifest(palette) ?? null, paletteId: palette ?? '',
     params, accent, accent2, meta, offline: SELF_CONTAINED,
   })
   for (const warning of appearance.warnings) console.warn(warning)

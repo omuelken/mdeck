@@ -11,6 +11,7 @@ import { Inspector } from './Inspector.jsx'
 import { DeckSettings } from './DeckSettings.jsx'
 import { TemplatePicker } from './TemplatePicker.jsx'
 import { ConflictBanner } from './ConflictBanner.jsx'
+import { ExtensionsMode } from './ExtensionsMode.jsx'
 
 const STATUS = { saved: 'Saved', unsaved: 'Unsaved changes', saving: 'Saving…', conflict: 'Conflict', error: 'Could not save' }
 
@@ -20,6 +21,8 @@ export function App() {
   stateRef.current = state
   const [picker, setPicker] = useState(false)
   const [loadError, setLoadError] = useState(null)
+  const [mode, setMode] = useState('slides')
+  const [previewKey, setPreviewKey] = useState(0)
 
   const queue = useMemo(() => createSaveQueue({
     save: saveSource,
@@ -48,7 +51,12 @@ export function App() {
         dispatch({ type: 'externalChange', source: payload.source, hash: payload.hash })
       } catch {}
     })
-    const offExtensions = onServerEvent('mdeck:extensions-changed', async () => { await queue.flush(); location.reload() })
+    // Extension files changed on disk (by this editor or another program):
+    // refresh the registry and reload the preview frame, never the page.
+    const offExtensions = onServerEvent('mdeck:extensions-changed', async () => {
+      try { const payload = await loadDeck(); dispatch({ type: 'setRegistry', registry: payload.registry }) } catch {}
+      setPreviewKey(key => key + 1)
+    })
     const flush = () => { if (queue.pending()) queue.flush() }
     window.addEventListener('beforeunload', flush)
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush() })
@@ -83,11 +91,17 @@ export function App() {
   const { deck, selectedIndex, tab } = state
   const slide = deck.slides[selectedIndex]
   const selection = { index: selectedIndex, slideId: slide?.id ?? null }
+  const stateWithPreview = { ...state, previewKey }
 
   return <div class="editor">
     <header class="editor-topbar">
       <h1 title={state.path}>{state.name}</h1>
       <span class={`editor-status is-${state.status}`}>{STATUS[state.status]}{state.error ? `: ${state.error}` : ''}</span>
+      <span class="spacer" />
+      <div class="tabs" style={{ padding: 0, border: 0, position: 'static' }}>
+        <button class={mode === 'slides' ? 'is-active' : ''} onClick={() => setMode('slides')}>Slides</button>
+        <button class={mode === 'extensions' ? 'is-active' : ''} onClick={() => setMode('extensions')}>Palettes, themes & templates</button>
+      </div>
       <span class="spacer" />
       <button class="btn is-small" onClick={actions.undo} disabled={!state.history.past.length} title="Undo (⌘Z)">Undo</button>
       <button class="btn is-small" onClick={actions.redo} disabled={!state.history.future.length} title="Redo (⇧⌘Z)">Redo</button>
@@ -96,9 +110,10 @@ export function App() {
     </header>
     {state.status === 'conflict' && <ConflictBanner onReload={() => actions.resolve('reload')} onOverwrite={() => actions.resolve('overwrite')} />}
     <div class="editor-main">
+      {mode === 'extensions' ? <ExtensionsMode state={stateWithPreview} dispatch={dispatch} previewReload={() => setPreviewKey(key => key + 1)} /> : <>
       <Outline deck={deck} manifests={state.manifests} diagnostics={state.diagnostics} selectedIndex={selectedIndex}
         onSelect={select} onAdd={actions.add} onDuplicate={actions.duplicate} onRemove={actions.remove} onMove={actions.move} />
-      <Preview source={state.source} selection={selection} width={deck.deckConfig.width ?? 1920} height={deck.deckConfig.height ?? 1080}
+      <Preview source={state.source} selection={selection} reloadKey={previewKey} width={deck.deckConfig.width ?? 1920} height={deck.deckConfig.height ?? 1080}
         onState={index => { if (index !== stateRef.current.selectedIndex) select(index) }}
         onRendered={info => dispatch({ type: 'previewRendered', ...info })} />
       <aside class="editor-panel">
@@ -108,6 +123,7 @@ export function App() {
         </div>
         {tab === 'deck' ? <DeckSettings state={state} edit={edit} /> : <Inspector state={state} dispatch={dispatch} edit={edit} />}
       </aside>
+      </>}
     </div>
     {picker && <TemplatePicker templates={state.manifests.templates} onPick={actions.pick} onClose={() => setPicker(false)} />}
   </div>

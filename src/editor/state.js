@@ -81,6 +81,11 @@ export function reduce(state, action) {
       const entry = { source: state.source, selectedIndex: state.selectedIndex, group: null, time: 0 }
       return { ...state, source: action.source, savedSource: action.source, hash: action.hash, deck, diagnostics, selectedIndex: clamp(state.selectedIndex, deck), history: { past: [...state.history.past, entry].slice(-HISTORY_LIMIT), future: [] }, status: 'saved' }
     }
+    case 'setRegistry': {
+      const manifests = { templates: byId(action.registry?.templates), themes: byId(action.registry?.themes), palettes: byId(action.registry?.palettes) }
+      const { deck, diagnostics } = derive(state.source, manifests)
+      return { ...state, registry: action.registry, manifests, warnings: action.registry?.warnings ?? state.warnings, deck, diagnostics }
+    }
     case 'previewRendered': return { ...state, preview: { error: action.error ?? null, slideCount: action.slideCount ?? 0 } }
     default: return state
   }

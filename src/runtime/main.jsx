@@ -4,7 +4,7 @@ import { marked } from 'marked'
 import slidesContent from 'virtual:slides'
 import { parseSlides } from '../core/parseSlides'
 import { validateDeck } from '../core/validateDeck'
-import { loadTheme, THEME_NAMES, PALETTE_NAMES, THEME_METAS, PALETTES } from './themeLoader'
+import { loadTheme, setExtensionOverrides, THEME_NAMES, PALETTE_NAMES, THEME_METAS, PALETTES } from './themeLoader'
 import { effectiveToken } from '../extensions/appearance.js'
 import { S, PaletteSwatches } from './chrome.jsx'
 import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
@@ -538,7 +538,7 @@ async function init() {
   if (editorMode) {
     const post = message => window.parent.postMessage(message, window.location.origin)
     const bridge = createEditorBridge({
-      parse: parseSlides, validate: deck => validateDeck(deck, { templates: manifests }), loadTheme, setCalloutLabels,
+      parse: parseSlides, validate: deck => validateDeck(deck, { templates: manifests }), loadTheme, setExtensionOverrides, setCalloutLabels,
       applyOverrides: withConfigOverrides, mount: context => mountDeck({ ...context, editor: true }), post,
     })
     window.addEventListener('message', event => {

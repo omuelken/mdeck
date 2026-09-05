@@ -8,9 +8,10 @@ import { templateManifests } from '../src/extensions/discover.js'
 const templates = templateManifests('examples/showcase/slides.md')
 
 function harness() {
-  const calls = { themes: [], mounts: [], posts: [] }
+  const calls = { themes: [], mounts: [], posts: [], overrides: [] }
   const bridge = createEditorBridge({
     parse: parseSlides,
+    setExtensionOverrides: value => calls.overrides.push(value),
     validate: deck => validateDeck(deck, { templates }),
     loadTheme: async config => { await new Promise(r => setTimeout(r, 5)); if (config.design === 'nope') throw new Error('Unknown theme: "nope"'); calls.themes.push(config.design ?? 'default') },
     mount: ({ deck, deckConfig, selection }) => { if (deck.slides[0]?.content === '# boom') throw new Error('layout exploded'); calls.mounts.push({ count: deck.slides.length, design: deckConfig.design, selection }) },
@@ -61,4 +62,19 @@ test('overlapping renders keep only the newest and messages are dispatched', asy
   assert.equal(calls.mounts.length, 2)
   assert.deepEqual(calls.mounts[1].selection, { index: 0, slideId: 'slide-1' })
   assert.equal(bridge.current().deck.slides[0].content, '# 3')
+})
+
+test('preview config and extension overrides reload the theme when they change', async () => {
+  const { bridge, calls } = harness()
+  await bridge.render('---\ndesign: duet\n---\n# A', { config: { palette: 'sage' } })
+  assert.equal(bridge.current().deckConfig.palette, 'sage')
+  assert.deepEqual(calls.overrides, [{}])
+  await bridge.render('---\ndesign: duet\n---\n# A', { config: { palette: 'sage' }, overrides: { palettes: { sage: { tokens: { '--bg': '#000' } } } } })
+  assert.equal(calls.themes.length, 2, 'changed overrides reload the theme')
+  assert.deepEqual(calls.overrides.at(-1), { palettes: { sage: { tokens: { '--bg': '#000' } } } })
+  await bridge.render('---\ndesign: duet\n---\n# B', { config: { palette: 'sage' }, overrides: { palettes: { sage: { tokens: { '--bg': '#000' } } } } })
+  assert.equal(calls.themes.length, 2, 'unchanged overrides do not')
+  bridge.handleMessage({ deckSource: { source: '---\ndesign: duet\n---\n# C', config: { design: 'terminal' } } })
+  await new Promise(r => setTimeout(r, 20))
+  assert.equal(calls.themes.at(-1), 'terminal')
 })

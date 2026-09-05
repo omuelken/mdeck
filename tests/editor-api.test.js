@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { createServer } from 'vite'
 import preact from '@preact/preset-vite'
 import { createServer as createHttpServer } from 'node:http'
-import { mkdtempSync, copyFileSync, readFileSync, writeFileSync, mkdirSync, cpSync } from 'node:fs'
+import { mkdtempSync, copyFileSync, readFileSync, writeFileSync, cpSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { slidesPlugin } from '../src/build/slidesPlugin.js'
@@ -100,4 +100,53 @@ test('only same-host loopback requests are allowed', () => {
   assert.equal(isAllowedRequest(request({ host: '127.0.0.1:5173', origin: 'null' })), false)
   assert.equal(isAllowedRequest(request({ host: 'example.com' })), false)
   assert.equal(isAllowedRequest(request({})), false)
+})
+
+test('deck-local extensions can be read, written and removed; built-ins are read-only', async () => {
+  const read = await api('/extension/template/comparison')
+  assert.equal(read.status, 200)
+  const body = await read.json()
+  assert.equal(body.source, 'local')
+  assert.ok(body.files['extension.toml'].includes('kind = "template"'))
+  assert.ok(body.files['layout.jsx'].includes('MarkdownRegion'))
+  assert.equal((await api('/extension/palette/paper')).status, 200)
+  assert.equal((await api('/extension/palette/nope')).status, 404)
+  assert.equal((await api('/extension/thing/paper')).status, 400)
+
+  const toml = 'schema = 1\nkind = "palette"\nid = "ocean"\ntitle = "Ocean"\ndark = true\n[tokens]\n"--bg" = "#102030"\n"--accent" = "#ffbd69"\n'
+  const created = await api('/extension/palette/ocean', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': toml } }) })
+  const createdText = await created.text()
+  assert.equal(created.status, 200, createdText)
+  const payload = JSON.parse(createdText)
+  assert.ok(payload.registry.palettes.find(p => p.id === 'ocean' && p.source === 'local'))
+  assert.equal(readFileSync(resolve(dir, 'extensions/ocean/extension.toml'), 'utf8'), toml)
+
+  const invalid = await api('/extension/palette/ocean', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': toml.replace('"--bg"', '"bg"') } }) })
+  assert.equal(invalid.status, 500)
+  assert.match((await invalid.json()).error, /tokens.bg/)
+  assert.equal(readFileSync(resolve(dir, 'extensions/ocean/extension.toml'), 'utf8'), toml, 'invalid manifests are not written')
+
+  const builtin = await api('/extension/palette/paper', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': toml.replace('ocean', 'paper') } }) })
+  assert.equal(builtin.status, 403)
+  const mismatch = await api('/extension/theme/ocean', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': toml } }) })
+  assert.equal(mismatch.status, 409)
+  const escape = await api('/extension/palette/ocean', { method: 'PUT', body: JSON.stringify({ files: { '../evil.toml': 'x', 'extension.toml': toml } }) })
+  assert.equal(escape.status, 400)
+  assert.equal((await api('/extension/palette/Ocean', { method: 'PUT', body: '{}' })).status, 400)
+
+  const tomlTemplate = 'schema = 1\nkind = "template"\nid = "box"\ntitle = "Box"\n[regions.body]\n'
+  const noLayout = await api('/extension/template/box', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': tomlTemplate } }) })
+  assert.equal(noLayout.status, 500)
+  assert.match((await noLayout.json()).error, /layout.jsx is missing/)
+  const withLayout = await api('/extension/template/box', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': tomlTemplate, 'layout.jsx': 'export default () => null\n', 'starter.md': '# Box\n' } }) })
+  assert.equal(withLayout.status, 200)
+  const dropStarter = await api('/extension/template/box', { method: 'PUT', body: JSON.stringify({ files: { 'starter.md': null } }) })
+  assert.equal(dropStarter.status, 200)
+  assert.deepEqual(Object.keys((await dropStarter.json()).files).sort(), ['extension.toml', 'layout.jsx'])
+
+  assert.equal((await api('/extension/palette/paper', { method: 'DELETE' })).status, 403)
+  assert.equal((await api('/extension/palette/ocean', { method: 'DELETE' })).status, 200)
+  assert.equal((await api('/extension/template/box', { method: 'DELETE' })).status, 200)
+  assert.equal(existsSync(resolve(dir, 'extensions/ocean')), false)
+  assert.ok((await (await api('/deck')).json()).registry.palettes.every(p => p.id !== 'ocean'))
 })

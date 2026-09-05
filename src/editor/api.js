@@ -32,3 +32,22 @@ export function onServerEvent(name, callback) {
   import.meta.hot.on(name, callback)
   return () => import.meta.hot.off?.(name, callback)
 }
+
+export async function loadExtension(kind, id) {
+  const response = await fetch(`/__mdeck/extension/${kind}/${id}`, { headers: { Accept: 'application/json' } })
+  if (!response.ok) throw await failure(response)
+  return response.json()
+}
+
+// files: { name: text | null }; null removes a file. Returns the new registry.
+export async function saveExtension(kind, id, files) {
+  const response = await fetch(`/__mdeck/extension/${kind}/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ files }) })
+  if (!response.ok) throw await failure(response)
+  return response.json()
+}
+
+export async function deleteExtension(kind, id) {
+  const response = await fetch(`/__mdeck/extension/${kind}/${id}`, { method: 'DELETE', headers: { Accept: 'application/json' } })
+  if (!response.ok) throw await failure(response)
+  return response.json()
+}
