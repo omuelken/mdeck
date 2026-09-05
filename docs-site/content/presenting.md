@@ -1,0 +1,75 @@
+# Add notes and present
+
+The presenter view puts your current slide, the next slide, your notes, and a timer in one place. Your audience can see the slides in a separate window.
+
+## Write notes for yourself
+
+Add a notes block at the end of a slide:
+
+```markdown
+# A place to grow
+
+Every neighborhood has a starting point.
+
+:::notes
+Welcome everyone. Ask who has visited the garden.
+
+- Pause for answers.
+- Keep this introduction short.
+:::
+```
+
+The words between `:::notes` and `:::` appear in the presenter view, not on the audience slide.
+
+Older files may use `note:` or `notes:` inside slide settings. Those still work. The block above is often easier to read and edit.
+
+## Open the presenter view
+
+```sh
+mdeck present my-talk.md
+```
+
+Use its audience-window button to open a separate view of the slides. If you have a projector or second screen, move that audience window onto it. Keep the presenter window on your own screen.
+
+The two windows follow the same slide and reveal position. This works between windows in the same browser on your computer. It is not a remote-control service for a second computer or phone.
+
+## Move through the talk
+
+| Key | What it does |
+|---|---|
+| Right arrow, Space, or Page Down | Show the next point, then the next slide |
+| Left arrow or Page Up | Hide the last revealed point, or return to the previous slide |
+| Home | Go to the first slide |
+| End | Go to the last slide when the slide view has focus |
+| R | Start again and clear the reveals |
+
+Click the slide area if your keys are not controlling it. Keys behave normally while you are typing in a text field.
+
+The timer is for your own reference; you can start, pause, and reset it in the presenter view.
+
+## Reveal points one at a time
+
+Wrap a list in a steps block:
+
+```markdown
+# Our plan
+
+:::steps
+- Meet the neighbors.
+- Choose a first project.
+- Set a date.
+:::
+```
+
+Each press of the next key reveals one point. Once all points are visible, the next press moves to the following slide. Printed slides show all the points.
+
+## Before the talk
+
+- Open the talk on the computer you will use.
+- Try the audience window and check the correct screen is showing.
+- Test every video, especially if it comes from the internet.
+- Run `mdeck check my-talk.md` to look for missing files or settings mistakes.
+
+## Are my notes private?
+
+Notes are hidden from the audience view, but they are included in the built presentation file. Someone with that file can inspect them. Remove confidential notes from a copy of your slide source before building a version for public sharing.

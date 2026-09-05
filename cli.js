@@ -335,6 +335,8 @@ const HELP = `
     ${c.green}mdeck build${c.reset} <slides.md> [--presenter-launchers]
                                               Add macOS/Linux and Windows launchers
     ${c.green}mdeck preview${c.reset}                          Preview the last build
+    ${c.green}mdeck docs${c.reset} [guide]                      Open the local documentation
+      --no-open   --port <number>   --build    Serve without opening, choose port, or build site
     ${c.green}mdeck check${c.reset} <slides.md> [--strict]       Validate source and local assets
     ${c.green}mdeck templates${c.reset} <slides.md> [--json]      List built-in and deck-local templates
     ${c.green}mdeck templates${c.reset} <slides.md> --starter <name>
@@ -374,6 +376,38 @@ function requireInput(cmd) {
 // ── dev ───────────────────────────────────────────────────────────────────────
 if (command === 'new') {
   await runNewWizard()
+
+} else if (command === 'docs') {
+  try {
+    const options = { page: 'index', open: true, port: 4174 }
+    let buildOnly = false
+    for (let i = 0; i < argv.length; i++) {
+      const arg = argv[i]
+      if (arg === '--no-open') options.open = false
+      else if (arg === '--build') buildOnly = true
+      else if (arg === '--port') {
+        options.port = Number(argv[++i])
+        if (!Number.isInteger(options.port) || options.port < 1 || options.port > 65535) throw new Error('Choose a port number between 1 and 65535.')
+      } else if (arg.startsWith('-')) throw new Error(`Unknown documentation option: ${arg}`)
+      else if (options.page !== 'index') throw new Error('Choose one guide to open.')
+      else options.page = arg.replace(/\.html$/, '')
+    }
+    const { pageFor } = await import('./docs-site/pages.js')
+    if (!pageFor(options.page)) throw new Error(`No guide named "${options.page}". Try mdeck docs getting-started.`)
+    if (buildOnly) {
+      const { buildDocs } = await import('./docs-site/build.js')
+      ok(`Documentation built: ${await buildDocs()}`)
+    } else {
+      tip('Preparing the guides and slide examples…')
+      const { startDocs } = await import('./docs-site/server.js')
+      const docs = await startDocs(options)
+      ok(`Documentation: ${docs.url}`)
+      tip('Press Ctrl+C to close the documentation server.')
+      const stop = async () => { await docs.close(); process.exit(0) }
+      process.once('SIGINT', stop)
+      process.once('SIGTERM', stop)
+    }
+  } catch (error) { err(error.message); process.exitCode = 1 }
 
 } else if (command === 'check') {
   const input = requireInput('check')

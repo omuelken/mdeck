@@ -1,0 +1,9 @@
+{
+  "name": "@mdeck/docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ../cli.js docs",
+    "build": "node build.js"
+  }
+}

@@ -9,6 +9,8 @@
   "scripts": {
     "test": "node --test",
     "test:browser": "node scripts/browser-check.mjs",
+    "docs": "node cli.js docs",
+    "docs:build": "node docs-site/build.js",
     "dev": "node cli.js dev",
     "build": "node cli.js build",
     "preview": "node cli.js preview"
