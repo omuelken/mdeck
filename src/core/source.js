@@ -1,3 +1,4 @@
+import yaml from 'js-yaml'
 // All ranges are half-open UTF-16 offsets into the original source string.
 export function sourceLines(source) {
   const lines = []
@@ -69,4 +70,68 @@ export function replaceRegion(deck, slideId, name, markdown) {
   const newline = deck.source.includes('\r\n') ? '\r\n' : '\n'
   const text = markdown.replace(/\r?\n/g, newline).replace(/[\r\n]*$/, '') + newline
   return applySourceEdits(deck.source, [{ ...region.source, text, expected: region.raw }])
+}
+
+// ─── Byte-preserving editing primitives ────────────────────────────────────
+
+export function detectNewline(source) { return source.includes('\r\n') ? '\r\n' : '\n' }
+
+// Normalizes line endings and guarantees exactly one trailing newline; '' stays ''.
+export function normalizeBlock(text, newline = '\n') {
+  if (!text || !text.trim()) return ''
+  return text.replace(/\r?\n/g, newline).replace(/[\r\n]*$/, '') + newline
+}
+
+const KEY_LINE_RE = /^([\w-]+):(\s|$)/
+const TRAIL_LINE_RE = /^\s*(#.*)?$/
+
+export function firstYamlKey(text) {
+  for (const line of sourceLines(text)) {
+    if (TRAIL_LINE_RE.test(line.text)) continue
+    return line.text.match(KEY_LINE_RE)?.[1] ?? null
+  }
+  return null
+}
+
+// Patches top-level keys of a YAML mapping given as full lines. Only the
+// blocks of the patched keys are rewritten; every other line stays
+// byte-identical, including comments. `undefined` deletes a key. Returns ''
+// when no keys remain. `leadKeys` moves a recognized key to the top so
+// legacy slide metadata and deck frontmatter keep being detected.
+export function patchYamlMapping(text, patch, { newline = detectNewline(text), leadKeys = null } = {}) {
+  const existing = text.trim() ? yaml.load(text) : null
+  if (existing != null && (typeof existing !== 'object' || Array.isArray(existing))) throw new Error('Metadata must be a YAML mapping')
+  const blocks = [{ key: null, lines: [] }]
+  for (const line of sourceLines(text)) {
+    const key = line.text.match(KEY_LINE_RE)?.[1]
+    if (key) blocks.push({ key, lines: [] })
+    blocks.at(-1).lines.push(line.text)
+  }
+  const split = lines => {
+    let end = lines.length
+    while (end > 0 && TRAIL_LINE_RE.test(lines[end - 1])) end--
+    return [lines.slice(0, end), lines.slice(end)]
+  }
+  const dump = (key, value) => yaml.dump({ [key]: value }, { flowLevel: 2, lineWidth: -1, noRefs: true, quotingType: '"' }).replace(/\n$/, '').split('\n')
+  for (const [key, value] of Object.entries(patch)) {
+    if (!KEY_LINE_RE.test(`${key}:`)) throw new Error(`Invalid metadata key "${key}"`)
+    const index = blocks.findIndex(block => block.key === key)
+    if (index < 0) {
+      if (value !== undefined) blocks.push({ key, lines: dump(key, value) })
+      continue
+    }
+    const [, trailing] = split(blocks[index].lines)
+    if (value === undefined) blocks[index] = { key: null, lines: trailing }
+    else blocks[index].lines = [...dump(key, value), ...trailing]
+  }
+  const keyed = blocks.filter(block => block.key)
+  if (!keyed.length) return ''
+  if (leadKeys && !leadKeys.has(keyed[0].key)) {
+    const lead = keyed.find(block => leadKeys.has(block.key))
+    if (lead) {
+      blocks.splice(blocks.indexOf(lead), 1)
+      blocks.splice(1, 0, lead)
+    }
+  }
+  return blocks.flatMap(block => block.lines).join(newline) + newline
 }

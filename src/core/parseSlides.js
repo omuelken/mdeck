@@ -2,8 +2,8 @@ import yaml from 'js-yaml'
 import { sourceLines, fenceState, scanDirectives, diagnostic } from './source.js'
 export { sourceLines, fenceState } from './source.js'
 
-const DECK_KEYS = new Set('design palette accent accent2 params meta width height institution authorDate pageNumbers sections lang callouts'.split(' '))
-const SLIDE_KEYS = new Set('layout id section number part description label image alt overlay eyebrow attribution note notes props'.split(' '))
+export const DECK_KEYS = new Set('design palette accent accent2 params meta width height institution authorDate pageNumbers sections lang callouts'.split(' '))
+export const SLIDE_KEYS = new Set('layout id section number part description label image alt overlay eyebrow attribution note notes props'.split(' '))
 
 export function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -29,7 +29,7 @@ function segmentsOf(source) {
   return segments.filter(s => source.slice(s.start, s.end).trim())
 }
 
-function looksLikeMeta(text, keys) {
+export function looksLikeMeta(text, keys) {
   const first = sourceLines(text).find(line => line.text.trim() && !/^\s*#/.test(line.text))
   const key = first?.text.match(/^([\w-]+):/)
   return !!key && keys.has(key[1]) && !/^\s*#{1,6}\s/.test(text)
