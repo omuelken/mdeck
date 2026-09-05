@@ -1,0 +1,4 @@
+.slide--comparison .comparison-body { gap: 40px; }
+.slide--comparison .comparison-options { display: grid; gap: 40px; min-height: 0; }
+.slide--comparison .comparison-option { min-width: 0; padding: 28px; border: 2px solid var(--rule); }
+.slide--comparison .comparison-option.is-emphasized { border-color: var(--accent); }

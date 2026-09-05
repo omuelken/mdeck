@@ -11,6 +11,8 @@ import { viteSingleFile } from 'vite-plugin-singlefile'
 import { collectLocalAssetRefs, slidesPlugin } from './src/slidesPlugin.js'
 import { parseSlides } from './src/parseSlides.js'
 import { validateDeck, formatDiagnostics } from './src/validateDeck.js'
+import { templateManifests } from './src/discoverTemplates.js'
+import { builtinManifests } from './src/templateManifests.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const frameworkRoot = __dirname
@@ -26,14 +28,6 @@ const err = msg => console.error(`  ${c.red}✗${c.reset}  ${msg}`)
 const tip = msg => console.log(`  ${c.dim}${msg}${c.reset}`)
 
 const THEMES = ['neue', 'aurora', 'duet', 'fhnw', 'editorial', 'terminal']
-const LAYOUT_LIBRARY = [
-  { key: 'title', label: 'Title slide' },
-  { key: 'chapter', label: 'Chapter divider' },
-  { key: 'focus', label: 'Big statement' },
-  { key: 'image-text', label: 'Image + text' },
-  { key: 'split', label: 'Split content' },
-  { key: 'full-bleed-image', label: 'Full-bleed image' },
-]
 const ASPECT_RATIOS = [
   { label: '16:9 (widescreen)', w: 16, h: 9 },
   { label: '16:10 (widescreen)', w: 16, h: 10 },
@@ -114,25 +108,6 @@ function parseSelection(input, max) {
   return picks
 }
 
-function createSlideTemplate(layout, section, n) {
-  const idx = String(n + 1).padStart(2, '0')
-  if (layout === 'title') {
-    return `---\nlayout: title\n---\n# ${section}\n## A clear subtitle for your audience\n`
-  }
-  if (layout === 'chapter') {
-    return `---\nlayout: chapter\nnumber: ${n + 1}\npart: Part ${n + 1}\ndescription: What this chapter covers\n---\n# ${section}\n`
-  }
-  if (layout === 'focus') {
-    return `---\nlayout: focus\neyebrow: Key message\nattribution: Your Name\n---\n# One strong idea for this section.\n`
-  }
-  if (layout === 'image-text') {
-    return `---\nlayout: image-text\nsection: ${section}\nimage: ./img/image-${idx}.jpg\n---\n## Visual context\n\nExplain the visual and connect it to your story.\n`
-  }
-  if (layout === 'split') {
-    return `---\nlayout: split\nsection: ${section}\n---\n\n\`\`\`python\na = [1, 2, 3]\nprint(sum(a))\n\`\`\`\n\n- Explain the snippet\n- Add key takeaways\n`
-  }
-  return `---\nlayout: full-bleed-image\nsection: ${section}\nimage: ./img/hero-${idx}.jpg\noverlay: true\n---\n# Section highlight\n`
-}
 
 async function runNewWizard() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
@@ -159,6 +134,7 @@ async function runNewWizard() {
     const pIdx = parseInt(pRaw, 10)
     const palette = pIdx > 0 ? (palettes[pIdx - 1] || '') : ''
 
+    const LAYOUT_LIBRARY = Object.values(templateManifests(outPath)).map(manifest => ({ key: manifest.name, label: manifest.title, starter: manifest.starter }))
     console.log('\n  Slide templates (comma-separated numbers):')
     LAYOUT_LIBRARY.forEach((opt, i) => console.log(`    ${i + 1}) ${opt.label}`))
     const defaultLayouts = '1,2,3,4'
@@ -205,7 +181,7 @@ async function runNewWizard() {
     ]
 
     chosen.forEach((opt, i) => {
-      lines.push(createSlideTemplate(opt.key, opt.label, i))
+      lines.push('---\n' + opt.starter)
       lines.push('')
     })
 
@@ -360,6 +336,9 @@ const HELP = `
                                               Add macOS/Linux and Windows launchers
     ${c.green}mdeck preview${c.reset}                          Preview the last build
     ${c.green}mdeck check${c.reset} <slides.md> [--strict]       Validate source and local assets
+    ${c.green}mdeck templates${c.reset} <slides.md> [--json]      List built-in and deck-local templates
+    ${c.green}mdeck templates${c.reset} <slides.md> --starter <name>
+                                              Print starter Markdown for a template
 
   ${c.dim}Install the${c.reset} ${c.bold}mdeck${c.reset} ${c.dim}command globally:${c.reset}
     npm link
@@ -399,13 +378,24 @@ if (command === 'new') {
 } else if (command === 'check') {
   const input = requireInput('check')
   const source = readFileSync(input, 'utf8')
-  const diagnostics = validateDeck(parseSlides(source))
+  const diagnostics = validateDeck(parseSlides(source), { templates: templateManifests(input) })
   for (const ref of collectLocalAssetRefs(source)) {
     if (!existsSync(resolve(dirname(resolve(input)), ref))) diagnostics.push({ severity: 'error', code: 'missing-asset', message: `Missing local asset: ${ref}`, line: 1, column: 1 })
   }
   if (diagnostics.length) console.log(formatDiagnostics(diagnostics, input))
   if (diagnostics.some(d => d.severity === 'error' || hasFlag('--strict'))) process.exitCode = 1
   else ok(`Checked ${input}${diagnostics.length ? ' (with warnings)' : ''}`)
+
+} else if (command === 'templates') {
+  const input = requireInput('templates')
+  const templates = templateManifests(input)
+  const starterIndex = argv.indexOf('--starter')
+  if (starterIndex >= 0) {
+    const name = argv[starterIndex + 1]
+    if (!Object.hasOwn(templates, name)) { err(`Unknown template: ${name}`); process.exitCode = 1 }
+    else process.stdout.write(templates[name].starter)
+  } else if (hasFlag('--json')) console.log(JSON.stringify(templates, null, 2))
+  else for (const manifest of Object.values(templates)) console.log(`  ${manifest.name} — ${manifest.title} (${Object.hasOwn(builtinManifests, manifest.name) ? 'built-in' : 'local'})`)
 
 // ── dev ───────────────────────────────────────────────────────────────────────
 } else if (command === 'dev') {

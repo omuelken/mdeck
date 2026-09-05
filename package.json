@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "node --test",
+    "test:browser": "node scripts/browser-check.mjs",
     "dev": "node cli.js dev",
     "build": "node cli.js build",
     "preview": "node cli.js preview"

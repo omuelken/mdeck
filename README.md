@@ -91,6 +91,8 @@ requirements. Pass a different port as the first argument if `8765` is occupied.
 
 For named content regions, explicit metadata, stable slide IDs, validation, and
 the source-preserving document API, see [Structured slides](docs/structured-slides.md).
+For deck-local layout components, manifests and starter presets, see
+[User-created templates](docs/templates.md).
 
 A deck is a single `.md` file. The first `---` block is the deck config; each subsequent `---` block is slide frontmatter followed by slide content.
 
@@ -237,7 +239,7 @@ It takes precedence over both palette and `params.primaryColor`.
 
 ## Themes
 
-Five themes are included:
+Six themes are included:
 
 | Theme | Character |
 |---|---|
@@ -295,7 +297,7 @@ const THEMES = {
 }
 ```
 
-See `themes/THEMES.md` for the full theme authoring reference.
+See [Theme authoring](docs/themes.md) for the full reference.
 
 ### Custom palettes
 
@@ -315,7 +317,7 @@ Add a JSON file to `palettes/`. No registration needed — the filename becomes 
 }
 ```
 
-See `palettes/PALETTES.md` for the palette authoring reference.
+See [Palette authoring](docs/palettes.md) for the full reference.
 
 ### Deck metadata as CSS variables
 
@@ -404,6 +406,11 @@ Open the built HTML in any browser and use **File → Print → Save as PDF**. E
 
 ## Project structure
 
+Run `npm test` for parser, source-editing, template, rendering, and navigation
+regressions. With Chrome/Chromium installed, `npm run test:browser` also checks
+template rendering and presenter/audience synchronization. Set `MDECK_CHROME`
+if the browser is not in a standard macOS/Linux location.
+
 ```
 mdeck/
   cli.js                CLI entry point (dev / present / build / preview)
@@ -426,7 +433,9 @@ mdeck/
     markedSetup.js       Overrides marked's code renderer → <codeblock>
     parseSlides.js       Splits .md into {deckConfig, slides[]}
     registry.jsx         Maps tag names to Preact components
-    renderSlide.jsx      All slide layout components
+    renderSlide.jsx      Template registry and dispatcher
+    builtinLayouts.jsx   Built-in template components
+    templateApi.jsx      Shared slide frame and Markdown regions
     slidesPlugin.js      Vite virtual-module plugin for the slides file
     themeLoader.js       Loads theme + palette CSS into the document
   themes/

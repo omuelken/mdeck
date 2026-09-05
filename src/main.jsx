@@ -5,7 +5,7 @@ import slidesContent from 'virtual:slides'
 import { parseSlides } from './parseSlides'
 import { validateDeck } from './validateDeck'
 import { loadTheme, THEME_NAMES, PALETTE_NAMES, THEME_METAS, PALETTES } from './themeLoader'
-import { SlideRenderer } from './renderSlide'
+import { SlideRenderer, manifests } from './renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import './deck-stage.js'
 
@@ -513,7 +513,7 @@ function PresenterView({ deckConfig, slides }) {
 
 async function init() {
   const parsed = parseSlides(slidesContent)
-  const errors = validateDeck(parsed).filter(d => d.severity === 'error')
+  const errors = validateDeck(parsed, { templates: manifests }).filter(d => d.severity === 'error')
   if (errors.length) {
     document.body.textContent = errors.map(d => `Line ${d.line}: ${d.message}`).join('\n')
     document.body.style.whiteSpace = 'pre-wrap'

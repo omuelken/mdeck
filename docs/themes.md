@@ -113,7 +113,13 @@ The key becomes the value used in `design:` in the deck frontmatter.
 
 ## Custom layouts
 
-Any slide with an unrecognised `layout:` value falls through to the generic renderer, which renders the full markdown body with the standard slide chrome (header, footer). The layout name is not used by the framework — it is purely informational.
+Define reusable slide structures with [deck-local templates](templates.md).
+They provide named regions, typed properties, and shared slide chrome without
+editing the framework. Theme CSS continues to style those structures.
+
+For compatibility, an unrecognised `layout:` value warns and falls through to the
+generic renderer. It renders the full Markdown body with standard slide chrome
+and emits a `.slide--<layout-name>` class. Prefer a declared template for new layouts.
 
 To style a custom layout, target `.slide--<layout-name>` in a CSS file loaded alongside your deck, or use inline styles in your markdown HTML.
 

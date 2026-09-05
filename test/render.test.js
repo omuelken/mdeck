@@ -7,14 +7,15 @@ import { parseSlides } from '../src/parseSlides.js'
 import { marked } from 'marked'
 import { createServer as createHttpServer } from 'node:http'
 
-const server = await createServer({ configFile: false, plugins: [preact(), slidesPlugin('examples/demo.md')], server: { middlewareMode: true, hmr: { server: createHttpServer() } }, optimizeDeps: { noDiscovery: true, include: [] }, appType: 'custom' })
+const server = await createServer({ configFile: false, plugins: [preact(), slidesPlugin('examples/custom-templates/slides.md')], server: { middlewareMode: true, hmr: { server: createHttpServer() } }, optimizeDeps: { noDiscovery: true, include: [] }, appType: 'custom' })
 after(() => server.close())
 await server.ssrLoadModule('/src/markedSetup.js')
-const { SlideRenderer } = await server.ssrLoadModule('/src/renderSlide.jsx')
+const { SlideRenderer, manifests } = await server.ssrLoadModule('/src/renderSlide.jsx')
 
 function htmlFragments(node) {
   if (!node || typeof node !== 'object') return ''
   if (Array.isArray(node)) return node.map(htmlFragments).join('\n')
+  if (typeof node.type === 'function' && node.type.name !== 'HtmlContent') return htmlFragments(node.type(node.props))
   return [node.props?.html, node.props?.dangerouslySetInnerHTML?.__html, htmlFragments(node.props?.children)].filter(Boolean).join('\n')
 }
 
@@ -27,7 +28,7 @@ test('image-text retains lists, tables, code, components and repeated headings',
 test('split supports named regions without losing the shared heading', () => {
   const slide = parseSlides(':::meta\nlayout: split\nid: split-test\n:::\n# Shared\n:::slot left\n**Left**\n:::\n:::slot right\nRight\n:::').slides[0]
   const node = SlideRenderer({ ...slide, deckConfig: {}, index: 0 })
-  assert.equal(node.props['data-slide-id'], 'split-test')
+  assert.equal(node.type(node.props).props['data-slide-id'], 'split-test')
   for (const text of ['Shared', 'Left', 'Right']) assert.ok(htmlFragments(node).includes(text))
 })
 
@@ -36,4 +37,15 @@ test('nested directives render correctly and preserve code delimiters', () => {
   assert.equal((html.match(/class="column"/g) ?? []).length, 2)
   assert.match(html, /callout-tip/)
   assert.match(html, /<codeblock[^>]*>\+\+\+/)
+})
+
+test('deck-local templates load through the real plugin and share the frame', () => {
+  assert.equal(manifests.comparison.title, 'Side-by-side comparison')
+  const slide = parseSlides(':::meta\nlayout: comparison\nid: local\n:::\n# Shared\n:::slot left\nLeft[^a]\n:::\n:::slot right\nRight[^b]\n\n[^a]: First source\n[^b]: Second source\n:::').slides[0]
+  const node = SlideRenderer({ ...slide, deckConfig: {}, index: 0 })
+  const frame = node.type(node.props)
+  assert.equal(frame.props.class, 'slide slide--comparison')
+  assert.equal(frame.props['data-slide-id'], 'local')
+  const html = htmlFragments(node)
+  for (const text of ['Shared', 'Left<sup>1</sup>', 'Right<sup>2</sup>', 'First source', 'Second source']) assert.ok(html.includes(text), text)
 })
