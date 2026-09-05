@@ -4,16 +4,19 @@
   "type": "module",
   "description": "Markdown-driven slide deck framework with swappable design systems",
   "bin": {
-    "mdeck": "./cli.js"
+    "mdeck": "./bin/mdeck.js"
   },
   "scripts": {
     "test": "node --test",
-    "test:browser": "node scripts/browser-check.mjs",
-    "docs": "node cli.js docs",
-    "docs:build": "node docs-site/build.js",
-    "dev": "node cli.js dev",
-    "build": "node cli.js build",
-    "preview": "node cli.js preview"
+    "test:browser": "node tools/browser-check.mjs",
+    "docs": "node bin/mdeck.js docs",
+    "docs:build": "node docs/site/build.js",
+    "dev": "node bin/mdeck.js dev",
+    "present": "node bin/mdeck.js present",
+    "build": "node bin/mdeck.js build",
+    "preview": "node bin/mdeck.js preview",
+    "playground": "vite --config playground/vite.config.js",
+    "playground:build": "vite build --config playground/vite.config.js"
   },
   "dependencies": {
     "js-yaml": "^4.1.0",

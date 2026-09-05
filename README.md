@@ -1,450 +1,129 @@
 # mdeck
 
-A minimal Markdown-driven slide deck framework with swappable themes, palettes, and JSX components. Builds either a portable directory bundle or one fully self-contained HTML file.
+Make presentations from a plain-text file. mdeck turns your words into slides,
+with ready-made layouts, themes, speaker notes, pictures, and video.
 
-## Quick start
+New to Markdown? Open the friendly step-by-step guides:
 
-```bash
+```sh
+mdeck docs
+```
+
+## Set up this checkout
+
+With Node.js and npm installed, run these commands in the project folder:
+
+```sh
 npm install
-npm link                          # install the mdeck command globally (once)
-
-mdeck dev my-talk.md               # dev server with live reload
-mdeck build my-talk.md             # build → dist/index.html
+npm link
+mdeck --help
 ```
 
-Without `npm link`, pass the file via npm scripts:
+`npm link` makes the `mdeck` command available from any folder. Run it again after
+updating an older checkout if its command still points to the previous entry.
 
-```bash
-npm run dev -- my-talk.md
-npm run build -- my-talk.md
-```
+## Make a presentation
 
----
-
-## CLI
-
-```
-mdeck dev <slides.md>                  Start dev server with live reload
-mdeck present <slides.md>              Open speaker/presenter view
-mdeck new                              Interactive deck scaffolding wizard
-mdeck build <slides.md> [-o out.html]  Build HTML and copy referenced local assets
-mdeck build <slides.md> --inline-images  Inline local images as data URLs
-mdeck build <slides.md> --self-contained Inline local images/media into one offline file
-mdeck build <slides.md> --presenter-launchers Add portable presenter launchers
-mdeck preview                          Preview the last build
-mdeck --help                           Show usage
-```
-
-Create a deck interactively:
-
-```bash
+```sh
 mdeck new
+mdeck dev my-talk.md
+mdeck present my-talk.md
+mdeck check my-talk.md
+mdeck build my-talk.md
 ```
 
-The wizard asks for theme, palette, aspect ratio, and starter slide templates, then creates your `.md` file plus an `img/` directory.
+The preview updates when you save your slide file. A normal build creates a
+`dist/` folder with the HTML and referenced local media. Send the whole folder.
+For one file, use:
 
-The `-o` flag builds to a specific file instead of `dist/index.html`:
-
-```bash
-mdeck build my-talk.md -o ~/Desktop/talk.html
-```
-
-To produce a single-file deck with local `image:`/`logo:` and Markdown image references embedded directly into the HTML, use:
-
-```bash
-mdeck build my-talk.md --inline-images
-```
-
-The normal build is the recommended way to ship decks with substantial video.
-It preserves referenced deck-relative paths and copies local images, video, and
-audio next to the output HTML automatically.
-
-To produce one offline-ready file, including local images and media such as
-`<videoplayer src="./video/demo.mp4">`, use:
-
-```bash
+```sh
 mdeck build my-talk.md --self-contained -o my-talk.html
 ```
 
-Deck code, deck-local components, imported JSON/text data, styles, images, and
-local audio/video are then contained in the HTML. Theme web fonts use their
-system-font fallbacks so the file does not need a network connection.
+Online videos and live Python still need a network connection. Speaker notes
+are included in built HTML even though the audience view hides them.
 
-Self-contained video is base64-encoded, which adds roughly 33% to its size and
-is less friendly to browser loading, memory use, and seeking. Prefer the normal
-directory bundle unless a single file is operationally important.
+See all commands with `mdeck --help`, or open `mdeck docs commands`.
 
-For a bundle that can launch the presenter view without installing mdeck, add:
+## Examples
 
-```bash
-mdeck build my-talk.md --presenter-launchers
-```
+Each example keeps its assets beside its slide source so it can be copied as a
+complete folder.
 
-This adds `present.sh` for macOS/Linux plus `present.bat` and `present.ps1` for
-Windows. Each launcher serves the bundle on `127.0.0.1:8765` and opens the
-presenter URL. Python 3 and a modern browser are the only target-computer
-requirements. Pass a different port as the first argument if `8765` is occupied.
-
----
-
-## Slide format
-
-For named content regions, explicit metadata, stable slide IDs, validation, and
-the source-preserving document API, see [Structured slides](docs/structured-slides.md).
-For deck-local layout components, manifests and starter presets, see
-[User-created templates](docs/templates.md).
-
-A deck is a single `.md` file. The first `---` block is the deck config; each subsequent `---` block is slide frontmatter followed by slide content.
-
-```markdown
----
-design: neue
-palette: dark-slate
-accent: "#e63946"
-meta:
-  title: My Talk
-  author: Ada Lovelace
-  organization: FHNW
-  date: "2026-05-13"
-width: 1920
-height: 1080
----
-
----
-layout: title
----
-# My Presentation
-## Subtitle line
-
----
-layout: chapter
-number: 1
-part: Part One
----
-# Chapter Title
-
----
-layout: focus
-eyebrow: Key idea
-attribution: Someone Famous
----
-# A short, punchy statement.
-
----
-layout: image-text
-image: ./img/photo.jpg
-section: Context
----
-# Heading beside the image
-
-Supporting paragraph text.
-
----
-layout: split
-section: Deep Dive
----
-```python
-def greet(name):
-    return f"Hello, {name}!"
-```
-
-- The left pane gets the first block
-- The right pane gets the rest
-- Any block type works — code, image, text
-
----
-layout: full-bleed-image
-image: ./img/hero.jpg
-overlay: true
----
-# Optional overlay title
-```
-
-### Slide layouts
-
-| Layout | Required frontmatter | Content |
-|---|---|---|
-| `title` | — | `# Title` and/or `## Subtitle` |
-| `chapter` | `number:`, optional `part:`, `description:` | `# Chapter title` |
-| `focus` | optional `eyebrow:`, `attribution:` | `# Statement` or freeform content |
-| `image-text` | `image: path` | `# Heading` + paragraph text |
-| `split` | — | First block → left pane; remaining blocks → right pane |
-| `full-bleed-image` | `image: path`, optional `overlay: true` | Optional `# Overlay title` |
-
-Slides without a recognised `layout:` fall through to a generic renderer that renders the full markdown body with standard slide chrome. Use this for custom layouts with inline HTML.
-
-### Lists
-
-Unordered and ordered lists work on any slide — no special layout needed:
-
-```markdown
----
-section: Summary
----
-# Key points
-
-- First item
-- Second item with **emphasis**
-
-1. Ordered item one
-2. Ordered item two
-```
-
-### Speaker notes
-
-Add per-slide notes in frontmatter. Notes support **markdown** and appear in the presenter view.
-
-```yaml
----
-layout: focus
-notes: |
-  Keep this slide under 90 seconds.
-
-  - Hit the *demo* first
-  - Questions at the end
----
-```
-
-`note:` also works as a synonym for `notes:`.
-
----
-
-## Deck config
-
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `design` | string | `neue` | Theme name |
-| `palette` | string | — | Color palette override |
-| `accent` | color | — | Accent color shorthand (overrides palette) |
-| `params` | map | — | Theme-specific param overrides |
-| `meta` | map | — | Metadata injected as `--meta-*` CSS vars |
-| `width` | number | `1920` | Slide width in px |
-| `height` | number | `1080` | Slide height in px |
-
-### `accent:` shorthand
-
-`accent:` sets `--accent` directly, without knowing theme param names:
-
-```yaml
----
-design: editorial
-palette: dark
-accent: "#16a34a"
----
-```
-
-It takes precedence over both palette and `params.primaryColor`.
-
----
-
-## Themes
-
-Six themes are included:
-
-| Theme | Character |
+| Example | What it demonstrates |
 |---|---|
-| `neue` | Clean sans-serif — Inter Tight headlines, neutral defaults |
-| `aurora` | Geometric modern — Plus Jakarta Sans, gradient accents |
-| `duet` | Two-accent system — Syne display, DM Sans body, structure vs. voice color roles |
-| `fhnw` | FHNW brand identity, Univers, square accent tiles |
-| `editorial` | Serif editorial, Playfair Display, ghost numerals |
-| `terminal` | Dark-by-default, JetBrains Mono, terminal green, `>` bullets |
+| [Showcase](examples/showcase/slides.md) | Layouts and rich slide content |
+| [FHNW](examples/fhnw/slides.md) | Slides using the FHNW theme |
+| [Python](examples/python/slides.md) | A short introductory programming talk |
+| [Custom templates](examples/custom-templates/slides.md) | A deck-local comparison design and named regions |
 
-Set the theme in the deck config:
-
-```yaml
-design: terminal
+```sh
+mdeck dev examples/showcase/slides.md
+mdeck dev examples/custom-templates/slides.md
 ```
 
-Override a theme-specific param:
+## Documentation
 
-```yaml
-design: neue
-params:
-  primaryColor: "#0066cc"
+```sh
+mdeck docs
+mdeck docs getting-started
+mdeck docs --no-open
+mdeck docs --build
 ```
 
-### Palettes
+The site lives in [docs/site](docs/site/) and builds to `docs/site/dist/`.
+Technical references live in [docs/reference](docs/reference/):
 
-Palettes swap the six core color tokens independently of the theme. All themes are palette-compatible.
+- [Authoring reference](docs/reference/authoring.md)
+- [Structured slides and source model](docs/reference/structured-slides.md)
+- [Custom templates](docs/reference/templates.md)
+- [Themes](docs/reference/themes.md) and [palettes](docs/reference/palettes.md)
+- [Slide-writing skill](docs/reference/claude-skill.md)
 
-| Palette | Character |
-|---|---|
-| `paper` | Clean white |
-| `sage` | Muted sage green |
-| `mono` | Pure monochrome |
-| `terra` | Warm sand and red |
-| `dark-slate` | Dark cool blue |
-| `dark-ember` | Dark warm amber |
-| `dark-neon` | Dark vivid neon |
-| `dark-mono` | Dark neutral grey |
+## Repository layout
 
-```yaml
-design: neue
-palette: dark-slate
+```text
+bin/                 mdeck executable entry point
+src/
+  cli/               Commands, scaffolding, and packaging
+  core/              Slide parsing, source ranges, and validation
+  runtime/           Browser app, navigation, and theme loading
+  components/        Built-in interactive content
+  templates/         Layouts, manifests, and shared rendering API
+  build/             Vite configuration and deck-local discovery
+  paths.js           Locations of installed framework resources
+assets/
+  themes/            Theme CSS and metadata
+  palettes/          Color palettes
+docs/
+  site/              Documentation website and beginner guides
+  reference/         Technical Markdown references
+examples/            Complete example deck projects
+playground/          Scratch deck and standalone development app
+tests/               Automated regression tests
+tools/               Optional development utilities
+skills/              Distributable slide-authoring instructions
 ```
 
-Dark palettes automatically apply syntax highlighting colors and logo inversion. The `terminal` theme is dark by default and applies these without a palette.
+Deck-local `components/` and `templates/` folders remain beside the author's
+slide file. These are different from the framework's built-in source folders.
+The template import `mdeck/template-api` stays the same.
 
-### Custom themes
+## Working on mdeck
 
-Copy any existing theme folder and edit the CSS. Register it in `src/themeLoader.js`:
-
-```js
-const THEMES = {
-  neue:     () => import('../themes/neue/index.js'),
-  mytheme:  () => import('../themes/mytheme/index.js'),
-}
+```sh
+npm test
+npm run playground
+npm run playground:build
+npm run docs:build
 ```
 
-See [Theme authoring](docs/themes.md) for the full reference.
+The playground builds to `playground/dist/`; documentation builds to
+`docs/site/dist/`. Both are ignored by Git. The user's `mdeck build` command
+continues to write to `dist/` in the current working folder.
 
-### Custom palettes
+For direct checkout execution, use `node bin/mdeck.js`. The npm `dev`, `build`,
+`present`, and `preview` workflows call that same entry point.
 
-Add a JSON file to `palettes/`. No registration needed — the filename becomes the palette key.
-
-```json
-{
-  "name": "Forest",
-  "tokens": {
-    "--bg":       "#f0f4ef",
-    "--ink":      "#1a2e1a",
-    "--ink-soft": "#2d4a2d",
-    "--muted":    "#5a7a5a",
-    "--rule":     "#d8e8d8",
-    "--accent":   "#2d7a2d"
-  }
-}
-```
-
-See [Palette authoring](docs/palettes.md) for the full reference.
-
-### Deck metadata as CSS variables
-
-Everything under `meta:` is injected as CSS custom properties:
-
-```yaml
-meta:
-  title: My Talk
-  author: Ada Lovelace
-  date: "2026-05-13"
-```
-
-```css
-/* Available automatically: */
---meta-title
---meta-author
---meta-date
-```
-
----
-
-## Components
-
-Components are Preact JSX files in `components/`. Register them by tag name in `src/registry.jsx`:
-
-```js
-import MyComponent from '../components/MyComponent.jsx'
-
-export const registry = {
-  mycomponent: MyComponent,
-}
-```
-
-Use them in slides as lowercase HTML tags:
-
-```markdown
-<mycomponent lang="js">
-content here
-</mycomponent>
-```
-
-Because `.slide-body` sets inheritable baseline typography, any raw HTML written in a slide automatically picks up the theme's body text style. You only need inline styles for structural layout:
-
-```markdown
----
-layout: four-columns
----
-# Heading
-
-<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 48px;">
-  <div><strong>One</strong> — description text</div>
-  <div><strong>Two</strong> — description text</div>
-  <div><strong>Three</strong> — description text</div>
-  <div><strong>Four</strong> — description text</div>
-</div>
-```
-
-### Built-in: `<codeblock>`
-
-Fenced code blocks are automatically converted to `<codeblock>` elements with syntax highlighting:
-
-````markdown
-```js
-const x = 1 + 2
-```
-````
-
-Or written explicitly for full attribute control:
-
-```markdown
-<codeblock lang="python">
-def greet(name):
-    return f"Hello, {name}!"
-</codeblock>
-```
-
-Supported languages: `js`, `ts`, `jsx`, `python`, `bash`, `css`, `html`, `json`, `yaml`, `sql`.
-
----
-
-## Print / PDF
-
-Open the built HTML in any browser and use **File → Print → Save as PDF**. Each slide prints as one page at the correct aspect ratio (1920 × 1080).
-
----
-
-## Project structure
-
-Run `npm test` for parser, source-editing, template, rendering, and navigation
-regressions. With Chrome/Chromium installed, `npm run test:browser` also checks
-template rendering and presenter/audience synchronization. Set `MDECK_CHROME`
-if the browser is not in a standard macOS/Linux location.
-
-```
-mdeck/
-  cli.js                CLI entry point (dev / present / build / preview)
-  components/
-    CodeBlock.jsx        Syntax-highlighted code block (Prism)
-    code-block.css       Code block styles
-  examples/
-    demo.md              Example slide deck
-  palettes/
-    paper.json           Built-in palettes
-    dark-slate.json
-    dark-ember.json
-    terra.json
-  docs/
-    authoring.md         Slide authoring reference
-    palettes.md          Palette authoring reference
-    themes.md            Theme authoring reference
-  src/
-    main.jsx             App entry — parses slides, loads theme, renders
-    markedSetup.js       Overrides marked's code renderer → <codeblock>
-    parseSlides.js       Splits .md into {deckConfig, slides[]}
-    registry.jsx         Maps tag names to Preact components
-    renderSlide.jsx      Template registry and dispatcher
-    builtinLayouts.jsx   Built-in template components
-    templateApi.jsx      Shared slide frame and Markdown regions
-    slidesPlugin.js      Vite virtual-module plugin for the slides file
-    themeLoader.js       Loads theme + palette CSS into the document
-  themes/
-    neue/                Clean sans-serif theme
-    aurora/              Geometric modern theme
-    fhnw/                FHNW brand theme
-    editorial/           Serif editorial theme
-    terminal/            Dark terminal theme
-    THEMES.md            Theme authoring reference
-  index.html             Vite HTML entry point
-  package.json
-```
+An optional `npm run test:browser` checks presenter/audience synchronization in
+Chrome or Chromium. Set `MDECK_CHROME` if needed. It is separate from `npm test`.

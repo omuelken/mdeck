@@ -8,11 +8,11 @@ You are writing a presentation using the mdeck slide framework — a Markdown-dr
 
 Read these files before writing any slides:
 
-- `docs/authoring.md` — layouts, frontmatter fields, markdown elements, components, callouts, speaker notes
-- `docs/palettes.md` — available color palettes and the token system
-- `docs/themes.md` — available themes and configuration
+- `docs/reference/authoring.md` — layouts, frontmatter fields, markdown elements, components, callouts, speaker notes
+- `docs/reference/palettes.md` — available color palettes and the token system
+- `docs/reference/themes.md` — available themes and configuration
 
-Also read `examples/demo.md` as a complete working reference deck.
+Also read `examples/showcase/slides.md` as a complete working reference deck.
 
 Then write a complete mdeck slide deck for the following request:
 
