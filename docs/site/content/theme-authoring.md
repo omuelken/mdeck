@@ -2,6 +2,8 @@
 
 This guide is for people comfortable with CSS. For the existing choices, see [Change the look](appearance.html).
 
+If you would rather click than type, `mdeck edit my-talk.md` has form-based editors for palettes and theme tokens with a live preview; see [Edit slides in your browser](editing.html). The files it writes are the ones described here.
+
 Themes and palettes are **extensions**: each one is a folder with an `extension.toml` file that says what it is. Slide designs (templates) use the same idea. Put the folder in `extensions/` beside your slide file and mdeck finds it automatically; there is nothing to register. The [extensions reference](extensions.html) has the complete list of settings.
 
 ```text

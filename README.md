@@ -27,13 +27,16 @@ updating an older checkout if its command still points to the previous entry.
 ```sh
 mdeck new
 mdeck dev my-talk.md
+mdeck edit my-talk.md
 mdeck present my-talk.md
 mdeck check my-talk.md
 mdeck extensions my-talk.md
 mdeck build my-talk.md
 ```
 
-The preview updates when you save your slide file. A normal build creates a
+The preview updates when you save your slide file. `mdeck edit` opens a
+visual editor in the browser that writes back into the same file, including
+form-based editors for palettes, themes and slide templates. A normal build creates a
 `dist/` folder with the HTML and referenced local media. Send the whole folder.
 For one file, use:
 
@@ -89,11 +92,12 @@ bin/                 mdeck executable entry point
 src/
   cli/               Commands, scaffolding, and packaging
   core/              Slide parsing, source ranges, and validation
-  runtime/           Browser app, navigation, and theme loading
+  runtime/           Browser app, navigation, theme loading, editor preview mode
+  editor/            Browser editor for decks, palettes, themes and templates
   components/        Built-in interactive content
   templates/         Shared rendering API, slide frame, and typed properties
   extensions/        Manifest contract, discovery registry, appearance rules
-  build/             Vite configuration and the generated extension module
+  build/             Vite configuration, the generated extension module, editing API
   paths.js           Locations of installed framework resources
 assets/
   base.css           Shared slide CSS every theme builds on

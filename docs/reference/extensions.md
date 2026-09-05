@@ -195,6 +195,14 @@ title = "Body font"
 Values are applied in this order: theme tokens, palette tokens, deck `params`,
 then the `accent` and `accent2` shorthands.
 
+## Editing in the browser
+
+`mdeck edit my-talk.md` includes editors for all three kinds under
+*Palettes, themes & templates*. Palettes and theme tokens are forms with live
+preview; theme stylesheets and template layouts are text areas. Built-in
+extensions are read-only there; copy one into the deck under a new id to
+change it. The editor writes the same files described above.
+
 ## Listing what is available
 
 ```sh

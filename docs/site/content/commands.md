@@ -8,6 +8,7 @@ Type these commands in a terminal. Replace `my-talk.md` with your own slide file
 |---|---|
 | `mdeck new` | Make a presentation with guided questions |
 | `mdeck dev my-talk.md` | Open a preview that reloads when you save |
+| `mdeck edit my-talk.md` | Edit slides, colors and designs in the browser; saves to the file |
 | `mdeck present my-talk.md` | Open your slides with presenter notes and controls |
 | `mdeck check my-talk.md` | Check settings and look for missing local files |
 | `mdeck build my-talk.md` | Make a shareable presentation in the `dist` folder |
@@ -27,6 +28,16 @@ Use the page name from its address, without `.html`. The welcome page is `index`
 `mdeck docs --no-open` starts the documentation server without opening a browser. `mdeck docs --port 4200` chooses a port number. If the usual port is busy, mdeck tries another one.
 
 To make a static copy of the documentation site, use `mdeck docs --build`. This saves it in `docs/site/dist` inside the mdeck project, separately from your presentation builds.
+
+## Edit in the browser
+
+```sh
+mdeck edit my-talk.md
+mdeck edit my-talk.md --no-open
+mdeck edit my-talk.md --port 4300
+```
+
+The editor opens in your browser and writes every change into the slide file. `--no-open` starts it without opening a browser window; `--port` chooses the port. See [Edit slides in your browser](editing.html).
 
 ## Sharing options
 

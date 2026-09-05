@@ -68,3 +68,52 @@ edits, or `applySourceEdits(source, edits)` for general changes. Edits specify
 `start`, `end`, `text` and optionally `expected` text; overlaps and stale expected
 text are rejected. Reparse the returned source after editing. Callers saving to
 disk must also compare against the current file to detect external changes.
+
+## Editing helpers
+
+`src/core/editDeck.js` builds on the source model to change a deck without
+disturbing anything else in the file. Every function takes the parsed deck,
+never mutates it, and returns the new source (or `{ source, index }` for
+structural changes); reparse the result before the next edit. Untouched bytes
+stay identical, including comments, blank lines and the file's line endings.
+
+| Function | Effect |
+|---|---|
+| `setRegion(deck, slideId, name, markdown)` | Replaces an explicit `:::slot` body, the implicit body (discontiguous ranges collapse into the first one), or appends a new slot |
+| `removeRegion(deck, slideId, name)` | Removes a slot block |
+| `setSlideMeta(deck, slideId, patch)` | Patches top-level keys of the slide's YAML; `undefined` deletes a key; works for `:::meta` and the legacy `---` form, inserting or removing the block as needed |
+| `setSlideNotes(deck, slideId, markdown)` | Edits the `:::notes` block, the `notes:` key, or appends a block |
+| `setDeckConfig(deck, patch)` | Patches the frontmatter, inserting it when absent |
+| `insertSlide(deck, index, markdown)` | Inserts a slide, keeping delimiters and blank lines tidy |
+| `removeSlide(deck, slideId)` / `moveSlide(deck, slideId, toIndex)` | Structural changes that return the index to select next |
+| `replaceSlideSource(deck, slideId, text)` | Replaces one slide's Markdown verbatim |
+
+Metadata patches rewrite only the block of each changed key
+(`patchYamlMapping` in `source.js`), so comments on other keys survive.
+Comments inside an edited nested block such as `props:` are lost.
+
+## Editor API
+
+`mdeck edit` serves a small JSON API from the Vite dev server for the browser
+editor. It binds to the loopback interface, refuses requests whose `Origin`
+differs from its own host, and only ever writes the deck file and folders
+under the deck's `extensions/` directory.
+
+| Route | Purpose |
+|---|---|
+| `GET /__mdeck/deck` | `{ path, name, source, hash, registry, warnings }` |
+| `POST /__mdeck/source` | `{ source, base }` writes when `base` equals the hash of the file on disk; otherwise `409 { source, hash }` |
+| `GET /__mdeck/extension/:kind/:id` | The extension's manifest and text files |
+| `PUT /__mdeck/extension/:kind/:id` | `{ files: { name: text \| null } }` writes into `extensions/<id>/` after validating the manifest against the files that will exist; built-ins are refused |
+| `DELETE /__mdeck/extension/:kind/:id` | Removes a deck-local extension folder |
+
+Two custom websocket events keep the editor in step with the disk:
+`mdeck:deck-changed { hash }` when another program saved the deck, and
+`mdeck:extensions-changed { file }` when an extension file changed.
+
+The preview iframe runs the normal deck runtime with `?editor=1`. The editor
+posts `{ deckSource: { source, selection, config, overrides } }` to it;
+`config` merges over the deck settings (for example to preview a palette) and
+`overrides` carries unsaved theme and palette manifests. The runtime answers
+with `{ deckEditorReady }`, `{ deckRendered: { slideCount, diagnostics, error } }`
+and the usual `{ deckStateChanged }` messages.

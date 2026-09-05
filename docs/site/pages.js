@@ -2,6 +2,7 @@ export const pages = [
   { slug: 'index', title: 'Welcome to mdeck', group: 'Start here', file: 'welcome.md', description: 'A friendly guide to making, presenting, and sharing your first slides.', preview: 'first-talk' },
   { slug: 'getting-started', title: 'Make your first presentation', group: 'Start here', file: 'getting-started.md', description: 'Set up mdeck, make a slide file, and see your words become a presentation.' },
   { slug: 'writing', title: 'Write your slides', group: 'Make your presentation', file: 'writing.md', description: 'Headings, paragraphs, lists, and the simple marks that turn text into slides.' },
+  { slug: 'editing', title: 'Edit slides in your browser', group: 'Make your presentation', file: 'editing.md', description: 'Change text, layouts, colors and designs with a visual editor that saves to your slide file.' },
   { slug: 'layouts', title: 'Choose a slide layout', group: 'Make your presentation', file: 'layouts.md', description: 'Choose a title slide, a big statement, a picture, or two columns.', preview: 'first-talk' },
   { slug: 'pictures-and-video', title: 'Add pictures and video', group: 'Make your presentation', file: 'media.md', description: 'Put an image or a video into your talk and keep its files together.' },
   { slug: 'appearance', title: 'Change the look', group: 'Make your presentation', file: 'appearance.md', description: 'Choose fonts and colors with themes and palettes.' },
