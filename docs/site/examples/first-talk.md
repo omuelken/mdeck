@@ -1,7 +1,5 @@
 ---
 design: neue
-palette: paper
-accent: "#2455c7"
 institution: none
 authorDate: none
 ---
@@ -15,6 +13,11 @@ id: hello
 ## A clear presentation
 
 ---
+:::meta
+layout: split
+props:
+  ratio: [1, 1]
+:::
 # What comes next?
 
 - Explain the idea.

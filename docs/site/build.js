@@ -30,8 +30,8 @@ function preview(page) {
   if (!page.preview) return ''
   const custom = page.preview === 'custom-templates'
   return `<figure class="slide-example" data-preview>
-    <figcaption><span>${custom ? 'A reusable comparison design' : 'A presentation you can try'}</span><a href="examples/${page.preview}.html" target="_blank" rel="noopener">Open slides</a></figcaption>
-    <iframe title="${custom ? 'Comparison slide example' : 'Example presentation'}" src="examples/${page.preview}.html?embedded=1" loading="lazy"></iframe>
+    <figcaption><span>${custom ? 'A reusable comparison design' : 'A presentation you can try'}</span><a href="examples/${page.preview}.html?palette=&amp;accent=&amp;accent2=" target="_blank" rel="noopener">Open slides</a></figcaption>
+    <iframe title="${custom ? 'Comparison slide example' : 'Example presentation'}" src="examples/${page.preview}.html?embedded=1&amp;palette=&amp;accent=&amp;accent2=" loading="lazy"></iframe>
     <div class="preview-controls"><div><button type="button" data-control="prev" aria-label="Previous slide or point">Previous</button><button type="button" data-control="next" aria-label="Next slide or point">Next</button><output aria-live="polite">Slide 1</output></div><label>Look <select aria-label="Example theme"><option value="neue">Neue</option><option value="editorial">Editorial</option><option value="duet">Duet</option><option value="terminal">Terminal</option><option value="aurora">Aurora</option><option value="fhnw">FHNW</option></select></label></div>
   </figure>`
 }
