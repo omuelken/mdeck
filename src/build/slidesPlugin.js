@@ -172,24 +172,31 @@ export function generateExtensionsModule(registry) {
   return `${imports.join('\n')}\nexport const templates = {\n${templates.join(',\n')}\n}\nexport const themes = {\n${themes.join(',\n')}\n}\nexport const palettes = {\n${palettes.join(',\n')}\n}\n`
 }
 
-export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false } = {}) {
+// `editor` keeps the page alive while `mdeck edit` rewrites the deck: deck
+// changes only invalidate the module, validation errors are warnings, and
+// extension changes are announced instead of forcing a reload.
+export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false } = {}) {
   const abs = resolve(slidesPath)
   const watchDirs = [...extensionRoots(abs).map(root => root.dir), deckComponentsDir(abs)]
   const isWatched = file => watchDirs.some(dir => resolve(file).startsWith(dir + sep))
   const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID]
-  const reload = (server, ids) => {
+  const invalidate = (server, ids) => {
     for (const id of ids) {
       const mod = server.moduleGraph.getModuleById(id)
       if (mod) server.moduleGraph.invalidateModule(mod)
     }
-    server.ws.send({ type: 'full-reload' })
+  }
+  const reload = (server, ids, file) => {
+    invalidate(server, ids)
+    if (!editor) server.ws.send({ type: 'full-reload' })
+    else if (file) server.ws.send('mdeck:extensions-changed', { file })
   }
 
   return {
     name: 'vite-plugin-slides',
     configureServer(server) {
       server.watcher.add([abs, ...watchDirs])
-      const refresh = file => { if (isWatched(file)) reload(server, ALL_IDS) }
+      const refresh = file => { if (isWatched(file)) reload(server, ALL_IDS, resolve(file)) }
       for (const event of ['add', 'unlink', 'addDir', 'unlinkDir']) server.watcher.on(event, refresh)
     },
     resolveId(id) {
@@ -208,7 +215,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
           templates: manifestsOf(registry, 'template'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette'),
         })
         const errors = diagnostics.filter(d => d.severity === 'error')
-        if (errors.length) throw new Error(formatDiagnostics(errors, abs))
+        if (errors.length && !editor) throw new Error(formatDiagnostics(errors, abs))
         if (diagnostics.length) this.warn(formatDiagnostics(diagnostics, abs))
         const source = maybeInlineAssets(raw, abs, { inlineImages, inlineMedia })
         return `export default ${JSON.stringify(source)}`
@@ -232,10 +239,14 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     handleHotUpdate({ file, server }) {
       const changed = resolve(file)
       if (isWatched(changed)) {
-        reload(server, ALL_IDS)
+        reload(server, ALL_IDS, changed)
         return []
       }
-      if (changed === abs) reload(server, [RESOLVED_ID])
+      if (changed === abs) {
+        invalidate(server, [RESOLVED_ID])
+        if (editor) return []
+        server.ws.send({ type: 'full-reload' })
+      }
     },
   }
 }

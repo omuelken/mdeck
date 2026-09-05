@@ -13,6 +13,7 @@
     "docs:build": "node docs/site/build.js",
     "dev": "node bin/mdeck.js dev",
     "present": "node bin/mdeck.js present",
+    "edit": "node bin/mdeck.js edit",
     "build": "node bin/mdeck.js build",
     "preview": "node bin/mdeck.js preview",
     "playground": "vite --config playground/vite.config.js",

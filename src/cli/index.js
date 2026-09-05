@@ -10,6 +10,7 @@ import { collectLocalAssetRefs, slidesPlugin } from '../build/slidesPlugin.js'
 import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, manifestsOf, serializeRegistry } from '../extensions/discover.js'
+import { editorPlugin } from '../build/editorPlugin.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
 
 import { frameworkRoot } from '../paths.js'
@@ -284,6 +285,8 @@ const HELP = `
   ${c.dim}Usage:${c.reset}
     ${c.green}mdeck dev${c.reset} <slides.md>                  Start dev server with live reload
     ${c.green}mdeck present${c.reset} <slides.md>              Open speaker/presenter view
+    ${c.green}mdeck edit${c.reset} <slides.md>                 Edit slides in the browser; saves to the file
+      --no-open   --port <number>
     ${c.green}mdeck new${c.reset}                              Interactive deck scaffolding wizard
     ${c.green}mdeck build${c.reset} <slides.md> [-o out.html]
                                               Build HTML + copied local assets
@@ -439,6 +442,31 @@ if (command === 'new') {
   ok(`Speaker view opened`)
   tip('Audience view: /')
   tip('Presenter view: /?presenter=1\n')
+
+// ── edit ──────────────────────────────────────────────────────────────────────
+} else if (command === 'edit') {
+  const input = requireInput('edit')
+  const abs = resolve(input)
+  registryFor(input)
+  let port = 5173, strictPort = false
+  const portIndex = argv.indexOf('--port')
+  if (portIndex >= 0) {
+    port = Number(argv[portIndex + 1])
+    if (!Number.isInteger(port) || port < 1 || port > 65535) { err('Choose a port number between 1 and 65535.'); process.exit(1) }
+    strictPort = true
+  }
+  const base = baseConfig(abs)
+  const server = await createServer({
+    ...base,
+    plugins: [preact(), slidesPlugin(abs, { editor: true }), editorPlugin(abs)],
+    publicDir: dirname(abs),
+    server: { ...base.server, host: '127.0.0.1', cors: false, port, strictPort, open: hasFlag('--no-open') ? false : '/editor.html' },
+  })
+  await server.listen()
+  server.printUrls()
+  console.log()
+  ok(`Editing ${c.cyan}${abs}${c.reset}`)
+  tip('Changes are saved to the file as you type. Editor page: /editor.html\n')
 
 // ── build ─────────────────────────────────────────────────────────────────────
 } else if (command === 'build') {
