@@ -34,7 +34,7 @@ Useful when transferring one file is operationally important.
 :::
 
 :::notes
-This layout is loaded from templates/comparison beside this deck.
+This layout is loaded from extensions/comparison beside this deck.
 :::
 
 ---

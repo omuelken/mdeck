@@ -1,0 +1,67 @@
+schema = 1
+kind = "theme"
+id = "editorial"
+title = "Editorial"
+description = "A magazine look with Playfair Display headings and Lora body text."
+fonts = [
+  "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap",
+]
+
+[files]
+styles = "styles.css"
+
+# Default values for the CSS custom properties used by styles.css.
+# Palettes and deck settings override these in order.
+[tokens]
+"--bg" = "#FAFAF7"  # warm white — premium paper
+"--surface" = "#F2F0E8"  # warm parchment — code blocks, raised panels
+"--ink" = "#111009"  # near-black with warm tone
+"--ink-soft" = "#3D3829"  # warm dark brown
+"--muted" = "#7A7568"  # warm gray
+"--rule" = "#D9D4C7"  # warm rule — hairlines, separators
+"--accent" = "#B83A1A"  # warm crimson — classic editorial red
+
+# Type scale (px) — projection-appropriate at 1920×1080
+"--fs-display" = "128px"
+"--fs-title" = "88px"
+"--fs-focus" = "72px"
+"--fs-h" = "60px"
+"--fs-sub" = "40px"
+"--fs-body" = "32px"
+"--fs-small" = "24px"
+"--fs-eyebrow" = "20px"
+
+# Spacing
+"--pad-x" = "120px"
+"--pad-y" = "72px"
+"--gap-title" = "48px"
+"--gap-item" = "24px"
+
+# Type families
+"--font-display" = "\"Playfair Display\", Georgia, \"Times New Roman\", serif"
+"--font-body" = "\"Lora\", Georgia, \"Times New Roman\", serif"
+
+# Settings authors can change under `params:` in the deck; each points at a token above.
+[params.primaryColor]
+token = "--accent"
+title = "Primary color"
+
+[params.backgroundColor]
+token = "--bg"
+title = "Background"
+
+[params.inkColor]
+token = "--ink"
+title = "Text color"
+
+[params.mutedColor]
+token = "--muted"
+title = "Muted text"
+
+[params.fontDisplay]
+token = "--font-display"
+title = "Display font"
+
+[params.fontBody]
+token = "--font-body"
+title = "Body font"

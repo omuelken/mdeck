@@ -1,0 +1,17 @@
+schema = 1
+kind = "palette"
+id = "dark-mono"
+title = "Dark Mono"
+description = "Dark monochrome."
+dark = true
+
+[tokens]
+"--bg" = "#111111"
+"--surface" = "#222222"
+"--ink" = "#eeeeee"
+"--ink-soft" = "#bbbbbb"
+"--muted" = "#777777"
+"--rule" = "#333333"
+"--accent" = "#dddddd"
+"--accent-2" = "#aaaaaa"
+"--on-accent" = "#111111"

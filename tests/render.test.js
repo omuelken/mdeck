@@ -40,6 +40,7 @@ test('nested directives render correctly and preserve code delimiters', () => {
 })
 
 test('deck-local templates load through the real plugin and share the frame', () => {
+  assert.equal(Object.keys(manifests).length, 8)
   assert.equal(manifests.comparison.title, 'Side-by-side comparison')
   const slide = parseSlides(':::meta\nlayout: comparison\nid: local\n:::\n# Shared\n:::slot left\nLeft[^a]\n:::\n:::slot right\nRight[^b]\n\n[^a]: First source\n[^b]: Second source\n:::').slides[0]
   const node = SlideRenderer({ ...slide, deckConfig: {}, index: 0 })

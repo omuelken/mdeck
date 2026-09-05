@@ -1,0 +1,25 @@
+schema = 1
+kind = "template"
+id = "split"
+title = "Split content"
+description = "Two columns, with an optional shared heading above them."
+
+[regions.body]
+description = "Shared heading; without slots the first block goes left and the rest right"
+
+[regions.left]
+description = "Left column"
+
+[regions.right]
+description = "Right column"
+
+[properties.ratio]
+type = "array"
+description = "Relative widths of the two columns"
+minItems = 2
+maxItems = 2
+default = [1, 1]
+
+[properties.ratio.items]
+type = "number"
+minimum = 0.01

@@ -1,0 +1,70 @@
+schema = 1
+kind = "theme"
+id = "duet"
+title = "Duet"
+description = "Slab-serif headings and two accent colors for contrasting ideas."
+accent2 = true
+fonts = [
+  "https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap",
+]
+
+[files]
+styles = "styles.css"
+
+# Default values for the CSS custom properties used by styles.css.
+# Palettes and deck settings override these in order.
+[tokens]
+"--bg" = "#f8f8f5"
+"--ink" = "#111110"
+"--ink-soft" = "#3c3c38"
+"--muted" = "#888882"
+"--rule" = "#e0e0d8"
+"--accent" = "#6d28d9"  # violet
+"--accent-2" = "#0891b2"  # cyan
+"--surface" = "#eeeeea"
+"--on-accent" = "#ffffff"
+
+# Type scale (px) — projection-appropriate at 1920×1080
+"--fs-display" = "128px"
+"--fs-title" = "88px"
+"--fs-focus" = "72px"
+"--fs-h" = "64px"
+"--fs-sub" = "44px"
+"--fs-body" = "34px"
+"--fs-small" = "28px"
+"--fs-eyebrow" = "24px"
+
+# Spacing
+"--pad-x" = "140px"
+"--pad-y" = "72px"
+"--gap-title" = "52px"
+"--gap-item" = "28px"
+
+# Type families
+"--font-display" = "\"Zilla Slab\", Georgia, \"Times New Roman\", serif"
+"--font-body" = "\"DM Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
+
+# Settings authors can change under `params:` in the deck; each points at a token above.
+[params.primaryColor]
+token = "--accent"
+title = "Primary color"
+
+[params.secondaryColor]
+token = "--accent-2"
+title = "Secondary color"
+
+[params.backgroundColor]
+token = "--bg"
+title = "Background"
+
+[params.inkColor]
+token = "--ink"
+title = "Text color"
+
+[params.fontDisplay]
+token = "--font-display"
+title = "Display font"
+
+[params.fontBody]
+token = "--font-body"
+title = "Body font"

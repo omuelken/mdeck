@@ -1,0 +1,17 @@
+schema = 1
+kind = "palette"
+id = "dark-ember"
+title = "Dark Ember"
+description = "Dark with warm orange highlights."
+dark = true
+
+[tokens]
+"--bg" = "#121005"
+"--surface" = "#1f1e19"
+"--ink" = "#eae0d5"
+"--ink-soft" = "#c6ac8f"
+"--muted" = "#C6AC8F"
+"--rule" = "#2b2a29"
+"--accent" = "#eb5e28"
+"--accent-2" = "#b37259"
+"--on-accent" = "#0d0a05"

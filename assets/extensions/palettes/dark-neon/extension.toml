@@ -1,0 +1,17 @@
+schema = 1
+kind = "palette"
+id = "dark-neon"
+title = "Dark Neon"
+description = "Near-black with vivid magenta and mint highlights."
+dark = true
+
+[tokens]
+"--bg" = "#0d0d0d"
+"--surface" = "#1a1a1a"
+"--ink" = "#f0f0f0"
+"--ink-soft" = "#cccccc"
+"--muted" = "#666666"
+"--rule" = "#17FFC4"
+"--accent" = "#CC17FF"
+"--accent-2" = "#FF1791"
+"--on-accent" = "#0d0d0d"

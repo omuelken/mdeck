@@ -1,0 +1,16 @@
+schema = 1
+kind = "palette"
+id = "sage"
+title = "Sage"
+description = "Muted green with deep teal text."
+
+[tokens]
+"--bg" = "#edede8"
+"--surface" = "#f6f1d1"
+"--ink" = "#1b2f35"
+"--ink-soft" = "#2e4f5a"
+"--muted" = "#5a7a84"
+"--rule" = "#cfd7c7"
+"--accent" = "#40798c"
+"--accent-2" = "#70a9a1"
+"--on-accent" = "#ffffff"

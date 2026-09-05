@@ -1,0 +1,48 @@
+schema = 1
+kind = "theme"
+id = "terminal"
+title = "Terminal"
+description = "Dark by default, monospace throughout, terminal green accent."
+dark = true
+fonts = [
+  "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&display=swap",
+]
+
+[files]
+styles = "styles.css"
+
+# Default values for the CSS custom properties used by styles.css.
+# Palettes and deck settings override these in order.
+[tokens]
+"--bg" = "#0d0f12"  # near-black
+"--surface" = "#141a24"  # raised dark surface — code blocks
+"--ink" = "#f1f5f9"  # off-white
+"--ink-soft" = "#cbd5e1"  # slate
+"--muted" = "#718096"  # dim — lightened for legibility on dark bg
+"--rule" = "#222c3a"  # visible separator — clearly distinct from bg
+"--accent" = "#4ade80"  # terminal green
+
+# Type families — monospace throughout
+"--font-display" = "'JetBrains Mono', ui-monospace, monospace"
+"--font-body" = "'JetBrains Mono', ui-monospace, monospace"
+
+# Type scale (px) — projection-appropriate at 1920×1080
+"--fs-display" = "100px"
+"--fs-h" = "52px"
+"--fs-sub" = "36px"
+"--fs-body" = "30px"
+"--fs-eyebrow" = "22px"
+"--fs-small" = "20px"
+"--fs-focus" = "68px"
+"--fs-title" = "60px"
+
+# Spacing
+"--pad-x" = "120px"
+"--pad-y" = "80px"
+"--gap-title" = "32px"
+"--gap-item" = "20px"
+
+# Settings authors can change under `params:` in the deck; each points at a token above.
+[params.primaryColor]
+token = "--accent"
+title = "Primary color"

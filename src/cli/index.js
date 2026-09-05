@@ -1,5 +1,5 @@
 import { createServer, build, preview } from 'vite'
-import { existsSync, copyFileSync, mkdtempSync, readdirSync, readFileSync } from 'fs'
+import { existsSync, copyFileSync, mkdtempSync, readFileSync } from 'fs'
 import { chmod, rm, mkdir, writeFile } from 'fs/promises'
 import { resolve, dirname, basename, relative, isAbsolute } from 'path'
 import { tmpdir } from 'os'
@@ -9,10 +9,10 @@ import { viteSingleFile } from 'vite-plugin-singlefile'
 import { collectLocalAssetRefs, slidesPlugin } from '../build/slidesPlugin.js'
 import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
-import { templateManifests } from '../build/discoverTemplates.js'
-import { builtinManifests } from '../templates/templateManifests.js'
+import { loadRegistry, manifestsOf, serializeRegistry } from '../extensions/discover.js'
+import { ManifestError, KINDS } from '../extensions/manifest.js'
 
-import { frameworkRoot, assetsRoot } from '../paths.js'
+import { frameworkRoot } from '../paths.js'
 import { baseConfig } from '../build/config.js'
 
 // ── ANSI helpers ──────────────────────────────────────────────────────────────
@@ -25,7 +25,6 @@ const ok  = msg => console.log(`  ${c.green}✓${c.reset}  ${msg}`)
 const err = msg => console.error(`  ${c.red}✗${c.reset}  ${msg}`)
 const tip = msg => console.log(`  ${c.dim}${msg}${c.reset}`)
 
-const THEMES = ['neue', 'aurora', 'duet', 'fhnw', 'editorial', 'terminal']
 const ASPECT_RATIOS = [
   { label: '16:9 (widescreen)', w: 16, h: 9 },
   { label: '16:10 (widescreen)', w: 16, h: 10 },
@@ -38,12 +37,19 @@ function hasFlag(name, short = null) {
   return argv.includes(name) || (short ? argv.includes(short) : false)
 }
 
-function availablePalettes() {
-  const dir = resolve(assetsRoot, 'palettes')
-  return readdirSync(dir)
-    .filter(name => name.endsWith('.json'))
-    .map(name => name.replace(/\.json$/, ''))
-    .sort()
+// Templates, themes and palettes all come from one registry: built-ins plus the
+// extensions/ folder beside the deck. Manifest problems are reported and stop
+// the command instead of being skipped silently.
+function registryFor(slidesPath) {
+  try {
+    const registry = loadRegistry(slidesPath)
+    for (const warning of registry.warnings) console.warn(`  ${c.yellow}!${c.reset}  ${warning}`)
+    return registry
+  } catch (error) {
+    if (!(error instanceof ManifestError)) throw error
+    err(error.message)
+    process.exit(1)
+  }
 }
 
 function parseSelection(input, max) {
@@ -59,7 +65,6 @@ function parseSelection(input, max) {
 
 async function runNewWizard() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-  const palettes = availablePalettes()
   try {
     console.log()
     console.log(`  ${c.bold}Create a new deck${c.reset}`)
@@ -70,19 +75,23 @@ async function runNewWizard() {
       process.exit(1)
     }
 
+    const registry = registryFor(outPath)
+    const THEMES = Object.keys(registry.themes)
+    const palettes = Object.keys(registry.palettes)
+    const describe = record => `${record.id} — ${record.title}${record.description ? ` (${record.description})` : ''}`
     console.log('\n  Theme:')
-    THEMES.forEach((name, i) => console.log(`    ${i + 1}) ${name}`))
+    THEMES.forEach((name, i) => console.log(`    ${i + 1}) ${describe(registry.themes[name])}`))
     const tIdx = parseInt((await rl.question('  Pick a theme [1]: ')).trim() || '1', 10)
     const theme = THEMES[tIdx - 1] || THEMES[0]
 
     console.log('\n  Palette:')
     console.log('    0) none')
-    palettes.forEach((name, i) => console.log(`    ${i + 1}) ${name}`))
+    palettes.forEach((name, i) => console.log(`    ${i + 1}) ${describe(registry.palettes[name])}`))
     const pRaw = (await rl.question('  Pick a palette [0]: ')).trim() || '0'
     const pIdx = parseInt(pRaw, 10)
     const palette = pIdx > 0 ? (palettes[pIdx - 1] || '') : ''
 
-    const LAYOUT_LIBRARY = Object.values(templateManifests(outPath)).map(manifest => ({ key: manifest.name, label: manifest.title, starter: manifest.starter }))
+    const LAYOUT_LIBRARY = Object.values(manifestsOf(registry, 'template')).map(manifest => ({ key: manifest.id, label: manifest.title, starter: manifest.starter }))
     console.log('\n  Slide templates (comma-separated numbers):')
     LAYOUT_LIBRARY.forEach((opt, i) => console.log(`    ${i + 1}) ${opt.label}`))
     const defaultLayouts = '1,2,3,4'
@@ -289,6 +298,7 @@ const HELP = `
     ${c.green}mdeck templates${c.reset} <slides.md> [--json]      List built-in and deck-local templates
     ${c.green}mdeck templates${c.reset} <slides.md> --starter <name>
                                               Print starter Markdown for a template
+    ${c.green}mdeck extensions${c.reset} <slides.md> [--json]     List templates, themes and palettes
 
   ${c.dim}Install the${c.reset} ${c.bold}mdeck${c.reset} ${c.dim}command globally:${c.reset}
     npm link
@@ -360,24 +370,36 @@ if (command === 'new') {
 } else if (command === 'check') {
   const input = requireInput('check')
   const source = readFileSync(input, 'utf8')
-  const diagnostics = validateDeck(parseSlides(source), { templates: templateManifests(input) })
+  const registry = registryFor(input)
+  const diagnostics = validateDeck(parseSlides(source), { templates: manifestsOf(registry, 'template'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette') })
   for (const ref of collectLocalAssetRefs(source)) {
     if (!existsSync(resolve(dirname(resolve(input)), ref))) diagnostics.push({ severity: 'error', code: 'missing-asset', message: `Missing local asset: ${ref}`, line: 1, column: 1 })
   }
   if (diagnostics.length) console.log(formatDiagnostics(diagnostics, input))
-  if (diagnostics.some(d => d.severity === 'error' || hasFlag('--strict'))) process.exitCode = 1
-  else ok(`Checked ${input}${diagnostics.length ? ' (with warnings)' : ''}`)
+  const warned = diagnostics.length || registry.warnings.length
+  if (diagnostics.some(d => d.severity === 'error') || (warned && hasFlag('--strict'))) process.exitCode = 1
+  else ok(`Checked ${input}${warned ? ' (with warnings)' : ''}`)
 
 } else if (command === 'templates') {
   const input = requireInput('templates')
-  const templates = templateManifests(input)
+  const registry = registryFor(input)
+  const templates = manifestsOf(registry, 'template')
   const starterIndex = argv.indexOf('--starter')
   if (starterIndex >= 0) {
     const name = argv[starterIndex + 1]
     if (!Object.hasOwn(templates, name)) { err(`Unknown template: ${name}`); process.exitCode = 1 }
     else process.stdout.write(templates[name].starter)
   } else if (hasFlag('--json')) console.log(JSON.stringify(templates, null, 2))
-  else for (const manifest of Object.values(templates)) console.log(`  ${manifest.name} — ${manifest.title} (${Object.hasOwn(builtinManifests, manifest.name) ? 'built-in' : 'local'})`)
+  else for (const record of Object.values(registry.templates)) console.log(`  ${record.id} — ${record.title} (${record.source})`)
+
+} else if (command === 'extensions') {
+  const input = requireInput('extensions')
+  const registry = registryFor(input)
+  if (hasFlag('--json')) console.log(JSON.stringify(serializeRegistry(registry, { relativeTo: process.cwd() }), null, 2))
+  else for (const kind of KINDS) {
+    console.log(`\n  ${c.bold}${kind}s${c.reset}`)
+    for (const record of Object.values(registry[`${kind}s`])) console.log(`    ${c.cyan}${record.id}${c.reset} — ${record.title} ${c.dim}(${record.source}${record.legacy ? ', old format' : ''})${record.description ? ' ' + record.description : ''}${c.reset}`)
+  }
 
 // ── dev ───────────────────────────────────────────────────────────────────────
 } else if (command === 'dev') {

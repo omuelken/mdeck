@@ -1,9 +1,8 @@
 import { readFileSync, existsSync, readdirSync } from 'fs'
-import { resolve, dirname, basename } from 'path'
+import { resolve, dirname, basename, sep } from 'path'
 import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
-import { discoverTemplates } from './discoverTemplates.js'
-import { builtinManifests } from '../templates/templateManifests.js'
+import { loadRegistry, extensionRoots, manifestsOf } from '../extensions/discover.js'
 import { fileURLToPath } from 'node:url'
 import { marked } from 'marked'
 
@@ -12,8 +11,8 @@ const RESOLVED_ID = '\0virtual:slides'
 
 const COMPONENTS_ID = 'virtual:deck-components'
 const RESOLVED_COMPONENTS_ID = '\0virtual:deck-components'
-const TEMPLATES_ID = 'virtual:deck-templates'
-const RESOLVED_TEMPLATES_ID = '\0virtual:deck-templates'
+const EXTENSIONS_ID = 'virtual:mdeck-extensions'
+const RESOLVED_EXTENSIONS_ID = '\0virtual:mdeck-extensions'
 
 const MIME_BY_EXT = {
   '.png': 'image/png',
@@ -153,50 +152,71 @@ function deckComponentFiles(abs) {
     }))
 }
 
+// ─── Extension registry module ────────────────────────────────────────────
+// Templates, themes and palettes are discovered in Node and handed to the
+// browser as one generated module. Template layouts and styles are imported
+// eagerly; theme stylesheets stay lazy so only the chosen theme is loaded.
+// Layout JSX is trusted code, not sandboxed data.
+
+export function generateExtensionsModule(registry) {
+  const imports = []
+  const templates = Object.values(registry.templates).map((t, i) => {
+    imports.push(`import L${i} from ${JSON.stringify(t.files.layout)}`, ...t.files.styles.map(s => `import ${JSON.stringify(s)}`))
+    return `${JSON.stringify(t.id)}: { manifest: ${JSON.stringify(t.manifest)}, render: L${i} }`
+  })
+  const themes = Object.values(registry.themes).map(t => {
+    const loads = t.files.styles.map(s => `import(${JSON.stringify(s + '?inline')})`)
+    return `${JSON.stringify(t.id)}: { manifest: ${JSON.stringify(t.manifest)}, load: () => Promise.all([${loads.join(', ')}]).then(mods => mods.map(m => m.default).join('\\n')) }`
+  })
+  const palettes = Object.values(registry.palettes).map(p => `${JSON.stringify(p.id)}: { manifest: ${JSON.stringify(p.manifest)} }`)
+  return `${imports.join('\n')}\nexport const templates = {\n${templates.join(',\n')}\n}\nexport const themes = {\n${themes.join(',\n')}\n}\nexport const palettes = {\n${palettes.join(',\n')}\n}\n`
+}
+
 export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false } = {}) {
   const abs = resolve(slidesPath)
+  const watchDirs = [...extensionRoots(abs).map(root => root.dir), deckComponentsDir(abs)]
+  const isWatched = file => watchDirs.some(dir => resolve(file).startsWith(dir + sep))
+  const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID]
+  const reload = (server, ids) => {
+    for (const id of ids) {
+      const mod = server.moduleGraph.getModuleById(id)
+      if (mod) server.moduleGraph.invalidateModule(mod)
+    }
+    server.ws.send({ type: 'full-reload' })
+  }
 
   return {
     name: 'vite-plugin-slides',
     configureServer(server) {
-      const templateDir = resolve(dirname(abs), 'templates')
-      const componentDir = deckComponentsDir(abs)
-      server.watcher.add([abs, templateDir, componentDir])
-      const refresh = file => {
-        const changed = resolve(file)
-        if (![templateDir, componentDir].some(dir => changed.startsWith(dir + '/'))) return
-        for (const id of [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_TEMPLATES_ID]) {
-          const mod = server.moduleGraph.getModuleById(id)
-          if (mod) server.moduleGraph.invalidateModule(mod)
-        }
-        server.ws.send({ type: 'full-reload' })
-      }
-      server.watcher.on('add', refresh)
-      server.watcher.on('unlink', refresh)
+      server.watcher.add([abs, ...watchDirs])
+      const refresh = file => { if (isWatched(file)) reload(server, ALL_IDS) }
+      for (const event of ['add', 'unlink', 'addDir', 'unlinkDir']) server.watcher.on(event, refresh)
     },
     resolveId(id) {
       if (id === 'mdeck/template-api') return fileURLToPath(new URL('../templates/templateApi.jsx', import.meta.url))
       if (id === VIRTUAL_ID) return RESOLVED_ID
       if (id === COMPONENTS_ID) return RESOLVED_COMPONENTS_ID
-      if (id === TEMPLATES_ID) return RESOLVED_TEMPLATES_ID
+      if (id === EXTENSIONS_ID) return RESOLVED_EXTENSIONS_ID
     },
     load(id) {
       if (id === RESOLVED_ID) {
         this.addWatchFile(abs)
         const raw = readFileSync(abs, 'utf-8')
-        const templates = { ...builtinManifests, ...Object.fromEntries(discoverTemplates(abs).map(t => [t.manifest.name, t.manifest])) }
-        const diagnostics = validateDeck(parseSlides(raw), { templates })
+        const registry = loadRegistry(abs)
+        for (const warning of registry.warnings) this.warn(warning)
+        const diagnostics = validateDeck(parseSlides(raw), {
+          templates: manifestsOf(registry, 'template'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette'),
+        })
         const errors = diagnostics.filter(d => d.severity === 'error')
         if (errors.length) throw new Error(formatDiagnostics(errors, abs))
         if (diagnostics.length) this.warn(formatDiagnostics(diagnostics, abs))
         const source = maybeInlineAssets(raw, abs, { inlineImages, inlineMedia })
         return `export default ${JSON.stringify(source)}`
       }
-      if (id === RESOLVED_TEMPLATES_ID) {
-        const templates = discoverTemplates(abs)
-        const imports = templates.map((t, i) => `import T${i} from ${JSON.stringify(t.layout)};${t.styles ? `\nimport ${JSON.stringify(t.styles)};` : ''}`).join('\n')
-        const entries = templates.map((t, i) => `${JSON.stringify(t.manifest.name)}: { manifest: ${JSON.stringify(t.manifest)}, render: T${i} }`).join(',\n')
-        return `${imports}\nexport default {${entries}}`
+      if (id === RESOLVED_EXTENSIONS_ID) {
+        const registry = loadRegistry(abs)
+        for (const record of registry.records) this.addWatchFile(record.file)
+        return generateExtensionsModule(registry)
       }
       if (id === RESOLVED_COMPONENTS_ID) {
         const files = deckComponentFiles(abs)
@@ -211,25 +231,11 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     },
     handleHotUpdate({ file, server }) {
       const changed = resolve(file)
-      if (changed.startsWith(resolve(dirname(abs), 'templates') + '/')) {
-        for (const id of [RESOLVED_TEMPLATES_ID, RESOLVED_ID]) {
-          const mod = server.moduleGraph.getModuleById(id)
-          if (mod) server.moduleGraph.invalidateModule(mod)
-        }
-        server.ws.send({ type: 'full-reload' })
+      if (isWatched(changed)) {
+        reload(server, ALL_IDS)
         return []
       }
-      if (changed.startsWith(deckComponentsDir(abs) + '/')) {
-        const mod = server.moduleGraph.getModuleById(RESOLVED_COMPONENTS_ID)
-        if (mod) server.moduleGraph.invalidateModule(mod)
-        server.ws.send({ type: 'full-reload' })
-        return
-      }
-      if (changed === abs) {
-        const mod = server.moduleGraph.getModuleById(RESOLVED_ID)
-        if (mod) server.moduleGraph.invalidateModule(mod)
-        server.ws.send({ type: 'full-reload' })
-      }
+      if (changed === abs) reload(server, [RESOLVED_ID])
     },
   }
 }

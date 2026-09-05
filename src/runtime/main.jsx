@@ -5,6 +5,7 @@ import slidesContent from 'virtual:slides'
 import { parseSlides } from '../core/parseSlides'
 import { validateDeck } from '../core/validateDeck'
 import { loadTheme, THEME_NAMES, PALETTE_NAMES, THEME_METAS, PALETTES } from './themeLoader'
+import { effectiveToken } from '../extensions/appearance.js'
 import { SlideRenderer, manifests } from '../templates/renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import './deck-stage.js'
@@ -128,14 +129,6 @@ function PaletteSwatches({ tokens }) {
   )
 }
 
-function themeParamDefault(themeMeta, token) {
-  if (!themeMeta?.params) return null
-  for (const param of Object.values(themeMeta.params)) {
-    if (param.token === token) return param.default
-  }
-  return null
-}
-
 function PresenterView({ deckConfig, slides }) {
   const [index, setIndex] = useState(0)
   const [design, setDesign] = useState(deckConfig.design ?? 'neue')
@@ -161,11 +154,11 @@ function PresenterView({ deckConfig, slides }) {
   const paletteDropRef = useRef(null)
   indexRef.current = index
 
-  const usesAccent2 = THEME_METAS[design]?.usesAccent2 ?? false
   const themeMeta = THEME_METAS[design]
-  const paletteTokens = PALETTES[palette]?.tokens ?? {}
-  const effectiveAccent  = accent  || paletteTokens['--accent']   || themeParamDefault(themeMeta, '--accent')   || '#888888'
-  const effectiveAccent2 = accent2 || paletteTokens['--accent-2'] || themeMeta?.defaultAccent2 || themeParamDefault(themeMeta, '--accent-2') || '#888888'
+  const usesAccent2 = themeMeta?.accent2 ?? false
+  const appearance = { theme: themeMeta, palette: PALETTES[palette], params: deckConfig.params, accent, accent2 }
+  const effectiveAccent  = effectiveToken('--accent', appearance) || '#888888'
+  const effectiveAccent2 = effectiveToken('--accent-2', appearance) || '#888888'
   const notes = useMemo(() => slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''), [slides])
   // Preserve current slide when design/palette causes an iframe reload
   const iframeSrc = useMemo(() => buildChildUrl(design, palette, accent, accent2, indexRef.current), [design, palette, accent, accent2])

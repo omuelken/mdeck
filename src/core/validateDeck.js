@@ -1,8 +1,11 @@
 import { diagnostic } from './source.js'
 import { isPlainObject } from './parseSlides.js'
-import { builtinManifests, resolveTemplateProps, propertyErrors } from '../templates/templateManifests.js'
+import { resolveTemplateProps, propertyErrors } from '../templates/templateProps.js'
 
-export function validateDeck(deck, { templates = builtinManifests } = {}) {
+// `templates`, `themes` and `palettes` are manifest maps from the extension
+// registry (see src/extensions/discover.js). Checks for a kind are skipped when
+// its map is not supplied.
+export function validateDeck(deck, { templates = null, themes = null, palettes = null } = {}) {
   const diagnostics = [...deck.diagnostics]
   const add = (code, message, offset, severity) => diagnostics.push(diagnostic(deck.source, code, message, offset, severity))
   const config = deck.deckConfig
@@ -16,6 +19,12 @@ export function validateDeck(deck, { templates = builtinManifests } = {}) {
   for (const [key, values] of Object.entries(enums)) {
     if (config[key] != null && !values.includes(config[key])) add('invalid-config', `${key} must be one of: ${values.join(', ')}`, deck.configSource?.start)
   }
+  if (themes && config.design != null && !Object.hasOwn(themes, config.design)) add('unknown-theme', `Unknown theme "${config.design}"; available: ${Object.keys(themes).join(', ')}`, deck.configSource?.start)
+  if (palettes && config.palette != null && config.palette !== '' && !Object.hasOwn(palettes, config.palette)) add('unknown-palette', `Unknown palette "${config.palette}"; available: ${Object.keys(palettes).join(', ')}`, deck.configSource?.start, 'warning')
+  if (themes && config.params != null && isPlainObject(config.params) && Object.hasOwn(themes, config.design ?? 'neue')) {
+    const theme = themes[config.design ?? 'neue']
+    for (const name of Object.keys(config.params)) if (!Object.hasOwn(theme.params ?? {}, name)) add('unknown-param', `Theme "${theme.id}" has no parameter "${name}"; available: ${Object.keys(theme.params ?? {}).join(', ') || 'none'}`, deck.configSource?.start, 'warning')
+  }
   const ids = new Set()
   for (const slide of deck.slides) {
     const offset = slide.metaSource?.start ?? slide.source.start
@@ -27,6 +36,7 @@ export function validateDeck(deck, { templates = builtinManifests } = {}) {
     }
     if (slide.meta.props != null && !isPlainObject(slide.meta.props)) add('invalid-props', 'props must be a mapping', offset)
     if (slide.meta.overlay != null && typeof slide.meta.overlay !== 'boolean') add('invalid-metadata', 'overlay must be true or false', offset)
+    if (!templates) continue
     const layout = slide.meta.layout ?? 'generic'
     if (!Object.hasOwn(templates, layout)) {
       add('unknown-layout', `Unknown layout "${layout}"; using the generic renderer`, offset, 'warning')

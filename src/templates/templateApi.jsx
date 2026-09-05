@@ -151,7 +151,7 @@ export function MarkdownRegion({ region, content, class: className, ...attribute
 
 // Layouts supply body content; every template receives the same outer frame.
 export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, id, manifest, footnotesHtml, children }) {
-  const layout = manifest.name === 'generic' ? meta.layout : manifest.name
+  const layout = manifest.id === 'generic' ? meta.layout : manifest.id
   const frame = manifest.frame ?? 'standard'
   const title = frame === 'title'
   const image = props.image
