@@ -6,6 +6,9 @@ import { parseSlides } from '../core/parseSlides'
 import { validateDeck } from '../core/validateDeck'
 import { loadTheme, THEME_NAMES, PALETTE_NAMES, THEME_METAS, PALETTES } from './themeLoader'
 import { effectiveToken } from '../extensions/appearance.js'
+import { S, PaletteSwatches } from './chrome.jsx'
+import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
+import { createEditorBridge } from './editorBridge.js'
 import { SlideRenderer, manifests } from '../templates/renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import './deck-stage.js'
@@ -79,54 +82,6 @@ function buildAudienceUrl(design, palette, accent, accent2, slideIndex = null) {
 function sendTo(win, command, value) {
   if (!win || win.closed) return
   win.postMessage({ deckControl: { command, value } }, '*')
-}
-
-const S = {
-  btn: {
-    appearance: 'none',
-    WebkitAppearance: 'none',
-    padding: '5px 12px',
-    borderRadius: '5px',
-    border: '1px solid #2e2e2e',
-    background: '#1e1e1e',
-    color: '#999',
-    cursor: 'pointer',
-    fontSize: '13px',
-    fontFamily: 'inherit',
-    lineHeight: '1.5',
-    outline: 'none',
-  },
-  select: {
-    padding: '5px 8px',
-    borderRadius: '5px',
-    border: '1px solid #2e2e2e',
-    background: '#1e1e1e',
-    color: '#999',
-    cursor: 'pointer',
-    fontSize: '13px',
-    fontFamily: 'inherit',
-    width: '100%',
-  },
-  label: {
-    color: '#555',
-    fontSize: '11px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-    marginBottom: '5px',
-    display: 'block',
-  },
-}
-
-function PaletteSwatches({ tokens }) {
-  const keys = ['--bg', '--surface', '--rule', '--accent', '--accent-2', '--ink']
-  return (
-    <div style={{ display: 'flex', gap: '2px', alignItems: 'center', flexShrink: 0 }}>
-      {keys.map(k => tokens[k]
-        ? <div key={k} style={{ width: '10px', height: '10px', borderRadius: '2px', background: tokens[k], border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }} />
-        : null
-      )}
-    </div>
-  )
 }
 
 function PresenterView({ deckConfig, slides }) {
@@ -504,10 +459,39 @@ function PresenterView({ deckConfig, slides }) {
   )
 }
 
+// Renders (or re-renders) the deck stage. Slides are keyed by id so an edit to
+// one slide leaves the others and the stage's position untouched.
+function mountDeck({ deck, deckConfig, selection = null, editor = false }) {
+  const { slides } = deck
+  injectSpeakerNotes(slides)
+  const seen = new Map()
+  const app = (
+    <deck-stage width={deckConfig.width ?? 1920} height={deckConfig.height ?? 1080}>
+      {slides.map((slide, i) => {
+        const count = (seen.get(slide.id) ?? 0) + 1
+        seen.set(slide.id, count)
+        const key = count > 1 ? `${slide.id}#${i}` : slide.id
+        const props = { id: slide.id, regions: slide.regions, meta: slide.meta, content: slide.content, deckConfig, index: i, total: slides.length }
+        if (!editor) return <SlideRenderer key={key} {...props} />
+        return <SlideErrorBoundary key={key} id={slide.id} source={deck.source.slice(slide.source.start, slide.source.end)}><SlideRenderer {...props} /></SlideErrorBoundary>
+      })}
+    </deck-stage>
+  )
+  render(app, document.body)
+  if (!selection) return
+  // The stage re-collects its slides asynchronously after structural changes.
+  setTimeout(() => {
+    const stage = document.querySelector('deck-stage')
+    if (stage && stage.index !== selection.index) stage.setState({ index: selection.index, slideId: selection.slideId, step: -1 })
+  }, 0)
+}
+
 async function init() {
   const parsed = parseSlides(slidesContent)
+  const url = new URL(window.location.href)
+  const editorMode = url.searchParams.get('editor') === '1'
   const errors = validateDeck(parsed, { templates: manifests }).filter(d => d.severity === 'error')
-  if (errors.length) {
+  if (errors.length && !editorMode) {
     document.body.textContent = errors.map(d => `Line ${d.line}: ${d.message}`).join('\n')
     document.body.style.whiteSpace = 'pre-wrap'
     return
@@ -515,7 +499,6 @@ async function init() {
   const deckConfig = withConfigOverrides(parsed.deckConfig)
   setCalloutLabels(deckConfig)
   const { slides } = parsed
-  const url = new URL(window.location.href)
   const presenterMode = url.searchParams.get('presenter') === '1'
   const audienceMode  = url.searchParams.get('audience')  === '1'
 
@@ -539,27 +522,6 @@ async function init() {
     return
   }
 
-  await loadTheme(deckConfig)
-
-  const app = (
-    <deck-stage width={deckConfig.width ?? 1920} height={deckConfig.height ?? 1080}>
-      {slides.map((slide, i) => (
-        <SlideRenderer
-          key={i}
-          id={slide.id}
-          regions={slide.regions}
-          meta={slide.meta}
-          content={slide.content}
-          deckConfig={deckConfig}
-          index={i}
-          total={slides.length}
-        />
-      ))}
-    </deck-stage>
-  )
-
-  render(app, document.body)
-
   function handleDeckControl(ctrl) {
     if (!ctrl) return
     const stage = document.querySelector('deck-stage')
@@ -570,6 +532,26 @@ async function init() {
     else if (ctrl.command === 'goTo' && Number.isInteger(ctrl.value)) stage.goTo(ctrl.value)
     else if (ctrl.command === 'setState') stage.setState(ctrl.value)
   }
+
+  // Editor preview: the editor pushes whole sources; render best effort and
+  // report back. Bad decks never blank the preview here.
+  if (editorMode) {
+    const post = message => window.parent.postMessage(message, window.location.origin)
+    const bridge = createEditorBridge({
+      parse: parseSlides, validate: deck => validateDeck(deck, { templates: manifests }), loadTheme, setCalloutLabels,
+      applyOverrides: withConfigOverrides, mount: context => mountDeck({ ...context, editor: true }), post,
+    })
+    window.addEventListener('message', event => {
+      if (event.source !== window.parent || event.origin !== window.location.origin) return
+      if (!bridge.handleMessage(event.data)) handleDeckControl(event.data?.deckControl)
+    })
+    await bridge.render(slidesContent)
+    post({ deckEditorReady: true })
+    return
+  }
+
+  await loadTheme(deckConfig)
+  mountDeck({ deck: parsed, deckConfig })
 
   // Embedded iframes (presenter view + preview pane) receive commands via postMessage
   window.addEventListener('message', event => {

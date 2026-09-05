@@ -1,0 +1,50 @@
+import { h } from 'preact'
+
+// Dark control chrome shared by the presenter view and the editor.
+export const S = {
+  btn: {
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    padding: '5px 12px',
+    borderRadius: '5px',
+    border: '1px solid #2e2e2e',
+    background: '#1e1e1e',
+    color: '#999',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: 'inherit',
+    lineHeight: '1.5',
+    outline: 'none',
+  },
+  select: {
+    padding: '5px 8px',
+    borderRadius: '5px',
+    border: '1px solid #2e2e2e',
+    background: '#1e1e1e',
+    color: '#999',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: 'inherit',
+    width: '100%',
+  },
+  label: {
+    color: '#555',
+    fontSize: '11px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    marginBottom: '5px',
+    display: 'block',
+  },
+}
+
+export function PaletteSwatches({ tokens }) {
+  const keys = ['--bg', '--surface', '--rule', '--accent', '--accent-2', '--ink']
+  return (
+    <div style={{ display: 'flex', gap: '2px', alignItems: 'center', flexShrink: 0 }}>
+      {keys.map(k => tokens[k]
+        ? <div key={k} style={{ width: '10px', height: '10px', borderRadius: '2px', background: tokens[k], border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }} />
+        : null
+      )}
+    </div>
+  )
+}
