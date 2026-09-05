@@ -8,7 +8,13 @@ import { SlideRenderer } from './renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import './deck-stage.js'
 
-const DECK_CHANNEL = 'deck-control'
+// Scope controls to this file and presenter session, including separate tabs.
+const controlUrl = new URL(window.location.href)
+if (controlUrl.searchParams.get('presenter') === '1' && !controlUrl.searchParams.has('session')) {
+  controlUrl.searchParams.set('session', crypto.randomUUID())
+  history.replaceState(null, '', controlUrl)
+}
+const DECK_CHANNEL = `deck-control:${controlUrl.pathname}:${controlUrl.searchParams.get('session') ?? 'default'}`
 
 function withConfigOverrides(deckConfig) {
   const url = new URL(window.location.href)
@@ -150,6 +156,7 @@ function PresenterView({ deckConfig, slides }) {
   const audienceRef = useRef(null)
   const bcRef = useRef(null)
   const indexRef = useRef(0)
+  const stateRef = useRef({ index: 0, step: -1 })
   const paletteDropRef = useRef(null)
   indexRef.current = index
 
@@ -170,6 +177,9 @@ function PresenterView({ deckConfig, slides }) {
   // BroadcastChannel for audience sync — more reliable than cross-window postMessage
   useEffect(() => {
     bcRef.current = new BroadcastChannel(DECK_CHANNEL)
+    bcRef.current.onmessage = ({ data }) => {
+      if (data?.audienceReady) bcRef.current?.postMessage({ deckControl: { command: 'setState', value: stateRef.current } })
+    }
     return () => bcRef.current?.close()
   }, [])
 
@@ -179,11 +189,18 @@ function PresenterView({ deckConfig, slides }) {
   useEffect(() => {
     function onMessage({ data, source }) {
       if (source !== iframeRef.current?.contentWindow) return
-      if (!data || typeof data.slideIndexChanged !== 'number') return
-      const i = data.slideIndexChanged
+      if (!data?.deckStateChanged) return
+      const state = data.deckStateChanged
+      const i = state.index
+      // Theme reloads must not reset the current reveal position.
+      if (data.reason === 'init' && stateRef.current.index === i) {
+        sendTo(iframeRef.current?.contentWindow, 'setState', stateRef.current)
+        return
+      }
+      stateRef.current = state
       setIndex(i)
-      if (data.reason !== 'init') {
-        bcRef.current?.postMessage({ deckControl: { command: 'goTo', value: i } })
+      if (data.reason !== 'sync') {
+        bcRef.current?.postMessage({ deckControl: { command: 'setState', value: state } })
         sendTo(previewRef.current?.contentWindow, 'goTo', i + 1)
       }
     }
@@ -495,6 +512,12 @@ function PresenterView({ deckConfig, slides }) {
 
 async function init() {
   const parsed = parseSlides(slidesContent)
+  const errors = parsed.diagnostics.filter(d => d.severity === 'error')
+  if (errors.length) {
+    document.body.textContent = errors.map(d => `Line ${d.line}: ${d.message}`).join('\n')
+    document.body.style.whiteSpace = 'pre-wrap'
+    return
+  }
   const deckConfig = withConfigOverrides(parsed.deckConfig)
   setCalloutLabels(deckConfig)
   const { slides } = parsed
@@ -549,10 +572,13 @@ async function init() {
     else if (ctrl.command === 'prev') stage.prev()
     else if (ctrl.command === 'reset') stage.reset()
     else if (ctrl.command === 'goTo' && Number.isInteger(ctrl.value)) stage.goTo(ctrl.value)
+    else if (ctrl.command === 'setState') stage.setState(ctrl.value)
   }
 
   // Embedded iframes (presenter view + preview pane) receive commands via postMessage
-  window.addEventListener('message', event => handleDeckControl(event.data?.deckControl))
+  window.addEventListener('message', event => {
+    if (event.source === window.parent && event.origin === window.location.origin) handleDeckControl(event.data?.deckControl)
+  })
 
   // Audience window receives commands via BroadcastChannel — reliable same-origin sync
   // that doesn't depend on keeping a live cross-window reference
@@ -567,6 +593,10 @@ async function init() {
         handleDeckControl(ctrl)
       }
     }
+    document.querySelector('deck-stage')?.addEventListener('slidechange', event => {
+      if (event.detail.reason === 'init') bc.postMessage({ audienceReady: true })
+    })
+    bc.postMessage({ audienceReady: true })
   }
 }
 

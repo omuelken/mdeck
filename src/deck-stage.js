@@ -526,7 +526,31 @@
       }
 
       this._prevIndex = curr;
+      if (broadcast) this._broadcastState(reason);
       if (showOverlay) this._flashOverlay();
+    }
+
+    get state() {
+      return { index: this._index, slideId: this._slides[this._index]?.dataset.slideId,
+        step: this._stepMap.get(this._index) ?? -1 };
+    }
+
+    _broadcastState(reason) {
+      const message = { deckStateChanged: this.state, reason };
+      window.postMessage(message, '*');
+      if (window.parent !== window) window.parent.postMessage(message, '*');
+      this.dispatchEvent(new CustomEvent('statechange', { detail: this.state }));
+    }
+
+    setState(state) {
+      if (!state || !Number.isInteger(state.index) || !Number.isInteger(state.step)) return;
+      const byId = state.slideId ? this._slides.findIndex(s => s.dataset.slideId === state.slideId) : -1;
+      const index = byId >= 0 ? byId : state.index;
+      if (index < 0 || index >= this._slides.length) return;
+      this._go(index, 'sync');
+      const max = this._getSteps(this._slides[index]).length - 1;
+      this._stepMap.set(index, Math.max(-1, Math.min(max, state.step)));
+      this._applySteps(index);
     }
 
     _flashOverlay() {
@@ -661,6 +685,7 @@
       if (steps.length > 0 && curr < steps.length - 1) {
         this._stepMap.set(this._index, curr + 1);
         this._applySteps(this._index);
+        this._broadcastState(reason);
         this._flashOverlay();
         return;
       }
@@ -673,6 +698,7 @@
       if (steps.length > 0 && curr >= 0) {
         this._stepMap.set(this._index, curr - 1);
         this._applySteps(this._index);
+        this._broadcastState(reason);
         this._flashOverlay();
         return;
       }
@@ -682,6 +708,8 @@
     reset() {
       this._stepMap.clear();
       this._go(0, 'api');
+      this._applySteps(0);
+      this._broadcastState('reset');
     }
   }
 

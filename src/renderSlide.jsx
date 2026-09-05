@@ -32,25 +32,24 @@ function preprocessFootnotes(markdown) {
   return { processed, footnotesHtml: `<ol>${items}</ol>` }
 }
 
-function extractContent(markdown) {
+function extractContent(markdown, { headingLevels = [], paragraph = false } = {}) {
   const { processed, footnotesHtml } = preprocessFootnotes(markdown)
   const tokens = marked.lexer(processed)
   const headings = {}
   const paragraphs = []
-  const lists = []
+  const remaining = []
 
   for (const token of tokens) {
-    if (token.type === 'heading') {
+    if (token.type === 'heading' && headingLevels.includes(token.depth) && headings[token.depth] == null) {
       headings[token.depth] = Parser.parseInline(token.tokens)
-    } else if (token.type === 'paragraph') {
+    } else if (token.type === 'paragraph' && paragraph && paragraphs.length === 0 && !headings[2]) {
       paragraphs.push(Parser.parseInline(token.tokens))
-    } else if (token.type === 'list') {
-      lists.push(token)
-    }
+    } else remaining.push(token)
   }
 
   const fullHtml = marked.parse(processed)
-  return { headings, paragraphs, lists, fullHtml, footnotesHtml }
+  const bodyHtml = marked.parser(Object.assign(remaining, { links: tokens.links }))
+  return { headings, paragraphs, bodyHtml, fullHtml, footnotesHtml }
 }
 
 // ─── Hydration for inline components ──────────────────────────────────────
@@ -60,6 +59,7 @@ function HtmlContent({ html, class: className }) {
 
   useEffect(() => {
     if (!ref.current) return
+    const mounted = []
     for (const [name, Component] of Object.entries(registry)) {
       for (const el of [...ref.current.querySelectorAll(name)]) {
         const props = Object.fromEntries([...el.attributes].map(a => [a.name, a.value]))
@@ -67,8 +67,10 @@ function HtmlContent({ html, class: className }) {
         const wrapper = document.createElement('div')
         el.replaceWith(wrapper)
         render(h(Component, { ...props, children }), wrapper)
+        mounted.push(wrapper)
       }
     }
+    return () => mounted.forEach(wrapper => render(null, wrapper))
   }, [html])
 
   return <div class={className} ref={ref} dangerouslySetInnerHTML={{ __html: html }} />
@@ -130,7 +132,7 @@ function slideNum(index) {
 // ─── Slide layout components ───────────────────────────────────────────────
 
 function TitleSlide({ meta, content, deckConfig, index }) {
-  const { headings, paragraphs, footnotesHtml } = extractContent(content)
+  const { headings, paragraphs, bodyHtml, footnotesHtml } = extractContent(content, { headingLevels: [1, 2], paragraph: !/^##\s/m.test(content) })
   const logo = deckConfig.meta?.logo
   const image = meta?.image
 
@@ -143,6 +145,7 @@ function TitleSlide({ meta, content, deckConfig, index }) {
           {(headings[2] || paragraphs[0]) && (
             <p class="subtitle" dangerouslySetInnerHTML={{ __html: headings[2] ?? paragraphs[0] }} />
           )}
+          {bodyHtml && <HtmlContent html={bodyHtml} />}
         </div>
         {image && <img class="title-image" src={image} alt="" />}
       </div>
@@ -153,7 +156,7 @@ function TitleSlide({ meta, content, deckConfig, index }) {
 }
 
 function ChapterSlide({ meta, content, deckConfig, index }) {
-  const { headings, paragraphs, footnotesHtml } = extractContent(content)
+  const { headings, paragraphs, bodyHtml, footnotesHtml } = extractContent(content, { headingLevels: [1], paragraph: meta.description == null })
   const num = meta.number != null ? String(meta.number).padStart(2, '0') : null
   const desc = meta.description ?? paragraphs[0]
   const image = meta?.image
@@ -171,6 +174,7 @@ function ChapterSlide({ meta, content, deckConfig, index }) {
           {desc && (
             <p class="chapter-desc" dangerouslySetInnerHTML={{ __html: desc }} />
           )}
+          {bodyHtml && <HtmlContent html={bodyHtml} />}
         </div>
         {image && <img class="chapter-image" src={image} alt="" />}
       </div>
@@ -200,7 +204,7 @@ function FocusSlide({ meta, content, deckConfig, index }) {
 }
 
 function ImageTextSlide({ meta, content, deckConfig, index }) {
-  const { headings, paragraphs, footnotesHtml } = extractContent(content)
+  const { headings, bodyHtml, footnotesHtml } = extractContent(content, { headingLevels: [1, 2] })
 
   return (
     <section class="slide slide--image-text" data-label={`${slideNum(index)} Image+Text`}>
@@ -219,9 +223,7 @@ function ImageTextSlide({ meta, content, deckConfig, index }) {
           {headings[1] && (
             <h2 class="title" dangerouslySetInnerHTML={{ __html: headings[1] }} />
           )}
-          {paragraphs.map((p, i) => (
-            <p key={i} class="body-text" dangerouslySetInnerHTML={{ __html: p }} />
-          ))}
+          <HtmlContent class="text-content" html={bodyHtml} />
         </div>
       </div>
       <SlideFootnotes html={footnotesHtml} />
@@ -232,7 +234,7 @@ function ImageTextSlide({ meta, content, deckConfig, index }) {
 
 
 function FullBleedImageSlide({ meta, content, deckConfig, index }) {
-  const { headings, footnotesHtml } = extractContent(content)
+  const { headings, bodyHtml, footnotesHtml } = extractContent(content, { headingLevels: [1] })
   const hasOverlay = !!meta.overlay
   const classes = ['slide', 'slide--full-bleed-image', hasOverlay && 'has-overlay']
     .filter(Boolean).join(' ')
@@ -247,6 +249,7 @@ function FullBleedImageSlide({ meta, content, deckConfig, index }) {
         {headings[1] && (
           <h2 class="overlay-title" dangerouslySetInnerHTML={{ __html: headings[1] }} />
         )}
+        {bodyHtml && <HtmlContent html={bodyHtml} />}
       </div>
       <SlideFootnotes html={footnotesHtml} />
     </section>
@@ -257,7 +260,7 @@ function FullBleedImageSlide({ meta, content, deckConfig, index }) {
 function SplitSlide({ meta, content, deckConfig, index }) {
   const { processed, footnotesHtml } = preprocessFootnotes(content)
   const allTokens = marked.lexer(processed)
-  const [firstToken, ...restTokens] = allTokens
+  const [firstToken, ...restTokens] = allTokens.filter(token => token.type !== 'space')
   const leftTokens = Object.assign(firstToken ? [firstToken] : [], { links: allTokens.links })
   const rightTokens = Object.assign(restTokens, { links: allTokens.links })
   const leftHtml = marked.parser(leftTokens)
@@ -284,7 +287,7 @@ function SplitSlide({ meta, content, deckConfig, index }) {
 function GenericSlide({ meta, content, deckConfig, index }) {
   const { fullHtml, footnotesHtml } = extractContent(content)
   return (
-    <section class="slide" data-label={`${slideNum(index)}`}>
+    <section class={`slide${meta.layout ? ` slide--${String(meta.layout).replace(/[^a-zA-Z0-9_-]/g, '-')}` : ''}`} data-label={`${slideNum(index)}`}>
       <SlideHeader deckConfig={deckConfig} right={meta.section ?? ''} />
       <HtmlContent class="slide-body" html={fullHtml} />
       <SlideFootnotes html={footnotesHtml} />

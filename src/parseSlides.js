@@ -1,77 +1,125 @@
 import yaml from 'js-yaml'
 
-function safeYamlLoad(s) {
-  try { return yaml.load(s) } catch { return null }
+const DECK_KEYS = new Set('design palette accent accent2 params meta width height institution authorDate pageNumbers sections lang callouts'.split(' '))
+const SLIDE_KEYS = new Set('layout id section number part description label image alt overlay eyebrow attribution note notes props'.split(' '))
+
+export function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-function isPlainObject(v) {
-  return v !== null && typeof v === 'object' && !Array.isArray(v)
+// Offsets always refer to the original string (including CRLF and whitespace).
+export function sourceLines(source) {
+  const lines = []
+  let offset = 0
+  for (const raw of source.match(/[^\n]*\n|[^\n]+$/g) ?? []) {
+    lines.push({ text: raw.replace(/\r?\n$/, ''), start: offset, end: offset + raw.length })
+    offset += raw.length
+  }
+  return lines
 }
 
-const NOTES_RE = /^:::notes[ \t]*\n([\s\S]*?)\n:::[ \t]*(?:\n|$)/gm
+export function fenceState(text, fence) {
+  const match = text.match(/^ {0,3}(`{3,}|~{3,})(.*)$/)
+  if (!match) return fence
+  if (!fence) return { char: match[1][0], length: match[1].length }
+  if (match[1][0] === fence.char && match[1].length >= fence.length && !match[2].trim()) return null
+  return fence
+}
+
+function segmentsOf(source) {
+  const segments = []
+  let start = 0
+  let fence = null
+  let depth = 0
+  for (const line of sourceLines(source)) {
+    const before = fence
+    fence = fenceState(line.text, fence)
+    if (before || fence) continue
+    if (/^:::\s*[\w-]+/.test(line.text)) depth++
+    else if (/^:::\s*$/.test(line.text)) depth = Math.max(0, depth - 1)
+    if (!depth && /^---[ \t]*$/.test(line.text)) {
+      segments.push({ start, end: line.start, delimiterEnd: line.end })
+      start = line.end
+    }
+  }
+  segments.push({ start, end: source.length, delimiterEnd: source.length })
+  return segments.filter(s => source.slice(s.start, s.end).trim())
+}
+
+function looksLikeMeta(text, keys) {
+  return sourceLines(text).some(({ text }) => {
+    const key = text.match(/^([\w-]+):/)
+    return key && keys.has(key[1])
+  }) && !/^\s*(?:#{1,6}\s|```|~~~|:::)/.test(text)
+}
 
 function extractNotes(content) {
-  const noteBlocks = []
-  const cleaned = content.replace(NOTES_RE, (_, body) => {
-    noteBlocks.push(body.trim())
-    return ''
-  })
-  return {
-    content: noteBlocks.length > 0 ? cleaned.trim() : content,
-    notes: noteBlocks.length > 0 ? noteBlocks.join('\n\n') : null,
+  const lines = sourceLines(content)
+  const edits = []
+  const notes = []
+  let fence = null
+  let depth = 0
+  let start = null
+  for (const line of lines) {
+    const before = fence
+    fence = fenceState(line.text, fence)
+    if (before || fence) continue
+    if (/^:::notes[ \t]*$/.test(line.text) && depth === 0) start = line
+    if (/^:::\s*[\w-]+/.test(line.text)) depth++
+    else if (/^:::[ \t]*$/.test(line.text)) {
+      depth = Math.max(0, depth - 1)
+      if (start && depth === 0) {
+        notes.push(content.slice(start.end, line.start).trim())
+        edits.push({ start: start.start, end: line.end })
+        start = null
+      }
+    }
   }
+  for (const edit of edits.reverse()) content = content.slice(0, edit.start) + content.slice(edit.end)
+  return { content: content.trim(), notes: notes.join('\n\n') }
 }
 
-export function parseSlides(markdown) {
-  const segments = markdown.split(/^---$/m).map(s => s.trim()).filter(Boolean)
-
-  if (segments.length === 0) return { deckConfig: {}, slides: [] }
-
-  // Detect deck config: first block that has no `layout` key
-  const firstParsed = safeYamlLoad(segments[0]) || {}
+export function parseSlides(source) {
+  const segments = segmentsOf(source)
+  const diagnostics = []
+  const text = segment => source.slice(segment.start, segment.end).trim()
+  const readMeta = segment => {
+    try {
+      const value = yaml.load(source.slice(segment.start, segment.end))
+      if (!isPlainObject(value)) throw new Error('Metadata must be a YAML mapping')
+      return value
+    } catch (error) {
+      const offset = segment.start + (error.mark?.position ?? 0)
+      diagnostics.push({ severity: 'error', code: 'invalid-yaml', message: error.reason ?? error.message, offset, line: source.slice(0, offset).split('\n').length })
+      return {}
+    }
+  }
   let deckConfig = {}
   let i = 0
-
-  if (!firstParsed.layout) {
-    deckConfig = firstParsed
-    i = 1
+  if (segments[0] && /^\s*---[ \t]*\r?\n/.test(source) && looksLikeMeta(text(segments[0]), DECK_KEYS) && !looksLikeMeta(text(segments[0]), SLIDE_KEYS)) {
+    deckConfig = readMeta(segments[0])
+    i++
   }
-
   const slides = []
   while (i < segments.length) {
-    const parsed = safeYamlLoad(segments[i])
-
-    if (isPlainObject(parsed)) {
-      // Frontmatter block — pair with the next segment if it's content
-      const next = segments[i + 1]
-      if (next && !isPlainObject(safeYamlLoad(next))) {
-        const { content, notes } = extractNotes(next)
-        if (notes && !parsed.note) parsed.note = notes
-        slides.push({ meta: parsed, content })
-        i += 2
-      } else {
-        slides.push({ meta: parsed, content: '' })
-        i += 1
-      }
-    } else {
-      // Not a YAML object — content-only slide, no frontmatter needed
-      const { content, notes } = extractNotes(segments[i])
-      slides.push({ meta: notes ? { note: notes } : {}, content })
-      i += 1
+    const segment = segments[i++]
+    let meta = {}
+    let body = segment
+    if (looksLikeMeta(text(segment), SLIDE_KEYS)) {
+      meta = readMeta(segment)
+      body = segments[i]
+      if (body && !looksLikeMeta(text(body), SLIDE_KEYS)) i++
+      else body = null
     }
+    const { content, notes } = extractNotes(body ? text(body) : '')
+    if (notes && meta.notes == null && meta.note == null) meta.notes = notes
+    slides.push({ meta, content })
   }
-
-  // Propagate section names forward from chapter slides (via part:) and explicit section: overrides
   let currentSection = null
   for (const slide of slides) {
-    if (slide.meta.layout === 'chapter' && slide.meta.part) {
-      currentSection = slide.meta.part
-    } else if (slide.meta.section) {
-      currentSection = slide.meta.section
-    } else if (currentSection) {
-      slide.meta.section = currentSection
-    }
+    if (slide.meta.layout === 'chapter' && slide.meta.part) currentSection = slide.meta.part
+    else if (Object.hasOwn(slide.meta, 'section')) currentSection = slide.meta.section
+    else if (currentSection) slide.meta.section = currentSection
   }
-
-  return { deckConfig, slides }
+  return { deckConfig, slides, diagnostics }
 }
