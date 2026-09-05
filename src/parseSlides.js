@@ -1,29 +1,12 @@
 import yaml from 'js-yaml'
+import { sourceLines, fenceState, scanDirectives, diagnostic } from './source.js'
+export { sourceLines, fenceState } from './source.js'
 
 const DECK_KEYS = new Set('design palette accent accent2 params meta width height institution authorDate pageNumbers sections lang callouts'.split(' '))
 const SLIDE_KEYS = new Set('layout id section number part description label image alt overlay eyebrow attribution note notes props'.split(' '))
 
 export function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
-}
-
-// Offsets always refer to the original string (including CRLF and whitespace).
-export function sourceLines(source) {
-  const lines = []
-  let offset = 0
-  for (const raw of source.match(/[^\n]*\n|[^\n]+$/g) ?? []) {
-    lines.push({ text: raw.replace(/\r?\n$/, ''), start: offset, end: offset + raw.length })
-    offset += raw.length
-  }
-  return lines
-}
-
-export function fenceState(text, fence) {
-  const match = text.match(/^ {0,3}(`{3,}|~{3,})(.*)$/)
-  if (!match) return fence
-  if (!fence) return { char: match[1][0], length: match[1].length }
-  if (match[1][0] === fence.char && match[1].length >= fence.length && !match[2].trim()) return null
-  return fence
 }
 
 function segmentsOf(source) {
@@ -47,36 +30,51 @@ function segmentsOf(source) {
 }
 
 function looksLikeMeta(text, keys) {
-  return sourceLines(text).some(({ text }) => {
-    const key = text.match(/^([\w-]+):/)
-    return key && keys.has(key[1])
-  }) && !/^\s*(?:#{1,6}\s|```|~~~|:::)/.test(text)
+  const first = sourceLines(text).find(line => line.text.trim() && !/^\s*#/.test(line.text))
+  const key = first?.text.match(/^([\w-]+):/)
+  return !!key && keys.has(key[1]) && !/^\s*#{1,6}\s/.test(text)
 }
 
-function extractNotes(content) {
-  const lines = sourceLines(content)
-  const edits = []
+function extractBody(source, body, diagnostics) {
+  const raw = body ? source.slice(body.start, body.end) : ''
+  const offset = body?.start ?? 0
+  const scan = scanDirectives(raw)
+  diagnostics.push(...scan.diagnostics.map(d => diagnostic(source, d.code, d.message, offset + d.offset)))
+  const regions = Object.create(null)
   const notes = []
-  let fence = null
-  let depth = 0
-  let start = null
-  for (const line of lines) {
-    const before = fence
-    fence = fenceState(line.text, fence)
-    if (before || fence) continue
-    if (/^:::notes[ \t]*$/.test(line.text) && depth === 0) start = line
-    if (/^:::\s*[\w-]+/.test(line.text)) depth++
-    else if (/^:::[ \t]*$/.test(line.text)) {
-      depth = Math.max(0, depth - 1)
-      if (start && depth === 0) {
-        notes.push(content.slice(start.end, line.start).trim())
-        edits.push({ start: start.start, end: line.end })
-        start = null
+  const blocks = []
+  const bodyParts = []
+  let cursor = 0
+  for (const node of scan.nodes) {
+    if (node.end == null || !['slot', 'notes', 'meta'].includes(node.name)) continue
+    if (node.start > cursor) bodyParts.push({ start: offset + cursor, end: offset + node.start })
+    const range = { start: offset + node.bodyStart, end: offset + node.bodyEnd }
+    const block = { type: node.name, name: node.argument, source: { start: offset + node.start, end: offset + node.end }, bodySource: range }
+    blocks.push(block)
+    const value = source.slice(range.start, range.end)
+    if (node.name === 'notes') notes.push(value.trim())
+    if (node.name === 'meta') diagnostics.push(diagnostic(source, 'misplaced-meta', ':::meta must be the first block of a slide', offset + node.start))
+    if (node.name === 'slot') {
+      const name = node.argument
+      if (!/^[a-z][a-z0-9-]*$/.test(name)) diagnostics.push(diagnostic(source, 'invalid-region', 'Region names must use lowercase letters, digits and hyphens', offset + node.start))
+      else if (regions[name]) diagnostics.push(diagnostic(source, 'duplicate-region', `Duplicate region "${name}"`, offset + node.start))
+      else regions[name] = { name, content: value.trim(), raw: value, source: range, explicit: true }
+      const checkChildren = children => {
+        for (const child of children) {
+          if (['slot', 'notes', 'meta'].includes(child.name)) diagnostics.push(diagnostic(source, 'nested-region', 'Slots, notes and metadata must be top-level slide blocks', offset + child.start))
+          checkChildren(child.children)
+        }
       }
+      checkChildren(node.children)
     }
+    cursor = node.end
   }
-  for (const edit of edits.reverse()) content = content.slice(0, edit.start) + content.slice(edit.end)
-  return { content: content.trim(), notes: notes.join('\n\n') }
+  if (cursor < raw.length) bodyParts.push({ start: offset + cursor, end: offset + raw.length })
+  const content = bodyParts.map(range => source.slice(range.start, range.end)).join('').trim()
+  // Unassigned content is always available as the default body region.
+  if (!regions.body) regions.body = { name: 'body', content, explicit: false, ranges: bodyParts }
+  else if (content) diagnostics.push(diagnostic(source, 'ambiguous-body', 'An explicit body slot cannot be combined with unassigned slide content', offset))
+  return { content, notes: notes.join('\n\n'), regions, blocks }
 }
 
 export function parseSlides(source) {
@@ -90,14 +88,16 @@ export function parseSlides(source) {
       return value
     } catch (error) {
       const offset = segment.start + (error.mark?.position ?? 0)
-      diagnostics.push({ severity: 'error', code: 'invalid-yaml', message: error.reason ?? error.message, offset, line: source.slice(0, offset).split('\n').length })
+      diagnostics.push(diagnostic(source, 'invalid-yaml', error.reason ?? error.message, offset))
       return {}
     }
   }
   let deckConfig = {}
+  let configSource = null
   let i = 0
   if (segments[0] && /^\s*---[ \t]*\r?\n/.test(source) && looksLikeMeta(text(segments[0]), DECK_KEYS) && !looksLikeMeta(text(segments[0]), SLIDE_KEYS)) {
     deckConfig = readMeta(segments[0])
+    configSource = { start: segments[0].start, end: segments[0].end }
     i++
   }
   const slides = []
@@ -105,15 +105,25 @@ export function parseSlides(source) {
     const segment = segments[i++]
     let meta = {}
     let body = segment
-    if (looksLikeMeta(text(segment), SLIDE_KEYS)) {
+    let metaSource = null
+    const explicit = scanDirectives(source.slice(segment.start, segment.end)).nodes[0]
+    if (explicit?.name === 'meta' && explicit.end != null && !source.slice(segment.start, segment.start + explicit.start).trim()) {
+      metaSource = { start: segment.start + explicit.bodyStart, end: segment.start + explicit.bodyEnd }
+      meta = readMeta(metaSource)
+      body = { start: segment.start + explicit.end, end: segment.end }
+    } else if (looksLikeMeta(text(segment), SLIDE_KEYS)) {
       meta = readMeta(segment)
+      metaSource = { start: segment.start, end: segment.end }
       body = segments[i]
-      if (body && !looksLikeMeta(text(body), SLIDE_KEYS)) i++
+      if (body && !looksLikeMeta(text(body), SLIDE_KEYS) && !/^:::meta\b/.test(text(body))) i++
       else body = null
     }
-    const { content, notes } = extractNotes(body ? text(body) : '')
+    const { content, notes, regions, blocks } = extractBody(source, body, diagnostics)
     if (notes && meta.notes == null && meta.note == null) meta.notes = notes
-    slides.push({ meta, content })
+    const authoredMeta = { ...meta }
+    slides.push({ id: meta.id ?? `slide-${slides.length + 1}`, meta, authoredMeta, content, regions, blocks,
+      source: { start: segment.start, end: body?.end ?? segment.end },
+      metaSource, bodySource: body ? { start: body.start, end: body.end } : null })
   }
   let currentSection = null
   for (const slide of slides) {
@@ -121,5 +131,5 @@ export function parseSlides(source) {
     else if (Object.hasOwn(slide.meta, 'section')) currentSection = slide.meta.section
     else if (currentSection) slide.meta.section = currentSection
   }
-  return { deckConfig, slides, diagnostics }
+  return { source, configSource, deckConfig, slides, diagnostics }
 }

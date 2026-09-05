@@ -3,6 +3,36 @@ import markedKatex from 'marked-katex-extension'
 import 'katex/dist/katex.min.css'
 import '../components/callout.css'
 import '../components/columns.css'
+import { scanDirectives, sourceLines, fenceState } from './source.js'
+
+function readDirective(src, name) {
+  if (!/^:::\s*[\w-]+/.test(src)) return null
+  const node = scanDirectives(src).nodes[0]
+  if (!node || node.end == null || (name && node.name !== name)) return null
+  return { ...node, raw: src.slice(0, node.end), body: src.slice(node.bodyStart, node.bodyEnd) }
+}
+
+function splitColumns(src) {
+  const columns = []
+  let start = 0, depth = 0, fence = null
+  for (const line of sourceLines(src)) {
+    const before = fence
+    fence = fenceState(line.text, fence)
+    if (before || fence) continue
+    if (/^:::\s*[\w-]+/.test(line.text)) depth++
+    else if (/^:::\s*$/.test(line.text)) depth--
+    if (!depth && /^\+\+\+[ \t]*$/.test(line.text)) {
+      columns.push(src.slice(start, line.start))
+      start = line.end
+    }
+  }
+  columns.push(src.slice(start))
+  return columns
+}
+
+function escapeHtml(text) {
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
 
 marked.use(markedKatex({ throwOnError: false, output: 'html' }))
 
@@ -28,17 +58,17 @@ marked.use({
   extensions: [{
     name: 'callout',
     level: 'block',
-    start(src) { return src.match(/^:::/)?.index },
+    start(src) { return src.match(/^:::/m)?.index },
     tokenizer(src) {
-      const m = src.match(/^:::\s*(\w+)(.*?)\n([\s\S]*?)\n:::\s*(?:\n|$)/)
+      const m = readDirective(src)
       if (!m) return
-      const token = { type: 'callout', raw: m[0], calloutType: m[1].toLowerCase(), title: m[2].trim(), tokens: [] }
-      this.lexer.blockTokens(m[3], token.tokens)
+      const token = { type: 'callout', raw: m.raw, calloutType: m.name.toLowerCase(), title: m.argument, tokens: [] }
+      this.lexer.blockTokens(m.body, token.tokens)
       return token
     },
     renderer(token) {
       const title = token.title || calloutLabels[token.calloutType] || token.calloutType
-      return `<div class="callout callout-${token.calloutType}"><div class="callout-title">${title}</div>${this.parser.parse(token.tokens)}</div>\n`
+      return `<div class="callout callout-${token.calloutType}"><div class="callout-title">${escapeHtml(title)}</div>${this.parser.parse(token.tokens)}</div>\n`
     },
   }],
 })
@@ -47,12 +77,12 @@ marked.use({
   extensions: [{
     name: 'columns',
     level: 'block',
-    start(src) { return src.match(/^:::columns/)?.index },
+    start(src) { return src.match(/^:::columns\b/m)?.index },
     tokenizer(src) {
-      const m = src.match(/^:::columns[ \t]*\n([\s\S]*?)\n:::[ \t]*(?:\n|$)/)
+      const m = readDirective(src, 'columns')
       if (!m) return
-      const colSrcs = m[1].split(/\n\+\+\+[ \t]*\n/)
-      const token = { type: 'columns', raw: m[0], columns: [] }
+      const colSrcs = splitColumns(m.body)
+      const token = { type: 'columns', raw: m.raw, columns: [] }
       for (const colSrc of colSrcs) {
         const colTokens = []
         this.lexer.blockTokens(colSrc.trim(), colTokens)
@@ -73,12 +103,12 @@ marked.use({
   extensions: [{
     name: 'steps',
     level: 'block',
-    start(src) { return src.match(/^:::steps/)?.index },
+    start(src) { return src.match(/^:::steps\b/m)?.index },
     tokenizer(src) {
-      const m = src.match(/^:::steps\s*\n([\s\S]*?)\n:::\s*(?:\n|$)/)
+      const m = readDirective(src, 'steps')
       if (!m) return
-      const token = { type: 'steps', raw: m[0], tokens: [] }
-      this.lexer.blockTokens(m[1], token.tokens)
+      const token = { type: 'steps', raw: m.raw, tokens: [] }
+      this.lexer.blockTokens(m.body, token.tokens)
       return token
     },
     renderer(token) {
@@ -86,12 +116,11 @@ marked.use({
       const links = token.tokens.links || {}
       const parts = []
       for (const t of token.tokens) {
+        if (t.type === 'space') continue
         if (t.type === 'list') {
           const tag = t.ordered ? 'ol' : 'ul'
           const items = t.items.map(item => {
-            const body = item.loose
-              ? this.parser.parse(Object.assign([...item.tokens], { links }))
-              : this.parser.parseInline(item.tokens[0]?.tokens ?? [])
+            const body = this.parser.parse(Object.assign([...item.tokens], { links }))
             return `<li data-step="${counter++}">${body}</li>`
           })
           parts.push(`<${tag}>${items.join('')}</${tag}>`)

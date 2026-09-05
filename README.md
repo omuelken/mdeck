@@ -89,6 +89,9 @@ requirements. Pass a different port as the first argument if `8765` is occupied.
 
 ## Slide format
 
+For named content regions, explicit metadata, stable slide IDs, validation, and
+the source-preserving document API, see [Structured slides](docs/structured-slides.md).
+
 A deck is a single `.md` file. The first `---` block is the deck config; each subsequent `---` block is slide frontmatter followed by slide content.
 
 ```markdown

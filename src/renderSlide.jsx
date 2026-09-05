@@ -257,18 +257,20 @@ function FullBleedImageSlide({ meta, content, deckConfig, index }) {
 }
 
 // Split: first block token goes left, remaining tokens go right
-function SplitSlide({ meta, content, deckConfig, index }) {
+function SplitSlide({ meta, content, deckConfig, index, regions }) {
   const { processed, footnotesHtml } = preprocessFootnotes(content)
   const allTokens = marked.lexer(processed)
   const [firstToken, ...restTokens] = allTokens.filter(token => token.type !== 'space')
   const leftTokens = Object.assign(firstToken ? [firstToken] : [], { links: allTokens.links })
   const rightTokens = Object.assign(restTokens, { links: allTokens.links })
-  const leftHtml = marked.parser(leftTokens)
-  const rightHtml = marked.parser(rightTokens)
+  const named = regions?.left || regions?.right
+  const leftHtml = named ? marked.parse(regions.left?.content ?? '') : marked.parser(leftTokens)
+  const rightHtml = named ? marked.parse(regions.right?.content ?? '') : marked.parser(rightTokens)
 
   return (
     <section class="slide slide--split" data-label={`${slideNum(index)} Split`}>
       <SlideHeader deckConfig={deckConfig} right={meta.section ?? ''} />
+      {named && content && <HtmlContent html={marked.parse(content)} />}
       <div class="slide-body">
         <div class="split-left">
           <HtmlContent html={leftHtml} />
@@ -307,7 +309,8 @@ const LAYOUTS = {
   split: SplitSlide,
 }
 
-export function SlideRenderer({ meta, content, deckConfig, index, total }) {
+export function SlideRenderer({ meta, content, deckConfig, index, total, id, regions }) {
   const Layout = LAYOUTS[meta.layout] ?? GenericSlide
-  return h(Layout, { meta, content, deckConfig, index, total })
+  const element = Layout({ meta, content: regions?.body?.content ?? content, deckConfig, index, total, regions })
+  return h(element.type, { ...element.props, 'data-slide-id': id }, element.props.children)
 }

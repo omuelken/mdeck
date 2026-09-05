@@ -1,5 +1,7 @@
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { resolve, dirname, basename } from 'path'
+import { parseSlides } from './parseSlides.js'
+import { validateDeck, formatDiagnostics } from './validateDeck.js'
 
 const VIRTUAL_ID = 'virtual:slides'
 const RESOLVED_ID = '\0virtual:slides'
@@ -149,6 +151,10 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     load(id) {
       if (id === RESOLVED_ID) {
         const raw = readFileSync(abs, 'utf-8')
+        const diagnostics = validateDeck(parseSlides(raw))
+        const errors = diagnostics.filter(d => d.severity === 'error')
+        if (errors.length) throw new Error(formatDiagnostics(errors, abs))
+        if (diagnostics.length) this.warn(formatDiagnostics(diagnostics, abs))
         const source = maybeInlineAssets(raw, abs, { inlineImages, inlineMedia })
         return `export default ${JSON.stringify(source)}`
       }

@@ -469,6 +469,8 @@
     }
 
     _restoreIndex() {
+      const named = this._slides.findIndex(s => '#' + encodeURIComponent(s.dataset.slideId) === location.hash);
+      if (named >= 0) { this._index = named; return; }
       // The host's ?slide= param is delivered as a #<int> hash (1-indexed) on
       // the iframe src. No hash → slide 1; the deck itself keeps no position
       // state across loads.
@@ -486,7 +488,7 @@
       // Keep the iframe's own hash in sync so an in-iframe location.reload()
       // (reload banner path in viewer-handle.ts) lands on the current slide,
       // not the stale deep-link hash from initial load.
-      try { history.replaceState(null, '', '#' + (curr + 1)); } catch (e) {}
+      try { history.replaceState(null, '', '#' + (this._slides[curr].dataset.slideId || (curr + 1))); } catch (e) {}
       this._slides.forEach((s, i) => {
         if (i === curr) s.setAttribute('data-deck-active', '');
         else s.removeAttribute('data-deck-active');
@@ -642,8 +644,8 @@
 
     _getSteps(slide) {
       if (!slide) return [];
-      return [...slide.querySelectorAll('[data-step]')]
-        .sort((a, b) => Number(a.dataset.step) - Number(b.dataset.step));
+      // Multiple and nested reveal blocks follow document order.
+      return [...slide.querySelectorAll('[data-step]')];
     }
 
     _applySteps(slideIndex) {

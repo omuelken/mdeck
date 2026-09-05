@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { marked } from 'marked'
 import slidesContent from 'virtual:slides'
 import { parseSlides } from './parseSlides'
+import { validateDeck } from './validateDeck'
 import { loadTheme, THEME_NAMES, PALETTE_NAMES, THEME_METAS, PALETTES } from './themeLoader'
 import { SlideRenderer } from './renderSlide'
 import { setCalloutLabels } from './markedSetup'
@@ -512,7 +513,7 @@ function PresenterView({ deckConfig, slides }) {
 
 async function init() {
   const parsed = parseSlides(slidesContent)
-  const errors = parsed.diagnostics.filter(d => d.severity === 'error')
+  const errors = validateDeck(parsed).filter(d => d.severity === 'error')
   if (errors.length) {
     document.body.textContent = errors.map(d => `Line ${d.line}: ${d.message}`).join('\n')
     document.body.style.whiteSpace = 'pre-wrap'
@@ -552,6 +553,8 @@ async function init() {
       {slides.map((slide, i) => (
         <SlideRenderer
           key={i}
+          id={slide.id}
+          regions={slide.regions}
           meta={slide.meta}
           content={slide.content}
           deckConfig={deckConfig}

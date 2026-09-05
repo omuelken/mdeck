@@ -9,6 +9,8 @@ import readline from 'readline/promises'
 import preact from '@preact/preset-vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 import { collectLocalAssetRefs, slidesPlugin } from './src/slidesPlugin.js'
+import { parseSlides } from './src/parseSlides.js'
+import { validateDeck, formatDiagnostics } from './src/validateDeck.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const frameworkRoot = __dirname
@@ -357,6 +359,7 @@ const HELP = `
     ${c.green}mdeck build${c.reset} <slides.md> [--presenter-launchers]
                                               Add macOS/Linux and Windows launchers
     ${c.green}mdeck preview${c.reset}                          Preview the last build
+    ${c.green}mdeck check${c.reset} <slides.md> [--strict]       Validate source and local assets
 
   ${c.dim}Install the${c.reset} ${c.bold}mdeck${c.reset} ${c.dim}command globally:${c.reset}
     npm link
@@ -392,6 +395,17 @@ function requireInput(cmd) {
 // ── dev ───────────────────────────────────────────────────────────────────────
 if (command === 'new') {
   await runNewWizard()
+
+} else if (command === 'check') {
+  const input = requireInput('check')
+  const source = readFileSync(input, 'utf8')
+  const diagnostics = validateDeck(parseSlides(source))
+  for (const ref of collectLocalAssetRefs(source)) {
+    if (!existsSync(resolve(dirname(resolve(input)), ref))) diagnostics.push({ severity: 'error', code: 'missing-asset', message: `Missing local asset: ${ref}`, line: 1, column: 1 })
+  }
+  if (diagnostics.length) console.log(formatDiagnostics(diagnostics, input))
+  if (diagnostics.some(d => d.severity === 'error' || hasFlag('--strict'))) process.exitCode = 1
+  else ok(`Checked ${input}${diagnostics.length ? ' (with warnings)' : ''}`)
 
 // ── dev ───────────────────────────────────────────────────────────────────────
 } else if (command === 'dev') {
