@@ -33,41 +33,56 @@ All nine tokens should be set. Omitting a token leaves the theme default in plac
 
 ## Authoring a palette
 
-Create a JSON file in `assets/palettes/`. The filename becomes the palette key.
+A palette is one kind of [extension](extensions.md): a folder named after the
+palette containing `extension.toml`. Put it under the framework's
+`assets/extensions/palettes/` folder or in `extensions/` beside a deck.
 
-```json
-{
-  "name": "Human-readable name",
-  "tokens": {
-    "--bg":        "#ffffff",
-    "--surface":   "#f5f5f5",
-    "--ink":       "#0a0a0a",
-    "--ink-soft":  "#2a2a2a",
-    "--muted":     "#6b6b6b",
-    "--rule":      "#e5e5e5",
-    "--accent":    "#2563eb",
-    "--accent-2":  "#7c3aed",
-    "--on-accent": "#ffffff"
-  }
-}
+```toml
+schema = 1
+kind = "palette"
+id = "notebook"
+title = "Blue notebook"
+description = "Cool blues on white."
+
+[tokens]
+"--bg" = "#ffffff"
+"--surface" = "#f5f5f5"
+"--ink" = "#0a0a0a"
+"--ink-soft" = "#2a2a2a"
+"--muted" = "#6b6b6b"
+"--rule" = "#e5e5e5"
+"--accent" = "#2563eb"
+"--accent-2" = "#7c3aed"
+"--on-accent" = "#ffffff"
 ```
 
-No registration step needed — any `.json` file placed here is automatically available.
+No registration step is needed; any palette folder is found automatically.
+Token names start with dashes, so quote them as TOML keys.
 
 ## Dark palettes
 
-Add `"dark": true` at the top level (outside `tokens`) to mark a palette as dark. This triggers dark-mode adjustments in the runtime: syntax-highlight colors are inverted, and the logo gets a CSS `invert()` filter so light logos remain legible.
+Add `dark = true` above `[tokens]` to mark a palette as dark. This triggers dark-mode adjustments in the runtime: syntax-highlight colors are inverted, and the logo gets a CSS `invert()` filter so light logos remain legible.
 
-```json
-{
-  "name": "Dark Slate",
-  "dark": true,
-  "tokens": {
-    "--bg":  "#0d0d0d",
-    ...
-  }
-}
+```toml
+schema = 1
+kind = "palette"
+id = "dark-slate"
+title = "Dark Slate"
+dark = true
+
+[tokens]
+"--bg" = "#0d0d0d"
+# ...
 ```
+
+## Built-in palettes
+
+| Light | Dark |
+|---|---|
+| `paper` — white and neutral | `dark-slate` — cool and restrained |
+| `sage` — muted green | `dark-ember` — warm highlights |
+| `mono` — black and white | `dark-neon` — vivid highlights |
+| `terra` — warm earth colors | `dark-mono` — dark monochrome |
 
 ## The `--on-accent` token
 

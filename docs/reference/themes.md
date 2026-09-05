@@ -1,6 +1,8 @@
 # Themes
 
-A theme defines how slides look: typography, spacing, layout structure, and default colors. Themes are independent of content and palettes.
+A theme defines how slides look: typography, spacing, layout structure, and
+default colors. Themes are independent of content and palettes. A theme is one
+kind of [extension](extensions.md).
 
 ## Using a theme
 
@@ -12,104 +14,91 @@ design: neue
 ---
 ```
 
+| Theme | Look |
+|---|---|
+| `neue` | Clear sans-serif type, warm stone background, teal accent |
+| `aurora` | Geometric shapes, violet accent with a derived second accent |
+| `duet` | Slab-serif headings and two accent colors |
+| `editorial` | Magazine look with Playfair Display and Lora |
+| `fhnw` | The FHNW corporate design |
+| `terminal` | Dark by default, monospace throughout |
+
+`mdeck extensions my-talk.md` lists them with their descriptions.
+
 ## Theme structure
 
-```
-assets/themes/
-  my-theme/
-    index.js        # Entry point — re-exports everything below
-    tokens.css      # CSS custom properties (:root vars)
-    templates.css   # Slide layout CSS
-    meta.json       # Theme metadata, fonts, configurable params
+```text
+assets/extensions/themes/my-theme/     built-in
+extensions/my-theme/                    beside a deck
+  extension.toml     identity, fonts, token defaults, parameters
+  styles.css         slide frame and layout rules
 ```
 
-### `tokens.css`
+No registration step is needed: any theme folder in either place is found
+automatically, and the `mdeck new` wizard offers it.
 
-Defines the CSS custom properties that the rest of the theme uses. Must include the six core color tokens (so palettes work) and any typography and spacing tokens.
+### `extension.toml`
 
-```css
-:root {
-  /* Core color tokens — must be present for palette compatibility */
-  --bg:       #ffffff;
-  --ink:      #0a0a0a;
-  --ink-soft: #2a2a2a;
-  --muted:    #6b6b6b;
-  --rule:     #e5e5e5;
-  --accent:   #2563eb;
+```toml
+schema = 1
+kind = "theme"
+id = "my-theme"
+title = "My Theme"
+fonts = ["https://fonts.googleapis.com/css2?family=..."]
 
-  /* Typography */
-  --fs-display: 128px;
-  --fs-h:        64px;
-  --fs-body:     34px;
-  /* ... */
+[tokens]
+"--bg" = "#ffffff"
+"--ink" = "#0a0a0a"
+"--ink-soft" = "#2a2a2a"
+"--muted" = "#6b6b6b"
+"--rule" = "#e5e5e5"
+"--accent" = "#2563eb"
+"--fs-display" = "128px"
+"--fs-h" = "64px"
+"--fs-body" = "34px"
+"--pad-x" = "140px"
+"--pad-y" = "110px"
+"--font-display" = "\"My Display Font\", sans-serif"
+"--font-body" = "\"My Body Font\", sans-serif"
 
-  /* Spacing */
-  --pad-x: 140px;
-  --pad-y: 110px;
-  /* ... */
+[params.primaryColor]
+token = "--accent"
+title = "Primary color"
 
-  /* Type families */
-  --font-display: "My Display Font", sans-serif;
-  --font-body:    "My Body Font", sans-serif;
-}
+[params.backgroundColor]
+token = "--bg"
+title = "Background"
 ```
 
-### `templates.css`
+`tokens` hold the default values of the CSS custom properties the stylesheet
+uses. mdeck writes them into a `:root` block ahead of the stylesheet. Include
+the core color tokens so palettes work, plus the typography and spacing tokens
+the rules refer to.
 
-Layout CSS for all slide types. References token vars for all color and spacing values — no hardcoded colors. Must define styles for:
-
-- `.slide` — base slide
-- `.slide-header`, `.slide-footer`, `.slide-body` — structural rails
-- `.slide--title`, `.slide--chapter`, `.slide--focus`, `.slide--image-text`, `.slide--bullet-list`, `.slide--full-bleed-image` — the six built-in layouts
-
-### `meta.json`
-
-Declares the theme name, font URLs, and which CSS tokens are user-overridable via `params:` in the deck frontmatter.
-
-```json
-{
-  "name": "My Theme",
-  "fonts": [
-    "https://fonts.googleapis.com/css2?family=..."
-  ],
-  "params": {
-    "primaryColor": { "token": "--accent", "default": "#2563eb" },
-    "backgroundColor": { "token": "--bg", "default": "#ffffff" }
-  }
-}
-```
-
-Each entry in `params` maps a user-facing name to a CSS custom property. Users set these in the deck frontmatter:
+`params` connect author-facing names to tokens. Users set them in the deck:
 
 ```yaml
 params:
   primaryColor: "#e63946"
 ```
 
-### `index.js`
+A parameter's default is its token's value, so the presenter controls and the
+rendered slides always agree. Unknown parameter names are reported by
+`mdeck check`.
 
-Re-exports everything using Vite's `?inline` import for CSS:
+Optional settings: `description`, `dark = true` for a dark-by-default theme,
+`accent2 = true` when the theme uses `--accent-2`, and `accent2Preview` when
+that token is a CSS expression rather than a plain color. `[files] styles` may
+name one stylesheet or a list.
 
-```js
-import tokensCSS from './tokens.css?inline'
-import templatesCSS from './templates.css?inline'
-import themeMeta from './meta.json'
+### `styles.css`
 
-export { tokensCSS, templatesCSS, themeMeta }
-```
+Layout CSS for all slide types. It references token variables for every color
+and spacing value and contains no `:root` defaults of its own. It must style:
 
-## Registering a theme
-
-Add an entry to the `THEMES` dict in `src/runtime/themeLoader.js`:
-
-```js
-const THEMES = {
-  neue:     () => import('../../assets/themes/neue/index.js'),
-  'my-theme': () => import('../../assets/themes/my-theme/index.js'),
-}
-```
-
-The key becomes the value used in `design:` in the deck frontmatter.
+- `.slide` — base slide
+- `.slide-header`, `.slide-footer`, `.slide-body` — structural rails
+- `.slide--title`, `.slide--chapter`, `.slide--focus`, `.slide--image-text`, `.slide--split`, `.slide--full-bleed-image` — the built-in layouts
 
 ## Custom layouts
 
@@ -143,6 +132,9 @@ Standard markdown elements (`h1`–`h6`, `p`, `ul`, `ol`, `strong`, `em`, `code`
 
 ## Token contract
 
-Themes must define the six core color tokens listed in `tokens.css` above. This is what makes palettes work across themes — palettes override these exact variable names, so any theme that defines them will repaint correctly when a palette is applied.
+Themes define the core color tokens in `[tokens]`. This is what makes palettes
+work across themes: palettes override these exact variable names, so any theme
+that defines them repaints correctly when a palette is applied.
 
-Themes may define additional tokens beyond the core six; those are theme-specific and will not be affected by palettes.
+Themes may define additional tokens beyond the core set; those are
+theme-specific and are not affected by palettes.

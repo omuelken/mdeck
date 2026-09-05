@@ -29,6 +29,7 @@ mdeck new
 mdeck dev my-talk.md
 mdeck present my-talk.md
 mdeck check my-talk.md
+mdeck extensions my-talk.md
 mdeck build my-talk.md
 ```
 
@@ -76,6 +77,7 @@ Technical references live in [docs/reference](docs/reference/):
 
 - [Authoring reference](docs/reference/authoring.md)
 - [Structured slides and source model](docs/reference/structured-slides.md)
+- [Extensions: one manifest for templates, themes and palettes](docs/reference/extensions.md)
 - [Custom templates](docs/reference/templates.md)
 - [Themes](docs/reference/themes.md) and [palettes](docs/reference/palettes.md)
 - [Slide-writing skill](docs/reference/claude-skill.md)
@@ -89,12 +91,13 @@ src/
   core/              Slide parsing, source ranges, and validation
   runtime/           Browser app, navigation, and theme loading
   components/        Built-in interactive content
-  templates/         Layouts, manifests, and shared rendering API
-  build/             Vite configuration and deck-local discovery
+  templates/         Shared rendering API, slide frame, and typed properties
+  extensions/        Manifest contract, discovery registry, appearance rules
+  build/             Vite configuration and the generated extension module
   paths.js           Locations of installed framework resources
 assets/
-  themes/            Theme CSS and metadata
-  palettes/          Color palettes
+  base.css           Shared slide CSS every theme builds on
+  extensions/        Built-in templates, themes, and palettes (extension.toml each)
 docs/
   site/              Documentation website and beginner guides
   reference/         Technical Markdown references
@@ -105,8 +108,9 @@ tools/               Optional development utilities
 skills/              Distributable slide-authoring instructions
 ```
 
-Deck-local `components/` and `templates/` folders remain beside the author's
-slide file. These are different from the framework's built-in source folders.
+Deck-local `components/` and `extensions/` folders remain beside the author's
+slide file. Built-in and deck-local extensions share one manifest format and
+one registry; see [docs/reference/extensions.md](docs/reference/extensions.md).
 The template import `mdeck/template-api` stays the same.
 
 ## Working on mdeck

@@ -7,38 +7,45 @@ property resolver, and slide frame. A local template requires no framework edit.
 ```text
 my-talk/
   slides.md
-  templates/
+  extensions/
     comparison/
-      template.json
+      extension.toml
       layout.jsx
       styles.css       optional
       starter.md       optional
 ```
 
-The folder name is the `layout:` value. Names must be lowercase letters, digits
-and hyphens, beginning with a letter. Local templates cannot shadow built-ins.
-Manifests are checked when loading, building, listing or validating a deck.
-The dev server reloads when template files are changed, added or removed.
+A template is one kind of [extension](extensions.md); themes and palettes use
+the same folder and manifest rules. The folder name is the `layout:` value.
+Names must be lowercase letters, digits and hyphens, beginning with a letter.
+A local template cannot use a built-in's name. Manifests are checked when
+loading, building, listing or validating a deck. The dev server reloads when
+extension files are changed, added or removed.
+
+Older decks with a `templates/<id>/template.json` folder still work and print
+a migration warning; see the [migration steps](extensions.md#migrating-an-old-template-folder).
 
 ## Manifest
 
-```json
-{
-  "name": "comparison",
-  "title": "Side-by-side comparison",
-  "regions": {
-    "body": { "description": "Shared heading" },
-    "left": { "required": true },
-    "right": { "required": true }
-  },
-  "properties": {
-    "emphasis": {
-      "type": "string",
-      "enum": ["none", "left", "right"],
-      "default": "none"
-    }
-  }
-}
+```toml
+schema = 1
+kind = "template"
+id = "comparison"
+title = "Side-by-side comparison"
+
+[regions.body]
+description = "Shared heading"
+
+[regions.left]
+required = true
+
+[regions.right]
+required = true
+
+[properties.emphasis]
+type = "string"
+enum = ["none", "left", "right"]
+default = "none"
 ```
 
 `regions` must include `body`, which contains unassigned slide Markdown.
@@ -48,8 +55,9 @@ missing required content are validation errors.
 
 `properties` describes values under slide metadata `props:`. Supported types:
 `string`, `number`, `integer`, `boolean`, `array`, `object`. The schema supports
-`required`, `default`, `enum`, numeric `minimum`/`maximum`, and array `items`,
-`minItems`/`maxItems`. This is a small schema subset, not full JSON Schema.
+`required`, `default`, `enum`, numeric `minimum`/`maximum`, array `items`
+(a `[properties.name.items]` sub-table), `minItems`/`maxItems`, and `title`
+and `description` for editors. This is a small schema subset, not full JSON Schema.
 Defaults are copied for each slide. Unknown properties and invalid values are
 errors. Built-ins also accept their legacy top-level properties such as `image:`.
 
@@ -111,19 +119,26 @@ manifest and authored values, but cannot prove what arbitrary JSX renders.
 ## Starters and discovery
 
 `starter.md` is an editable slide preset. It should contain explicit `:::meta`
-and placeholder region content, without a leading slide separator. `mdeck new`
-lists built-in and local starters found beside the requested output deck.
+and placeholder region content, without a leading slide separator. `layout.jsx`,
+`styles.css` and `starter.md` are picked up automatically from the template
+folder; use a `[files]` table in the manifest to point at different names.
+`mdeck new` lists built-in and local starters found beside the requested output deck.
 
 ```sh
 mdeck templates slides.md
 mdeck templates slides.md --json
 mdeck templates slides.md --starter comparison
+mdeck extensions slides.md
 mdeck check slides.md --strict
 ```
 
 The JSON listing is the serializable manifest registry, suitable for completion,
 template galleries, or future editor inspectors. Listing and validation do not
 execute template JSX. Packages and a visual editor are not implemented here.
+
+Built-in layouts are ordinary templates under the framework's
+`assets/extensions/templates/` folder and use the same `mdeck/template-api`
+import, so they double as worked examples.
 
 See the runnable [custom template example](../../examples/custom-templates/slides.md):
 

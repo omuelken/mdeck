@@ -58,6 +58,12 @@ mdeck templates my-talk.md --starter comparison
 
 The first lists the designs available to your talk. The second prints starting text for one design. `--json` prints the design descriptions in a structured form intended for other tools.
 
+```sh
+mdeck extensions my-talk.md
+```
+
+This lists every design, theme and color palette your talk can use, including any kept in an `extensions` folder beside it. `--json` prints the same information for other tools.
+
 ## Why do some examples use Node directly?
 
 `mdeck` is the normal command. After the one-time `npm link` setup, you can use it from any folder.

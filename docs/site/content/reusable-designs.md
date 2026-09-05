@@ -8,17 +8,19 @@ You do not have to create a template to use one. Someone comfortable with coding
 
 ## Keep the design with the talk
 
-If someone gives you a presentation folder with a `templates` folder inside, keep that folder beside the slide file. mdeck finds those designs automatically.
+If someone gives you a presentation folder with an `extensions` folder inside, keep that folder beside the slide file. mdeck finds those designs automatically.
 
 ```text
 my-talk/
   my-talk.md
-  templates/
+  extensions/
     comparison/
       …files supplied by the design's creator
 ```
 
-Copy the whole design folder if you move it to a different presentation. You do not need to edit mdeck itself.
+Copy the whole design folder if you move it to a different presentation. You do not need to edit mdeck itself. The same folder can also hold a theme or a set of colors made for your team; `mdeck extensions my-talk.md` lists everything it found.
+
+Older presentations may have a `templates` folder instead. It still works, and `mdeck check` explains how to move it.
 
 ## See which designs are available
 
@@ -38,7 +40,7 @@ mdeck templates my-talk.md --starter comparison
 
 Copy the text it prints into your slide file. Put `---` on its own line before it if you are adding it after an existing slide.
 
-Replace the example words, leaving the named areas and settings in place. If you use `mdeck new` to make a file beside an existing `templates` folder, its wizard also offers those designs.
+Replace the example words, leaving the named areas and settings in place. If you use `mdeck new` to make a file beside an existing `extensions` folder, its wizard also offers those designs.
 
 ## Understand the comparison example
 

@@ -11,6 +11,9 @@ import 'prismjs/components/prism-jsx.js'
 import 'prismjs/components/prism-bash.js'
 import { pages } from './pages.js'
 import { frameworkRoot as projectRoot } from '../../src/paths.js'
+import { loadRegistry } from '../../src/extensions/discover.js'
+import { parseSlides } from '../../src/core/parseSlides.js'
+import { readFileSync } from 'node:fs'
 
 export const docsRoot = dirname(fileURLToPath(import.meta.url))
 const exec = promisify(execFile)
@@ -26,13 +29,22 @@ function navigation(current) {
   }).join('')
 }
 
+const exampleFiles = { 'first-talk': resolve(docsRoot, 'examples/first-talk.md'), 'custom-templates': resolve(projectRoot, 'examples/custom-templates/slides.md') }
+
+// The theme picker lists every registered theme and starts on the example's own design.
+function themeOptions(exampleFile) {
+  const current = parseSlides(readFileSync(exampleFile, 'utf8')).deckConfig.design ?? 'neue'
+  const themes = loadRegistry(exampleFile).themes
+  return Object.values(themes).map(theme => `<option value="${theme.id}"${theme.id === current ? ' selected' : ''}>${escape(theme.title)}</option>`).join('')
+}
+
 function preview(page) {
   if (!page.preview) return ''
   const custom = page.preview === 'custom-templates'
   return `<figure class="slide-example" data-preview>
     <figcaption><span>${custom ? 'A reusable comparison design' : 'A presentation you can try'}</span><a href="examples/${page.preview}.html?palette=&amp;accent=&amp;accent2=" target="_blank" rel="noopener">Open slides</a></figcaption>
     <iframe title="${custom ? 'Comparison slide example' : 'Example presentation'}" src="examples/${page.preview}.html?embedded=1&amp;palette=&amp;accent=&amp;accent2=" loading="lazy"></iframe>
-    <div class="preview-controls"><div><button type="button" data-control="prev" aria-label="Previous slide or point">Previous</button><button type="button" data-control="next" aria-label="Next slide or point">Next</button><output aria-live="polite">Slide 1</output></div><label>Look <select aria-label="Example theme"><option value="neue">Neue</option><option value="editorial">Editorial</option><option value="duet">Duet</option><option value="terminal">Terminal</option><option value="aurora">Aurora</option><option value="fhnw">FHNW</option></select></label></div>
+    <div class="preview-controls"><div><button type="button" data-control="prev" aria-label="Previous slide or point">Previous</button><button type="button" data-control="next" aria-label="Next slide or point">Next</button><output aria-live="polite">Slide 1</output></div><label>Look <select aria-label="Example theme">${themeOptions(exampleFiles[page.preview])}</select></label></div>
   </figure>`
 }
 
@@ -58,7 +70,8 @@ export function renderPage(page, markdown) {
     },
     table(header, body) { return `<div class="table-scroll" tabindex="0" role="region" aria-label="Reference table"><table><thead>${header}</thead><tbody>${body}</tbody></table></div>` },
     link(href, linkTitle, text) {
-      const aliases = { 'templates.md': 'custom-templates.html', '../../examples/custom-templates/slides.md': 'downloads/comparison.md' }
+      const aliases = { 'templates.md': 'custom-templates.html', 'extensions.md': 'extensions.html', 'themes.md': 'theme-authoring.html', 'palettes.md': 'theme-authoring.html', '../../examples/custom-templates/slides.md': 'downloads/comparison.md' }
+      href = href.replace(/^extensions\.md#/, 'extensions.html#')
       href = aliases[href] ?? href
       return `<a href="${escape(href)}"${linkTitle ? ` title="${escape(linkTitle)}"` : ''}>${text}</a>`
     },
@@ -95,7 +108,7 @@ export async function buildDocs({ outDir = resolve(docsRoot, 'dist'), examples =
   await copyFile(resolve(projectRoot, 'examples/custom-templates/slides.md'), resolve(outDir, 'downloads/comparison.md'))
   await copyFile(resolve(docsRoot, 'examples/first-talk.md'), resolve(outDir, 'downloads/first-talk.md'))
   if (examples) {
-    for (const [name, file] of [['first-talk', resolve(docsRoot, 'examples/first-talk.md')], ['custom-templates', resolve(projectRoot, 'examples/custom-templates/slides.md')]]) {
+    for (const [name, file] of Object.entries(exampleFiles)) {
       await exec(process.execPath, [resolve(projectRoot, 'bin/mdeck.js'), 'build', file, '--self-contained', '-o', resolve(outDir, 'examples', `${name}.html`)], { cwd: projectRoot, maxBuffer: 4 * 1024 * 1024 })
     }
   }

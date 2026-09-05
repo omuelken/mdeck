@@ -6,6 +6,8 @@ Before writing any slides, read the documentation:
 - `docs/reference/palettes.md` — available color palettes and the token system
 - `docs/reference/themes.md` — available themes and how to configure them
 
+If the deck folder has an `extensions/` folder, run `mdeck extensions <deck>.md` (or read its manifests) to learn about local templates, themes and palettes before choosing `design`, `palette` or a `layout`.
+
 Also read `examples/showcase/slides.md` as a complete working reference.
 
 Then write a complete mdeck slide deck for the following request:

@@ -14,6 +14,7 @@ export const pages = [
   { slug: 'custom-templates', title: 'Create a custom slide design', group: 'Advanced customization', source: '../reference/templates.md', description: 'For people comfortable with JavaScript: define a layout, its content areas, and its settings.' },
   { slug: 'components', title: 'Create interactive content', group: 'Advanced customization', file: 'components.md', description: 'Extend slides with your own Preact components.' },
   { slug: 'theme-authoring', title: 'Create a theme or palette', group: 'Advanced customization', file: 'theme-authoring.md', description: 'For people comfortable with CSS: create a visual identity for a whole deck.' },
+  { slug: 'extensions', title: 'Extension manifests', group: 'Advanced customization', source: '../reference/extensions.md', description: 'The one manifest format shared by templates, themes and palettes, and how to migrate older template folders.' },
   { slug: 'source-model', title: 'Build tools around mdeck', group: 'Advanced customization', source: '../reference/structured-slides.md', description: 'The source-preserving document model and editing helpers for tool authors.' },
 ]
 
