@@ -20,8 +20,6 @@ my-talk/
 
 Copy the whole design folder if you move it to a different presentation. You do not need to edit mdeck itself. The same folder can also hold a theme or a set of colors made for your team; `mdeck extensions my-talk.md` lists everything it found.
 
-Older presentations may have a `templates` folder instead. It still works, and `mdeck check` explains how to move it.
-
 ## See which designs are available
 
 ```sh

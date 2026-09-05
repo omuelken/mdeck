@@ -22,9 +22,6 @@ A local template cannot use a built-in's name. Manifests are checked when
 loading, building, listing or validating a deck. The dev server reloads when
 extension files are changed, added or removed.
 
-Older decks with a `templates/<id>/template.json` folder still work and print
-a migration warning; see the [migration steps](extensions.md#migrating-an-old-template-folder).
-
 ## Manifest
 
 ```toml

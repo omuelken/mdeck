@@ -195,23 +195,6 @@ title = "Body font"
 Values are applied in this order: theme tokens, palette tokens, deck `params`,
 then the `accent` and `accent2` shorthands.
 
-## Migrating an old template folder
-
-Before this format, a deck-local template lived in `templates/<id>/` with a
-`template.json`. Those folders still work and print a warning naming the file
-and its replacement. To migrate:
-
-1. Move `templates/comparison/` to `extensions/comparison/`.
-2. Replace `template.json` with `extension.toml`. Add `schema = 1` and
-   `kind = "template"`, rename `name` to `id`, and write `regions` and
-   `properties` as TOML tables as shown above.
-3. Keep `layout.jsx`, `styles.css` and `starter.md` where they are.
-4. Run `mdeck check my-talk.md` until no warning remains.
-
-Keeping both the old and the new folder for the same identifier is an error.
-mdeck never rewrites your files. Support for `template.json` will be removed in
-a later release; the removal will be announced in the command's warning first.
-
 ## Listing what is available
 
 ```sh

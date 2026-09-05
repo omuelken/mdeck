@@ -398,7 +398,7 @@ if (command === 'new') {
   if (hasFlag('--json')) console.log(JSON.stringify(serializeRegistry(registry, { relativeTo: process.cwd() }), null, 2))
   else for (const kind of KINDS) {
     console.log(`\n  ${c.bold}${kind}s${c.reset}`)
-    for (const record of Object.values(registry[`${kind}s`])) console.log(`    ${c.cyan}${record.id}${c.reset} — ${record.title} ${c.dim}(${record.source}${record.legacy ? ', old format' : ''})${record.description ? ' ' + record.description : ''}${c.reset}`)
+    for (const record of Object.values(registry[`${kind}s`])) console.log(`    ${c.cyan}${record.id}${c.reset} — ${record.title} ${c.dim}(${record.source})${record.description ? ' ' + record.description : ''}${c.reset}`)
   }
 
 // ── dev ───────────────────────────────────────────────────────────────────────

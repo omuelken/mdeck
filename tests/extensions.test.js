@@ -146,33 +146,6 @@ test('duplicate identifiers are rejected across discovery roots instead of overr
   try {
     assert.throws(() => loadRegistry(fx.slides), /Duplicate palette "paper" is also defined in .*assets\/extensions\/palettes\/paper\/extension\.toml/)
   } finally { fx.remove() }
-  const both = fixture({
-    'extensions/box/extension.toml': TEMPLATE, 'extensions/box/layout.jsx': LAYOUT,
-    'templates/box/template.json': JSON.stringify({ name: 'box', title: 'Old box', regions: { body: {} } }), 'templates/box/layout.jsx': LAYOUT,
-  })
-  try {
-    assert.throws(() => loadRegistry(both.slides), /templates\/box\/template\.json: Duplicate template "box"/)
-  } finally { both.remove() }
-})
-
-test('old template.json folders keep working through the adapter with a migration warning', () => {
-  const fx = fixture({
-    'templates/box/template.json': JSON.stringify({ name: 'box', title: 'Old box', regions: { body: {}, side: { required: true } }, properties: { size: { type: 'integer', default: 2 } } }),
-    'templates/box/layout.jsx': LAYOUT, 'templates/box/starter.md': ':::meta\nlayout: box\n:::\n:::slot side\nx\n:::\n',
-  })
-  try {
-    const legacy = loadRegistry(fx.slides)
-    assert.equal(legacy.templates.box.legacy, true)
-    assert.equal(legacy.templates.box.manifest.properties.size.default, 2)
-    assert.match(legacy.templates.box.manifest.starter, /slot side/)
-    assert.equal(legacy.warnings.length, 1)
-    assert.match(legacy.warnings[0], /templates\/box\/template\.json: template\.json is the old template format\. Move this folder to extensions\/box\//)
-    assert.equal(serializeRegistry(legacy).templates.find(t => t.id === 'box').legacy, true)
-    writeFileSync(resolve(fx.dir, 'templates/box/template.json'), JSON.stringify({ name: 'other', title: 'Old box', regions: { body: {} } }))
-    assert.throws(() => loadRegistry(fx.slides), /template\.json: id: id "other" must match the folder name "box"/)
-    writeFileSync(resolve(fx.dir, 'templates/box/template.json'), '{ nope')
-    assert.throws(() => discoverExtensions(extensionRoots(fx.slides)), /template\.json: .*JSON/)
-  } finally { fx.remove() }
 })
 
 test('appearance precedence is theme tokens, palette, params, then explicit accents', () => {

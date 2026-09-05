@@ -5,7 +5,6 @@ import { resolve, dirname, relative } from 'node:path'
 import { MANIFEST_FILENAME, ManifestError, KINDS, parseManifestText, validateManifest } from './manifest.js'
 import { builtinExtensionsRoot } from '../paths.js'
 
-const LEGACY_TEMPLATE_FILE = 'template.json'
 const SKIP = name => name.startsWith('.') || name === 'node_modules'
 
 export function extensionRoots(slidesPath, { builtinRoot = builtinExtensionsRoot } = {}) {
@@ -13,7 +12,6 @@ export function extensionRoots(slidesPath, { builtinRoot = builtinExtensionsRoot
   return [
     { dir: builtinRoot, source: 'built-in' },
     { dir: resolve(deckDir, 'extensions'), source: 'local' },
-    { dir: resolve(deckDir, 'templates'), source: 'local', legacy: true },
   ]
 }
 
@@ -45,22 +43,6 @@ function loadManifest({ dir, file, folderName }) {
   return record.kind === 'template' ? readTemplate(record) : record
 }
 
-// Compatibility: deck-local templates/<id>/template.json (the pre-TOML format)
-// are adapted into the same registry with a migration warning.
-function loadLegacyTemplate({ dir, folderName }, warnings) {
-  const file = resolve(dir, LEGACY_TEMPLATE_FILE)
-  let legacy
-  try { legacy = JSON.parse(readFileSync(file, 'utf8')) } catch (error) { throw new ManifestError(error.message, { file }) }
-  if (legacy === null || typeof legacy !== 'object' || Array.isArray(legacy)) throw new ManifestError('Template manifest must be an object', { file })
-  const { name, title, description, frame, regions, properties, ...rest } = legacy
-  const unknown = Object.keys(rest)
-  if (unknown.length) throw new ManifestError(`Unknown setting: ${unknown.join(', ')}`, { file })
-  const raw = { schema: 1, kind: 'template', id: name, title, ...(description != null ? { description } : {}), ...(frame != null ? { frame } : {}), regions, properties }
-  const record = readTemplate(validateManifest(raw, { file, dir, folderName }))
-  warnings.push(`${file}: template.json is the old template format. Move this folder to extensions/${record.id}/ and describe it in ${MANIFEST_FILENAME} (see docs/reference/extensions.md).`)
-  return { ...record, legacy: true }
-}
-
 export function discoverExtensions(roots) {
   const registry = { templates: {}, themes: {}, palettes: {}, records: [], warnings: [] }
   const byKey = new Map()
@@ -75,15 +57,6 @@ export function discoverExtensions(roots) {
   }
   for (const root of roots) {
     if (!existsSync(root.dir) || !statSync(root.dir).isDirectory()) continue
-    if (root.legacy) {
-      for (const entry of sortedEntries(root.dir)) {
-        const dir = resolve(root.dir, entry.name)
-        if (existsSync(resolve(dir, MANIFEST_FILENAME))) add(loadManifest({ dir, file: resolve(dir, MANIFEST_FILENAME), folderName: entry.name }), root.source)
-        else if (existsSync(resolve(dir, LEGACY_TEMPLATE_FILE))) add(loadLegacyTemplate({ dir, folderName: entry.name }, registry.warnings), root.source)
-        else throw new ManifestError(`${dir}: missing ${LEGACY_TEMPLATE_FILE} or ${MANIFEST_FILENAME}`)
-      }
-      continue
-    }
     for (const found of walk(root.dir)) add(loadManifest(found), root.source)
   }
   return registry
@@ -106,7 +79,7 @@ export function serializeRegistry(registry, { relativeTo } = {}) {
   const out = { schema: 1, warnings: registry.warnings }
   for (const kind of KINDS) {
     out[`${kind}s`] = Object.values(registry[`${kind}s`]).map(record => ({
-      ...record.manifest, kind, source: record.source, ...(record.legacy ? { legacy: true } : {}),
+      ...record.manifest, kind, source: record.source,
       file: relativeTo ? relative(relativeTo, record.file) : record.file,
     }))
   }
