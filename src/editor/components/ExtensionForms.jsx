@@ -38,7 +38,7 @@ export function TokenList({ tokens, onChange, suggestions = CORE_TOKENS }) {
 export function PaletteForm({ model, onChange }) {
   return <>
     <Identity model={model} onChange={onChange} />
-    <Field><label class="row" style={{ textTransform: 'none', letterSpacing: 0, color: '#bbb', fontSize: '13px' }}><input type="checkbox" checked={model.dark} style={{ flex: '0 0 auto' }} onChange={e => onChange({ dark: e.currentTarget.checked })} /> <span>Dark palette (inverts logos and code colors)</span></label></Field>
+    <Field><label class="row" style={{ textTransform: 'none', letterSpacing: 0, color: '#e0e0e0', fontSize: '13px' }}><input type="checkbox" checked={model.dark} style={{ flex: '0 0 auto' }} onChange={e => onChange({ dark: e.currentTarget.checked })} /> <span>Dark palette (inverts logos and code colors)</span></label></Field>
     <TokenList tokens={model.tokens} onChange={tokens => onChange({ tokens })} />
   </>
 }
@@ -48,8 +48,8 @@ export function ThemeForm({ model, files, onChange, onFile }) {
   return <>
     <Identity model={model} onChange={onChange} />
     <div class="grid-2">
-      <Field><label class="row" style={{ textTransform: 'none', letterSpacing: 0, color: '#bbb', fontSize: '13px' }}><input type="checkbox" checked={model.dark} style={{ flex: '0 0 auto' }} onChange={e => onChange({ dark: e.currentTarget.checked })} /> <span>Dark by default</span></label></Field>
-      <Field><label class="row" style={{ textTransform: 'none', letterSpacing: 0, color: '#bbb', fontSize: '13px' }}><input type="checkbox" checked={model.accent2} style={{ flex: '0 0 auto' }} onChange={e => onChange({ accent2: e.currentTarget.checked })} /> <span>Uses a second accent</span></label></Field>
+      <Field><label class="row" style={{ textTransform: 'none', letterSpacing: 0, color: '#e0e0e0', fontSize: '13px' }}><input type="checkbox" checked={model.dark} style={{ flex: '0 0 auto' }} onChange={e => onChange({ dark: e.currentTarget.checked })} /> <span>Dark by default</span></label></Field>
+      <Field><label class="row" style={{ textTransform: 'none', letterSpacing: 0, color: '#e0e0e0', fontSize: '13px' }}><input type="checkbox" checked={model.accent2} style={{ flex: '0 0 auto' }} onChange={e => onChange({ accent2: e.currentTarget.checked })} /> <span>Uses a second accent</span></label></Field>
     </div>
     {model.accent2 && <Field label="Accent 2 preview color" hint="only needed when --accent-2 is not a plain color"><input type="text" value={model.accent2Preview} onInput={e => onChange({ accent2Preview: e.currentTarget.value })} /></Field>}
     <Field label="Font stylesheets" hint="one URL per line"><TextArea rows={2} value={model.fonts.join('\n')} onInput={text => onChange({ fonts: text.split(/\r?\n/).map(line => line.trim()).filter(Boolean) })} /></Field>
@@ -84,7 +84,7 @@ function PropertyRow({ property, onChange, onRemove }) {
     <div class="row">
       <input type="text" value={(property.enum ?? []).join(', ')} placeholder="choices, comma separated" onInput={e => set({ enum: e.currentTarget.value.split(',').map(v => v.trim()).filter(Boolean) })} />
       <input type="text" value={property.default === undefined || property.default === null ? '' : typeof property.default === 'string' ? property.default : JSON.stringify(property.default)} placeholder="default (JSON for lists)" onInput={e => { const raw = e.currentTarget.value; let value = raw; if (raw === '') value = undefined; else if (property.type !== 'string') { try { value = JSON.parse(raw) } catch { value = raw } } set({ default: value }) }} />
-      <label class="row" style={{ flex: '0 0 auto', color: '#999' }}><input type="checkbox" checked={Boolean(property.required)} onChange={e => set({ required: e.currentTarget.checked })} /> required</label>
+      <label class="row" style={{ flex: '0 0 auto', color: '#d0d0d0' }}><input type="checkbox" checked={Boolean(property.required)} onChange={e => set({ required: e.currentTarget.checked })} /> required</label>
     </div>
     {(numeric || property.type === 'array') && <div class="row">
       {numeric && <input type="number" value={property.minimum ?? ''} placeholder="min" onInput={e => set({ minimum: e.currentTarget.value === '' ? undefined : Number(e.currentTarget.value) })} />}
@@ -105,7 +105,7 @@ export function TemplateForm({ model, files, onChange, onFile }) {
       <div class="row">
         <input type="text" value={region.name} placeholder="name" disabled={region.name === 'body'} style={{ flex: '0 0 120px', fontFamily: 'ui-monospace, monospace' }} onInput={e => onChange({ regions: update(model.regions, index, { name: e.currentTarget.value }) })} />
         <input type="text" value={region.description ?? ''} placeholder="What goes here" onInput={e => onChange({ regions: update(model.regions, index, { description: e.currentTarget.value }) })} />
-        <label class="row" style={{ flex: '0 0 auto', color: '#999' }}><input type="checkbox" checked={Boolean(region.required)} onChange={e => onChange({ regions: update(model.regions, index, { required: e.currentTarget.checked }) })} /> required</label>
+        <label class="row" style={{ flex: '0 0 auto', color: '#d0d0d0' }}><input type="checkbox" checked={Boolean(region.required)} onChange={e => onChange({ regions: update(model.regions, index, { required: e.currentTarget.checked }) })} /> required</label>
         {region.name !== 'body' && <button class="btn is-small" onClick={() => onChange({ regions: without(model.regions, index) })}>×</button>}
       </div>
     </div>)}

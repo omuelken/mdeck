@@ -46,10 +46,10 @@ export function DeckSettings({ state, edit }) {
     </Field>
     <div class="grid-2">
       <Field label="Accent">
-        <div class="row"><input type="color" value={effectiveToken('--accent', appearance) ?? '#888888'} onInput={e => text('accent', e.currentTarget.value)} style={{ flex: '0 0 auto' }} /><span style={{ color: '#666' }}>{config.accent ?? 'from theme'}</span>{config.accent && <button class="btn is-small" onClick={() => text('accent', '')}>×</button>}</div>
+        <div class="row"><input type="color" value={effectiveToken('--accent', appearance) ?? '#888888'} onInput={e => text('accent', e.currentTarget.value)} style={{ flex: '0 0 auto' }} /><span style={{ color: '#b0b0b0' }}>{config.accent ?? 'from theme'}</span>{config.accent && <button class="btn is-small" onClick={() => text('accent', '')}>×</button>}</div>
       </Field>
       {theme?.accent2 && <Field label="Accent 2">
-        <div class="row"><input type="color" value={effectiveToken('--accent-2', appearance) ?? '#888888'} onInput={e => text('accent2', e.currentTarget.value)} style={{ flex: '0 0 auto' }} /><span style={{ color: '#666' }}>{config.accent2 ?? 'from theme'}</span>{config.accent2 && <button class="btn is-small" onClick={() => text('accent2', '')}>×</button>}</div>
+        <div class="row"><input type="color" value={effectiveToken('--accent-2', appearance) ?? '#888888'} onInput={e => text('accent2', e.currentTarget.value)} style={{ flex: '0 0 auto' }} /><span style={{ color: '#b0b0b0' }}>{config.accent2 ?? 'from theme'}</span>{config.accent2 && <button class="btn is-small" onClick={() => text('accent2', '')}>×</button>}</div>
       </Field>}
     </div>
     {theme && Object.keys(theme.params).length > 0 && <>

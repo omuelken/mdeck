@@ -12,6 +12,7 @@ import { DeckSettings } from './DeckSettings.jsx'
 import { TemplatePicker } from './TemplatePicker.jsx'
 import { ConflictBanner } from './ConflictBanner.jsx'
 import { ExtensionsMode } from './ExtensionsMode.jsx'
+import { Resizer, readInspectorWidth, storeInspectorWidth } from './Resizer.jsx'
 
 const STATUS = { saved: 'Saved', unsaved: 'Unsaved changes', saving: 'Saving…', conflict: 'Conflict', error: 'Could not save' }
 
@@ -23,6 +24,8 @@ export function App() {
   const [loadError, setLoadError] = useState(null)
   const [mode, setMode] = useState('slides')
   const [previewKey, setPreviewKey] = useState(0)
+  const [inspectorWidth, setInspectorWidth] = useState(readInspectorWidth)
+  const resize = width => { setInspectorWidth(width); storeInspectorWidth(width) }
 
   const queue = useMemo(() => createSaveQueue({
     save: saveSource,
@@ -109,14 +112,15 @@ export function App() {
       <a class="btn is-small" href="/" target="_blank" rel="noopener">Open deck</a>
     </header>
     {state.status === 'conflict' && <ConflictBanner onReload={() => actions.resolve('reload')} onOverwrite={() => actions.resolve('overwrite')} />}
-    <div class="editor-main">
-      {mode === 'extensions' ? <ExtensionsMode state={stateWithPreview} dispatch={dispatch} previewReload={() => setPreviewKey(key => key + 1)} /> : <>
+    <div class="editor-main" style={{ gridTemplateColumns: `240px minmax(0, 1fr) ${inspectorWidth}px` }}>
+      {mode === 'extensions' ? <ExtensionsMode state={stateWithPreview} dispatch={dispatch} previewReload={() => setPreviewKey(key => key + 1)} onResize={resize} /> : <>
       <Outline deck={deck} manifests={state.manifests} diagnostics={state.diagnostics} selectedIndex={selectedIndex}
         onSelect={select} onAdd={actions.add} onDuplicate={actions.duplicate} onRemove={actions.remove} onMove={actions.move} />
       <Preview source={state.source} selection={selection} reloadKey={previewKey} width={deck.deckConfig.width ?? 1920} height={deck.deckConfig.height ?? 1080}
         onState={index => { if (index !== stateRef.current.selectedIndex) select(index) }}
         onRendered={info => dispatch({ type: 'previewRendered', ...info })} />
       <aside class="editor-panel">
+        <Resizer onResize={resize} />
         <div class="tabs">
           <button class={tab === 'slide' ? 'is-active' : ''} onClick={() => dispatch({ type: 'setTab', tab: 'slide' })}>Slide</button>
           <button class={tab === 'deck' ? 'is-active' : ''} onClick={() => dispatch({ type: 'setTab', tab: 'deck' })}>Deck</button>

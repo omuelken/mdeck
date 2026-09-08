@@ -18,7 +18,7 @@ function PropControl({ name, schema, value, authored, onChange }) {
   const shown = error ?? errors[0]?.replace(`${name} `, '') ?? null
   let control
   if (kind === 'select') control = <select value={value ?? ''} onChange={e => commit(e.currentTarget.value)}>{schema.enum.map(option => <option key={option} value={option}>{String(option)}</option>)}</select>
-  else if (kind === 'checkbox') control = <label class="row" style={{ textTransform: 'none', letterSpacing: 0, color: '#bbb', fontSize: '13px' }}><input type="checkbox" checked={Boolean(value)} onChange={e => commit(e.currentTarget.checked)} style={{ flex: '0 0 auto' }} /> <span>{value ? 'on' : 'off'}</span></label>
+  else if (kind === 'checkbox') control = <label class="row" style={{ textTransform: 'none', letterSpacing: 0, color: '#e0e0e0', fontSize: '13px' }}><input type="checkbox" checked={Boolean(value)} onChange={e => commit(e.currentTarget.checked)} style={{ flex: '0 0 auto' }} /> <span>{value ? 'on' : 'off'}</span></label>
   else if (kind === 'number') control = <input type="number" value={value ?? ''} min={schema.minimum} max={schema.maximum} step={schema.type === 'integer' ? 1 : 'any'} onInput={e => commit(e.currentTarget.value)} />
   else if (kind === 'yaml') control = <TextArea rows={2} value={formatFieldValue(kind, value)} onInput={commit} />
   else control = <input type="text" value={value ?? ''} onInput={e => commit(e.currentTarget.value)} />

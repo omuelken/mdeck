@@ -5,13 +5,14 @@ import { starterFiles, parseManifest, toModel, toRuntimeManifest, deckHeader, MA
 import { ExtensionsPanel, NewExtensionDialog } from './ExtensionsPanel.jsx'
 import { ExtensionEditor } from './ExtensionEditor.jsx'
 import { Preview } from './Preview.jsx'
+import { Resizer } from './Resizer.jsx'
 
 const SAVE_DELAY = 500
 
 // Palette, theme and template editing. Unsaved palettes and themes are
 // previewed live through runtime overrides; template layouts show up after
 // they are saved and the preview frame reloads.
-export function ExtensionsMode({ state, dispatch, previewReload }) {
+export function ExtensionsMode({ state, dispatch, previewReload, onResize }) {
   const [current, setCurrent] = useState(null) // { kind, id, source, files, dirty: {} }
   const [status, setStatus] = useState('saved')
   const [error, setError] = useState(null)
@@ -98,6 +99,7 @@ export function ExtensionsMode({ state, dispatch, previewReload }) {
     <Preview source={source} selection={{ index: 0, slideId: null }} config={config} overrides={overrides} reloadKey={state.previewKey}
       width={state.deck.deckConfig.width ?? 1920} height={state.deck.deckConfig.height ?? 1080} onState={() => {}} onRendered={info => dispatch({ type: 'previewRendered', ...info })} />
     <aside class="editor-panel">
+      <Resizer onResize={onResize} />
       {current
         ? <ExtensionEditor extension={current} status={status} error={error} onFiles={onFiles} onDelete={remove} onCopy={() => setDialog({ kind: current.kind, initial: { from: current.id, title: `${current.files[MANIFEST]?.match(/^title = "(.*)"$/m)?.[1] ?? current.id} copy`, id: `${current.id}-copy` } })} />
         : <div class="form"><p class="empty">Pick a palette, theme or template on the left, or create a new one.{error ? ` ${error}` : ''}</p></div>}

@@ -9,13 +9,20 @@ export function ExtensionsPanel({ registry, selected, onSelect, onCreate }) {
     {KINDS.map(([kind, label]) => <section key={kind}>
       <div class="editor-panel-head"><span>{label}</span><button class="btn is-small is-primary" onClick={() => onCreate(kind)}>+ New</button></div>
       <ol class="outline-list">
-        {(registry?.[`${kind}s`] ?? []).map(item => <li key={item.id} class={`outline-item${selected?.kind === kind && selected?.id === item.id ? ' is-selected' : ''}`} onClick={() => onSelect(kind, item.id)} style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}>
+        {(registry?.[`${kind}s`] ?? []).map(item => <li key={item.id} class={`outline-item${kind === 'theme' ? ' has-thumb' : ''}${selected?.kind === kind && selected?.id === item.id ? ' is-selected' : ''}`} onClick={() => onSelect(kind, item.id)} style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}>
+          {kind === 'theme' && <ThemeThumbnail id={item.id} />}
           <span><span class="title" style={{ display: 'block' }}>{item.title}</span><span class="layout">{item.id}{item.source === 'local' ? ' · this deck' : ''}</span></span>
-          {item.tokens && <span class="swatches">{['--bg', '--accent', '--ink'].map(key => item.tokens[key] ? <i key={key} style={{ background: item.tokens[key] }} /> : null)}</span>}
+          {kind === 'palette' && item.tokens && <span class="swatches">{['--bg', '--accent', '--ink'].map(key => item.tokens[key] ? <i key={key} style={{ background: item.tokens[key] }} /> : null)}</span>}
         </li>)}
       </ol>
     </section>)}
   </aside>
+}
+
+// A theme is its typography and layout, so the list shows the deck's first
+// slide rendered with it rather than its default colors.
+function ThemeThumbnail({ id }) {
+  return <div class="thumb"><iframe src={`/?embedded=1&design=${encodeURIComponent(id)}&palette=&accent=&accent2=`} title="" tabIndex={-1} loading="lazy" scrolling="no" /></div>
 }
 
 export function NewExtensionDialog({ kind, registry, existing, onCreate, onClose, initial = null }) {

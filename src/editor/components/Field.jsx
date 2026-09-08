@@ -9,7 +9,9 @@ const normalize = text => String(text ?? '').replace(/\r?\n/g, '\n').trim()
 export function TextArea({ value, onInput, rows = 4, tall = false, ...rest }) {
   const [draft, setDraft] = useState(value ?? '')
   useEffect(() => { if (normalize(value) !== normalize(draft)) setDraft(value ?? '') }, [value])
-  return <textarea rows={rows} class={tall ? 'is-tall' : ''} value={draft} spellcheck={false}
+  // Grow with the text so nothing has to be scrolled inside a small box.
+  const lines = draft.split('\n').length + 1
+  return <textarea rows={tall ? rows : Math.min(40, Math.max(rows, lines))} class={tall ? 'is-tall' : ''} value={draft} spellcheck={false}
     onInput={event => { setDraft(event.currentTarget.value); onInput(event.currentTarget.value) }} {...rest} />
 }
 
