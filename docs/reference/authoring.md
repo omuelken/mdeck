@@ -43,7 +43,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `design` | `neue` | Theme name |
 | `palette` | _(theme default)_ | Color palette override |
 | `accent` | _(theme/palette default)_ | Primary accent color override |
-| `accent2` | _(theme/palette default)_ | Secondary accent color (Aurora theme) |
+| `accent2` | _(theme/palette default)_ | Secondary accent color (themes with a second accent, such as Aurora and Duet) |
 | `meta.title` | — | Deck title (shown in footer) |
 | `meta.author` | — | Author name (shown in footer) |
 | `meta.organization` | — | Organization name (shown in header) |
@@ -57,6 +57,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `lang` | `en` | Language for built-in labels such as callout titles: `en` or `de` |
 | `callouts` | — | Override individual callout titles (see below) |
 | `params` | — | Theme-specific color/font overrides (see below) |
+| `share.themes` | `true` | Whether the reader view of a shared build offers other themes and palettes (see below) |
 
 ### Theme params
 
@@ -71,6 +72,19 @@ params:
 Available params depend on the theme — check the presenter sidebar for a list.
 
 ---
+
+### Share settings
+
+```yaml
+share:
+  themes: false   # hide the theme and color picker in the reader view
+```
+
+`mdeck build --share` produces a file that opens in the reader view (outline,
+Read mode, look picker, PDF download). `share.themes: false` keeps the
+sender's look fixed. Speaker notes are removed from share builds unless the
+build uses `--with-notes`. The same view is reachable in any build through
+`?view=share`.
 
 ## Available themes
 
@@ -587,13 +601,3 @@ You can write HTML directly in slide bodies. It inherits the theme's body text s
   <div>Right column content</div>
 </div>
 ```
-
-### Share settings
-
-```yaml
-share:
-  themes: false   # hide the theme and color picker in the reader view
-```
-
-The reader view (`?view=share`, or the default for `mdeck build --share`)
-lets recipients try other looks unless `share.themes` is `false`.

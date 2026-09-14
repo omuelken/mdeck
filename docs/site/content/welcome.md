@@ -38,9 +38,9 @@ The `#` makes a heading. The line with `---` starts another slide. A dash before
 
 ## What mdeck does today
 
-mdeck gives you ready-made slide layouts, different visual themes, speaker notes, pictures, videos, and a separate presenter view. It can also use slide designs made by other people.
+mdeck gives you ready-made slide layouts, different visual themes, speaker notes, pictures, videos, a separate presenter view, and a reader view with a PDF for people you send the slides to. It can also use slide designs made by other people.
 
-You write and edit the presentation in a text editor. There is not yet a drag-and-drop slide editor. The preview updates when you save your file.
+You write the presentation in a plain text file. Use any text editor, or the built-in browser editor (`mdeck edit`) with forms for each slide, colors and designs. Either way the file stays the single copy, and the preview updates as you go.
 
 ## Keep this guide nearby
 

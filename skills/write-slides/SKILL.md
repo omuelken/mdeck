@@ -42,6 +42,6 @@ $ARGUMENTS
 **Practical defaults**
 - Prefer built-in layouts from the authoring docs (`title`, `chapter`, `focus`, `image-text`, `split`, `full-bleed-image`)
 - Use local image paths under `./img/` when referencing visuals
-- If the user asks for a single-file shareable output, mention `mdeck build <file>.md --inline-images`
+- If the user asks for a single-file shareable output, mention `mdeck build <file>.md --share --self-contained -o <file>.html` (reader view with PDF, notes removed; add `--with-notes` to keep them)
 
 Write the result to a `.md` file named after the topic (e.g. `my-talk.md`).

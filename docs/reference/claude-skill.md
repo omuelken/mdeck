@@ -33,8 +33,8 @@ cp -r skills/write-slides .claude/skills/write-slides
 
 Claude reads the framework docs and `examples/showcase/slides.md`, then writes a complete `.md` deck and saves it to a file.
 
-For sharing as a single HTML artifact, build with:
+For sharing as a single HTML file with a reader view and PDF, build with:
 
 ```bash
-mdeck build <deck>.md --inline-images
+mdeck build <deck>.md --share --self-contained -o <deck>.html
 ```
