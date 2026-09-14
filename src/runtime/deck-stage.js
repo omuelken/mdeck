@@ -300,6 +300,7 @@
       this._loadNotes();
       this._syncPrintPageRule();
       window.addEventListener('keydown', this._onKey);
+      if (typeof ResizeObserver !== 'undefined') { this._resizeObserver = new ResizeObserver(() => this._fit()); this._resizeObserver.observe(this); }
       window.addEventListener('resize', this._onResize);
       window.addEventListener('mousemove', this._onMouseMove, { passive: true });
       // Initial collection + layout happens via slotchange, which fires on mount.
@@ -307,6 +308,7 @@
 
     disconnectedCallback() {
       window.removeEventListener('keydown', this._onKey);
+      this._resizeObserver?.disconnect();
       window.removeEventListener('resize', this._onResize);
       window.removeEventListener('mousemove', this._onMouseMove);
       if (this._hideTimer) clearTimeout(this._hideTimer);
@@ -573,8 +575,11 @@
         this._canvas.style.transform = 'none';
         return;
       }
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
+      // Fit the host element, which is the viewport when the stage is
+      // full-screen and a panel when it is embedded in another layout.
+      const rect = this.getBoundingClientRect();
+      const vw = rect.width || window.innerWidth;
+      const vh = rect.height || window.innerHeight;
       const s = Math.min(vw / this.designWidth, vh / this.designHeight);
       this._canvas.style.transform = `scale(${s})`;
     }

@@ -1,5 +1,31 @@
 # Share or print your slides
 
+## Send slides to someone
+
+The quickest way to share slides with people who were not in the room:
+
+```sh
+mdeck build my-talk.md --share --self-contained -o my-talk.html
+```
+
+Send `my-talk.html` by email. It opens in a **reader view**: an outline of all slides on the left, the slides in the middle, a **Read** mode that stacks every slide for scrolling on a phone, a **Look** menu to try other themes and colors, a **Download PDF** button, and a **Present** button that opens the full-screen deck.
+
+- Your speaker notes are removed from a `--share` build. Add `--with-notes` to keep them; they then appear under each slide in Read mode.
+- The PDF is made while building, using Chrome or Chromium on your computer. If neither is found, the button offers the browser's own "Save as PDF" dialog instead. Set `MDECK_CHROME` to the browser's path if it is installed somewhere unusual.
+- Leave out `--self-contained` to get a folder with the HTML, the media files and `deck.pdf` side by side, which stays smaller when the talk has videos.
+- To stop recipients changing the look, put `share:` with `themes: false` in the settings at the top of your slide file.
+
+Anyone who opens a normal build can reach the reader view through the small **Overview** link in the corner, or by adding `?view=share` to the address.
+
+## Make a PDF on its own
+
+```sh
+mdeck pdf my-talk.md
+mdeck pdf my-talk.md -o handout.pdf
+```
+
+Each slide becomes one page at the slide's own size, with real text you can search and copy.
+
 While you write, mdeck reads your text file. To send the presentation to someone else, **build** it: ask mdeck to make a browser-ready version of your talk.
 
 ## Make a folder you can share

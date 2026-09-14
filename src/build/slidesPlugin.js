@@ -3,6 +3,7 @@ import { resolve, dirname, basename, sep } from 'path'
 import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, extensionRoots, manifestsOf } from '../extensions/discover.js'
+import { stripNotes as stripNotesFrom } from '../core/editDeck.js'
 import { fileURLToPath } from 'node:url'
 import { marked } from 'marked'
 
@@ -175,7 +176,7 @@ export function generateExtensionsModule(registry) {
 // `editor` keeps the page alive while `mdeck edit` rewrites the deck: deck
 // changes only invalidate the module, validation errors are warnings, and
 // extension changes are announced instead of forcing a reload.
-export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false } = {}) {
+export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false } = {}) {
   const abs = resolve(slidesPath)
   const watchDirs = [...extensionRoots(abs).map(root => root.dir), deckComponentsDir(abs)]
   const isWatched = file => watchDirs.some(dir => resolve(file).startsWith(dir + sep))
@@ -217,7 +218,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         const errors = diagnostics.filter(d => d.severity === 'error')
         if (errors.length && !editor) throw new Error(formatDiagnostics(errors, abs))
         if (diagnostics.length) this.warn(formatDiagnostics(diagnostics, abs))
-        const source = maybeInlineAssets(raw, abs, { inlineImages, inlineMedia })
+        const source = maybeInlineAssets(stripNotes ? stripNotesFrom(raw) : raw, abs, { inlineImages, inlineMedia })
         return `export default ${JSON.stringify(source)}`
       }
       if (id === RESOLVED_EXTENSIONS_ID) {

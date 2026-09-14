@@ -11,6 +11,7 @@ import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, manifestsOf, serializeRegistry } from '../extensions/discover.js'
 import { editorPlugin } from '../build/editorPlugin.js'
+import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
 
 import { frameworkRoot } from '../paths.js'
@@ -294,6 +295,10 @@ const HELP = `
                                               Inline local images/media into one HTML file
     ${c.green}mdeck build${c.reset} <slides.md> [--presenter-launchers]
                                               Add macOS/Linux and Windows launchers
+    ${c.green}mdeck build${c.reset} <slides.md> --share [--with-notes] [--no-pdf]
+                                              Open in the reader view, strip speaker notes, add a PDF
+    ${c.green}mdeck build${c.reset} <slides.md> --pdf         Also render deck.pdf with a local Chrome
+    ${c.green}mdeck pdf${c.reset} <slides.md> [-o talk.pdf]    Render the slides to PDF
     ${c.green}mdeck preview${c.reset}                          Preview the last build
     ${c.green}mdeck docs${c.reset} [guide]                      Open the local documentation
       --no-open   --port <number>   --build    Serve without opening, choose port, or build site
@@ -474,6 +479,9 @@ if (command === 'new') {
   const selfContained = hasFlag('--self-contained', '-S')
   const inlineImages = selfContained || hasFlag('--inline-images', '-I')
   const presenterLaunchers = hasFlag('--presenter-launchers')
+  const share = hasFlag('--share')
+  const stripNotes = share && !hasFlag('--with-notes')
+  const wantPdf = (share || hasFlag('--pdf')) && !hasFlag('--no-pdf')
 
   if (selfContained && presenterLaunchers) {
     err('--presenter-launchers is only available for directory bundles.')
@@ -489,8 +497,8 @@ if (command === 'new') {
   const htmlFilename = outputPath ? basename(outputPath) : 'index.html'
 
   await build({
-    ...baseConfig(input, { selfContained }),
-    plugins: [preact(), slidesPlugin(resolve(input), { inlineImages, inlineMedia: selfContained }), viteSingleFile()],
+    ...baseConfig(input, { selfContained, defaultView: share ? 'share' : 'deck' }),
+    plugins: [preact(), slidesPlugin(resolve(input), { inlineImages, inlineMedia: selfContained, stripNotes }), viteSingleFile()],
     build: {
       outDir,
       emptyOutDir: !tempDir,
@@ -506,13 +514,45 @@ if (command === 'new') {
     if (presenterLaunchers) await writePresenterLaunchers(finalOutDir, htmlFilename)
   }
 
+  let htmlFile = resolve(outDir, 'index.html')
   if (outputPath && tempDir) {
     copyFileSync(resolve(tempDir, 'index.html'), outputPath)
     await rm(tempDir, { recursive: true })
-    ok(`Built: ${c.cyan}${outputPath}${c.reset}${selfContained ? ' (self-contained)' : inlineImages ? ' (images inlined)' : ' + local assets'}\n`)
-  } else {
-    ok(`Built: ${c.cyan}${resolve(outDir, 'index.html')}${c.reset}${selfContained ? ' (self-contained)' : inlineImages ? ' (images inlined + local assets)' : ' + local assets'}\n`)
+    htmlFile = outputPath
   }
+  if (wantPdf) {
+    const pdfFile = outputPath ? outputPath.replace(/\.html?$/i, '') + '.pdf' : resolve(finalOutDir, 'deck.pdf')
+    try {
+      await renderPdf({ htmlFile, output: pdfFile })
+      attachPdf(htmlFile, pdfFile, { embed: selfContained })
+      if (selfContained) await rm(pdfFile)
+      ok(`PDF: ${c.cyan}${selfContained ? 'embedded in ' + htmlFile : pdfFile}${c.reset}`)
+    } catch (error) {
+      console.warn(`  ${c.yellow}!${c.reset}  PDF not rendered: ${error.message}`)
+      tip('The reader view will offer the browser\'s "Save as PDF" dialog instead.')
+    }
+  }
+  if (stripNotes) tip('Speaker notes were removed from this build (use --with-notes to keep them).')
+  ok(`Built: ${c.cyan}${htmlFile}${c.reset}${selfContained ? ' (self-contained)' : inlineImages ? ' (images inlined + local assets)' : ' + local assets'}${share ? ' — opens in the reader view' : ''}\n`)
+
+// ── pdf ───────────────────────────────────────────────────────────────────────
+} else if (command === 'pdf') {
+  const input = requireInput('pdf')
+  const outputFlagIdx = argv.findIndex(a => a === '--output' || a === '-o')
+  const pdfFile = outputFlagIdx !== -1 ? resolve(process.cwd(), argv[outputFlagIdx + 1]) : resolve(process.cwd(), basename(input).replace(/\.md$/i, '') + '.pdf')
+  if (!findChrome()) { err('No Chrome or Chromium found. Set MDECK_CHROME to its executable path.'); process.exit(1) }
+  const tempDir = mkdtempSync(resolve(tmpdir(), 'mdeck-pdf-'))
+  try {
+    await build({
+      ...baseConfig(input, { selfContained: true }),
+      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true }), viteSingleFile()],
+      build: { outDir: tempDir, emptyOutDir: true, target: 'esnext', assetsInlineLimit: 100 * 1024 * 1024 },
+      logLevel: 'warn',
+    })
+    await mkdir(dirname(pdfFile), { recursive: true })
+    await renderPdf({ htmlFile: resolve(tempDir, 'index.html'), output: pdfFile })
+    ok(`PDF: ${c.cyan}${pdfFile}${c.reset}\n`)
+  } catch (error) { err(error.message); process.exitCode = 1 } finally { await rm(tempDir, { recursive: true, force: true }) }
 
 // ── preview ───────────────────────────────────────────────────────────────────
 } else if (command === 'preview') {

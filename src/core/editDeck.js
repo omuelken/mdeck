@@ -222,3 +222,12 @@ export function replaceSlideSource(deck, slideId, text) {
   const body = text.replace(/\r?\n/g, nl).replace(/[\r\n]*$/, '')
   return edit(deck, [{ ...slide.source, text: body + (body ? trailing : ''), expected: current }])
 }
+
+// Removes every speaker note (blocks and metadata keys) for shared builds.
+export function stripNotes(source) {
+  let deck = parseSlides(source)
+  for (let i = 0; i < deck.slides.length; i++) {
+    for (let guard = 0; guard < 8 && notesSource(deck, deck.slides[i].id); guard++) deck = parseSlides(setSlideNotes(deck, deck.slides[i].id, ''))
+  }
+  return deck.source
+}

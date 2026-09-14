@@ -44,6 +44,11 @@ For one file, use:
 mdeck build my-talk.md --self-contained -o my-talk.html
 ```
 
+To send slides to someone, add `--share`: the file opens in a reader view with
+an outline, a scrollable Read mode, a look picker and a PDF download; speaker
+notes are stripped unless you pass `--with-notes`. `mdeck pdf my-talk.md`
+renders a PDF on its own (both need a local Chrome or Chromium).
+
 Online videos and live Python still need a network connection. Speaker notes
 are included in built HTML even though the audience view hides them.
 

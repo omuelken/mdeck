@@ -12,8 +12,12 @@ export function validateDeck(deck, { templates = null, themes = null, palettes =
   for (const key of ['width', 'height']) {
     if (config[key] != null && (typeof config[key] !== 'number' || !Number.isFinite(config[key]) || config[key] <= 0)) add('invalid-config', `${key} must be a positive number`, deck.configSource?.start)
   }
-  for (const key of ['meta', 'params', 'callouts']) {
+  for (const key of ['meta', 'params', 'callouts', 'share']) {
     if (config[key] != null && !isPlainObject(config[key])) add('invalid-config', `${key} must be a mapping`, deck.configSource?.start)
+  }
+  if (isPlainObject(config.share)) {
+    for (const key of Object.keys(config.share)) if (!['themes'].includes(key)) add('invalid-config', `share.${key} is not a setting; available: themes`, deck.configSource?.start, 'warning')
+    if (config.share.themes != null && typeof config.share.themes !== 'boolean') add('invalid-config', 'share.themes must be true or false', deck.configSource?.start)
   }
   const enums = { institution: ['title', 'all', 'none'], authorDate: ['title', 'all', 'none'], pageNumbers: ['slides', 'all', 'none'], sections: ['all', 'none'] }
   for (const [key, values] of Object.entries(enums)) {

@@ -9,6 +9,8 @@ import { effectiveToken } from '../extensions/appearance.js'
 import { S, PaletteSwatches } from './chrome.jsx'
 import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
 import { createEditorBridge } from './editorBridge.js'
+import { ShareView } from './ShareView.jsx'
+import './share.css'
 import { SlideRenderer, manifests } from '../templates/renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import './deck-stage.js'
@@ -490,6 +492,8 @@ async function init() {
   const parsed = parseSlides(slidesContent)
   const url = new URL(window.location.href)
   const editorMode = url.searchParams.get('editor') === '1'
+  const defaultView = typeof __MDECK_DEFAULT_VIEW__ !== 'undefined' ? __MDECK_DEFAULT_VIEW__ : 'deck'
+  const view = url.searchParams.get('view') ?? (url.searchParams.get('share') === '1' ? 'share' : defaultView)
   const errors = validateDeck(parsed, { templates: manifests }).filter(d => d.severity === 'error')
   if (errors.length && !editorMode) {
     document.body.textContent = errors.map(d => `Line ${d.line}: ${d.message}`).join('\n')
@@ -501,6 +505,8 @@ async function init() {
   const { slides } = parsed
   const presenterMode = url.searchParams.get('presenter') === '1'
   const audienceMode  = url.searchParams.get('audience')  === '1'
+  const embedded = url.searchParams.get('embedded') === '1'
+  const shareMode = view === 'share' && !presenterMode && !audienceMode && !editorMode && !embedded
 
   injectSpeakerNotes(slides)
 
@@ -550,8 +556,23 @@ async function init() {
     return
   }
 
+  if (shareMode) {
+    document.body.style.margin = '0'
+    await loadTheme(deckConfig)
+    render(<ShareView deck={parsed} deckConfig={deckConfig} />, document.body)
+    return
+  }
+
   await loadTheme(deckConfig)
   mountDeck({ deck: parsed, deckConfig })
+  if (!embedded && !audienceMode) {
+    // A quiet way into the reader view for anyone who opened the file directly.
+    const entry = document.createElement('a')
+    entry.className = 'share-entry'
+    entry.href = '?view=share'
+    entry.textContent = 'Overview'
+    document.body.appendChild(entry)
+  }
 
   // Embedded iframes (presenter view + preview pane) receive commands via postMessage
   window.addEventListener('message', event => {

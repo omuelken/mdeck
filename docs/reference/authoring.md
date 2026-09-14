@@ -587,3 +587,13 @@ You can write HTML directly in slide bodies. It inherits the theme's body text s
   <div>Right column content</div>
 </div>
 ```
+
+### Share settings
+
+```yaml
+share:
+  themes: false   # hide the theme and color picker in the reader view
+```
+
+The reader view (`?view=share`, or the default for `mdeck build --share`)
+lets recipients try other looks unless `share.themes` is `false`.

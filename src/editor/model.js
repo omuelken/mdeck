@@ -1,14 +1,7 @@
 // Read-only helpers that derive editor views from the parsed deck and the
 // extension manifests.
 import { marked } from 'marked'
-
-export function slideTitle(slide, index, manifest) {
-  const heading = slide.content?.match(/^\s*#{1,3}\s+(.+?)\s*#*\s*$/m)?.[1]
-  if (heading) return heading.replace(/[*_`]/g, '')
-  const first = slide.content?.split(/\r?\n/).map(line => line.trim()).find(line => line && !line.startsWith(':::'))
-  if (first) return first.slice(0, 60)
-  return manifest?.title ?? slide.meta.layout ?? `Slide ${index + 1}`
-}
+export { slideTitle } from '../core/outline.js'
 
 // Body first, then the manifest's regions in order, then explicit regions the
 // manifest does not know about.

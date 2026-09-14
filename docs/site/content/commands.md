@@ -47,6 +47,9 @@ The editor opens in your browser and writes every change into the slide file. `-
 | `mdeck build my-talk.md --inline-images` | Embed supported local image references in the HTML |
 | `mdeck build my-talk.md --self-contained -o talk.html` | Embed local images and media in one HTML file |
 | `mdeck build my-talk.md --presenter-launchers` | Include presenter launchers in the folder build |
+| `mdeck build my-talk.md --share` | Open in the reader view, remove speaker notes, add a PDF (`--with-notes`, `--no-pdf`) |
+| `mdeck build my-talk.md --pdf` | Also render `deck.pdf` next to the HTML |
+| `mdeck pdf my-talk.md -o talk.pdf` | Render the slides to a PDF file |
 
 `-I` is a short form of `--inline-images`. `-S` is a short form of `--self-contained`. See [Share or print your slides](sharing.html) for help choosing an option.
 
