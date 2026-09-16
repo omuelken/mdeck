@@ -5,7 +5,7 @@
 <p align="center"><b>Write slides as a plain text file. Present them in the browser. Share them as one HTML file or a PDF.</b></p>
 
 <p align="center">
-  <a href="https://tilman.schieber.pages.fhnw.ch/mdeck/">Guides</a> ·
+  <a href="https://mdeck-996814.pages.fhnw.ch/">Guides</a> ·
   <a href="https://gitlab.fhnw.ch/tilman.schieber/mdeck/-/packages">Package</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="LICENSE">MIT license</a>
@@ -77,7 +77,7 @@ mdeck build talk.md --share --self-contained -o talk.html   # one file to email,
 
 The guides are written for people who have never used Markdown:
 
-- Online: <https://tilman.schieber.pages.fhnw.ch/mdeck/>
+- Online: <https://mdeck-996814.pages.fhnw.ch/>
 - Offline, from any folder once mdeck is installed: `mdeck docs`
 
 Technical references for template, theme and tool authors live in

@@ -5,7 +5,7 @@
   "description": "Write slides as a plain text file, present them in the browser, share them as one HTML file or PDF.",
   "license": "MIT",
   "author": "Tilman Schieber",
-  "homepage": "https://tilman.schieber.pages.fhnw.ch/mdeck/",
+  "homepage": "https://mdeck-996814.pages.fhnw.ch/",
   "repository": {
     "type": "git",
     "url": "https://gitlab.fhnw.ch/tilman.schieber/mdeck.git"
