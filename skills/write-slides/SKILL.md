@@ -1,7 +1,12 @@
 ---
+name: write-slides
 description: Write a complete mdeck slide deck. Use when the user asks to create slides, a presentation, or a talk using the mdeck framework.
-argument-hint: [topic and audience]
+license: MIT
+compatibility: Best with the mdeck command installed (npm install -g @tilman.schieber/mdeck); works without it using the quick reference.
 allowed-tools: Read Write Bash(mdeck:*) Bash(npm root:*) Bash(ls:*)
+metadata:
+  argument-hint: "[topic, audience, length, language]"
+  homepage: https://mdeck-996814.pages.fhnw.ch/
 ---
 
 You are writing a presentation for mdeck, a slide framework that turns one Markdown file into slides with swappable themes and palettes.
@@ -89,9 +94,7 @@ Right column
 
 ## 3. Write the deck
 
-Write a complete deck for this request:
-
-$ARGUMENTS
+The request is the message that invoked this skill: topic, audience, length and language. If any of those are missing and matter, ask once, then write a complete deck.
 
 **Structure**
 - Start with the deck settings: pick a `design` and, if it suits the subject, a `palette` from the lists you gathered; fill in `meta.title`, `meta.author`, `meta.organization`, `meta.date`.

@@ -96,11 +96,13 @@ The docs are written for people who have never used Markdown:
 Technical references for template, theme and tool authors live in
 [docs/reference](docs/reference/).
 
-## Write slides with Claude Code
+## Write slides with an AI assistant
 
-The package includes a `/write-slides` skill for [Claude Code](https://claude.ai/code)
-that drafts a deck from a short brief, checks it, and uses whatever layouts and
-looks your deck folder provides. See [docs/reference/claude-skill.md](docs/reference/claude-skill.md).
+The package includes a `write-slides` skill that drafts a deck from a short
+brief, checks it, and uses whatever layouts and looks your deck folder
+provides. `mdeck skill --install claude codex cursor copilot gemini` puts it
+where each assistant looks; `mdeck skill --print` gives it to any other tool.
+See [docs/reference/claude-skill.md](docs/reference/claude-skill.md).
 
 ## Examples
 

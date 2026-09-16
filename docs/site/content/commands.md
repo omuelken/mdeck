@@ -78,6 +78,16 @@ mdeck extensions my-talk.md
 
 This lists every design, theme and color palette your talk can use, including any kept in an `extensions` folder beside it. `--json` prints the same information for other tools.
 
+## Slides from an AI assistant
+
+```sh
+mdeck skill
+mdeck skill --install claude codex
+mdeck skill --print
+```
+
+Installs the slide-writing skill for the assistants you use, or prints it for any other tool. See [Write slides with an AI assistant](claude-skill.html).
+
 ## Why do some examples use Node directly?
 
 `mdeck` is the normal command. After the one-time `npm link` setup, you can use it from any folder.

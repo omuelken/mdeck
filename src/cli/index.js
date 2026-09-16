@@ -12,6 +12,7 @@ import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, manifestsOf, serializeRegistry } from '../extensions/discover.js'
 import { editorPlugin } from '../build/editorPlugin.js'
 import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
+import { installSkill, readSkill, TARGETS } from './skill.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
 
 import { frameworkRoot } from '../paths.js'
@@ -299,6 +300,8 @@ const HELP = `
                                               Open in the reader view, strip speaker notes, add a PDF
     ${c.green}mdeck build${c.reset} <slides.md> --pdf         Also render deck.pdf with a local Chrome
     ${c.green}mdeck pdf${c.reset} <slides.md> [-o talk.pdf]    Render the slides to PDF
+    ${c.green}mdeck skill${c.reset} [--print] [--install <assistant>...] [--project]
+                                              Slide-writing skill for AI assistants (claude, codex, cursor, copilot, gemini)
     ${c.green}mdeck preview${c.reset}                          Preview the last build
     ${c.green}mdeck docs${c.reset} [guide]                      Open the local documentation
       --no-open   --port <number>   --build    Serve without opening, choose port, or build site
@@ -534,6 +537,23 @@ if (command === 'new') {
   }
   if (stripNotes) tip('Speaker notes were removed from this build (use --with-notes to keep them).')
   ok(`Built: ${c.cyan}${htmlFile}${c.reset}${selfContained ? ' (self-contained)' : inlineImages ? ' (images inlined + local assets)' : ' + local assets'}${share ? ' — opens in the reader view' : ''}\n`)
+
+// ── skill ─────────────────────────────────────────────────────────────────────
+} else if (command === 'skill') {
+  const installIndex = argv.indexOf('--install')
+  if (hasFlag('--print') || installIndex < 0) {
+    if (installIndex < 0 && !hasFlag('--print')) {
+      console.log(`\n  The write-slides skill drafts a complete deck for an AI coding assistant.\n`)
+      for (const [key, spec] of Object.entries(TARGETS)) console.log(`    ${c.cyan}${key.padEnd(8)}${c.reset} ${spec.title.padEnd(16)} ${c.dim}${spec.scope === 'home' ? `~/${spec.path}  (or --project)` : spec.projectPath}${c.reset}`)
+      console.log(`\n  ${c.dim}mdeck skill --install claude codex     install for one or more assistants\n  mdeck skill --print                     print the skill for any other tool${c.reset}\n`)
+    } else process.stdout.write(readSkill().text)
+  } else {
+    const targets = argv.slice(installIndex + 1).filter(arg => !arg.startsWith('-'))
+    if (!targets.length) { err(`Name at least one assistant: ${Object.keys(TARGETS).join(', ')}`); process.exit(1) }
+    for (const target of targets) {
+      try { const result = installSkill(target, { project: hasFlag('--project') }); ok(`${result.title}: ${c.cyan}${result.file}${c.reset}`) } catch (error) { err(error.message); process.exitCode = 1 }
+    }
+  }
 
 // ── pdf ───────────────────────────────────────────────────────────────────────
 } else if (command === 'pdf') {
