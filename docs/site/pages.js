@@ -10,6 +10,7 @@ export const pages = [
   { slug: 'sharing', title: 'Share or print your slides', group: 'Present and share', file: 'sharing.md', description: 'Make a shareable folder, a single file, or a PDF.' },
   { slug: 'more-content', title: 'Tables, tips, and more', group: 'Keep learning', file: 'more-content.md', description: 'Add tables, helpful callouts, QR codes, formulas, and code examples.' },
   { slug: 'reusable-designs', title: 'Use a reusable slide design', group: 'Keep learning', file: 'reusable-designs.md', description: 'Use a slide design someone has made for you, including the comparison example.', preview: 'custom-templates' },
+  { slug: 'claude-skill', title: 'Write slides with Claude Code', group: 'Keep learning', source: '../reference/claude-skill.md', description: 'Let an AI assistant draft a deck that uses your layouts, themes and palettes.' },
   { slug: 'commands', title: 'Command guide', group: 'Help and reference', file: 'commands.md', description: 'What each mdeck command does and when to use it.' },
   { slug: 'troubleshooting', title: 'When something goes wrong', group: 'Help and reference', file: 'troubleshooting.md', description: 'Find a missing picture, fix a typing mistake, or recover a command that will not run.' },
   { slug: 'custom-templates', title: 'Create a custom slide design', group: 'Advanced customization', source: '../reference/templates.md', description: 'For people comfortable with JavaScript: define a layout, its content areas, and its settings.' },

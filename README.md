@@ -96,6 +96,12 @@ The docs are written for people who have never used Markdown:
 Technical references for template, theme and tool authors live in
 [docs/reference](docs/reference/).
 
+## Write slides with Claude Code
+
+The package includes a `/write-slides` skill for [Claude Code](https://claude.ai/code)
+that drafts a deck from a short brief, checks it, and uses whatever layouts and
+looks your deck folder provides. See [docs/reference/claude-skill.md](docs/reference/claude-skill.md).
+
 ## Examples
 
 Each example keeps its assets beside its slide source so it can be copied as a

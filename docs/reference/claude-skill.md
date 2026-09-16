@@ -1,40 +1,56 @@
-# Claude Code skill — /write-slides
+# Write slides with Claude Code
 
-The `skills/write-slides/` directory contains a [Claude Code](https://claude.ai/code) skill that drafts a complete mdeck slide deck on request. It reads the framework docs automatically before writing anything.
+mdeck ships a [Claude Code](https://claude.ai/code) skill, `/write-slides`, that
+drafts a complete deck from a short brief. It reads the mdeck reference docs,
+asks the installed `mdeck` command which layouts, themes and palettes the deck
+can use (including designs kept in the deck's `extensions/` folder), writes the
+file, and runs `mdeck check` on the result.
 
-## Installation
+## Install the skill
 
-Claude Code looks for skills in two places:
+The skill is one folder, `skills/write-slides/`, inside the mdeck package.
+Copy it to where Claude Code looks for skills:
 
 | Location | Path | Available in |
 |---|---|---|
-| Personal | `~/.claude/skills/<name>/` | Every project |
-| Project | `.claude/skills/<name>/` | This project only |
+| Personal | `~/.claude/skills/write-slides/` | Every project |
+| Project | `.claude/skills/write-slides/` | That project only |
 
-Copy the skill directory to whichever location suits you:
+From an installed mdeck:
 
-```bash
-# Personal — available in every project
-cp -r skills/write-slides ~/.claude/skills/write-slides
-
-# Project-local — only available inside this repo
-mkdir -p .claude/skills
-cp -r skills/write-slides .claude/skills/write-slides
+```sh
+cp -r "$(npm root -g)/@tilman.schieber/mdeck/skills/write-slides" ~/.claude/skills/
 ```
 
-> The skill reads docs via relative paths (`docs/reference/authoring.md` etc.), so it works best when Claude Code is opened at the mdeck repo root.
+From a checkout of the repository:
 
-## Usage
+```sh
+cp -r skills/write-slides ~/.claude/skills/
+```
+
+The skill finds the reference docs either in the current folder (inside the
+repository) or in the globally installed package, so it works from any deck
+folder once `mdeck` is installed.
+
+## Use it
 
 ```
 /write-slides A 20-minute talk on design systems for a frontend engineering audience
-/write-slides Intro lecture on machine learning for first-year students, 10 slides
+/write-slides Intro lecture on enzyme kinetics for first-year students, 10 slides, German
 ```
 
-Claude reads the framework docs and `examples/showcase/slides.md`, then writes a complete `.md` deck and saves it to a file.
+Claude writes a `.md` file named after the topic, checks it, and tells you the
+commands to preview, present and share it. Review the notes and pictures it
+asks for, then:
 
-For sharing as a single HTML file with a reader view and PDF, build with:
-
-```bash
+```sh
+mdeck dev <deck>.md
 mdeck build <deck>.md --share --self-contained -o <deck>.html
 ```
+
+## What the skill knows
+
+It carries a short quick reference of the file format so it can work even
+without the docs, and it prefers the live answers from `mdeck templates --json`
+and `mdeck extensions` over its own memory. Update the copy in your skills
+folder when you update mdeck.

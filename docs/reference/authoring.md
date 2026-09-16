@@ -90,12 +90,15 @@ build uses `--with-notes`. The same view is reachable in any build through
 
 | Key | Description |
 |---|---|
-| `neue` | Clean sans-serif — Inter Tight headlines, neutral defaults |
-| `aurora` | Geometric modern — Plus Jakarta Sans, gradient accents |
-| `duet` | Two-accent system — Syne display, DM Sans body, structure vs. voice color roles |
-| `editorial` | High-contrast serif — Playfair Display headlines, Lora body |
-| `fhnw` | FHNW brand theme |
-| `terminal` | Dark monospace — code-first presentations |
+| `neue` | Clear sans-serif type (Inter Tight and Inter), warm stone background, teal accent |
+| `aurora` | Geometric shapes, Plus Jakarta Sans, violet accent with a derived magenta second accent |
+| `duet` | Zilla Slab headings with DM Sans body; two accents for structure and voice |
+| `editorial` | Magazine look, Playfair Display headings and Lora body, warm crimson accent |
+| `fhnw` | The FHNW corporate design: Inter, black on white, yellow accent areas |
+| `terminal` | Dark by default, JetBrains Mono throughout, terminal green accent |
+
+`mdeck extensions <deck>.md` lists these together with any themes kept beside
+the deck.
 
 ---
 
