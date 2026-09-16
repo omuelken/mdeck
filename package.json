@@ -52,7 +52,8 @@
     "build": "node bin/mdeck.js build",
     "preview": "node bin/mdeck.js preview",
     "playground": "vite --config playground/vite.config.js",
-    "playground:build": "vite build --config playground/vite.config.js"
+    "playground:build": "vite build --config playground/vite.config.js",
+    "readme-images": "node tools/readme-images.mjs"
   },
   "dependencies": {
     "@preact/preset-vite": "^2.8.1",

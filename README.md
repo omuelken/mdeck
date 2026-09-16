@@ -5,7 +5,7 @@
 <p align="center"><b>Write slides as a plain text file. Present them in the browser. Share them as one HTML file or a PDF.</b></p>
 
 <p align="center">
-  <a href="https://mdeck-996814.pages.fhnw.ch/">Guides</a> ·
+  <a href="https://mdeck-996814.pages.fhnw.ch/">Docs</a> ·
   <a href="https://gitlab.fhnw.ch/tilman.schieber/mdeck/-/packages">Package</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="LICENSE">MIT license</a>
@@ -41,6 +41,19 @@ Ask who has seen the curve before.
 Save that as `talk.md`, run `mdeck dev talk.md`, and it is a slide deck with a
 title slide, a content slide, a theme, and your notes in the presenter view.
 
+<p align="center"><img src="docs/images/hero.png" alt="The showcase deck's title slide in the Neue theme" width="800"></p>
+
+## One file, any look
+
+The same slide file rendered with each of the six built-in themes. Change one
+line in the settings, or pick from the presenter view, and the whole deck
+repaints.
+
+<p align="center"><img src="docs/images/themes.gif" alt="The same slide cycling through the Aurora, Duet, Editorial, FHNW, Neue and Terminal themes" width="800"></p>
+
+Try it yourself: the [docs home page](https://mdeck-996814.pages.fhnw.ch/)
+embeds a live deck with a theme switcher.
+
 ## Install
 
 You need [Node.js](https://nodejs.org) 22 or newer. mdeck is published in the
@@ -73,9 +86,9 @@ mdeck build talk.md --share --self-contained -o talk.html   # one file to email,
 - **Content:** pictures, video, tables, callouts, code with syntax highlighting and live execution, formulas, QR codes, and your own Preact components.
 - **Editing in the browser** *(experimental)*: `mdeck edit talk.md` opens an editor with a live preview and forms for slides, settings, palettes, themes and templates. It writes back into your text file.
 
-## Read the guides
+## Read the docs
 
-The guides are written for people who have never used Markdown:
+The docs are written for people who have never used Markdown:
 
 - Online: <https://mdeck-996814.pages.fhnw.ch/>
 - Offline, from any folder once mdeck is installed: `mdeck docs`

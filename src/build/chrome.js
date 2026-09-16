@@ -1,0 +1,109 @@
+// Headless Chrome over the DevTools protocol, used for PDF rendering and
+// screenshots. Serves a folder over loopback so relative assets resolve.
+import { spawn } from 'node:child_process'
+import { existsSync, readFileSync, mkdtempSync, rmSync, statSync } from 'node:fs'
+import { createServer } from 'node:http'
+import { tmpdir } from 'node:os'
+import { resolve, extname, relative, isAbsolute } from 'node:path'
+import { setTimeout as delay } from 'node:timers/promises'
+
+const CANDIDATES = {
+  darwin: ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/Applications/Chromium.app/Contents/MacOS/Chromium', '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge'],
+  linux: ['/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/snap/bin/chromium'],
+  win32: ['C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe', 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'],
+}
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.mp4': 'video/mp4', '.webm': 'video/webm', '.woff2': 'font/woff2', '.woff': 'font/woff', '.pdf': 'application/pdf' }
+
+export function findChrome() {
+  if (process.env.MDECK_CHROME) return existsSync(process.env.MDECK_CHROME) ? process.env.MDECK_CHROME : null
+  return (CANDIDATES[process.platform] ?? []).find(existsSync) ?? null
+}
+
+export function serveDirectory(root) {
+  return createServer((request, response) => {
+    try {
+      const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname)
+      const file = resolve(root, '.' + pathname)
+      const rel = relative(root, file)
+      if (rel.startsWith('..') || isAbsolute(rel) || !statSync(file).isFile()) throw new Error('not found')
+      response.writeHead(200, { 'Content-Type': MIME[extname(file).toLowerCase()] ?? 'application/octet-stream' })
+      response.end(readFileSync(file))
+    } catch { response.writeHead(404); response.end() }
+  })
+}
+
+// Starts Chrome and a static server for `dir`. `open(path)` returns a page
+// with evaluate(), send() and waitFor(); call close() when done.
+export async function launchChrome({ dir, chrome = findChrome(), timeout = 90000 } = {}) {
+  if (!chrome) throw new Error('No Chrome or Chromium found. Set MDECK_CHROME to its executable path.')
+  const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-chrome-'))
+  const server = serveDirectory(dir)
+  await new Promise(done => server.listen(0, '127.0.0.1', done))
+  const origin = `http://127.0.0.1:${server.address().port}`
+  const browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--remote-debugging-port=0', `--user-data-dir=${resolve(temp, 'profile')}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] })
+  const pending = new Map()
+  let socket
+  const deadline = setTimeout(() => { for (const task of pending.values()) task.reject(new Error('Timed out while driving Chrome')) }, timeout)
+  const close = async () => {
+    clearTimeout(deadline)
+    socket?.close()
+    server.close()
+    if (browser.exitCode === null) { browser.kill(); await new Promise(done => browser.once('exit', done)) }
+    rmSync(temp, { recursive: true, force: true })
+  }
+  try {
+    const endpoint = await new Promise((resolveEndpoint, reject) => {
+      let log = ''
+      browser.on('error', reject)
+      browser.on('exit', code => reject(new Error(`Chrome exited early (${code})`)))
+      browser.stderr.on('data', data => { log += data; const match = log.match(/DevTools listening on (ws:\/\/\S+)/); if (match) resolveEndpoint(match[1]) })
+    })
+    socket = new WebSocket(endpoint)
+    await new Promise((done, reject) => { socket.addEventListener('open', done, { once: true }); socket.addEventListener('error', reject, { once: true }) })
+    let nextId = 0
+    socket.addEventListener('message', ({ data }) => {
+      const message = JSON.parse(data)
+      if (!message.id) return
+      const task = pending.get(message.id)
+      pending.delete(message.id)
+      if (message.error) task?.reject(new Error(message.error.message))
+      else task?.resolve(message.result)
+    })
+    const send = (method, params = {}, sessionId) => new Promise((resolveTask, reject) => { const id = ++nextId; pending.set(id, { resolve: resolveTask, reject }); socket.send(JSON.stringify({ id, method, params, sessionId })) })
+    const open = async path => {
+      const url = path.startsWith('http') ? path : origin + '/' + path.replace(/^\//, '')
+      const { targetId } = await send('Target.createTarget', { url })
+      const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true })
+      const page = {
+        url, sessionId,
+        send: (method, params) => send(method, params, sessionId),
+        async evaluate(expression) {
+          const result = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, sessionId)
+          if (result.exceptionDetails) throw new Error(result.exceptionDetails.text)
+          return result.result.value
+        },
+        async waitFor(expression, { attempts = 600, interval = 100 } = {}) {
+          for (let attempt = 0; attempt < attempts; attempt++) {
+            if (await page.evaluate(expression)) return true
+            await delay(interval)
+          }
+          return false
+        },
+        // Waits until the deck stage exists, fonts are loaded and images decoded.
+        waitForDeck: () => page.waitFor("document.querySelector('deck-stage')?.length > 0 && document.fonts.status === 'loaded' && [...document.images].every(image => image.complete)"),
+        async screenshot({ width = 1600, height = 900, scale = 1 } = {}) {
+          await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: scale, mobile: false }, sessionId)
+          await delay(150)
+          const { data } = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, sessionId)
+          return Buffer.from(data, 'base64')
+        },
+        close: () => send('Target.closeTarget', { targetId }),
+      }
+      return page
+    }
+    return { origin, open, close }
+  } catch (error) {
+    await close()
+    throw error
+  }
+}
