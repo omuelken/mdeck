@@ -4,18 +4,18 @@ You will make a small text file, open its preview, and change your first slide. 
 
 ## Set up mdeck once
 
-mdeck needs Node.js and npm on your computer. If someone set up mdeck for you, you may already have both. The current project is installed from its project folder, rather than through an app store.
+mdeck needs Node.js and npm on your computer. Install [Node.js](https://nodejs.org) (version 22 or newer); npm comes with it.
 
-Open a terminal in the mdeck project folder. A terminal is an app where you type short commands: Terminal on macOS, or PowerShell on Windows. A text editor may also have a Terminal menu.
+Open a terminal. A terminal is an app where you type short commands: Terminal on macOS, or PowerShell on Windows. A text editor may also have a Terminal menu.
 
-Run these two commands, one at a time:
+Run these two commands, one at a time. The first tells npm where FHNW publishes mdeck; the second installs it:
 
 ```sh
-npm install
-npm link
+npm config set @tilman.schieber:registry https://gitlab.fhnw.ch/api/v4/packages/npm/
+npm install -g @tilman.schieber/mdeck
 ```
 
-The first gets the pieces mdeck needs. The second makes the `mdeck` command available outside the project folder. You normally do this only once.
+You normally do this only once. To update later, run the second command again.
 
 Check that the command is ready:
 

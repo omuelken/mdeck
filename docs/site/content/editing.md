@@ -1,5 +1,7 @@
 # Edit slides in your browser
 
+> The editor is new and marked **experimental**. It only ever rewrites the parts of your file you change, and every change can be undone, but keep a copy of decks you care about while it matures.
+
 You can write slides in any text editor. If you prefer clicking and typing in forms, mdeck also has a visual editor:
 
 ```sh

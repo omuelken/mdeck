@@ -286,7 +286,7 @@ const HELP = `
   ${c.dim}Usage:${c.reset}
     ${c.green}mdeck dev${c.reset} <slides.md>                  Start dev server with live reload
     ${c.green}mdeck present${c.reset} <slides.md>              Open speaker/presenter view
-    ${c.green}mdeck edit${c.reset} <slides.md>                 Edit slides in the browser; saves to the file
+    ${c.green}mdeck edit${c.reset} <slides.md>                 Edit slides in the browser (experimental); saves to the file
       --no-open   --port <number>
     ${c.green}mdeck new${c.reset}                              Interactive deck scaffolding wizard
     ${c.green}mdeck build${c.reset} <slides.md> [-o out.html]
@@ -471,7 +471,7 @@ if (command === 'new') {
   server.printUrls()
   console.log()
   ok(`Editing ${c.cyan}${abs}${c.reset}`)
-  tip('Changes are saved to the file as you type. Editor page: /editor.html\n')
+  tip('Changes are saved to the file as you type. The editor is experimental; keep a copy of decks you care about.\n')
 
 // ── build ─────────────────────────────────────────────────────────────────────
 } else if (command === 'build') {

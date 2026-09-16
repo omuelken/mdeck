@@ -1,10 +1,45 @@
 {
-  "name": "mdeck",
-  "version": "0.1.0",
+  "name": "@tilman.schieber/mdeck",
+  "version": "1.0.0",
   "type": "module",
-  "description": "Markdown-driven slide deck framework with swappable design systems",
+  "description": "Write slides as a plain text file, present them in the browser, share them as one HTML file or PDF.",
+  "license": "MIT",
+  "author": "Tilman Schieber",
+  "homepage": "https://tilman.schieber.pages.fhnw.ch/mdeck/",
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.fhnw.ch/tilman.schieber/mdeck.git"
+  },
+  "bugs": {
+    "url": "https://gitlab.fhnw.ch/tilman.schieber/mdeck/-/issues"
+  },
+  "keywords": [
+    "markdown",
+    "slides",
+    "presentation",
+    "deck",
+    "pdf",
+    "teaching"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "bin": {
     "mdeck": "./bin/mdeck.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "assets",
+    "docs/README.md",
+    "docs/reference",
+    "docs/site",
+    "examples",
+    "skills",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "@tilman.schieber:registry": "https://gitlab.fhnw.ch/api/v4/projects/31311/packages/npm/"
   },
   "scripts": {
     "test": "node --test",
@@ -20,6 +55,7 @@
     "playground:build": "vite build --config playground/vite.config.js"
   },
   "dependencies": {
+    "@preact/preset-vite": "^2.8.1",
     "js-yaml": "^4.1.0",
     "katex": "^0.16.46",
     "marked": "^12.0.0",
@@ -27,11 +63,9 @@
     "preact": "^10.23.0",
     "prismjs": "^1.29.0",
     "qrcode": "^1.5.4",
-    "smol-toml": "^1.8.0"
-  },
-  "devDependencies": {
-    "@preact/preset-vite": "^2.8.1",
+    "smol-toml": "^1.8.0",
     "vite": "^5.4.0",
     "vite-plugin-singlefile": "^2.0.0"
-  }
+  },
+  "devDependencies": {}
 }

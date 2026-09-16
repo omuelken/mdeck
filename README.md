@@ -1,58 +1,87 @@
-# mdeck
+<p align="center">
+  <img src="assets/logo/logo-light.svg" alt="mdeck" width="280">
+</p>
 
-Make presentations from a plain-text file. mdeck turns your words into slides,
-with ready-made layouts, themes, speaker notes, pictures, and video.
+<p align="center"><b>Write slides as a plain text file. Present them in the browser. Share them as one HTML file or a PDF.</b></p>
 
-New to Markdown? Open the friendly step-by-step guides:
+<p align="center">
+  <a href="https://tilman.schieber.pages.fhnw.ch/mdeck/">Guides</a> ·
+  <a href="https://gitlab.fhnw.ch/tilman.schieber/mdeck/-/packages">Package</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="LICENSE">MIT license</a>
+</p>
 
-```sh
-mdeck docs
+## A presentation is a text file
+
+```markdown
+---
+design: neue
+meta:
+  title: Enzyme kinetics
+  author: Alex Morgan
+---
+
+---
+layout: title
+---
+# Enzyme kinetics
+## How fast, and why
+
+---
+# Rate depends on substrate
+
+- Michaelis–Menten describes saturation
+- *K*<sub>m</sub> is the half-saturation point
+
+:::notes
+Ask who has seen the curve before.
+:::
 ```
 
-## Set up this checkout
+Save that as `talk.md`, run `mdeck dev talk.md`, and it is a slide deck with a
+title slide, a content slide, a theme, and your notes in the presenter view.
 
-With Node.js and npm installed, run these commands in the project folder:
+## Install
+
+You need [Node.js](https://nodejs.org) 22 or newer. mdeck is published in the
+GitLab package registry of this project:
 
 ```sh
-npm install
-npm link
+npm config set @tilman.schieber:registry https://gitlab.fhnw.ch/api/v4/packages/npm/
+npm install -g @tilman.schieber/mdeck
 mdeck --help
 ```
 
-`npm link` makes the `mdeck` command available from any folder. Run it again after
-updating an older checkout if its command still points to the previous entry.
+Working from a clone instead? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Make a presentation
-
-```sh
-mdeck new
-mdeck dev my-talk.md
-mdeck edit my-talk.md
-mdeck present my-talk.md
-mdeck check my-talk.md
-mdeck extensions my-talk.md
-mdeck build my-talk.md
-```
-
-The preview updates when you save your slide file. `mdeck edit` opens a
-visual editor in the browser that writes back into the same file, including
-form-based editors for palettes, themes and slide templates. A normal build creates a
-`dist/` folder with the HTML and referenced local media. Send the whole folder.
-For one file, use:
+## First steps
 
 ```sh
-mdeck build my-talk.md --self-contained -o my-talk.html
+mdeck new                 # answer a few questions, get a starter file
+mdeck dev talk.md         # preview that reloads when you save
+mdeck present talk.md     # presenter view with notes, timer and audience window
+mdeck build talk.md       # dist/ folder to hand out or host
+mdeck build talk.md --share --self-contained -o talk.html   # one file to email, with PDF
 ```
 
-To send slides to someone, add `--share`: the file opens in a reader view with
-an outline, a scrollable Read mode, a look picker and a PDF download; speaker
-notes are stripped unless you pass `--with-notes`. `mdeck pdf my-talk.md`
-renders a PDF on its own (both need a local Chrome or Chromium).
+## What you get
 
-Online videos and live Python still need a network connection. Speaker notes
-are included in built HTML even though the audience view hides them.
+- **Layouts:** title, chapter, big statement, image and text, split, full-bleed image, and plain content slides, with points that appear one at a time.
+- **Looks:** six themes and eight colour palettes, changeable without touching the slides. Make your own as small `extension.toml` folders beside the deck.
+- **Presenting:** a presenter view with notes and timer, and an audience window that stays in sync.
+- **Sharing:** a reader view with an outline, a phone-friendly Read mode and a PDF download; speaker notes are stripped from shared builds.
+- **Content:** pictures, video, tables, callouts, code with syntax highlighting and live execution, formulas, QR codes, and your own Preact components.
+- **Editing in the browser** *(experimental)*: `mdeck edit talk.md` opens an editor with a live preview and forms for slides, settings, palettes, themes and templates. It writes back into your text file.
 
-See all commands with `mdeck --help`, or open `mdeck docs commands`.
+## Read the guides
+
+The guides are written for people who have never used Markdown:
+
+- Online: <https://tilman.schieber.pages.fhnw.ch/mdeck/>
+- Offline, from any folder once mdeck is installed: `mdeck docs`
+
+Technical references for template, theme and tool authors live in
+[docs/reference](docs/reference/).
 
 ## Examples
 
@@ -66,77 +95,7 @@ complete folder.
 | [Python](examples/python/slides.md) | A short introductory programming talk |
 | [Custom templates](examples/custom-templates/slides.md) | A deck-local comparison design and named regions |
 
-```sh
-mdeck dev examples/showcase/slides.md
-mdeck dev examples/custom-templates/slides.md
-```
+## Made at FHNW
 
-## Documentation
-
-```sh
-mdeck docs
-mdeck docs getting-started
-mdeck docs --no-open
-mdeck docs --build
-```
-
-The site lives in [docs/site](docs/site/) and builds to `docs/site/dist/`.
-Technical references live in [docs/reference](docs/reference/):
-
-- [Authoring reference](docs/reference/authoring.md)
-- [Structured slides and source model](docs/reference/structured-slides.md)
-- [Extensions: one manifest for templates, themes and palettes](docs/reference/extensions.md)
-- [Custom templates](docs/reference/templates.md)
-- [Themes](docs/reference/themes.md) and [palettes](docs/reference/palettes.md)
-- [Slide-writing skill](docs/reference/claude-skill.md)
-
-## Repository layout
-
-```text
-bin/                 mdeck executable entry point
-src/
-  cli/               Commands, scaffolding, and packaging
-  core/              Slide parsing, source ranges, and validation
-  runtime/           Browser app, navigation, theme loading, editor preview mode
-  editor/            Browser editor for decks, palettes, themes and templates
-  components/        Built-in interactive content
-  templates/         Shared rendering API, slide frame, and typed properties
-  extensions/        Manifest contract, discovery registry, appearance rules
-  build/             Vite configuration, the generated extension module, editing API
-  paths.js           Locations of installed framework resources
-assets/
-  base.css           Shared slide CSS every theme builds on
-  extensions/        Built-in templates, themes, and palettes (extension.toml each)
-docs/
-  site/              Documentation website and beginner guides
-  reference/         Technical Markdown references
-examples/            Complete example deck projects
-playground/          Scratch deck and standalone development app
-tests/               Automated regression tests
-tools/               Optional development utilities
-skills/              Distributable slide-authoring instructions
-```
-
-Deck-local `components/` and `extensions/` folders remain beside the author's
-slide file. Built-in and deck-local extensions share one manifest format and
-one registry; see [docs/reference/extensions.md](docs/reference/extensions.md).
-The template import `mdeck/template-api` stays the same.
-
-## Working on mdeck
-
-```sh
-npm test
-npm run playground
-npm run playground:build
-npm run docs:build
-```
-
-The playground builds to `playground/dist/`; documentation builds to
-`docs/site/dist/`. Both are ignored by Git. The user's `mdeck build` command
-continues to write to `dist/` in the current working folder.
-
-For direct checkout execution, use `node bin/mdeck.js`. The npm `dev`, `build`,
-`present`, and `preview` workflows call that same entry point.
-
-An optional `npm run test:browser` checks presenter/audience synchronization in
-Chrome or Chromium. Set `MDECK_CHROME` if needed. It is separate from `npm test`.
+mdeck is developed at the School of Life Sciences FHNW for lectures, labs and
+talks. Issues and ideas: <https://gitlab.fhnw.ch/tilman.schieber/mdeck/-/issues>.

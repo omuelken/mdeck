@@ -13,6 +13,7 @@ import { TemplatePicker } from './TemplatePicker.jsx'
 import { ConflictBanner } from './ConflictBanner.jsx'
 import { ExtensionsMode } from './ExtensionsMode.jsx'
 import { Resizer, readInspectorWidth, storeInspectorWidth } from './Resizer.jsx'
+import markUrl from '../../../assets/logo/mark.svg'
 
 const STATUS = { saved: 'Saved', unsaved: 'Unsaved changes', saving: 'Saving…', conflict: 'Conflict', error: 'Could not save' }
 
@@ -98,7 +99,9 @@ export function App() {
 
   return <div class="editor">
     <header class="editor-topbar">
+      <img src={markUrl} alt="" width="22" height="22" style={{ borderRadius: '5px' }} />
       <h1 title={state.path}>{state.name}</h1>
+      <span class="editor-chip" title="The editor is new. It saves only what you change, but keep a copy of decks you care about.">Experimental</span>
       <span class={`editor-status is-${state.status}`}>{STATUS[state.status]}{state.error ? `: ${state.error}` : ''}</span>
       <span class="spacer" />
       <div class="tabs" style={{ padding: 0, border: 0, position: 'static' }}>

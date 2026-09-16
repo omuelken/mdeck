@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 160" width="560" height="160">
+  <title>mdeck</title>
+  <g transform="translate(16 16) scale(0.25)">
+    <rect width="512" height="512" rx="96" fill="#0d9488"/>
+    <rect x="72" y="136" width="368" height="240" rx="18" fill="#f4f1e8"/>
+    <g fill="#0d9488"><rect x="132" y="176" width="26" height="160" rx="13"/><rect x="184" y="176" width="26" height="160" rx="13"/><rect x="102" y="222" width="140" height="26" rx="13"/><rect x="102" y="266" width="140" height="26" rx="13"/></g>
+    <g fill="#1b1a17" opacity="0.85"><rect x="268" y="226" width="130" height="20" rx="10"/><rect x="268" y="276" width="88" height="20" rx="10"/></g>
+  </g>
+  <text x="172" y="112" font-family="'Inter Tight', 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-weight="800" font-size="96" letter-spacing="-3" fill="#1b1a17">mdeck</text>
+</svg>
