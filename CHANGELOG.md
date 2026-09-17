@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2 — 2026-09-17
+
+- The reader view no longer shows speaker notes just because the file contains them. Notes appear in Read mode only when the deck sets `share.notes: true`, so one build can serve both the presenter and the people you send the link to.
+
 ## 1.0.1 — 2026-09-16
 
 - The slide-writing skill follows the Agent Skills format and works with any assistant; `mdeck skill` installs it for Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, or prints it for other tools.

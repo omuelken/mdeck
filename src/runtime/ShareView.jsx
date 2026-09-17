@@ -61,7 +61,8 @@ export function ShareView({ deck, deckConfig }) {
   const themedConfig = { ...deckConfig, design: look.design, palette: look.palette, accent: undefined, accent2: undefined }
   const pickerAllowed = deckConfig.share?.themes !== false
   const pdf = useMemo(pdfLink, [])
-  const hasNotes = slides.some(slide => slide.meta.notes || slide.meta.note)
+  // Notes stay private unless the deck opts in; a file may carry them for the presenter.
+  const showNotes = deckConfig.share?.notes === true && slides.some(slide => slide.meta.notes || slide.meta.note)
 
   useEffect(() => {
     loadTheme(themedConfig).catch(error => console.warn(error.message))
@@ -177,7 +178,7 @@ export function ShareView({ deck, deckConfig }) {
             </div>
           </>
           : <div class="share-read" ref={readRef}>
-            {slides.map((slide, i) => <ReadPage key={slide.id} slide={slide} index={i} total={slides.length} deckConfig={deckConfig} width={width} height={height} scale={readScale} showNotes={hasNotes} />)}
+            {slides.map((slide, i) => <ReadPage key={slide.id} slide={slide} index={i} total={slides.length} deckConfig={deckConfig} width={width} height={height} scale={readScale} showNotes={showNotes} />)}
           </div>}
       </section>
     </div>

@@ -38,7 +38,7 @@ test('the outline names slides and marks chapters', () => {
 
 test('share settings are validated', () => {
   const codes = source => validateDeck(parseSlides(source)).map(d => [d.code, d.severity])
-  assert.deepEqual(codes('---\nshare:\n  themes: false\n---\n# A'), [])
+  assert.deepEqual(codes('---\nshare:\n  themes: false\n  notes: true\n---\n# A'), [])
   assert.deepEqual(codes('---\nshare: yes\n---\n# A'), [['invalid-config', 'error']])
   assert.deepEqual(codes('---\nshare:\n  themes: maybe\n  pdf: true\n---\n# A'), [['invalid-config', 'warning'], ['invalid-config', 'error']])
 })

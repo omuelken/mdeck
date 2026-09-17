@@ -58,6 +58,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `callouts` | — | Override individual callout titles (see below) |
 | `params` | — | Theme-specific color/font overrides (see below) |
 | `share.themes` | `true` | Whether the reader view of a shared build offers other themes and palettes (see below) |
+| `share.notes` | `false` | Whether the reader view shows speaker notes under each slide in Read mode |
 
 ### Theme params
 
@@ -78,13 +79,16 @@ Available params depend on the theme — check the presenter sidebar for a list.
 ```yaml
 share:
   themes: false   # hide the theme and color picker in the reader view
+  notes: true     # show speaker notes under each slide in Read mode
 ```
 
 `mdeck build --share` produces a file that opens in the reader view (outline,
 Read mode, look picker, PDF download). `share.themes: false` keeps the
 sender's look fixed. Speaker notes are removed from share builds unless the
-build uses `--with-notes`. The same view is reachable in any build through
-`?view=share`.
+build uses `--with-notes`, and even then the reader shows them only when
+`share.notes` is `true`, so a file can carry notes for the presenter view
+without showing them to readers. The same view is reachable in any build
+through `?view=share`.
 
 ## Available themes
 

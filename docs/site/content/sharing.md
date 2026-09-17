@@ -10,7 +10,7 @@ mdeck build my-talk.md --share --self-contained -o my-talk.html
 
 Send `my-talk.html` by email. It opens in a **reader view**: an outline of all slides on the left, the slides in the middle, a **Read** mode that stacks every slide for scrolling on a phone, a **Look** menu to try other themes and colors, a **Download PDF** button, and a **Present** button that opens the full-screen deck.
 
-- Your speaker notes are removed from a `--share` build. Add `--with-notes` to keep them; they then appear under each slide in Read mode.
+- Your speaker notes are removed from a `--share` build. Add `--with-notes` to keep them in the file, for example when you also present from the same link. Readers only see notes if you put `share:` with `notes: true` in the settings at the top of your slide file.
 - The PDF is made while building, using Chrome or Chromium on your computer. If neither is found, the button offers the browser's own "Save as PDF" dialog instead. Set `MDECK_CHROME` to the browser's path if it is installed somewhere unusual.
 - Leave out `--self-contained` to get a folder with the HTML, the media files and `deck.pdf` side by side, which stays smaller when the talk has videos.
 - To stop recipients changing the look, put `share:` with `themes: false` in the settings at the top of your slide file.
