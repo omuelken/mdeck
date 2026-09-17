@@ -12,7 +12,8 @@
 .share-btn:hover { border-color: #5a5a5a; color: #fff; }
 .share-btn:disabled { opacity: 0.45; cursor: default; }
 .share-btn:disabled:hover { border-color: #3a3a3a; color: #e6e6e6; }
-.share-btn.is-primary { background: #27436a !important; border-color: #3d6094 !important; }
+.share-icon { flex: 0 0 auto; opacity: 0.85; }
+.share-btn.is-active .share-icon { opacity: 1; }
 .share-btn.is-active { background: #2a2a2a !important; border-color: #6a6a6a !important; }
 .share-select { padding: 6px 8px !important; border-radius: 6px; border: 1px solid #3a3a3a !important; background: #1b1b1b !important; color: #f0f0f0; }
 .share-main { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 0; }

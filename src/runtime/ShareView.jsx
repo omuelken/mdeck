@@ -21,6 +21,23 @@ function restoreLook(deckConfig) {
   return fallback
 }
 
+// Small line icons; every button carries one so the bar reads at a glance.
+const ICONS = {
+  menu: 'M4 7h16M4 12h16M4 17h16',
+  slides: 'M3 5h18v12H3zM8 21h8',
+  read: 'M4 4h16v16H4zM8 9h8M8 13h8M8 17h5',
+  look: 'M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-2 0-3 3 0 4-1 2-3 2-3a9 9 0 0 0-8-9zM7.5 11a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM11 7.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM16 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2z',
+  download: 'M12 4v11m0 0l-4-4m4 4l4-4M5 19h14',
+  present: 'M4 4h16v12H4zM12 16v4M8 20h8M9 7l5 3-5 3z',
+  prev: 'M15 5l-7 7 7 7',
+  next: 'M9 5l7 7-7 7',
+  link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.5 1.5M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5',
+  reset: 'M4 12a8 8 0 1 0 2.3-5.7L4 8.5M4 4v4.5h4.5',
+}
+function Icon({ name }) {
+  return <svg class="share-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ICONS[name]} /></svg>
+}
+
 function pdfLink() {
   return document.querySelector('link[rel="alternate"][type="application/pdf"]')?.getAttribute('href') ?? null
 }
@@ -133,25 +150,25 @@ export function ShareView({ deck, deckConfig }) {
 
   return <div class="share">
     <header class="share-top">
-      <button class="share-btn share-nav-toggle" onClick={() => setNavOpen(open => !open)} aria-label="Outline">☰</button>
+      <button class="share-btn share-nav-toggle" onClick={() => setNavOpen(open => !open)} aria-label="Outline"><Icon name="menu" /></button>
       <h1>{meta.title ?? 'Slides'}</h1>
       {metaLine && <span class="share-meta">{metaLine}</span>}
       <span class="share-spacer" />
       <span class="share-count">{index + 1} / {slides.length}</span>
-      <button class={`share-btn${mode === 'slides' ? ' is-active' : ''}`} onClick={() => switchMode('slides')}>Slides</button>
-      <button class={`share-btn${mode === 'read' ? ' is-active' : ''}`} onClick={() => switchMode('read')}>Read</button>
+      <button class={`share-btn${mode === 'slides' ? ' is-active' : ''}`} onClick={() => switchMode('slides')}><Icon name="slides" />Slides</button>
+      <button class={`share-btn${mode === 'read' ? ' is-active' : ''}`} onClick={() => switchMode('read')}><Icon name="read" />Read</button>
       {pickerAllowed && <div class="share-menu">
-        <button class={`share-btn${lookOpen ? ' is-active' : ''}`} onClick={() => setLookOpen(open => !open)}>Look ▾</button>
+        <button class={`share-btn${lookOpen ? ' is-active' : ''}`} onClick={() => setLookOpen(open => !open)}><Icon name="look" />Look</button>
         {lookOpen && <div class="share-menu-panel">
           <label>Theme<select class="share-select" value={look.design} onChange={e => setLook({ ...look, design: e.currentTarget.value })}>{Object.values(THEME_METAS).map(theme => <option key={theme.id} value={theme.id}>{theme.title}</option>)}</select></label>
           <label>Colors<select class="share-select" value={look.palette} onChange={e => setLook({ ...look, palette: e.currentTarget.value })}><option value="">Theme colors</option>{Object.values(PALETTES).map(palette => <option key={palette.id} value={palette.id}>{palette.title}</option>)}</select></label>
-          <button class="share-btn" disabled={isSenderLook} onClick={() => setLook(senderLook)} title={isSenderLook ? 'This is the look the deck was made with' : 'Return to the look the deck was made with'}>Reset to default</button>
+          <button class="share-btn" disabled={isSenderLook} onClick={() => setLook(senderLook)} title={isSenderLook ? 'This is the look the deck was made with' : 'Return to the look the deck was made with'}><Icon name="reset" />Reset to default</button>
         </div>}
       </div>}
       {pdf
-        ? <a class="share-btn is-primary" href={pdf} download={`${(meta.title ?? 'slides').replace(/[^\w.-]+/g, '-')}.pdf`}>Download PDF</a>
-        : <button class="share-btn is-primary" onClick={savePdf} title="Opens the browser's print dialog; choose Save as PDF">Save as PDF…</button>}
-      <a class="share-btn" href={`?view=deck#${encodeURIComponent(slides[index]?.id ?? String(index + 1))}`}>Present</a>
+        ? <a class="share-btn" href={pdf} download={`${(meta.title ?? 'slides').replace(/[^\w.-]+/g, '-')}.pdf`}><Icon name="download" />Download PDF</a>
+        : <button class="share-btn" onClick={savePdf} title="Opens the browser's print dialog; choose Save as PDF"><Icon name="download" />Save as PDF…</button>}
+      <a class="share-btn" href={`?view=deck#${encodeURIComponent(slides[index]?.id ?? String(index + 1))}`}><Icon name="present" />Present</a>
     </header>
     <div class="share-main" onClick={() => lookOpen && setLookOpen(false)}>
       <nav class={`share-nav${navOpen ? ' is-open' : ''}`} aria-label="Slides">
@@ -171,10 +188,10 @@ export function ShareView({ deck, deckConfig }) {
               </deck-stage>
             </div>
             <div class="share-bottom">
-              <button class="share-btn" onClick={() => stageRef.current?.prev('click')}>← Previous</button>
-              <button class="share-btn" onClick={() => stageRef.current?.next('click')}>Next →</button>
+              <button class="share-btn" onClick={() => stageRef.current?.prev('click')}><Icon name="prev" />Previous</button>
+              <button class="share-btn" onClick={() => stageRef.current?.next('click')}>Next<Icon name="next" /></button>
               <span class="share-spacer" />
-              <button class="share-btn" onClick={copyLink}>Copy link to this slide</button>
+              <button class="share-btn" onClick={copyLink}><Icon name="link" />Copy link to this slide</button>
             </div>
           </>
           : <div class="share-read" ref={readRef}>
