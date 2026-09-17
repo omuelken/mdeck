@@ -15,9 +15,18 @@ import { SlideRenderer, manifests } from '../templates/renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import './deck-stage.js'
 
+// One address parameter selects the view. `?view=share` and the shortcut
+// `?v=s` mean the same; the letters are d, s, p and a.
+const VIEW_ALIASES = { d: 'deck', s: 'share', p: 'presenter', a: 'audience' }
+export function requestedView(url, fallback = 'deck') {
+  const raw = url.searchParams.get('view') ?? url.searchParams.get('v')
+  if (raw == null) return fallback
+  return VIEW_ALIASES[raw] ?? raw
+}
+
 // Scope controls to this file and presenter session, including separate tabs.
 const controlUrl = new URL(window.location.href)
-if (controlUrl.searchParams.get('view') === 'presenter' && !controlUrl.searchParams.has('session')) {
+if (requestedView(controlUrl) === 'presenter' && !controlUrl.searchParams.has('session')) {
   controlUrl.searchParams.set('session', crypto.randomUUID())
   history.replaceState(null, '', controlUrl)
 }
@@ -53,6 +62,7 @@ function injectSpeakerNotes(slides) {
 // URL for the presenter's own iframe and preview pane (uses postMessage)
 function buildChildUrl(design, palette, accent, accent2, slideIndex = null) {
   const url = new URL(window.location.href)
+  url.searchParams.delete('v')
   url.searchParams.set('view', 'deck')
   url.searchParams.set('embedded', '1')
   if (design) url.searchParams.set('design', design)
@@ -69,6 +79,7 @@ function buildChildUrl(design, palette, accent, accent2, slideIndex = null) {
 function buildAudienceUrl(design, palette, accent, accent2, slideIndex = null) {
   const url = new URL(window.location.href)
   url.searchParams.delete('embedded')
+  url.searchParams.delete('v')
   url.searchParams.set('view', 'audience')
   if (design) url.searchParams.set('design', design)
   else url.searchParams.delete('design')
@@ -492,7 +503,7 @@ async function init() {
   const editorMode = url.searchParams.get('editor') === '1'
   // One switch selects the view: deck, share, presenter or audience.
   const defaultView = typeof __MDECK_DEFAULT_VIEW__ !== 'undefined' ? __MDECK_DEFAULT_VIEW__ : 'deck'
-  const view = url.searchParams.get('view') ?? defaultView
+  const view = requestedView(url, defaultView)
   const errors = validateDeck(parsed, { templates: manifests }).filter(d => d.severity === 'error')
   if (errors.length && !editorMode) {
     document.body.textContent = errors.map(d => `Line ${d.line}: ${d.message}`).join('\n')

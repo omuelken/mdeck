@@ -2,7 +2,7 @@
 
 ## 1.1.0 — 2026-09-17
 
-- One address parameter selects the view: `?view=deck`, `?view=share`, `?view=presenter`, `?view=audience`. The former `?presenter=1`, `?audience=1` and `?share=1` are gone; launchers, the presenter command and the editor use the new form.
+- One address parameter selects the view: `?view=deck`, `?view=share`, `?view=presenter`, `?view=audience`, with the short forms `?v=d`, `?v=s`, `?v=p`, `?v=a`. The former `?presenter=1`, `?audience=1` and `?share=1` are gone; launchers, the presenter command and the editor use the new form.
 - The reader's Look menu always offers "Reset to default", and every reader button has an icon and the same style.
 
 ## 1.0.2 — 2026-09-17

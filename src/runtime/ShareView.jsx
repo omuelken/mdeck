@@ -132,7 +132,8 @@ export function ShareView({ deck, deckConfig }) {
 
   const copyLink = async () => {
     const url = new URL(location.href)
-    url.searchParams.set('view', 'share')
+    url.searchParams.delete('view')
+    url.searchParams.set('v', 's')
     url.hash = encodeURIComponent(slides[index]?.id ?? String(index + 1))
     try { await navigator.clipboard.writeText(url.toString()); setToast('Link copied') } catch { setToast(url.toString()) }
     setTimeout(() => setToast(''), 1800)
