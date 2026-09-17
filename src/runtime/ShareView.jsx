@@ -145,7 +145,7 @@ export function ShareView({ deck, deckConfig }) {
         {lookOpen && <div class="share-menu-panel">
           <label>Theme<select class="share-select" value={look.design} onChange={e => setLook({ ...look, design: e.currentTarget.value })}>{Object.values(THEME_METAS).map(theme => <option key={theme.id} value={theme.id}>{theme.title}</option>)}</select></label>
           <label>Colors<select class="share-select" value={look.palette} onChange={e => setLook({ ...look, palette: e.currentTarget.value })}><option value="">Theme colors</option>{Object.values(PALETTES).map(palette => <option key={palette.id} value={palette.id}>{palette.title}</option>)}</select></label>
-          {!isSenderLook && <button class="share-btn" onClick={() => setLook(senderLook)}>Back to the sender's look</button>}
+          <button class="share-btn" disabled={isSenderLook} onClick={() => setLook(senderLook)} title={isSenderLook ? 'This is the look the deck was made with' : 'Return to the look the deck was made with'}>Reset to default</button>
         </div>}
       </div>}
       {pdf
