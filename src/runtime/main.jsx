@@ -17,7 +17,7 @@ import './deck-stage.js'
 
 // Scope controls to this file and presenter session, including separate tabs.
 const controlUrl = new URL(window.location.href)
-if (controlUrl.searchParams.get('presenter') === '1' && !controlUrl.searchParams.has('session')) {
+if (controlUrl.searchParams.get('view') === 'presenter' && !controlUrl.searchParams.has('session')) {
   controlUrl.searchParams.set('session', crypto.randomUUID())
   history.replaceState(null, '', controlUrl)
 }
@@ -53,8 +53,7 @@ function injectSpeakerNotes(slides) {
 // URL for the presenter's own iframe and preview pane (uses postMessage)
 function buildChildUrl(design, palette, accent, accent2, slideIndex = null) {
   const url = new URL(window.location.href)
-  url.searchParams.delete('presenter')
-  url.searchParams.delete('audience')
+  url.searchParams.set('view', 'deck')
   url.searchParams.set('embedded', '1')
   if (design) url.searchParams.set('design', design)
   else url.searchParams.delete('design')
@@ -66,12 +65,11 @@ function buildChildUrl(design, palette, accent, accent2, slideIndex = null) {
   return url.toString()
 }
 
-// URL for the audience window — ?audience=1 makes it listen on BroadcastChannel
+// URL for the audience window — view=audience makes it listen on BroadcastChannel
 function buildAudienceUrl(design, palette, accent, accent2, slideIndex = null) {
   const url = new URL(window.location.href)
-  url.searchParams.delete('presenter')
   url.searchParams.delete('embedded')
-  url.searchParams.set('audience', '1')
+  url.searchParams.set('view', 'audience')
   if (design) url.searchParams.set('design', design)
   else url.searchParams.delete('design')
   url.searchParams.set('palette', palette ?? '')
@@ -492,8 +490,9 @@ async function init() {
   const parsed = parseSlides(slidesContent)
   const url = new URL(window.location.href)
   const editorMode = url.searchParams.get('editor') === '1'
+  // One switch selects the view: deck, share, presenter or audience.
   const defaultView = typeof __MDECK_DEFAULT_VIEW__ !== 'undefined' ? __MDECK_DEFAULT_VIEW__ : 'deck'
-  const view = url.searchParams.get('view') ?? (url.searchParams.get('share') === '1' ? 'share' : defaultView)
+  const view = url.searchParams.get('view') ?? defaultView
   const errors = validateDeck(parsed, { templates: manifests }).filter(d => d.severity === 'error')
   if (errors.length && !editorMode) {
     document.body.textContent = errors.map(d => `Line ${d.line}: ${d.message}`).join('\n')
@@ -503,10 +502,10 @@ async function init() {
   const deckConfig = withConfigOverrides(parsed.deckConfig)
   setCalloutLabels(deckConfig)
   const { slides } = parsed
-  const presenterMode = url.searchParams.get('presenter') === '1'
-  const audienceMode  = url.searchParams.get('audience')  === '1'
+  const presenterMode = view === 'presenter'
+  const audienceMode  = view === 'audience'
   const embedded = url.searchParams.get('embedded') === '1'
-  const shareMode = view === 'share' && !presenterMode && !audienceMode && !editorMode && !embedded
+  const shareMode = view === 'share' && !editorMode && !embedded
 
   injectSpeakerNotes(slides)
 

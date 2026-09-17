@@ -201,7 +201,7 @@ function posixPresenterLauncher(htmlFilename) {
     '  exit 1',
     'fi',
     '',
-    `URL="http://127.0.0.1:$PORT/${page}?presenter=1"`,
+    `URL="http://127.0.0.1:$PORT/${page}?view=presenter"`,
     '"$PYTHON" -m http.server "$PORT" --bind 127.0.0.1 &',
     'SERVER_PID=$!',
     'cleanup() {',
@@ -255,7 +255,7 @@ function powershellPresenterLauncher(htmlFilename) {
     '  $Prefix = @()',
     '}',
     '',
-    `$Url = "http://127.0.0.1:$Port/${page}?presenter=1"`,
+    `$Url = "http://127.0.0.1:$Port/${page}?view=presenter"`,
     '$Arguments = $Prefix + @("-m", "http.server", "$Port", "--bind", "127.0.0.1")',
     '$Server = Start-Process -FilePath $Python -ArgumentList $Arguments -PassThru -NoNewWindow',
     'try {',
@@ -441,15 +441,15 @@ if (command === 'new') {
     publicDir: dirname(resolve(input)),
     server: {
       ...base.server,
-      open: '/?presenter=1',
+      open: '/?view=presenter',
     },
   })
   await server.listen()
   server.printUrls()
   console.log()
   ok(`Speaker view opened`)
-  tip('Audience view: /')
-  tip('Presenter view: /?presenter=1\n')
+  tip('Audience view: /?view=deck')
+  tip('Presenter view: /?view=presenter\n')
 
 // ── edit ──────────────────────────────────────────────────────────────────────
 } else if (command === 'edit') {

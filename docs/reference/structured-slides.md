@@ -111,7 +111,7 @@ Two custom websocket events keep the editor in step with the disk:
 `mdeck:deck-changed { hash }` when another program saved the deck, and
 `mdeck:extensions-changed { file }` when an extension file changed.
 
-The preview iframe runs the normal deck runtime with `?editor=1`. The editor
+The preview iframe runs the normal deck runtime with `?view=deck&editor=1`. The editor
 posts `{ deckSource: { source, selection, config, overrides } }` to it;
 `config` merges over the deck settings (for example to preview a palette) and
 `overrides` carries unsaved theme and palette manifests. The runtime answers

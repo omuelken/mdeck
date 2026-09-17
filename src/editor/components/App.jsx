@@ -111,7 +111,7 @@ export function App() {
       <span class="spacer" />
       <button class="btn is-small" onClick={actions.undo} disabled={!state.history.past.length} title="Undo (⌘Z)">Undo</button>
       <button class="btn is-small" onClick={actions.redo} disabled={!state.history.future.length} title="Redo (⇧⌘Z)">Redo</button>
-      <a class="btn is-small" href="/?presenter=1" target="_blank" rel="noopener">Present</a>
+      <a class="btn is-small" href="/?view=presenter" target="_blank" rel="noopener">Present</a>
       <a class="btn is-small" href="/" target="_blank" rel="noopener">Open deck</a>
     </header>
     {state.status === 'conflict' && <ConflictBanner onReload={() => actions.resolve('reload')} onOverwrite={() => actions.resolve('overwrite')} />}

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 — 2026-09-17
+
+- One address parameter selects the view: `?view=deck`, `?view=share`, `?view=presenter`, `?view=audience`. The former `?presenter=1`, `?audience=1` and `?share=1` are gone; launchers, the presenter command and the editor use the new form.
+- The reader's Look menu always offers "Reset to default", and every reader button has an icon and the same style.
+
 ## 1.0.2 — 2026-09-17
 
 - The reader view no longer shows speaker notes just because the file contains them. Notes appear in Read mode only when the deck sets `share.notes: true`, so one build can serve both the presenter and the people you send the link to.

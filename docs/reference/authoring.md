@@ -82,7 +82,8 @@ share:
   notes: true     # show speaker notes under each slide in Read mode
 ```
 
-`mdeck build --share` produces a file that opens in the reader view (outline,
+Views are chosen with one address parameter: `?view=deck`, `?view=share`,
+`?view=presenter`, `?view=audience`. `mdeck build --share` produces a file that opens in the reader view (outline,
 Read mode, look picker, PDF download). `share.themes: false` keeps the
 sender's look fixed. Speaker notes are removed from share builds unless the
 build uses `--with-notes`, and even then the reader shows them only when

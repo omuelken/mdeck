@@ -62,15 +62,15 @@ try {
     }
     throw new Error(`Condition did not become true: ${expression}`)
   }
-  const presenter = await target(url + '?presenter=1')
+  const presenter = await target(url + '?view=presenter')
   const stage = "document.querySelector('iframe')?.contentWindow?.document.querySelector('deck-stage')"
   await until(presenter, `${stage}?.length === 2`)
   // Let Preact install the presenter's event listeners.
   await delay(200)
   const session = await evaluate(presenter, "new URL(location.href).searchParams.get('session')")
   assert.ok(session)
-  const audience = await target(url + '?audience=1&session=' + session)
-  const other = await target(url + '?audience=1&session=another-session')
+  const audience = await target(url + '?view=audience&session=' + session)
+  const other = await target(url + '?view=audience&session=another-session')
   const audienceStage = "document.querySelector('deck-stage')"
   await until(audience, `${audienceStage}?.length === 2`)
   await until(other, `${audienceStage}?.length === 2`)
