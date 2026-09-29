@@ -56,6 +56,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `sections` | `all` | Whether to show section labels in the header: `all` or `none` |
 | `lang` | `en` | Language for built-in labels such as callout titles: `en` or `de` |
 | `callouts` | — | Override individual callout titles (see below) |
+| `components` | — | Extra folders of Preact components shared between decks, relative to the deck or starting with `~/` |
 | `params` | — | Theme-specific color/font overrides (see below) |
 | `share.themes` | `true` | Whether the reader view of a shared build offers other themes and palettes (see below) |
 | `share.notes` | `false` | Whether the reader view shows speaker notes under each slide in Read mode |

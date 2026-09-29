@@ -10,7 +10,7 @@ import QRCode from 'qrcode'
 import { loadRegistry } from '../extensions/discover.js'
 import { parseSlides } from '../core/parseSlides.js'
 import { checkDeck } from './check.js'
-import { deckComponentFiles } from './slidesPlugin.js'
+import { componentFiles } from './components.js'
 import { isAllowedRequest, send, readJson } from './editorPlugin.js'
 import { findChrome } from './chrome.js'
 import { frameworkRoot } from '../paths.js'
@@ -86,7 +86,7 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       themes: records('theme').map(record => ({ id: record.id, title: record.title, description: record.description ?? '', source: record.source })),
       palettes: records('palette').map(record => ({ id: record.id, title: record.title, description: record.description ?? '', source: record.source })),
       components: [
-        ...deckComponentFiles(abs).map(({ tag }) => ({ tag, source: 'deck', example: `<${tag} />` })),
+        ...componentFiles(abs).map(({ tag, source, folder }) => ({ tag, source, folder, example: `<${tag} />` })),
         ...BUILT_IN_COMPONENTS.map(component => ({ ...component, source: 'built-in' })),
       ],
       urls: { local: local[0] ?? null, network: phoneUrl },

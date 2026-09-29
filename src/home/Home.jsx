@@ -150,7 +150,7 @@ function BuildingBlocks({ info }) {
       <CopyButton text={layout.starter} label="Copy starter" />
     </li>)}</ul>}
     {tab === 'components' && <ul class="home-blocks">{info.components.map(component => <li key={component.tag} class="home-block">
-      <div><strong>&lt;{component.tag}&gt;</strong><span class="home-tag">{component.source === 'deck' ? 'this deck' : 'built-in'}</span></div>
+      <div><strong>&lt;{component.tag}&gt;</strong><span class="home-tag" title={component.folder}>{component.source === 'deck' ? 'this deck' : component.source === 'shared' ? component.folder : 'built-in'}</span></div>
       <pre>{component.example}</pre>
       <CopyButton text={component.example} />
     </li>)}</ul>}

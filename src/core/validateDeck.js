@@ -19,6 +19,7 @@ export function validateDeck(deck, { templates = null, themes = null, palettes =
     for (const key of Object.keys(config.share)) if (!['themes', 'notes'].includes(key)) add('invalid-config', `share.${key} is not a setting; available: themes, notes`, deck.configSource?.start, 'warning')
     for (const key of ['themes', 'notes']) if (config.share[key] != null && typeof config.share[key] !== 'boolean') add('invalid-config', `share.${key} must be true or false`, deck.configSource?.start)
   }
+  if (config.components != null && (!Array.isArray(config.components) || config.components.some(path => typeof path !== 'string' || !path.trim()))) add('invalid-config', 'components must be a list of folder paths', deck.configSource?.start)
   const enums = { institution: ['title', 'all', 'none'], authorDate: ['title', 'all', 'none'], pageNumbers: ['slides', 'all', 'none'], sections: ['all', 'none'] }
   for (const [key, values] of Object.entries(enums)) {
     if (config[key] != null && !values.includes(config[key])) add('invalid-config', `${key} must be one of: ${values.join(', ')}`, deck.configSource?.start)

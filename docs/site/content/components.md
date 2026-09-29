@@ -27,6 +27,25 @@ Use it in an ordinary slide or a named region:
 
 The default export must be a Preact component. Deck-local discovery supports `.jsx` files. Import hooks from `preact/hooks`; the build resolves Preact to the framework's instance.
 
+## Share components between decks
+
+To use the same components in several decks, keep them in one folder and list it in each deck's settings:
+
+```yaml
+---
+design: neue
+components:
+  - ../shared-components
+  - ~/mdeck-components
+---
+```
+
+Paths are relative to the deck's Markdown file; `~/` starts in your home folder. Every `.jsx` file in a listed folder becomes a tag, just like the deck's own `components` folder. Helper files in subfolders can be imported from those components.
+
+When two folders have a component with the same name, the deck's own `components` folder wins, then the listed folders in their order, then mdeck's built-in components. Edits to a shared component reload every deck that is open in `mdeck dev`. `mdeck check` reports a listed folder that does not exist, and the launch page shows which folder each component comes from.
+
+Builds contain the component code, so a built presentation does not need the shared folder. Someone who gets your slide file to work on needs that folder too.
+
 ## How content reaches a component
 
 HTML attributes arrive as string props. Text between the opening and closing tags arrives as the `children` string. The HTML-to-component bridge uses `textContent`; it does not pass a nested JSX tree.

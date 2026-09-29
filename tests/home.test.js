@@ -38,7 +38,7 @@ test('info describes the deck, its check results, building blocks and addresses'
   assert.deepEqual(info.diagnostics.filter(d => d.severity === 'error'), [])
   assert.ok(info.layouts.some(layout => layout.id === 'comparison' && layout.source !== 'built-in'))
   assert.ok(info.layouts.every(layout => layout.starter.length > 0))
-  assert.deepEqual(info.components.find(c => c.tag === 'chart'), { tag: 'chart', source: 'deck', example: '<chart />' })
+  assert.deepEqual(info.components.find(c => c.tag === 'chart'), { tag: 'chart', source: 'deck', folder: 'components', example: '<chart />' })
   assert.equal(info.urls.network, 'http://192.168.1.20:5173/')
   assert.match(info.phoneQr, /^<svg/)
   assert.deepEqual(Object.keys(info.outputs), ['folder', 'share', 'pdf'])

@@ -4,6 +4,7 @@ import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, extensionRoots, manifestsOf } from '../extensions/discover.js'
 import { stripNotes as stripNotesFrom } from '../core/editDeck.js'
+import { componentFolders, componentFiles } from './components.js'
 import { fileURLToPath } from 'node:url'
 import { marked } from 'marked'
 
@@ -131,28 +132,6 @@ function maybeInlineAssets(markdown, abs, { inlineImages, inlineMedia }) {
   return out
 }
 
-// ─── Deck-local components ────────────────────────────────────────────────
-// A deck may ship its own Preact components in a `components/` folder next to
-// the .md file. Each `*.jsx` file's default export is registered under its
-// lowercased filename, so `components/Tokenizer.jsx` becomes `<tokenizer>`.
-// Deck components override built-ins of the same name.
-
-function deckComponentsDir(abs) {
-  return resolve(dirname(abs), 'components')
-}
-
-export function deckComponentFiles(abs) {
-  const dir = deckComponentsDir(abs)
-  if (!existsSync(dir)) return []
-  return readdirSync(dir)
-    .filter(name => /\.jsx$/.test(name))
-    .sort()
-    .map(name => ({
-      tag: basename(name, '.jsx').toLowerCase(),
-      file: resolve(dir, name),
-    }))
-}
-
 // ─── Extension registry module ────────────────────────────────────────────
 // Templates, themes and palettes are discovered in Node and handed to the
 // browser as one generated module. Template layouts and styles are imported
@@ -178,8 +157,20 @@ export function generateExtensionsModule(registry) {
 // extension changes are announced instead of forcing a reload.
 export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false } = {}) {
   const abs = resolve(slidesPath)
-  const watchDirs = [...extensionRoots(abs).map(root => root.dir), deckComponentsDir(abs)]
-  const isWatched = file => watchDirs.some(dir => resolve(file).startsWith(dir + sep))
+  const extensionDirs = extensionRoots(abs).map(root => root.dir)
+  let componentDirs = componentFolders(abs).map(folder => folder.dir)
+  const watchDirs = () => [...extensionDirs, ...componentDirs]
+  const isWatched = file => watchDirs().some(dir => resolve(file).startsWith(dir + sep))
+  // A changed `components:` list takes effect without restarting the server.
+  const followComponentFolders = server => {
+    const next = componentFolders(abs).map(folder => folder.dir)
+    if (next.join('\n') === componentDirs.join('\n')) return false
+    componentDirs = next
+    server.watcher.add(next)
+    const allow = server.config.server.fs.allow
+    for (const dir of next) if (!allow.includes(dir)) allow.push(dir)
+    return true
+  }
   const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID]
   const invalidate = (server, ids) => {
     for (const id of ids) {
@@ -196,7 +187,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
   return {
     name: 'vite-plugin-slides',
     configureServer(server) {
-      server.watcher.add([abs, ...watchDirs])
+      server.watcher.add([abs, ...watchDirs()])
       const refresh = file => { if (isWatched(file)) reload(server, ALL_IDS, resolve(file)) }
       for (const event of ['add', 'unlink', 'addDir', 'unlinkDir']) server.watcher.on(event, refresh)
     },
@@ -227,7 +218,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         return generateExtensionsModule(registry)
       }
       if (id === RESOLVED_COMPONENTS_ID) {
-        const files = deckComponentFiles(abs)
+        const files = componentFiles(abs)
         const imports = files
           .map((f, i) => `import C${i} from ${JSON.stringify(f.file)}`)
           .join('\n')
@@ -244,6 +235,10 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         return []
       }
       if (changed === abs) {
+        if (followComponentFolders(server)) {
+          reload(server, ALL_IDS, changed)
+          return []
+        }
         invalidate(server, [RESOLVED_ID])
         if (editor) return []
         server.ws.send({ type: 'full-reload' })
