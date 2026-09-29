@@ -177,4 +177,6 @@ deck-stage { background: #000; }
 @media print {
   html, body, deck-stage { background: #fff !important; }
   [data-step] { opacity: 1 !important; }
+  /* Pages are captured right after print mode reveals everything. */
+  *, *::before, *::after { transition: none !important; }
 }

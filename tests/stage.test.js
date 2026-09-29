@@ -7,13 +7,14 @@ import { readFileSync } from 'node:fs'
 function stageFixture() {
   let Stage
   const messages = []
+  const events = []
   const window = { postMessage: message => messages.push(message) }
   window.parent = window
   vm.runInNewContext(readFileSync(new URL('../src/runtime/deck-stage.js', import.meta.url), 'utf8'), {
-    HTMLElement: class { attachShadow() { return {} } dispatchEvent() {} },
+    HTMLElement: class { attachShadow() { return {} } dispatchEvent(event) { events.push(event) } toggleAttribute(name, on) { this[name] = on } },
     customElements: { get() {}, define(name, value) { Stage = value } },
     location: { search: '', hash: '' }, history: { replaceState() {} },
-    URLSearchParams, window, CustomEvent: class {},
+    URLSearchParams, window, CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail } },
   })
   const stage = new Stage()
   const step = () => ({ dataset: { step: '0' }, setAttribute() { this.visible = true }, removeAttribute() { this.visible = false } })
@@ -21,7 +22,7 @@ function stageFixture() {
     const steps = [step(), step()]
     return { dataset: { slideId: id }, steps, querySelectorAll: () => steps, setAttribute() {}, removeAttribute() {} }
   })
-  return { stage, messages }
+  return { stage, messages, events }
 }
 
 test('reveals broadcast state and an audience applies it on the same slide', () => {
@@ -54,4 +55,19 @@ test('state resolves stable IDs and clamps invalid reveal positions', () => {
   assert.equal(stage.state.step, 1)
   stage.setState({ index: -10, step: 0 })
   assert.equal(stage.index, 1)
+})
+
+test('print mode reveals every step and restores the positions afterwards', () => {
+  const { stage, events } = stageFixture()
+  stage.next()
+  stage.printing = true
+  assert.equal(stage['data-deck-print'], true)
+  assert.equal(events.at(-1).type, 'printchange')
+  assert.equal(events.at(-1).detail.printing, true)
+  assert.ok(stage._slides.every(slide => slide.steps.every(step => step.visible)))
+  stage.printing = false
+  assert.equal(stage['data-deck-print'], false)
+  assert.equal(stage._slides[0].steps[0].visible, true)
+  assert.equal(stage._slides[0].steps[1].visible, false)
+  assert.equal(stage._slides[1].steps[0].visible, false)
 })

@@ -13,6 +13,8 @@ export async function renderPdf({ htmlFile, output, chrome = findChrome(), timeo
   try {
     const page = await browser.open(`${encodeURIComponent(basename(html))}?view=deck&embedded=1`)
     await page.waitForDeck()
+    // Reveal every step and let interactive slides render their final state.
+    await page.evaluate("document.querySelector('deck-stage').printing = true")
     await delay(300)
     const { data } = await page.send('Page.printToPDF', { printBackground: true, preferCSSPageSize: true, displayHeaderFooter: false, marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0 })
     writeFileSync(output, Buffer.from(data, 'base64'))

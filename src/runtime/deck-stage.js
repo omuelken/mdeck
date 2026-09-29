@@ -13,7 +13,9 @@
  *      PPTX exporter sets this so its DOM capture sees unscaled geometry.
  *  (f) print — `@media print` lays every slide out as its own page at the
  *      design size, so the browser's Print → Save as PDF produces a clean
- *      one-page-per-slide PDF with no extra setup.
+ *      one-page-per-slide PDF with no extra setup. While printing, every
+ *      step on every slide is revealed and the stage carries the
+ *      `data-deck-print` attribute (see "Print mode" below).
  *
  * Slides are HIDDEN, not unmounted. Non-active slides stay in the DOM with
  * `visibility: hidden` + `opacity: 0`, so their state (videos, iframes,
@@ -32,6 +34,16 @@
  *     e.detail.previousSlide // the prior slide element, or null on init
  *     e.detail.reason        // 'init' | 'keyboard' | 'click' | 'tap' | 'api'
  *   });
+ *
+ * Print mode — before printing (the browser's `beforeprint`, or an explicit
+ * `stage.printing = true` from the PDF renderer) the stage reveals all steps,
+ * sets `data-deck-print` on itself and dispatches a `printchange` event with
+ * `detail.printing`. Interactive slide code that normally waits for its slide
+ * to become active should render its final state while printing:
+ *
+ *   stage.addEventListener('printchange', e => render(e.detail.printing));
+ *
+ * Leaving print mode restores each slide's step position.
  *
  * Persistence: none at the deck level. The host app keeps the current slide
  * in its own URL (?slide=) and re-delivers it via location.hash on load, so a
@@ -286,6 +298,8 @@
       this._onMouseMove = this._onMouseMove.bind(this);
       this._onTapBack = this._onTapBack.bind(this);
       this._onTapForward = this._onTapForward.bind(this);
+      this._onBeforePrint = () => { this.printing = true; };
+      this._onAfterPrint = () => { this.printing = false; };
     }
 
     get designWidth() {
@@ -303,6 +317,8 @@
       if (typeof ResizeObserver !== 'undefined') { this._resizeObserver = new ResizeObserver(() => this._fit()); this._resizeObserver.observe(this); }
       window.addEventListener('resize', this._onResize);
       window.addEventListener('mousemove', this._onMouseMove, { passive: true });
+      window.addEventListener('beforeprint', this._onBeforePrint);
+      window.addEventListener('afterprint', this._onAfterPrint);
       // Initial collection + layout happens via slotchange, which fires on mount.
     }
 
@@ -311,6 +327,8 @@
       this._resizeObserver?.disconnect();
       window.removeEventListener('resize', this._onResize);
       window.removeEventListener('mousemove', this._onMouseMove);
+      window.removeEventListener('beforeprint', this._onBeforePrint);
+      window.removeEventListener('afterprint', this._onAfterPrint);
       if (this._hideTimer) clearTimeout(this._hideTimer);
       if (this._mouseIdleTimer) clearTimeout(this._mouseIdleTimer);
     }
@@ -657,7 +675,7 @@
       const slide = this._slides[slideIndex];
       if (!slide) return;
       const steps = this._getSteps(slide);
-      const curr  = this._stepMap.get(slideIndex) ?? -1;
+      const curr  = this._printing ? steps.length - 1 : (this._stepMap.get(slideIndex) ?? -1);
       steps.forEach((el, i) =>
         i <= curr ? el.setAttribute('data-step-visible', '') : el.removeAttribute('data-step-visible')
       );
@@ -683,6 +701,21 @@
     get index() { return this._index; }
     /** Total slide count. */
     get length() { return this._slides.length; }
+    /** True while the deck is laid out for print or PDF. */
+    get printing() { return !!this._printing; }
+    /** Enter or leave print mode: reveal every step and tell slide code to show its final state. */
+    set printing(on) {
+      on = !!on;
+      if (on === this.printing) return;
+      this._printing = on;
+      this.toggleAttribute('data-deck-print', on);
+      this._slides.forEach((_, i) => this._applySteps(i));
+      this.dispatchEvent(new CustomEvent('printchange', {
+        detail: { printing: on },
+        bubbles: true,
+        composed: true,
+      }));
+    }
     /** Programmatically navigate to a specific slide (no step checks). */
     goTo(i) { this._go(i, 'api'); }
     /** Advance: reveals next step if the current slide has unrevealed steps, else goes to next slide. */
