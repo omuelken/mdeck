@@ -15,7 +15,7 @@
  *      design size, so the browser's Print → Save as PDF produces a clean
  *      one-page-per-slide PDF with no extra setup. While printing, every
  *      step on every slide is revealed and the stage carries the
- *      `data-deck-print` attribute (see "Print mode" below).
+ *      `data-deck-static` attribute (see "Print mode" below).
  *
  * Slides are HIDDEN, not unmounted. Non-active slides stay in the DOM with
  * `visibility: hidden` + `opacity: 0`, so their state (videos, iframes,
@@ -37,11 +37,13 @@
  *
  * Print mode — before printing (the browser's `beforeprint`, or an explicit
  * `stage.printing = true` from the PDF renderer) the stage reveals all steps,
- * sets `data-deck-print` on itself and dispatches a `printchange` event with
- * `detail.printing`. Interactive slide code that normally waits for its slide
- * to become active should render its final state while printing:
+ * sets `data-deck-static` on itself and dispatches a `printchange` event with
+ * `detail.printing`. The reader's Read mode marks its slides the same way.
+ * Interactive slide code that normally waits for its slide or its steps
+ * should render its finished state inside `[data-deck-static]`:
  *
- *   stage.addEventListener('printchange', e => render(e.detail.printing));
+ *   const finished = () => !!el.closest('[data-deck-static]');
+ *   stage?.addEventListener('printchange', () => render(finished()));
  *
  * Leaving print mode restores each slide's step position.
  *
@@ -708,7 +710,7 @@
       on = !!on;
       if (on === this.printing) return;
       this._printing = on;
-      this.toggleAttribute('data-deck-print', on);
+      this.toggleAttribute('data-deck-static', on);
       this._slides.forEach((_, i) => this._applySteps(i));
       this.dispatchEvent(new CustomEvent('printchange', {
         detail: { printing: on },

@@ -61,12 +61,12 @@ test('print mode reveals every step and restores the positions afterwards', () =
   const { stage, events } = stageFixture()
   stage.next()
   stage.printing = true
-  assert.equal(stage['data-deck-print'], true)
+  assert.equal(stage['data-deck-static'], true)
   assert.equal(events.at(-1).type, 'printchange')
   assert.equal(events.at(-1).detail.printing, true)
   assert.ok(stage._slides.every(slide => slide.steps.every(step => step.visible)))
   stage.printing = false
-  assert.equal(stage['data-deck-print'], false)
+  assert.equal(stage['data-deck-static'], false)
   assert.equal(stage._slides[0].steps[0].visible, true)
   assert.equal(stage._slides[0].steps[1].visible, false)
   assert.equal(stage._slides[1].steps[0].visible, false)

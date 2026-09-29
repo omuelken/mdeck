@@ -39,21 +39,21 @@ Import assets from JSX so Vite can include them in builds. Install extra depende
 
 Slides stay mounted while navigating. For media or ongoing work, listen to the `slidechange` event on `document.querySelector('deck-stage')` and check whether `event.detail.slide` contains your component. Clean up listeners when the component unmounts.
 
-## Print and PDF
+## Print, PDF and Read mode
 
-In a PDF every slide is on the page at once, and none of them is the active slide. Before printing, the stage reveals every step, sets the `data-deck-print` attribute on itself and dispatches a `printchange` event. A component that builds up step by step, or waits for its slide, should then show its finished state:
+In a PDF, and in the reader's Read mode, every slide is shown at once and none of them is the active slide. There, mdeck reveals every step and places the slide inside an element with the `data-deck-static` attribute. A component that builds up step by step, or waits for its slide, should then show its finished state. Printing can start while the deck is open, so also listen for the stage's `printchange` event:
 
 ```jsx
 useEffect(() => {
   const stage = document.querySelector('deck-stage')
-  const sync = () => setFinished(stage?.printing)
+  const sync = () => setFinished(!!ref.current.closest('[data-deck-static]'))
   sync()
   stage?.addEventListener('printchange', sync)
   return () => stage?.removeEventListener('printchange', sync)
 }, [])
 ```
 
-Transitions are turned off in print, so the finished state appears immediately. Afterwards the stage puts each slide back to the step it was on.
+Transitions are turned off in print, so the finished state appears immediately. After printing, the stage puts each slide back to the step it was on.
 
 ## When to use a template instead
 

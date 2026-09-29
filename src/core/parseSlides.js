@@ -3,7 +3,7 @@ import { sourceLines, fenceState, scanDirectives, diagnostic } from './source.js
 export { sourceLines, fenceState } from './source.js'
 
 export const DECK_KEYS = new Set('design palette accent accent2 params meta width height institution authorDate pageNumbers sections lang callouts share'.split(' '))
-export const SLIDE_KEYS = new Set('layout id section number part description label image alt overlay eyebrow attribution note notes props'.split(' '))
+export const SLIDE_KEYS = new Set('layout id title section number part description label image alt overlay eyebrow attribution note notes props'.split(' '))
 
 export function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)

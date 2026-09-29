@@ -35,7 +35,7 @@ export function validateDeck(deck, { templates = null, themes = null, palettes =
     if (typeof slide.id !== 'string' || !/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(slide.id)) add('invalid-id', 'Slide IDs must start with a letter and contain letters, digits, hyphens or underscores', offset)
     if (ids.has(slide.id)) add('duplicate-id', `Duplicate slide ID "${slide.id}"`, offset)
     ids.add(slide.id)
-    for (const key of ['layout', 'image', 'alt', 'section', 'part', 'eyebrow', 'attribution', 'notes', 'note']) {
+    for (const key of ['layout', 'title', 'image', 'alt', 'section', 'part', 'eyebrow', 'attribution', 'notes', 'note']) {
       if (slide.meta[key] != null && typeof slide.meta[key] !== 'string') add('invalid-metadata', `${key} must be a string`, offset)
     }
     if (slide.meta.props != null && !isPlainObject(slide.meta.props)) add('invalid-props', 'props must be a mapping', offset)

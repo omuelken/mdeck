@@ -94,6 +94,12 @@ export function ShareView({ deck, deckConfig }) {
     return () => stage.removeEventListener('slidechange', onChange)
   }, [mode])
 
+  // Read mode shows every slide finished: all steps revealed, as in print.
+  useEffect(() => {
+    if (mode !== 'read' || !readRef.current) return
+    readRef.current.querySelectorAll('[data-step]').forEach(step => step.setAttribute('data-step-visible', ''))
+  }, [mode])
+
   useEffect(() => {
     if (mode !== 'read' || !readRef.current) return
     const measure = () => { const page = readRef.current?.querySelector('.share-page'); if (page) setReadScale(page.clientWidth / width) }
@@ -195,7 +201,7 @@ export function ShareView({ deck, deckConfig }) {
               <button class="share-btn" onClick={copyLink}><Icon name="link" />Copy link to this slide</button>
             </div>
           </>
-          : <div class="share-read" ref={readRef}>
+          : <div class="share-read" ref={readRef} data-deck-static>
             {slides.map((slide, i) => <ReadPage key={slide.id} slide={slide} index={i} total={slides.length} deckConfig={deckConfig} width={width} height={height} scale={readScale} showNotes={showNotes} />)}
           </div>}
       </section>

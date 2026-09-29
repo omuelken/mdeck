@@ -142,6 +142,7 @@ description: A short description shown under the title.
 |---|---|
 | `layout` | Slide layout (see below) |
 | `section` | Section label shown in the slide header (auto-propagated — see below) |
+| `title` | Name in the outline and reader navigation, for slides without a heading (not shown on the slide) |
 
 ### Section labels
 

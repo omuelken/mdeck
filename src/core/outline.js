@@ -14,6 +14,7 @@ function firstProseLine(content = '') {
 }
 
 export function slideTitle(slide, index, manifest) {
+  if (slide.meta.title) return slide.meta.title
   const heading = slide.content?.match(/^\s*#{1,3}\s+(.+?)\s*#*\s*$/m)?.[1]
   if (heading) return heading.replace(/[*_`]/g, '')
   const first = firstProseLine(slide.content)

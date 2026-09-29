@@ -34,6 +34,9 @@ test('the outline names slides and marks chapters', () => {
   assert.deepEqual(outline.map(item => [item.title, item.chapter, item.part]), [['Welcome', false, null], ['Basics', true, 'Part One'], ['Emphasis stays plain', false, null], ['Big statement', false, null]])
   const noisy = parseSlides('```js\ncode\n```\n\nAfter the code\n---\n| a | b |\n|---|---|\n---\n<qrcode value="x" />\n')
   assert.deepEqual(deckOutline(noisy).map(item => item.title), ['After the code', 'Slide 2', 'Slide 3'])
+  const named = parseSlides('---\ndesign: neue\n---\n---\ntitle: Network diagram\n---\n<netzwerk />\n')
+  assert.deepEqual(deckOutline(named).map(item => item.title), ['Network diagram'])
+  assert.deepEqual(validateDeck(parseSlides('---\ndesign: neue\n---\n---\ntitle: 3\n---\n# A')).map(d => d.code), ['invalid-metadata'])
 })
 
 test('share settings are validated', () => {
