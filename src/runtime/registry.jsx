@@ -1,6 +1,7 @@
 import CodeBlock from '../components/CodeBlock.jsx'
 import QrCode from '../components/QrCode.jsx'
 import VideoPlayer from '../components/VideoPlayer.jsx'
+import Poll from '../components/Poll.jsx'
 import deckComponents from 'virtual:deck-components'
 
 // Maps lowercase HTML tag names to Preact components.
@@ -14,5 +15,6 @@ export const registry = {
   codeblock: CodeBlock,
   qrcode: QrCode,
   videoplayer: VideoPlayer,
+  poll: Poll,
   ...deckComponents,
 }

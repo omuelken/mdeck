@@ -193,6 +193,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     },
     resolveId(id) {
       if (id === 'mdeck/template-api') return fileURLToPath(new URL('../templates/templateApi.jsx', import.meta.url))
+      if (id === 'mdeck/live') return fileURLToPath(new URL('../live/client.js', import.meta.url))
       if (id === VIRTUAL_ID) return RESOLVED_ID
       if (id === COMPONENTS_ID) return RESOLVED_COMPONENTS_ID
       if (id === EXTENSIONS_ID) return RESOLVED_EXTENSIONS_ID

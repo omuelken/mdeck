@@ -13,6 +13,7 @@ Type these commands in a terminal. Replace `my-talk.md` with your own slide file
 | `mdeck check my-talk.md` | Check settings and look for missing local files |
 | `mdeck build my-talk.md` | Make a shareable presentation in the `dist` folder |
 | `mdeck preview` | Open the last build from the current folder |
+| `mdeck live` | Run a room server for polls in hosted presentations ([details](audience.html#use-it-in-a-real-session)) |
 | `mdeck docs` | Open this documentation |
 | `mdeck --help` | Show a short list of commands |
 

@@ -10,14 +10,16 @@ import { S, PaletteSwatches } from './chrome.jsx'
 import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
 import { createEditorBridge } from './editorBridge.js'
 import { ShareView } from './ShareView.jsx'
+import { RespondView } from './RespondView.jsx'
+import { configureLive } from '../live/client.js'
 import './share.css'
 import { SlideRenderer, manifests } from '../templates/renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import './deck-stage.js'
 
 // One address parameter selects the view. `?view=share` and the shortcut
-// `?v=s` mean the same; the letters are d, s, p and a.
-const VIEW_ALIASES = { d: 'deck', s: 'share', p: 'presenter', a: 'audience' }
+// `?v=s` mean the same; the letters are d, s, p, a and r.
+const VIEW_ALIASES = { d: 'deck', s: 'share', p: 'presenter', a: 'audience', r: 'respond' }
 export function requestedView(url, fallback = 'deck') {
   const raw = url.searchParams.get('view') ?? url.searchParams.get('v')
   if (raw == null) return fallback
@@ -512,11 +514,20 @@ async function init() {
   }
   const deckConfig = withConfigOverrides(parsed.deckConfig)
   setCalloutLabels(deckConfig)
+  configureLive(deckConfig)
   const { slides } = parsed
   const presenterMode = view === 'presenter'
   const audienceMode  = view === 'audience'
   const embedded = url.searchParams.get('embedded') === '1'
   const shareMode = view === 'share' && !editorMode && !embedded
+
+  // A phone that scanned a slide's QR code: only that component, no slides.
+  if (view === 'respond' && !editorMode) {
+    await loadTheme(deckConfig)
+    document.body.className = 'respond-page'
+    render(<RespondView deck={parsed} deckConfig={deckConfig} room={url.searchParams.get('room')} />, document.body)
+    return
+  }
 
   injectSpeakerNotes(slides)
 

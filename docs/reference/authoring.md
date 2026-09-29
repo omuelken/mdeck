@@ -56,6 +56,9 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `sections` | `all` | Whether to show section labels in the header: `all` or `none` |
 | `lang` | `en` | Language for built-in labels such as callout titles: `en` or `de` |
 | `callouts` | — | Override individual callout titles (see below) |
+| `live.server` | the dev server | Room server for polls and other audience activities, e.g. `https://example.org/live` |
+| `live.audience` | this page | Where phones open the slides, when you present from elsewhere |
+| `live.id` | from the title | Keeps the rooms of different decks apart on a shared room server |
 | `components` | — | Extra folders of Preact components shared between decks, relative to the deck or starting with `~/` |
 | `params` | — | Theme-specific color/font overrides (see below) |
 | `share.themes` | `true` | Whether the reader view of a shared build offers other themes and palettes (see below) |

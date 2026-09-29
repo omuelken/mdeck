@@ -19,6 +19,7 @@ const BUILT_IN_COMPONENTS = [
   { tag: 'codeblock', example: '```python live copy\nprint("hello")\n```' },
   { tag: 'qrcode', example: '<qrcode url="https://example.org" size="240" />' },
   { tag: 'videoplayer', example: '<videoplayer src="./media/clip.mp4" />' },
+  { tag: 'poll', example: '<poll room="lunch" options="Mensa|Thai|Pizza" />' },
 ]
 
 // Each output is one ordinary CLI run beside the deck, so the launch page

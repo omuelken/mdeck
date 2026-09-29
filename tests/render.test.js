@@ -6,8 +6,13 @@ import { slidesPlugin } from '../src/build/slidesPlugin.js'
 import { parseSlides } from '../src/core/parseSlides.js'
 import { marked } from 'marked'
 import { createServer as createHttpServer } from 'node:http'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { resolve } from 'node:path'
 
-const server = await createServer({ configFile: false, plugins: [preact(), slidesPlugin('examples/custom-templates/slides.md')], server: { middlewareMode: true, hmr: { server: createHttpServer() } }, optimizeDeps: { noDiscovery: true, include: [] }, appType: 'custom' })
+// Own Vite cache per test file: files run in parallel and would otherwise
+// rebuild the shared node_modules/.vite cache at the same time.
+const server = await createServer({ configFile: false, plugins: [preact(), slidesPlugin('examples/custom-templates/slides.md')], server: { middlewareMode: true, hmr: { server: createHttpServer() } }, optimizeDeps: { noDiscovery: true, include: [] }, cacheDir: mkdtempSync(resolve(tmpdir(), 'mdeck-vite-cache-')), appType: 'custom' })
 after(() => server.close())
 await server.ssrLoadModule('/src/runtime/markedSetup.js')
 const { SlideRenderer, manifests } = await server.ssrLoadModule('/src/templates/renderSlide.jsx')

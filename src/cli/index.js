@@ -13,6 +13,7 @@ import { BACKUP_DIR } from '../build/editorPlugin.js'
 import { createEditorServer } from '../build/editorServer.js'
 import { homePlugin } from '../build/homePlugin.js'
 import { checkDeck } from '../build/check.js'
+import { livePlugin, startLiveServer } from '../live/server.js'
 import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
 import { installSkill, readSkill, TARGETS } from './skill.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
@@ -301,6 +302,7 @@ const HELP = `
     ${c.green}mdeck present${c.reset} <slides.md>              Open speaker/presenter view (same options)
     ${c.green}mdeck edit${c.reset} <slides.md>                 Edit slides in the browser (experimental); saves to the file
       --no-open   --port <number>
+    ${c.green}mdeck live${c.reset} [--port 8787] [--host [addr]]   Room server for polls on hosted decks (MDECK_LIVE_KEY)
     ${c.green}mdeck new${c.reset}                              Interactive deck scaffolding wizard
     ${c.green}mdeck build${c.reset} <slides.md> [-o out.html]
                                               Build HTML + copied local assets
@@ -441,7 +443,7 @@ if (command === 'new') {
   }
   const server = await createServer({
     ...base,
-    plugins: [...base.plugins, homePlugin(abs, { services })],
+    plugins: [...base.plugins, homePlugin(abs, { services }), livePlugin()],
     publicDir: dirname(abs),
     server: {
       ...base.server,
@@ -460,6 +462,23 @@ if (command === 'new') {
   console.log()
   ok(`Watching ${c.cyan}${abs}${c.reset}`)
   tip('Edit and save to reload.\n')
+
+// ── live ──────────────────────────────────────────────────────────────────────
+} else if (command === 'live') {
+  const port = portOption() ?? 8787
+  const hostIndex = argv.indexOf('--host')
+  const host = hostIndex >= 0 && argv[hostIndex + 1] && !argv[hostIndex + 1].startsWith('-') ? argv[hostIndex + 1] : hostIndex >= 0 ? '0.0.0.0' : '127.0.0.1'
+  const key = process.env.MDECK_LIVE_KEY || null
+  try {
+    const live = await startLiveServer({ port, host, key })
+    ok(`Room server: ${c.cyan}${live.url}${c.reset}`)
+    tip('Point decks at it with  live: { server: https://your.host/live }  behind a web server.')
+    tip(key ? 'Presenters reset rooms after opening the deck once with ?livekey=<MDECK_LIVE_KEY>.' : 'Set MDECK_LIVE_KEY to let presenters reset rooms.')
+    tip('Rooms live in memory only. Press Ctrl+C to stop.\n')
+    const stop = async () => { await live.close(); process.exit(0) }
+    process.once('SIGINT', stop)
+    process.once('SIGTERM', stop)
+  } catch (error) { err(error.message); process.exitCode = 1 }
 
 // ── edit ──────────────────────────────────────────────────────────────────────
 } else if (command === 'edit') {

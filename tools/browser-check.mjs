@@ -3,7 +3,7 @@
 //   npm run test:browser
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -12,10 +12,11 @@ import { createServer } from 'vite'
 import { launchChrome } from '../src/build/chrome.js'
 import { baseConfig } from '../src/build/config.js'
 import { homePlugin } from '../src/build/homePlugin.js'
+import { livePlugin } from '../src/live/server.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-browser-check-'))
-let browser, dev
+let browser, dev, pollDev
 try {
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-templates/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   browser = await launchChrome({ dir: temp, timeout: 45000 })
@@ -55,9 +56,25 @@ try {
   await until(home, "document.querySelectorAll('.home-tile').length === 5 && !!document.querySelector('.home-header h1')?.textContent")
   assert.equal(await home.evaluate("document.querySelectorAll('.home-output').length"), 3)
   assert.equal(await home.evaluate("[...document.querySelectorAll('.home-block strong')].some(el => el.textContent === 'Side-by-side comparison')"), true)
-  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page.')
+
+  // A poll: a phone's vote reaches the slide through the dev server's rooms.
+  const pollDeck = resolve(temp, 'poll.md')
+  writeFileSync(pollDeck, '---\ndesign: neue\nmeta:\n  title: Poll check\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n')
+  const pollConfig = baseConfig(pollDeck)
+  pollDev = await createServer({ ...pollConfig, plugins: [...pollConfig.plugins, livePlugin()], server: { ...pollConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  await pollDev.listen()
+  const pollBase = pollDev.resolvedUrls.local[0]
+  const projector = await open(new URL('?view=deck', pollBase).href)
+  await until(projector, "!!document.querySelector('.poll-dot.is-live')")
+  const phone = await open(new URL('?view=respond&room=lunch', pollBase).href)
+  await until(phone, "document.querySelectorAll('.poll-options button').length === 2 && document.querySelector('.poll-answer h1')?.textContent === 'Lunch?'")
+  await phone.evaluate("document.querySelectorAll('.poll-options button')[1].click()")
+  await until(projector, "[...document.querySelectorAll('.poll-count')].map(e => e.textContent).join() === '0,1'")
+  await until(phone, "document.querySelector('.poll-status').textContent.includes('Thai')")
+  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll.')
 } finally {
   await browser?.close()
   await dev?.close()
+  await pollDev?.close()
   rmSync(temp, { recursive: true, force: true })
 }

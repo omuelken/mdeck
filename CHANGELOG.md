@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Audience interaction: `<poll room=… options=…>` shows live results and a QR code; phones that scan it get one button per option. Components can build their own activities with `useRoom` from `mdeck/live`. Rooms run inside `mdeck dev` (with `--host` for phones) or on a hosted room server started with `mdeck live`, set with the `live:` deck setting. Answers are anonymous and kept in memory only.
 - Decks can share components: the `components:` setting lists extra folders, searched after the deck's own `components/` folder. The dev server allows and watches them, picks up changes to the list without a restart, and `mdeck check` reports folders that do not exist.
 - `mdeck dev` opens a launch page for the deck: presenter, deck and reader views; the visual editor and the guides, started on first click; buttons that build the folder, the file to send and the PDF; the `mdeck check` results; and the layouts, components, themes and palettes with starters to copy. `--host` makes the slides reachable from phones in the same network and shows a QR code; the launch page and its actions answer only on this computer. `mdeck dev` and `mdeck present` accept `--port` and `--no-open`.
 - PDFs, printouts and the reader's Read mode show interactive slides in their finished state. Every step is revealed and the slides sit inside `[data-deck-static]`; the stage dispatches a `printchange` event when printing starts or ends. CSS transitions are off in print.

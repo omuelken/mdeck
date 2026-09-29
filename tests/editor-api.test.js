@@ -15,7 +15,8 @@ const deck = resolve(dir, 'slides.md')
 copyFileSync(new URL('../examples/custom-templates/slides.md', import.meta.url), deck)
 const original = readFileSync(deck, 'utf8')
 
-const vite = await createServer({ configFile: false, root: resolve('src/runtime'), plugins: [preact(), slidesPlugin(deck, { editor: true }), editorPlugin(deck)], server: { middlewareMode: true, hmr: { server: createHttpServer() }, fs: { allow: [process.cwd(), dir] } }, optimizeDeps: { noDiscovery: true, include: [] }, appType: 'custom' })
+// Own Vite cache per test file, as in render.test.js.
+const vite = await createServer({ configFile: false, root: resolve('src/runtime'), plugins: [preact(), slidesPlugin(deck, { editor: true }), editorPlugin(deck)], server: { middlewareMode: true, hmr: { server: createHttpServer() }, fs: { allow: [process.cwd(), dir] } }, optimizeDeps: { noDiscovery: true, include: [] }, cacheDir: mkdtempSync(resolve(tmpdir(), 'mdeck-vite-cache-')), appType: 'custom' })
 const http = createHttpServer(vite.middlewares)
 await new Promise(done => http.listen(0, '127.0.0.1', done))
 const base = `http://127.0.0.1:${http.address().port}`
