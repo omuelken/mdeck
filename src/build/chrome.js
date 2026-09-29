@@ -40,7 +40,10 @@ export async function launchChrome({ dir, chrome = findChrome(), timeout = 90000
   const server = serveDirectory(dir)
   await new Promise(done => server.listen(0, '127.0.0.1', done))
   const origin = `http://127.0.0.1:${server.address().port}`
-  const browser = spawn(chrome, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--remote-debugging-port=0', `--user-data-dir=${resolve(temp, 'profile')}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] })
+  const flags = ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--remote-debugging-port=0', `--user-data-dir=${resolve(temp, 'profile')}`]
+  // Chrome refuses to start as root with its sandbox on, as in CI containers.
+  if (process.getuid?.() === 0) flags.push('--no-sandbox')
+  const browser = spawn(chrome, [...flags, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] })
   const pending = new Map()
   let socket
   const deadline = setTimeout(() => { for (const task of pending.values()) task.reject(new Error('Timed out while driving Chrome')) }, timeout)
