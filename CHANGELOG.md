@@ -3,6 +3,8 @@
 ## Unreleased
 
 - PDFs and printouts show interactive slides in their finished state. While printing, the stage reveals every step on every slide, carries `data-deck-print` and dispatches a `printchange` event that components can follow; CSS transitions are off in print.
+- Up to date dependencies with no known vulnerabilities: Vite 8, marked 18, KaTeX 0.18, js-yaml 4.3. Step lists (`:::steps`) now have the same spacing as ordinary bullet lists.
+- Code blocks stay left-aligned in centred layouts such as `focus`.
 
 ## 1.1.0 — 2026-09-17
 

@@ -1,6 +1,5 @@
 ---
 design: aurora
-palette: default
 meta:
   title: "Slide Framework Demo"
   author: "Tilman Schieber"

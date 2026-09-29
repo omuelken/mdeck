@@ -136,7 +136,7 @@ marked.use({
 
 marked.use({
   renderer: {
-    code(code, infoString) {
+    code({ text: code, lang: infoString }) {
       const [lang = 'text', ...flags] = (infoString || '').split(/\s+/).filter(Boolean)
       const attrs = flags.map(f => `${f}=""`).join(' ')
       const encoded = (code || '')

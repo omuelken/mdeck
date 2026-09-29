@@ -33,7 +33,7 @@ test('starter files for new extensions validate', () => {
     if (kind === 'template') assert.match(files['starter.md'], /layout: fresh/)
     if (kind === 'theme' && from) assert.equal(record.manifest.params.secondaryColor.default, '#0891b2')
   }
-  assert.match(parseManifest('id = \n').error, /value expected/)
+  assert.match(parseManifest('id = \n').error, /value expected|invalid value/)
 })
 
 test('the preview source for a template starts with the deck settings', () => {

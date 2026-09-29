@@ -3,7 +3,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { Marked } from 'marked'
+import { Marked, Renderer } from 'marked'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-markdown.js'
 import 'prismjs/components/prism-yaml.js'
@@ -60,7 +60,8 @@ export function renderPage(page, markdown) {
   const firstHeading = markdown.match(/^# (.+)\r?$/m)
   if (firstHeading) { title = firstHeading[1]; markdown = markdown.replace(firstHeading[0], '') }
   const renderer = {
-    heading(text, level) {
+    heading({ tokens, depth: level }) {
+      const text = this.parser.parseInline(tokens)
       const base = plain(text).toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-') || 'section'
       const count = used.get(base) ?? 0
       used.set(base, count + 1)
@@ -68,14 +69,15 @@ export function renderPage(page, markdown) {
       if (level === 2) headings.push({ id, text: plain(text) })
       return `<h${level} id="${id}">${text}<a class="heading-link" href="#${id}" aria-label="Link to ${escape(plain(text))}">#</a></h${level}>\n`
     },
-    code(code, info) {
+    code({ text: code, lang: info }) {
       const language = (info ?? '').split(/\s/)[0]
       const grammar = Prism.languages[{ sh: 'bash', html: 'markup', text: 'plain' }[language] ?? language]
       const html = grammar ? Prism.highlight(code, grammar, language) : escape(code)
       return `<figure class="code-example"><figcaption><span>${language === 'sh' ? 'In your terminal' : 'Example'}</span><button type="button" data-copy aria-label="Copy example">Copy</button></figcaption><pre><code>${html}</code></pre></figure>\n`
     },
-    table(header, body) { return `<div class="table-scroll" tabindex="0" role="region" aria-label="Reference table"><table><thead>${header}</thead><tbody>${body}</tbody></table></div>` },
-    link(href, linkTitle, text) {
+    table(token) { return `<div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">${Renderer.prototype.table.call(this, token)}</div>` },
+    link({ href, title: linkTitle, tokens }) {
+      const text = this.parser.parseInline(tokens)
       const aliases = { 'templates.md': 'custom-templates.html', 'extensions.md': 'extensions.html', 'themes.md': 'theme-authoring.html', 'palettes.md': 'theme-authoring.html', '../../examples/custom-templates/slides.md': 'downloads/comparison.md' }
       href = href.replace(/^extensions\.md#/, 'extensions.html#')
       href = aliases[href] ?? href

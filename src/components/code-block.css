@@ -24,6 +24,8 @@ code[class*="language-"] { color: var(--token-default); }
   position: relative;
   margin: 40px 0;
   width: 100%;
+  /* Centred layouts (focus, title) must not centre the lines of code. */
+  text-align: left;
 }
 
 /* ── Action buttons ─────────────────────────────────────────────────────── */
