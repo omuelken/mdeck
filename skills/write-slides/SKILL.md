@@ -91,6 +91,7 @@ Right column
 - Named areas use `:::slot name … :::`; the layout's regions and settings come from `mdeck templates --json`.
 - `:::notes … :::` holds speaker notes. `:::steps … :::` reveals list items one at a time. `:::tip`, `:::warning`, `:::info` are callouts. `:::columns … +++ … :::` makes columns inside a slide.
 - Code fences get syntax highlighting; `$…$` and `$$…$$` render math.
+- `<poll room="lunch" options="Mensa|Thai|Pizza" />` lets the audience vote on their phones through a QR code on the slide; each poll needs its own `room`. It works when the deck is presented with `mdeck dev <deck>.md --host` or with a room server set under `live:`.
 
 ## 3. Write the deck
 
@@ -106,6 +107,7 @@ The request is the message that invoked this skill: topic, audience, length and 
 - Headings are statements, not labels ("Tokens decouple design from content", not "Design tokens").
 - Use `layout: focus` for principles, quotes and conclusions; `layout: split` to pair code or an image with an explanation; `layout: full-bleed-image` only when a strong photograph carries the point.
 - Add speaker notes to every content slide: context, transitions, what to emphasise.
+- When the brief asks for audience interaction, add one or two polls at natural pauses, not more, and say in the notes how to present them.
 
 **Formatting**
 - `*italic*` renders in the accent colour; use it for key terms, not decoration.

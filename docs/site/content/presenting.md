@@ -29,9 +29,13 @@ Older files may use `note:` or `notes:` inside slide settings. Those still work.
 mdeck present my-talk.md
 ```
 
+The launch page that `mdeck dev my-talk.md` opens has a **Presenter view** button that does the same.
+
 Use its audience-window button to open a separate view of the slides. If you have a projector or second screen, move that audience window onto it. Keep the presenter window on your own screen.
 
 The two windows follow the same slide and reveal position. This works between windows in the same browser on your computer. It is not a remote-control service for a second computer or phone.
+
+To let people answer a question on their phones, put a poll on a slide. See [Ask your audience](audience.html).
 
 ## Move through the talk
 
@@ -69,6 +73,7 @@ Each press of the next key reveals one point. Once all points are visible, the n
 - Try the audience window and check the correct screen is showing.
 - Test every video, especially if it comes from the internet.
 - Run `mdeck check my-talk.md` to look for missing files or settings mistakes.
+- If the talk has a poll, scan its QR code with a phone in the room's network and vote once. Then reset the poll.
 
 ## Are my notes private?
 

@@ -66,6 +66,20 @@ Appearance changes in the presenter view are temporary. Save the theme and palet
 
 Online videos and live Python need a network connection. A self-contained build embeds local media; it does not download an entire external service. Use a local video file if you need to play it offline.
 
+## Phones cannot open the poll
+
+The QR code points at your computer when you present with `mdeck dev my-talk.md --host`. The phones must be in the same network. Many large Wi-Fi networks, often at universities, do not let devices reach each other, even when both are connected.
+
+Try a phone hotspot that both your computer and the phones join, or use a room server on the internet as described in [Ask your audience](audience.html#use-it-in-a-real-session). If the slide says phones cannot reach it, you started without `--host`.
+
+## I want an earlier version of my slide file
+
+Before its first change in each session, the visual editor saves a copy of the file in a `.mdeck-backups` folder next to it, named with the date and time. Open the copy you want, and copy the text you need back into your slide file. The folder may be hidden in your file manager because its name starts with a dot.
+
+## A component from another folder is missing
+
+If a tag such as `<chart />` shows nothing, run `mdeck check my-talk.md`. It reports a folder listed under `components:` that does not exist. Paths are relative to the slide file. The tag is the file name in lowercase: `<chart>` comes from `Chart.jsx` or `chart.jsx`. See [sharing components between decks](components.html#share-components-between-decks).
+
 ## Still stuck?
 
 Keep the exact error message and a small copy of the slide that causes it. Include the command you ran and whether the problem happens in the live preview or a built file. Those details make it much easier for someone to help.

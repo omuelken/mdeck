@@ -17,10 +17,13 @@ src/
   core/              Slide parsing, source ranges, validation, editing helpers
   runtime/           Browser app: deck stage, presenter, reader and editor preview
   editor/            Browser editor for decks, palettes, themes and templates
-  components/        Built-in interactive content
+  components/        Built-in interactive content, including the poll
+  live/              Audience rooms: server, `mdeck/live` client, answer-page lookup
+  home/              Launch page that `mdeck dev` opens
   templates/         Shared rendering API, slide frame, typed properties
   extensions/        Manifest contract, discovery registry, appearance rules
-  build/             Vite configuration, generated extension module, editing API, PDF
+  build/             Vite configuration, component discovery, editing and launch
+                     page APIs, deck check, PDF
   paths.js           Locations of installed framework resources
 assets/
   base.css           Shared slide CSS every theme builds on
@@ -32,7 +35,7 @@ docs/
 examples/            Complete example deck projects
 playground/          Scratch deck and standalone development app
 tests/               Automated regression tests (node --test)
-tools/               Optional browser regression check
+tools/               Real-browser regression check (runs in CI)
 skills/              Distributable slide-authoring instructions
 ```
 
@@ -40,7 +43,7 @@ skills/              Distributable slide-authoring instructions
 
 ```sh
 npm test                 # unit and integration tests
-npm run test:browser     # optional real-Chrome check (set MDECK_CHROME if needed)
+npm run test:browser     # real-Chrome check, also run in CI (set MDECK_CHROME if needed)
 npm run playground       # scratch deck with hot reload
 npm run docs:build       # build the documentation site into docs/site/dist
 node bin/mdeck.js ...    # run the CLI from the checkout
@@ -60,6 +63,14 @@ writes to `dist/` in the current working folder.
   as deck-local ones; there is no second registration path.
 - The browser editor is experimental: keep its features behind `mdeck edit`
   and do not make presenting or building depend on it.
+- Local-only APIs (the editor, the launch page) answer loopback requests from
+  their own pages only (`isAllowedRequest`). The room server is the exception:
+  phones must reach it, so it accepts any origin but keeps no personal data and
+  lets only the presenter reset rooms.
+- Components show their finished state inside `[data-deck-static]` (PDF,
+  print, Read mode); built-in components must too.
+- Tests that start a Vite server give it its own `cacheDir`, because test files
+  run in parallel.
 
 ## Releasing
 

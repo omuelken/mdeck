@@ -571,6 +571,37 @@ For `play="auto"` the video pauses and resets to the beginning when you navigate
 
 ---
 
+## Polls
+
+`<poll>` asks the audience a question they answer on their phones:
+
+```markdown
+# Where do we eat?
+
+<poll room="lunch" options="Mensa|Thai|Pizza|Salad" />
+```
+
+| Attribute | Default | Description |
+|---|---|---|
+| `room` | `poll` | Name of the room that collects the answers; unique per poll in a deck. Letters, digits, `.`, `-`, `_` |
+| `options` | — | Answers separated by `\|` |
+| `question` | — | Question text; phones fall back to the slide heading |
+
+The slide shows live bars, the number of answers and a QR code. Phones that scan it open `?view=respond&room=<room>`, which renders only that component. Each device's latest vote counts. The presenter's own browser can reset the room (hover over the results).
+
+Rooms run inside `mdeck dev` (add `--host` so phones can reach it) or on a standalone server started with `mdeck live`. Built decks find a standalone server through the `live` deck settings:
+
+```yaml
+live:
+  server: https://example.org/live            # room server
+  audience: https://example.org/slides/talk/  # where phones open the deck
+  id: talk                                    # optional; defaults to the title
+```
+
+Rooms of a deck are named `<id>.<room>` on the server, so decks sharing a server stay apart. See the [Ask your audience](../site/content/audience.md) guide for hosting, and [Create interactive content](../site/content/components.md) for writing other activities with `useRoom` from `mdeck/live`.
+
+---
+
 ## Deck-local components
 
 Components registered in `src/runtime/registry.jsx` are part of *every* deck. When a
@@ -593,6 +624,25 @@ lowercased filename, so `Tokenizer.jsx` becomes `<tokenizer>`:
 
 Attributes arrive as props, exactly like built-in components. Deck-local
 components override a built-in of the same name.
+
+To reuse components across decks, list their folders in the deck settings:
+
+```yaml
+components:
+  - ../shared-components
+  - ~/mdeck-components
+```
+
+The deck's own `components/` folder is searched first, then the listed folders
+in order, then the built-ins. `mdeck check` reports listed folders that do not
+exist.
+
+In PDFs, printouts and the reader's Read mode, every slide is shown at once.
+There mdeck reveals all steps and places the slide inside an element with the
+`data-deck-static` attribute; a component that builds up step by step should
+render its finished state inside `[data-deck-static]`, and follow the stage's
+`printchange` event for printing started from an open deck. A slide that holds
+only a component can be named for the outline with a `title:` setting.
 
 Because they are only pulled in by the deck that ships them, a heavy dependency
 stays out of every other deck's bundle. Install such dependencies in a

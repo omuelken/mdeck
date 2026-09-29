@@ -84,6 +84,8 @@ A QR code lets people open a link on their phones. Replace the address below wit
 
 `size` sets its width in slide pixels. Keep enough space around it, and test it on the screen you will use.
 
+To ask the audience a question instead, a poll shows its own QR code and the answers as they come in. See [Ask your audience](audience.html).
+
 ## Show a formula
 
 Formulas use a notation called LaTeX. For a formula in a sentence, put it between dollar signs:
