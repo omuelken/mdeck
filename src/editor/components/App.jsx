@@ -101,7 +101,7 @@ export function App() {
     <header class="editor-topbar">
       <img src={markUrl} alt="" width="22" height="22" style={{ borderRadius: '5px' }} />
       <h1 title={state.path}>{state.name}</h1>
-      <span class="editor-chip" title="The editor is new. It saves only what you change, but keep a copy of decks you care about.">Experimental</span>
+      <span class="editor-chip" title="The editor is new. It saves only what you change, and keeps a copy of the file from before this session in .mdeck-backups.">Experimental</span>
       <span class={`editor-status is-${state.status}`}>{STATUS[state.status]}{state.error ? `: ${state.error}` : ''}</span>
       <span class="spacer" />
       <div class="tabs" style={{ padding: 0, border: 0, position: 'static' }}>

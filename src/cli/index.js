@@ -10,7 +10,7 @@ import { collectLocalAssetRefs, slidesPlugin } from '../build/slidesPlugin.js'
 import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, manifestsOf, serializeRegistry } from '../extensions/discover.js'
-import { editorPlugin } from '../build/editorPlugin.js'
+import { editorPlugin, BACKUP_DIR } from '../build/editorPlugin.js'
 import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
 import { installSkill, readSkill, TARGETS } from './skill.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
@@ -468,13 +468,13 @@ if (command === 'new') {
     ...base,
     plugins: [preact(), slidesPlugin(abs, { editor: true }), editorPlugin(abs)],
     publicDir: dirname(abs),
-    server: { ...base.server, host: '127.0.0.1', cors: false, port, strictPort, open: hasFlag('--no-open') ? false : '/editor.html' },
+    server: { ...base.server, host: '127.0.0.1', cors: false, port, strictPort, open: hasFlag('--no-open') ? false : '/editor.html', watch: { ignored: [`**/${BACKUP_DIR}/**`] } },
   })
   await server.listen()
   server.printUrls()
   console.log()
   ok(`Editing ${c.cyan}${abs}${c.reset}`)
-  tip('Changes are saved to the file as you type. The editor is experimental; keep a copy of decks you care about.\n')
+  tip(`Changes are saved to the file as you type. Before the first change, a copy goes to ${BACKUP_DIR}/ beside it.\n`)
 
 // ── build ─────────────────────────────────────────────────────────────────────
 } else if (command === 'build') {

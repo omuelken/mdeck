@@ -1,6 +1,7 @@
 // Local editing API for `mdeck edit`. The server is a guarded file writer:
 // it only ever writes the one deck path, rejects stale writes with the
 // current content, and tells the editor when the file changed on disk.
+// Before its first write it copies the file into .mdeck-backups/ beside it.
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, unlinkSync } from 'node:fs'
 import { resolve, basename, dirname, relative } from 'node:path'
@@ -14,8 +15,27 @@ export function hashSource(source) {
   return createHash('sha1').update(source, 'utf8').digest('hex')
 }
 
-export function createDeckFile(abs) {
+export const BACKUP_DIR = '.mdeck-backups'
+const BACKUPS_KEPT = 10
+
+// Copies the deck as it is now to .mdeck-backups/<name>-<time>.md and keeps
+// the newest few copies of this deck.
+export function backupDeck(abs, source, now = new Date()) {
+  const dir = resolve(dirname(abs), BACKUP_DIR)
+  mkdirSync(dir, { recursive: true })
+  const name = basename(abs).replace(/\.md$/i, '')
+  const stamp = now.toISOString().replace(/[:.]/g, '-').replace(/-\d{3}Z$/, 'Z')
+  const file = resolve(dir, `${name}-${stamp}.md`)
+  writeFileSync(file, source, 'utf8')
+  const prefix = `${name}-`
+  const copies = readdirSync(dir).filter(entry => entry.startsWith(prefix) && /^\d{4}-\d{2}-\d{2}T[\d-]+Z\.md$/.test(entry.slice(prefix.length))).sort()
+  for (const old of copies.slice(0, -BACKUPS_KEPT)) unlinkSync(resolve(dir, old))
+  return file
+}
+
+export function createDeckFile(abs, { backup = true } = {}) {
   let lastWritten = null
+  let backupFile = null
   const read = () => {
     const source = readFileSync(abs, 'utf8')
     return { source, hash: hashSource(source) }
@@ -27,11 +47,13 @@ export function createDeckFile(abs) {
       if (!existsSync(abs)) return { ok: false, conflict: true, source: null, hash: null }
       const current = read()
       if (base !== current.hash) return { ok: false, conflict: true, ...current }
+      if (backup && !backupFile && source !== current.source) backupFile = backupDeck(abs, current.source)
       writeFileSync(abs, source, 'utf8')
       lastWritten = source
       return { ok: true, hash: hashSource(source) }
     },
     isExternalChange(content) { return content !== lastWritten },
+    get backupFile() { return backupFile },
   }
 }
 

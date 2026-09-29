@@ -4,6 +4,7 @@
 
 - PDFs, printouts and the reader's Read mode show interactive slides in their finished state. Every step is revealed and the slides sit inside `[data-deck-static]`; the stage dispatches a `printchange` event when printing starts or ends. CSS transitions are off in print.
 - Up to date dependencies with no known vulnerabilities: Vite 8, marked 18, KaTeX 0.18, js-yaml 4.3. Step lists (`:::steps`) now have the same spacing as ordinary bullet lists.
+- The editor copies the deck into `.mdeck-backups/` beside it before the first change of each session and keeps the ten newest copies.
 - A slide's `title:` setting names it in the outline and reader navigation when it has no heading.
 - Code blocks stay left-aligned in centred layouts such as `focus`.
 

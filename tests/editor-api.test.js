@@ -3,11 +3,11 @@ import assert from 'node:assert/strict'
 import { createServer } from 'vite'
 import preact from '@preact/preset-vite'
 import { createServer as createHttpServer } from 'node:http'
-import { mkdtempSync, copyFileSync, readFileSync, writeFileSync, cpSync, existsSync } from 'node:fs'
+import { mkdtempSync, copyFileSync, readFileSync, writeFileSync, cpSync, existsSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { slidesPlugin } from '../src/build/slidesPlugin.js'
-import { editorPlugin, createDeckFile, isAllowedRequest, hashSource } from '../src/build/editorPlugin.js'
+import { editorPlugin, createDeckFile, backupDeck, isAllowedRequest, hashSource, BACKUP_DIR } from '../src/build/editorPlugin.js'
 
 const dir = mkdtempSync(resolve(tmpdir(), 'mdeck-editor-'))
 cpSync(new URL('../examples/custom-templates/extensions', import.meta.url), resolve(dir, 'extensions'), { recursive: true })
@@ -89,6 +89,25 @@ test('the deck file tracks its own writes so only external changes are reported'
   assert.equal(file.isExternalChange(original), true)
   assert.deepEqual(file.write('x', 'stale'), { ok: false, conflict: true, source: original, hash: hashSource(original) })
   assert.equal(createDeckFile(resolve(dir, 'missing.md')).write('x', 'y').conflict, true)
+})
+
+test('the first write of a session backs up the file and old copies are pruned', () => {
+  const folder = mkdtempSync(resolve(tmpdir(), 'mdeck-backup-'))
+  const path = resolve(folder, 'talk.md')
+  writeFileSync(path, 'one')
+  const file = createDeckFile(path)
+  assert.equal(file.write('one', hashSource('one')).ok, true)
+  assert.equal(file.backupFile, null, 'an unchanged write needs no copy')
+  file.write('two', hashSource('one'))
+  file.write('three', hashSource('two'))
+  assert.equal(readFileSync(file.backupFile, 'utf8'), 'one')
+  assert.deepEqual(readdirSync(resolve(folder, BACKUP_DIR)).length, 1)
+  for (let i = 0; i < 12; i++) backupDeck(path, `copy ${i}`, new Date(Date.UTC(2026, 0, 1, 0, 0, i)))
+  writeFileSync(resolve(folder, BACKUP_DIR, 'other-2020-01-01T00-00-00Z.md'), 'other deck')
+  const copies = readdirSync(resolve(folder, BACKUP_DIR)).filter(name => name.startsWith('talk-')).sort()
+  assert.equal(copies.length, 10)
+  assert.equal(readFileSync(resolve(folder, BACKUP_DIR, copies.at(-1)), 'utf8'), 'one', 'the newest copy survives')
+  assert.ok(existsSync(resolve(folder, BACKUP_DIR, 'other-2020-01-01T00-00-00Z.md')), 'other decks are untouched')
 })
 
 test('only same-host loopback requests are allowed', () => {

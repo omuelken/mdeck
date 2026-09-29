@@ -1,6 +1,6 @@
 # Edit slides in your browser
 
-> The editor is new and marked **experimental**. It only ever rewrites the parts of your file you change, and every change can be undone, but keep a copy of decks you care about while it matures.
+> The editor is new and marked **experimental**. It only ever rewrites the parts of your file you change, every change can be undone, and before its first change mdeck keeps a copy of the file (see below).
 
 You can write slides in any text editor. If you prefer clicking and typing in forms, mdeck also has a visual editor:
 
@@ -23,6 +23,8 @@ There is no save button. Every change is written into your slide file within a m
 Because the file is the only copy, you can keep your text editor open at the same time. When you save there, the visual editor shows the change. If both change the same file at the same moment, the editor asks which version to keep.
 
 The editor only ever rewrites the parts of the file you change. Your blank lines, comments and the order of everything else stay as they are.
+
+Before the first change of each editing session, mdeck copies the file as it was into a `.mdeck-backups` folder beside it, named after the deck and the time, for example `.mdeck-backups/my-talk-2026-09-29T10-15-00Z.md`. It keeps the ten newest copies of each deck. If you keep your slides in Git, add `.mdeck-backups/` to your `.gitignore`.
 
 ## Palettes, themes and designs
 
