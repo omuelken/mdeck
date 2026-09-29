@@ -141,7 +141,7 @@ function deckComponentsDir(abs) {
   return resolve(dirname(abs), 'components')
 }
 
-function deckComponentFiles(abs) {
+export function deckComponentFiles(abs) {
   const dir = deckComponentsDir(abs)
   if (!existsSync(dir)) return []
   return readdirSync(dir)

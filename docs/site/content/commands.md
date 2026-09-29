@@ -7,7 +7,7 @@ Type these commands in a terminal. Replace `my-talk.md` with your own slide file
 | Command | Use it to… |
 |---|---|
 | `mdeck new` | Make a presentation with guided questions |
-| `mdeck dev my-talk.md` | Open a preview that reloads when you save |
+| `mdeck dev my-talk.md` | Open the launch page: present, edit, share and check from one place; slides reload when you save |
 | `mdeck edit my-talk.md` | Edit slides, colors and designs in the browser; saves to the file |
 | `mdeck present my-talk.md` | Open your slides with presenter notes and controls |
 | `mdeck check my-talk.md` | Check settings and look for missing local files |
@@ -15,6 +15,18 @@ Type these commands in a terminal. Replace `my-talk.md` with your own slide file
 | `mdeck preview` | Open the last build from the current folder |
 | `mdeck docs` | Open this documentation |
 | `mdeck --help` | Show a short list of commands |
+
+## The launch page
+
+`mdeck dev my-talk.md` opens a page on your own computer with everything for this talk:
+
+- **Present:** the presenter view, the full-screen deck and the reader view, each in a new tab.
+- **Write and learn:** the visual editor and these guides. Each starts the first time you click it.
+- **Share:** buttons that make the `dist` folder, one file to send, or a PDF, next to your slide file, and show them in your file manager.
+- **Check:** the same problems `mdeck check` reports, such as missing pictures.
+- **What you can use:** every layout with a starter to copy, the components, themes and colour palettes available to this deck.
+
+Add `--host` to reach the slides from phones and tablets in the same network; the page then shows a QR code for the reader view. The launch page itself and its buttons only work on your own computer. `--port 4000` chooses the port and `--no-open` starts without opening a browser. `mdeck present` takes the same options and opens the presenter view instead.
 
 ## Open a particular guide
 

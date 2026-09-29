@@ -7,10 +7,12 @@ import readline from 'readline/promises'
 import preact from '@preact/preset-vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 import { collectLocalAssetRefs, slidesPlugin } from '../build/slidesPlugin.js'
-import { parseSlides } from '../core/parseSlides.js'
-import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
+import { formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, manifestsOf, serializeRegistry } from '../extensions/discover.js'
-import { editorPlugin, BACKUP_DIR } from '../build/editorPlugin.js'
+import { BACKUP_DIR } from '../build/editorPlugin.js'
+import { createEditorServer } from '../build/editorServer.js'
+import { homePlugin } from '../build/homePlugin.js'
+import { checkDeck } from '../build/check.js'
 import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
 import { installSkill, readSkill, TARGETS } from './skill.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
@@ -38,6 +40,14 @@ const ASPECT_RATIOS = [
 
 function hasFlag(name, short = null) {
   return argv.includes(name) || (short ? argv.includes(short) : false)
+}
+
+function portOption() {
+  const index = argv.indexOf('--port')
+  if (index < 0) return null
+  const port = Number(argv[index + 1])
+  if (!Number.isInteger(port) || port < 1 || port > 65535) { err('Choose a port number between 1 and 65535.'); process.exit(1) }
+  return port
 }
 
 // Templates, themes and palettes all come from one registry: built-ins plus the
@@ -285,8 +295,10 @@ const HELP = `
   ${c.bold}mdeck${c.reset} — markdown slide deck
 
   ${c.dim}Usage:${c.reset}
-    ${c.green}mdeck dev${c.reset} <slides.md>                  Start dev server with live reload
-    ${c.green}mdeck present${c.reset} <slides.md>              Open speaker/presenter view
+    ${c.green}mdeck dev${c.reset} <slides.md>                  Open the launch page: present, edit, share and check
+      --host      share the slides with phones in the same network
+      --no-open   --port <number>
+    ${c.green}mdeck present${c.reset} <slides.md>              Open speaker/presenter view (same options)
     ${c.green}mdeck edit${c.reset} <slides.md>                 Edit slides in the browser (experimental); saves to the file
       --no-open   --port <number>
     ${c.green}mdeck new${c.reset}                              Interactive deck scaffolding wizard
@@ -380,12 +392,8 @@ if (command === 'new') {
 
 } else if (command === 'check') {
   const input = requireInput('check')
-  const source = readFileSync(input, 'utf8')
   const registry = registryFor(input)
-  const diagnostics = validateDeck(parseSlides(source), { templates: manifestsOf(registry, 'template'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette') })
-  for (const ref of collectLocalAssetRefs(source)) {
-    if (!existsSync(resolve(dirname(resolve(input)), ref))) diagnostics.push({ severity: 'error', code: 'missing-asset', message: `Missing local asset: ${ref}`, line: 1, column: 1 })
-  }
+  const { diagnostics } = checkDeck(input, registry)
   if (diagnostics.length) console.log(formatDiagnostics(diagnostics, input))
   const warned = diagnostics.length || registry.warnings.length
   if (diagnostics.some(d => d.severity === 'error') || (warned && hasFlag('--strict'))) process.exitCode = 1
@@ -412,64 +420,54 @@ if (command === 'new') {
     for (const record of Object.values(registry[`${kind}s`])) console.log(`    ${c.cyan}${record.id}${c.reset} — ${record.title} ${c.dim}(${record.source})${record.description ? ' ' + record.description : ''}${c.reset}`)
   }
 
-// ── dev ───────────────────────────────────────────────────────────────────────
-} else if (command === 'dev') {
-  const input = requireInput('dev')
-  const base = baseConfig(input)
-
+// ── dev / present ─────────────────────────────────────────────────────────────
+} else if (command === 'dev' || command === 'present') {
+  const input = requireInput(command)
+  const abs = resolve(input)
+  const base = baseConfig(abs)
+  const port = portOption()
+  const exposed = hasFlag('--host')
+  // The launch page starts these on first use, inside this process.
+  const services = {
+    async editor() {
+      const editor = await createEditorServer(abs, { port: (port ?? 5173) + 10 })
+      await editor.listen()
+      return { url: new URL('editor.html', editor.resolvedUrls.local[0]).href }
+    },
+    async docs() {
+      const { startDocs } = await import('../../docs/site/server.js')
+      return startDocs({ open: false })
+    },
+  }
   const server = await createServer({
     ...base,
-    publicDir: dirname(resolve(input)),
+    plugins: [...base.plugins, homePlugin(abs, { services })],
+    publicDir: dirname(abs),
     server: {
       ...base.server,
-      open: true,
+      ...(port ? { port, strictPort: true } : {}),
+      host: exposed ? true : base.server.host,
+      open: hasFlag('--no-open') ? false : command === 'present' ? '/?view=presenter' : '/home.html',
     },
   })
   await server.listen()
-  server.printUrls()
+  const local = server.resolvedUrls.local[0]
   console.log()
-  ok(`Watching ${c.cyan}${resolve(input)}${c.reset}`)
+  ok(`Launch page: ${c.cyan}${new URL('home.html', local).href}${c.reset}`)
+  tip(`Presenter:   ${new URL('?view=presenter', local).href}`)
+  tip(`Deck:        ${new URL('?view=deck', local).href}`)
+  if (exposed) for (const url of server.resolvedUrls.network) tip(`On a phone:  ${new URL('?view=share', url).href}`)
+  console.log()
+  ok(`Watching ${c.cyan}${abs}${c.reset}`)
   tip('Edit and save to reload.\n')
-
-// ── present ───────────────────────────────────────────────────────────────────
-} else if (command === 'present') {
-  const input = requireInput('present')
-  const base = baseConfig(input)
-
-  const server = await createServer({
-    ...base,
-    publicDir: dirname(resolve(input)),
-    server: {
-      ...base.server,
-      open: '/?view=presenter',
-    },
-  })
-  await server.listen()
-  server.printUrls()
-  console.log()
-  ok(`Speaker view opened`)
-  tip('Audience view: /?view=deck')
-  tip('Presenter view: /?view=presenter\n')
 
 // ── edit ──────────────────────────────────────────────────────────────────────
 } else if (command === 'edit') {
   const input = requireInput('edit')
   const abs = resolve(input)
   registryFor(input)
-  let port = 5173, strictPort = false
-  const portIndex = argv.indexOf('--port')
-  if (portIndex >= 0) {
-    port = Number(argv[portIndex + 1])
-    if (!Number.isInteger(port) || port < 1 || port > 65535) { err('Choose a port number between 1 and 65535.'); process.exit(1) }
-    strictPort = true
-  }
-  const base = baseConfig(abs)
-  const server = await createServer({
-    ...base,
-    plugins: [preact(), slidesPlugin(abs, { editor: true }), editorPlugin(abs)],
-    publicDir: dirname(abs),
-    server: { ...base.server, host: '127.0.0.1', cors: false, port, strictPort, open: hasFlag('--no-open') ? false : '/editor.html', watch: { ignored: [`**/${BACKUP_DIR}/**`] } },
-  })
+  const port = portOption()
+  const server = await createEditorServer(abs, { port: port ?? 5173, strictPort: !!port, open: !hasFlag('--no-open') })
   await server.listen()
   server.printUrls()
   console.log()

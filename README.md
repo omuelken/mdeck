@@ -71,7 +71,7 @@ Working from a clone instead? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```sh
 mdeck new                 # answer a few questions, get a starter file
-mdeck dev talk.md         # preview that reloads when you save
+mdeck dev talk.md         # launch page: present, edit, share and check; reloads on save
 mdeck present talk.md     # presenter view with notes, timer and audience window
 mdeck build talk.md       # dist/ folder to hand out or host
 mdeck build talk.md --share --self-contained -o talk.html   # one file to email, with PDF
@@ -81,6 +81,7 @@ mdeck build talk.md --share --self-contained -o talk.html   # one file to email,
 
 - **Layouts:** title, chapter, big statement, image and text, split, full-bleed image, and plain content slides, with points that appear one at a time.
 - **Looks:** six themes and eight colour palettes, changeable without touching the slides. Make your own as small `extension.toml` folders beside the deck.
+- **One launch page:** `mdeck dev` opens a page with the presenter, deck and reader views, the editor, the guides, one-click builds and PDF, the deck's check results, and every layout with a starter to copy.
 - **Presenting:** a presenter view with notes and timer, and an audience window that stays in sync.
 - **Sharing:** a reader view with an outline, a phone-friendly Read mode and a PDF download; speaker notes are stripped from shared builds.
 - **Content:** pictures, video, tables, callouts, code with syntax highlighting and live execution, formulas, QR codes, and your own Preact components.

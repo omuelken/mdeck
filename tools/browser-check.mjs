@@ -8,11 +8,14 @@ import { tmpdir } from 'node:os'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { setTimeout as delay } from 'node:timers/promises'
+import { createServer } from 'vite'
 import { launchChrome } from '../src/build/chrome.js'
+import { baseConfig } from '../src/build/config.js'
+import { homePlugin } from '../src/build/homePlugin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-browser-check-'))
-let browser
+let browser, dev
 try {
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-templates/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   browser = await launchChrome({ dir: temp, timeout: 45000 })
@@ -42,8 +45,19 @@ try {
   await until(audience, `${audienceStage}.state.step === -1`)
   await presenter.evaluate(`${stage}.reset()`)
   await until(audience, `${audienceStage}.state.index === 0`)
-  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation.')
+
+  // The launch page `mdeck dev` opens renders the deck's details from its API.
+  const slides = resolve(root, 'examples/custom-templates/slides.md')
+  const config = baseConfig(slides)
+  dev = await createServer({ ...config, plugins: [...config.plugins, homePlugin(slides, { services: {} })], server: { ...config.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  await dev.listen()
+  const home = await open(new URL('home.html', dev.resolvedUrls.local[0]).href)
+  await until(home, "document.querySelectorAll('.home-tile').length === 5 && !!document.querySelector('.home-header h1')?.textContent")
+  assert.equal(await home.evaluate("document.querySelectorAll('.home-output').length"), 3)
+  assert.equal(await home.evaluate("[...document.querySelectorAll('.home-block strong')].some(el => el.textContent === 'Side-by-side comparison')"), true)
+  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page.')
 } finally {
   await browser?.close()
+  await dev?.close()
   rmSync(temp, { recursive: true, force: true })
 }

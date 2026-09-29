@@ -57,13 +57,13 @@ In a terminal opened in your talk's folder, run:
 mdeck dev my-talk.md
 ```
 
-Your browser opens the presentation. Press the right arrow key to move to the second slide, and the left arrow key to go back.
+Your browser opens the launch page for your talk. Click **Full-screen deck** to see the slides. Press the right arrow key to move to the second slide, and the left arrow key to go back.
 
-Keep the terminal open while working. If the browser does not open, click or copy the local address shown in the terminal. It usually starts with `http://localhost:5173/`.
+Keep the terminal open while working. If the browser does not open, click or copy the launch page address shown in the terminal. It usually is `http://localhost:5173/home.html`. The [command guide](commands.html#the-launch-page) describes everything else on the launch page.
 
 ## Make a change
 
-Change “My first presentation” to the title of your own talk. Save the file. The browser reloads with your new title.
+Change “My first presentation” to the title of your own talk. Save the file. The slides reload with your new title.
 
 That is the everyday workflow: write, save, and look at the preview. When you are finished, press `Ctrl+C` in the terminal to stop it.
 

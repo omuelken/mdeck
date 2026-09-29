@@ -120,4 +120,4 @@ Save the deck as a `.md` file named after the topic (for example `enzyme-kinetic
 mdeck check <deck>.md
 ```
 
-Fix anything it reports. Finish by telling the user the three commands they will want next: `mdeck dev <deck>.md` to preview, `mdeck present <deck>.md` to present, and `mdeck build <deck>.md --share --self-contained -o <deck>.html` for a file to send around (a reader view with a PDF; notes are removed unless `--with-notes` is added).
+Fix anything it reports. Finish by telling the user the three commands they will want next: `mdeck dev <deck>.md` for the launch page (preview, editor, builds and checks), `mdeck present <deck>.md` to present, and `mdeck build <deck>.md --share --self-contained -o <deck>.html` for a file to send around (a reader view with a PDF; notes are removed unless `--with-notes` is added).

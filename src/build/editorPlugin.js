@@ -73,13 +73,13 @@ export function isAllowedRequest(request) {
   try { return new URL(origin).host.toLowerCase() === host.toLowerCase() } catch { return false }
 }
 
-function send(response, status, body) {
+export function send(response, status, body) {
   const text = JSON.stringify(body)
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(text), 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' })
   response.end(text)
 }
 
-function readJson(request) {
+export function readJson(request) {
   return new Promise((resolvePromise, reject) => {
     const type = request.headers['content-type'] ?? ''
     if (!/^application\/json\b/i.test(type)) return reject(Object.assign(new Error('Send JSON with Content-Type: application/json'), { status: 415 }))
