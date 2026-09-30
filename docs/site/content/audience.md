@@ -99,7 +99,7 @@ live:
 
 `MDECK_LIVE_KEY` is the presenter code: only a browser that has it can move the phones along and reset polls, so nobody in the audience can. Start `mdeck dev` with the same code (`MDECK_LIVE_KEY=choose-a-secret mdeck dev my-talk.md`), and the launch page checks the room server, shows the join link and opens the presenter view with the code. The browser remembers it; it never appears in the address bar or in the slide file. Without it, phones wait. The presenter view says whether the phones follow it, and if not, why.
 
-The presenter's screen repeats the current poll every few seconds, so phones that join late, or a room server that restarted, catch up. While a presenter view is open, other windows of the presentation in the same browser leave the phones alone.
+The presenter's screen repeats the current poll every few seconds, so phones that join late, or a room server that restarted, catch up. While a presenter view is open, other windows of the presentation in the same browser leave the phones alone. If the presentation is open on several screens, even in other browsers, the phones follow the one where the slides were changed last; just opening it elsewhere does not take them away. A presenter view that has lost the phones says so, and changing the slide there takes them back.
 
 Two presentations with the same title share a session code. Give one of them `live.id`, or set the digits yourself with `live.code`.
 

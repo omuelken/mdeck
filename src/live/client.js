@@ -147,6 +147,9 @@ export function captureLook(doc = lookSource()) {
   const style = getComputedStyle(doc.documentElement)
   const tokens = Object.fromEntries(LOOK_TOKENS.map(name => [name, style.getPropertyValue(name).trim()]).filter(([, value]) => value))
   const fonts = [...doc.querySelectorAll('link[data-deck-theme-font]')].map(link => link.href)
+  // A frame that has not loaded its slides yet has no theme: send nothing, so
+  // phones keep the look they have.
+  if (!tokens['--bg'] && !tokens['--font-body']) return null
   const h1 = doc.querySelector('.slide-body h1')
   const hs = h1 && doc.defaultView.getComputedStyle(h1)
   // Letter spacing relative to the font size, so a slide heading's spacing
@@ -164,8 +167,9 @@ const phoneWords = () => ({ waiting: t('respond.waiting'), pick: t('poll.pick'),
 // that restarted catch up; the server passes on only changes. Only the
 // presenter may: `steering` says whether this screen reaches the phones.
 const REPEAT_MS = 4000
-let current = { room: null, activity: null, title: '' }, repeat = null
+let current = { room: null, activity: null, title: '', at: 0 }, repeat = null
 let steering = null
+let lastLook = null
 const steeringListeners = new Set()
 function report(next) {
   if (steering && steering.ok === next.ok && steering.reason === next.reason) return
@@ -191,10 +195,13 @@ async function sendCurrent() {
   const info = await serverInfo()
   if (!info.reachable) return report({ ok: false, reason: 'unreachable' })
   if (!info.canReset) return report({ ok: false, reason: presenterKey() ? 'wrong-code' : 'no-code' })
-  const state = { ...current, look: captureLook(), lang: deckLanguage(), labels: phoneWords() }
+  const look = captureLook()
+  if (look) lastLook = look
+  const state = { ...current, look: lastLook, lang: deckLanguage(), labels: phoneWords() }
   try {
     const response = await fetch(`${sessionPath()}/state`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state }) })
-    report(response.ok ? { ok: true } : { ok: false, reason: response.status === 403 ? 'wrong-code' : 'unreachable' })
+    const body = response.ok ? await response.json().catch(() => ({})) : {}
+    report(!response.ok ? { ok: false, reason: response.status === 403 ? 'wrong-code' : 'unreachable' } : body.ignored ? { ok: false, reason: 'other-screen' } : { ok: true })
   } catch { report({ ok: false, reason: 'unreachable' }) }
 }
 
@@ -203,8 +210,11 @@ async function sendCurrent() {
  * `activity` is what the phones show ({ type: 'choice' | 'text' | 'scale', … }),
  * or nothing between activities.
  */
-export function announce({ room = null, activity = null, title = '' } = {}) {
-  current = { room, activity, title }
+export function announce({ room = null, activity = null, title = '', initial = false } = {}) {
+  // `at` marks this change; the room server keeps the latest change of all
+  // screens. A screen that just opened says 0, so opening a tab to look at
+  // the deck does not take the phones away from the presenter.
+  current = { room, activity, title, at: initial ? 0 : Date.now() }
   sendCurrent()
   repeat ??= setInterval(sendCurrent, REPEAT_MS)
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Phones no longer flip between two screens showing the same presentation: the room server follows the screen where the slides were changed last, a screen that only opened does not take over, and the presenter view says when another screen has the phones. A screen that cannot read its theme yet no longer sends an empty look, which made the phones' fonts jump.
+
 ## 1.3.0 — 2026-09-30
 
 Polls work without hosting the slides. This changes how phones join; see *Removed*.

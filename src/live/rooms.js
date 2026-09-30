@@ -45,13 +45,20 @@ export function createRooms({ maxMessages = 5000, maxRooms = 500, idleMs = 12 * 
       room.messages = []
       broadcast(room, { type: 'reset' })
     },
+    // A state carries `at`, when its screen last changed it. The latest change
+    // wins: a state older than the current one is ignored (returns false), so
+    // a forgotten screen repeating an old slide cannot take the phones back.
     setState(id, state) {
       const room = get(id)
       const next = state ?? null
+      // A state without `at`, as from an outdated page, counts as the oldest.
+      const at = state => Number.isFinite(state?.at) ? state.at : 0
+      if (next && room.state && at(next) < at(room.state)) return false
       // The presenter repeats its state; listeners only hear changes.
-      if (JSON.stringify(next) === JSON.stringify(room.state)) return
+      if (JSON.stringify(next) === JSON.stringify(room.state)) return true
       room.state = next
       broadcast(room, { type: 'state', state: room.state })
+      return true
     },
     snapshot: id => get(id).messages,
     state: id => get(id).state,
@@ -161,7 +168,7 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
       if (match[2] === '/reset' || match[2] === '/state') {
         if (!canReset(request)) return reply(response, 403, { error: 'Only the presenter can change a room' })
         if (match[2] === '/reset') rooms.reset(id)
-        else rooms.setState(id, (await readBody(request, MAX_STATE)).state)
+        else if (!rooms.setState(id, (await readBody(request, MAX_STATE)).state)) return reply(response, 200, { ok: true, ignored: true })
         return reply(response, 200, { ok: true })
       }
       if (!limit(clientAddress(request))) return reply(response, 429, { error: 'Too many answers at once; wait a moment' })

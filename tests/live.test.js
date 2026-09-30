@@ -83,6 +83,21 @@ test('bad requests are refused', async () => {
   assert.equal(preflight.headers.get('access-control-allow-origin'), '*')
 })
 
+test('the latest change wins over repeats from a screen changed earlier', () => {
+  const rooms = createRooms()
+  const heard = []
+  rooms.subscribe('s', event => heard.push(event.state?.room))
+  assert.equal(rooms.setState('s', { room: 'a', at: 0 }), true, 'a screen that just opened')
+  assert.equal(rooms.setState('s', { room: 'b', at: 200 }), true, 'the presenter moves on')
+  assert.equal(rooms.setState('s', { room: null, at: 100 }), false, 'a forgotten screen repeating an older slide')
+  assert.equal(rooms.setState('s', { room: 'a', at: 0 }), false, 'a newly opened screen')
+  assert.equal(rooms.setState('s', { room: 'b', at: 200 }), true, 'the presenter repeating itself')
+  assert.equal(rooms.setState('s', { room: 'old' }), false, 'a page without `at` counts as the oldest')
+  assert.equal(rooms.setState('s', { room: null, at: 300 }), true, 'someone moves the other screen on')
+  assert.deepEqual(heard, ['a', 'b', null])
+  assert.deepEqual(rooms.state('s'), { room: null, at: 300 })
+})
+
 test('rooms fill up, idle rooms are forgotten and senders are rate limited', () => {
   let t = 0
   const rooms = createRooms({ maxMessages: 2, maxRooms: 1, idleMs: 100, now: () => t })

@@ -38,13 +38,15 @@
 
   // The deck's colours and fonts, as the presenter's screen shows them.
   function applyLook(look, lang) {
+    if (lang) document.documentElement.lang = lang
+    // No look: keep the one the page has, fonts included.
+    if (!look?.tokens) return
     const style = document.documentElement.style
     for (const [name, value] of Object.entries(look?.tokens ?? {})) if (/^--[\w-]+$/.test(name)) style.setProperty(name, value)
     for (const [name, value] of Object.entries(look?.heading ?? {})) style.setProperty(`--answer-heading-${name}`, value)
     const wanted = (look?.fonts ?? []).filter(url => /^https:\/\//.test(url))
     for (const link of [...document.querySelectorAll('link[data-theme-font]')]) if (!wanted.includes(link.href)) link.remove()
     for (const url of wanted) if (!document.querySelector(`link[data-theme-font][href="${CSS.escape(url)}"]`)) document.head.append(el('link', { rel: 'stylesheet', href: url, 'data-theme-font': true }))
-    if (lang) document.documentElement.lang = lang
   }
 
   async function answer(room, value) {

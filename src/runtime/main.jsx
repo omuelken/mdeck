@@ -69,8 +69,8 @@ function activityOn(deck, slide) {
   const props = Object.fromEntries([...element.attributes].map(attribute => [attribute.name, attribute.value]))
   try { return { room, activity: component.phone(props, { slideTitle: slideTitleFor(deck, room) }) } } catch (error) { console.warn(error); return { room, activity: null } }
 }
-function announceSlide(deck, index) {
-  if (hasActivities()) announce({ ...activityOn(deck, deck.slides[index]), title: deck.deckConfig?.meta?.title ?? '' })
+function announceSlide(deck, index, { initial = false } = {}) {
+  if (hasActivities()) announce({ ...activityOn(deck, deck.slides[index]), title: deck.deckConfig?.meta?.title ?? '', initial })
 }
 
 // Whether this presenter screen moves the phones along, shown only for decks
@@ -79,6 +79,7 @@ const STEERING = {
   'no-code': 'Phones do not follow: this browser has no presenter code. Open the presenter view once with ?livekey=… (the launch page has a link).',
   'wrong-code': "Phones do not follow: the room server does not accept this browser's presenter code.",
   unreachable: 'Phones do not follow: the room server does not answer.',
+  'other-screen': 'Phones follow another screen, where this presentation was moved on more recently. Change the slide here to take them back.',
 }
 function SteeringNote() {
   const steering = useSteering()
@@ -161,7 +162,11 @@ function PresenterView({ deckConfig, slides }) {
   indexRef.current = index
   // Phones see the look of the slide this view shows, read from its frame.
   useEffect(() => { setLookSource(() => iframeRef.current?.contentDocument) }, [])
-  useEffect(() => { announceSlide({ slides, deckConfig }, index) }, [index])
+  const announcedOnce = useRef(false)
+  useEffect(() => {
+    announceSlide({ slides, deckConfig }, index, { initial: !announcedOnce.current })
+    announcedOnce.current = true
+  }, [index])
 
   const themeMeta = THEME_METAS[design]
   const usesAccent2 = themeMeta?.accent2 ?? false
@@ -642,8 +647,8 @@ async function init() {
   // A full deck or audience window is a presenter's screen; previews are embedded.
   if (!embedded) {
     const stage = document.querySelector('deck-stage')
-    stage?.addEventListener('slidechange', event => announceSlide(parsed, event.detail.index))
-    if (stage) announceSlide(parsed, stage.index)
+    stage?.addEventListener('slidechange', event => announceSlide(parsed, event.detail.index, { initial: event.detail.reason === 'init' }))
+    if (stage) announceSlide(parsed, stage.index, { initial: true })
   }
 
   // Embedded iframes (presenter view + preview pane) receive commands via postMessage
