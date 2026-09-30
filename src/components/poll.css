@@ -13,6 +13,44 @@
 .poll-dot.is-live { background: #16a34a; opacity: 1; }
 .poll-reset { margin-left: auto; padding: 4px 14px; border: 1px solid var(--rule, #ccc); border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; opacity: 0; transition: opacity .2s; }
 .poll:hover .poll-reset, .poll-reset:focus-visible { opacity: 1; }
-.poll-link { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 20px; color: #333; }
-.poll-join { flex: none; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 18px; background: #fff; border-radius: 12px; color: #111; text-decoration: none; font-size: var(--fs-small, 24px); }
-@media print { .poll-reset, .poll-dot { display: none; } .poll-fill { transition: none; } }
+.poll-link { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 20px; color: var(--muted, #555); }
+/* The join code in the slide's own colours (see QrCode.jsx). */
+.poll-join { flex: none; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 18px; border: 1px solid var(--rule, rgba(0,0,0,.12)); border-radius: 12px; color: var(--ink, #111); text-decoration: none; font-size: var(--fs-small, 24px); }
+.poll-join--local { display: block; max-width: 460px; text-align: left; line-height: 1.4; color: var(--ink-soft, var(--ink, #333)); }
+.poll-join--local code { display: inline; font-size: .9em; }
+.poll-join--local a, a.poll-inline-link { color: var(--accent, #0d9488); }
+.poll-inline-link { color: var(--ink-soft, var(--ink, #333)); }
+.poll-inline-link code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95em; }
+
+/* <question>: the newest answers as cards */
+.question-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
+.slide-body .question-cards li::before, .question-cards li::before, .question-cards li::marker { content: none; display: none; }
+.slide-body .question-cards li { padding-left: 22px; }
+.question-cards li { margin: 0; padding: 18px 22px; border-radius: 10px; background: var(--surface, color-mix(in srgb, var(--ink, #111) 5%, transparent)); border-left: 5px solid var(--accent, #0d9488); font-size: .8em; line-height: 1.35; overflow-wrap: anywhere; animation: poll-in .4s ease both; }
+.question-cards li:first-child { border-left-color: var(--accent-2, var(--accent, #0d9488)); }
+.question-empty { margin: 0; color: var(--muted, #666); font-style: italic; }
+@keyframes poll-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* <wordcloud> */
+.word-cloud { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: .15em .6em; margin: 0; line-height: 1.1; }
+.word { font-weight: 600; transition: font-size .6s cubic-bezier(.2, .8, .2, 1); animation: poll-in .4s ease both; }
+.word--0 { color: var(--accent, #0d9488); }
+.word--1 { color: var(--ink, #111); }
+.word--2 { color: var(--accent-2, var(--ink-soft, #555)); }
+
+/* <scale> */
+.scale-columns { display: flex; gap: 20px; align-items: stretch; height: 320px; }
+.scale-column { flex: 1; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; justify-items: center; }
+.scale-track { width: 100%; display: flex; align-items: flex-end; background: color-mix(in srgb, var(--ink, #111) 6%, transparent); border-radius: 6px; overflow: hidden; }
+.scale-fill { display: block; width: 100%; background: var(--accent, #0d9488); border-radius: 6px 6px 0 0; transition: height .6s cubic-bezier(.2, .8, .2, 1); }
+.scale-count { font-variant-numeric: tabular-nums; font-weight: 600; font-size: var(--fs-small, 24px); }
+.scale-step { font-variant-numeric: tabular-nums; color: var(--muted, #666); }
+.scale-labels { display: flex; justify-content: space-between; margin: 12px 0 0; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
+.scale-average { margin: 6px 0 0; font-size: var(--fs-small, 24px); font-weight: 600; }
+
+/* <join>: the code, large, on a slide of its own */
+.poll-join-slide { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
+.poll-join-slide .poll-join { font-size: var(--fs-body, 32px); gap: 16px; padding: 24px 32px; }
+.poll-join-slide .poll-link { font-size: 28px; }
+.poll-join-hint { margin: 0; color: var(--muted, #666); font-size: var(--fs-small, 24px); }
+@media print { .poll-reset, .poll-dot { display: none; } .poll-fill, .scale-fill, .word { transition: none; animation: none; } .question-cards li { animation: none; } }

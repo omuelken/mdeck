@@ -131,6 +131,13 @@ export function useRoom(room) {
   return { messages, reset, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code }
 }
 
+/** The deck's join link alone, for a slide that only invites people in (<join>). */
+export function useJoinLink() {
+  const [info, setInfo] = useState({})
+  useEffect(() => { serverInfo().then(setInfo) }, [])
+  return { joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code }
+}
+
 /** The latest answer of each device, e.g. to count votes that can be changed. */
 export function latestByDevice(messages) {
   const latest = new Map()

@@ -91,7 +91,7 @@ Right column
 - Named areas use `:::slot name … :::`; the layout's regions and settings come from `mdeck templates --json`.
 - `:::notes … :::` holds speaker notes. `:::steps … :::` reveals list items one at a time. `:::tip`, `:::warning`, `:::info` are callouts. `:::columns … +++ … :::` makes columns inside a slide.
 - Code fences get syntax highlighting; `$…$` and `$$…$$` render math.
-- `<poll room="lunch" options="Mensa|Thai|Pizza" />` lets the audience vote on their phones through a QR code on the slide; each poll needs its own `room`. It works when the deck is presented with `mdeck dev <deck>.md --host` or with a room server set under `live:`.
+- `<poll room="lunch" options="Mensa|Thai|Pizza" />` lets the audience vote on their phones through a QR code on the slide; each poll needs its own `room`. `<scale room="pace" min="1" max="5" low="Too slow" high="Too fast" />`, `<wordcloud room="mood" />` and `<question room="ask" />` ask for a rating, short words or open answers the same way. With several of them, put `<join />` on an early slide to show the QR code once, and add `qr="false"` to the questions. It works when the deck is presented with `mdeck dev <deck>.md --host` or with a room server set under `live:`.
 
 ## 3. Write the deck
 

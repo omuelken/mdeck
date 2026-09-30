@@ -516,6 +516,11 @@ labels:
 | `respond.waiting` | The next question will appear here. | Die nächste Frage erscheint hier. |
 | `respond.send` | Send | Senden |
 | `respond.sent` | Sent. Thank you! | Gesendet. Danke! |
+| `join.scan` | Scan to join | Scannen und mitmachen |
+| `join.hint` | Keep the page open: each question appears there. | Seite offen lassen: Jede Frage erscheint dort. |
+| `join.at` | Join at {link} | Mitmachen: {link} |
+| `question.empty` | Answers appear here. | Hier erscheinen die Antworten. |
+| `scale.average` | Average {n} | Durchschnitt {n} |
 
 ---
 
@@ -648,6 +653,17 @@ For `play="auto"` the video pauses and resets to the beginning when you navigate
 | `room` | `poll` | Name of the room that collects the answers; unique per poll in a deck. Letters, digits, `.`, `-`, `_` |
 | `options` | — | Answers separated by `\|` |
 | `question` | — | Question text; phones fall back to the slide heading |
+| `qr` | `true` | `false` shows only the short link instead of the QR code |
+
+Three more activities take the same `room`, `question` and `qr`:
+
+| Tag | Attributes | Phones | Slide |
+|---|---|---|---|
+| `<scale>` | `min` (1), `max` (5), `low`, `high` | One button per number, `low`/`high` as labels | Count per number and the average; latest answer per device |
+| `<wordcloud>` | `placeholder`, `limit` (40) | Text field, up to 40 characters, repeatable | Answers sized by frequency, case-insensitive |
+| `<question>` | `placeholder`, `limit` (8) | Text field, up to 200 characters, repeatable | The newest answers as cards |
+
+`<join />` shows the deck's join code large (`size`, default 420), for a slide that invites everyone once; activities after it can use `qr="false"`. QR codes (`<join>`, activities, `<qrcode>`) are SVG in the slide's `--ink` on a transparent background; `--qr-ink` and `--qr-bg` override the colours.
 
 The slide shows live bars, the number of answers, a QR code and a short link. Phones never load the deck: they open the room server's own answer page at `<server>/<code>`, where the six-digit session code is the same for every poll in the deck. The presenter's screen (the presenter view or a full deck window, never an embedded preview) announces the poll on the current slide with what the phones should show and the deck's look; the room server only accepts that from the presenter. Between polls the phones wait. Each device's latest vote counts. The presenter can reset the room (hover over the results).
 

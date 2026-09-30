@@ -20,8 +20,47 @@ Every poll in a presentation shows the same code, so people scan once. Their pho
 | `room` | A short name for this question, different for each poll in the deck. Letters, digits, hyphens and underscores. |
 | `options` | The answers, separated by `\|` |
 | `question` | Optional question text. Without it, phones show the slide's heading. |
+| `qr` | `false` leaves out the QR code, when `<join />` showed it earlier. |
 
 With `lang: de` in the settings, the slide and the phones show German words, such as “Scannen und abstimmen”. The phones use the presentation's colours and fonts; if you pick another theme or palette in the presenter view, the phones change with it.
+
+## Other kinds of questions
+
+Besides a poll, three more kinds work the same way: one line on a slide, answered on the phones.
+
+```markdown
+<scale room="pace" min="1" max="5" low="Too slow" high="Too fast" />
+<wordcloud room="mood" placeholder="One word" />
+<question room="ask" placeholder="Your question" />
+```
+
+| Tag | Phones show | The slide shows |
+|---|---|---|
+| `<scale>` | The numbers from `min` to `max` (1 to 5 unless set, at most 11 steps), with `low` and `high` as labels at the ends | How many chose each number, and the average. Each phone's latest answer counts |
+| `<wordcloud>` | A short text field | Every answer, larger the more often it came in. Capitals and extra spaces do not matter. People may send several |
+| `<question>` | A text field | The newest answers as cards, eight unless `limit` says otherwise. People may send several |
+
+All of them take `room`, `question` and `qr` like a poll, and `placeholder` for the text fields.
+
+## Show the code once
+
+Each question shows the QR code unless you say otherwise. To invite everybody once, at the start, put the code on a slide of its own and leave it out of the questions:
+
+```markdown
+---
+# Take out your phone.
+
+<join />
+
+---
+# How do you make slides today?
+
+<poll room="tools" options="PowerPoint|Keynote|Markdown" qr="false" />
+```
+
+`<join />` shows the code large, with the link below it. Phones that scanned it follow along to every question. With `qr="false"`, a question shows the short link in its last line instead, for people who come in late. `size` sets the size of the code on the join slide.
+
+The code is drawn in the slide's colours, so it fits the theme; phone cameras also read light codes on dark slides.
 
 Hover over the results to see **Reset**, which clears the answers, for example before the real session. Only the presenter can reset.
 
@@ -109,4 +148,4 @@ Answers are anonymous. Each phone gets a random number so it can change its vote
 
 ## Make your own activity
 
-A poll is an ordinary component. The [interactive content](components.html#audience-interaction) guide shows how to write your own, such as a word cloud or a rating.
+Polls, scales, word clouds and questions are ordinary components. The [interactive content](components.html#audience-interaction) guide shows how to write your own, such as a quiz.

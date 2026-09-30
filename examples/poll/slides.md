@@ -12,27 +12,23 @@ meta:
 layout: title
 ---
 # Ask the room.
-## A live poll in a plain slide file.
+## Live questions in a plain slide file.
 
 :::notes
-Start this deck with `mdeck dev slides.md --host` so phones in the same network can vote.
+Start this deck with `mdeck dev slides.md --host` so phones in the same network can answer.
 
-This deck shows the whole idea in two polls: one question on the slide, one answered on the phone.
+The deck shows every kind of question mdeck has: a poll, a scale, a word cloud and open answers. The QR code appears once, on the next slide.
 :::
 
 ---
-# People answer on their phones, the slide counts.
+# Take out your phone.
 
-:::steps
-- **Scan** — one QR code for the whole talk.
-- **Tap** — the phone shows one button per answer.
-- **Watch** — the bars grow as the answers come in.
-:::
+<join />
 
 :::notes
-Reveal the three steps, then move on to try it right away.
+Leave this up until most people have scanned. The code is the same for the whole talk: phones that joined now follow along, and each question appears on them when its slide comes up.
 
-Stress that nobody installs anything: the QR code opens the same slides, showing only the buttons. People scan once; their phones follow along to each poll.
+Latecomers find the short link at the bottom of every question slide.
 :::
 
 ---
@@ -40,10 +36,10 @@ title: "Poll: how do you make slides?"
 ---
 # How do you make slides today?
 
-<poll room="tools" options="PowerPoint|Keynote|Google Slides|LaTeX Beamer|Markdown" />
+<poll room="tools" options="PowerPoint|Keynote|Google Slides|LaTeX Beamer|Markdown" qr="false" />
 
 :::notes
-Give people half a minute to scan and vote. Read out the leader once the bars settle.
+A poll: one button per answer. Give people half a minute and read out the leader once the bars settle.
 
 Anyone can change their answer: only the latest vote from each phone counts.
 
@@ -51,34 +47,63 @@ Before the talk, hover over the results and click Reset to clear test votes.
 :::
 
 ---
-# Writing a poll takes one line.
+title: "Scale: Markdown"
+---
+# How well do you know Markdown?
 
-```markdown
-<poll room="tools"
-      options="PowerPoint|Keynote|Google Slides|LaTeX Beamer|Markdown" />
-```
-
-- **room** — a short name, different for every poll in the deck.
-- **options** — the answers, separated by `|`.
-- **question** — optional; without it, phones show the slide heading.
+<scale room="markdown" min="1" max="5" low="Never used it" high="Every day" qr="false" />
 
 :::notes
-Point at the line that made the previous slide. That line is all the author writes.
+A scale: phones show the numbers from 1 to 5, the slide counts each one and shows the average.
 
-The next slide uses `question`, so the text on the phone differs from the slide heading.
+A high average means the rest of the talk can go faster.
 :::
 
 ---
-title: "Poll: next feature"
+title: "Word cloud: slides"
 ---
-# One more before we finish.
+# One word for your last presentation?
 
-<poll room="next" question="Which feature should mdeck get next?" options="Word clouds|Open questions|Quizzes|Timers" />
+<wordcloud room="mood" placeholder="One word" qr="false" />
 
 :::notes
-This poll sets its own `question`, which appears above the bars and on the phones.
+A word cloud: people may send as many words as they like. The more often a word comes in, the larger it gets; capitals do not matter.
 
-Mention that each of these is an ordinary Preact component on top of the same rooms, and that the "Create interactive content" guide shows how to write one.
+Pick out the largest word and one surprising small one.
+:::
+
+---
+title: "Open question"
+---
+# What would you like to ask?
+
+<question room="ask" placeholder="Your question" qr="false" />
+
+:::notes
+Open answers: the newest eight appear as cards, and people can send several.
+
+Answer one or two now, and promise to go through the rest afterwards; the room keeps them until you reset it.
+:::
+
+---
+# Each question is one line.
+
+```markdown
+<join />
+<poll room="tools" options="PowerPoint|Keynote|Markdown" />
+<scale room="markdown" min="1" max="5" low="Never" high="Daily" />
+<wordcloud room="mood" />
+<question room="ask" placeholder="Your question" />
+```
+
+- **room** — a short name, different for every question in the deck.
+- **qr="false"** — leave out the code when `<join />` showed it earlier.
+- **question** — optional; without it, phones show the slide heading.
+
+:::notes
+Point at the lines that made the previous slides. That is all the author writes.
+
+The QR code takes the slide's colours, so it fits every theme; phone cameras read light-on-dark codes too.
 :::
 
 ---

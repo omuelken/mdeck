@@ -45,6 +45,11 @@ export const LABELS = {
     'respond.waiting': 'The next question will appear here.',
     'respond.send': 'Send',
     'respond.sent': 'Sent. Thank you!',
+    'join.scan': 'Scan to join',
+    'join.hint': 'Keep the page open: each question appears there.',
+    'join.at': 'Join at {link}',
+    'question.empty': 'Answers appear here.',
+    'scale.average': 'Average {n}',
   },
   de: {
     'reader.outline': 'Gliederung',
@@ -86,6 +91,11 @@ export const LABELS = {
     'respond.waiting': 'Die nächste Frage erscheint hier.',
     'respond.send': 'Senden',
     'respond.sent': 'Gesendet. Danke!',
+    'join.scan': 'Scannen und mitmachen',
+    'join.hint': 'Seite offen lassen: Jede Frage erscheint dort.',
+    'join.at': 'Mitmachen: {link}',
+    'question.empty': 'Hier erscheinen die Antworten.',
+    'scale.average': 'Durchschnitt {n}',
   },
 }
 
