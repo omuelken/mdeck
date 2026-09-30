@@ -11,8 +11,8 @@
 - The room server orders the presenter's announcements by when it heard them, so two devices with clocks that disagree no longer take the phones back to an older slide. New route `POST /rooms/<id>/ink` (presenter only) for live drawings.
 - Fixed: the presenter view and the phones' answer page failed on plain `http://` network addresses (as with `mdeck dev --host`), where browsers offer no `crypto.randomUUID`.
 - More kinds of audience questions: `<scale>` (a number from `min` to `max`, with counts and the average), `<wordcloud>` (short answers sized by how often they came in) and `<question>` (open answers as cards). Phones answer them on the same page as polls.
-- `<join />` shows the deck's join code once, large, for a slide at the start; `qr="false"` on a poll or another question leaves out its own code and shows the short link instead.
-- QR codes (`<qrcode>`, polls, `<join>`) are drawn as SVG in the slide's own colours instead of black on white, so they fit dark themes too; `--qr-ink` and `--qr-bg` override them.
+- `<qrcode />` without `url` shows the deck's join code, large and with its link, for a slide at the start; `qr="false"` on a poll or another question leaves out its own code and shows the short link instead.
+- QR codes (`<qrcode>` and the questions) are drawn as SVG in the slide's own colours instead of black on white, so they fit dark themes too; `--qr-ink` and `--qr-bg` override them.
 
 ## 1.3.1 — 2026-09-30
 

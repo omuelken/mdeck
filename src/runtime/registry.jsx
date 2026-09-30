@@ -1,11 +1,10 @@
 import CodeBlock from '../components/CodeBlock.jsx'
-import QrCode from '../components/QrCode.jsx'
+import QrCodeTag from '../components/QrCodeTag.jsx'
 import VideoPlayer from '../components/VideoPlayer.jsx'
 import Poll from '../components/Poll.jsx'
 import Question from '../components/Question.jsx'
 import WordCloud from '../components/WordCloud.jsx'
 import Scale from '../components/Scale.jsx'
-import Join from '../components/Join.jsx'
 import deckComponents from 'virtual:deck-components'
 
 // Maps lowercase HTML tag names to Preact components.
@@ -17,12 +16,11 @@ import deckComponents from 'virtual:deck-components'
 // Deck-local components win on a name collision.
 export const registry = {
   codeblock: CodeBlock,
-  qrcode: QrCode,
+  qrcode: QrCodeTag,
   videoplayer: VideoPlayer,
   poll: Poll,
   question: Question,
   wordcloud: WordCloud,
   scale: Scale,
-  join: Join,
   ...deckComponents,
 }

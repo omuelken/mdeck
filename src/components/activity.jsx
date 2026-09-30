@@ -3,7 +3,7 @@ import QrCode from './QrCode.jsx'
 import { t } from '../core/labels.js'
 
 // Parts every activity on a slide shares (<poll>, <question>, <wordcloud>,
-// <scale>, <join>): the deck's join code and the line with the number of
+// <scale>, and <qrcode> without a url): the deck's join code and the line with the number of
 // answers, the live dot and Reset.
 
 export const shortLink = url => url.replace(/^https?:\/\//, '')
