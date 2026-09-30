@@ -154,5 +154,12 @@ export function strokePath(stroke) {
   return d.join(' ') + ' Z'
 }
 
+/** The ink file's text: one stroke per line, so it reads well in a diff. */
+export function serializeInk(ink) {
+  const slides = Object.entries(ink.slides ?? {}).filter(([, strokes]) => strokes.length)
+  const body = slides.map(([id, strokes]) => `    ${JSON.stringify(id)}: [\n${strokes.map(stroke => '      ' + JSON.stringify(stroke)).join(',\n')}\n    ]`).join(',\n')
+  return `{\n  "version": ${INK_VERSION},\n  "width": ${ink.width},\n  "height": ${ink.height},\n  "slides": {${body ? '\n' + body + '\n  ' : ''}}\n}\n`
+}
+
 /** Opacity the SVG layer draws a tool with. */
 export const toolOpacity = tool => tool === 'highlighter' ? 0.35 : 1

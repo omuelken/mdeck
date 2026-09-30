@@ -3,7 +3,7 @@
 //   npm run test:browser
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,10 +13,11 @@ import { launchChrome } from '../src/build/chrome.js'
 import { baseConfig } from '../src/build/config.js'
 import { homePlugin } from '../src/build/homePlugin.js'
 import { livePlugin } from '../src/live/server.js'
+import { inkPlugin } from '../src/build/inkPlugin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-browser-check-'))
-let browser, dev, pollDev
+let browser, dev, pollDev, inkDev
 try {
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-templates/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   browser = await launchChrome({ dir: temp, timeout: 45000 })
@@ -73,6 +74,30 @@ try {
   await presenter.evaluate(`${stage}.reset()`)
   await until(audience, `${audienceStage}.state.index === 0`)
 
+  // Saving in dev: the first stroke gives the slide an id from its heading and
+  // writes <deck>.ink.json, without reloading the open windows.
+  const saveDeck = resolve(temp, 'save.md')
+  writeFileSync(saveDeck, '---\ndesign: neue\n---\n\n---\n# The important part\n\n---\n# Second\n')
+  const saveConfig = baseConfig(saveDeck)
+  inkDev = await createServer({ ...saveConfig, plugins: [...saveConfig.plugins, inkPlugin(saveDeck)], server: { ...saveConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  await inkDev.listen()
+  const drawing = await open(new URL('?view=deck', inkDev.resolvedUrls.local[0]).href)
+  await until(drawing, "document.querySelector('deck-stage')?.length === 2")
+  await delay(500)
+  await drawing.evaluate('window.__sameDocument = true; document.querySelector("deck-stage").inking = true')
+  const box = await drawing.evaluate("(() => { const r = document.querySelector('deck-stage').getBoundingClientRect(); return [r.left, r.top, r.width, r.height] })()")
+  const on = ([fx, fy]) => ({ x: box[0] + box[2] * fx, y: box[1] + box[3] * fy })
+  await drawing.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...on([0.2, 0.5]), clickCount: 1, buttons: 1, ...pen })
+  for (let i = 1; i <= 10; i++) await drawing.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...on([0.2 + 0.05 * i, 0.5]), buttons: 1, ...pen })
+  await drawing.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...on([0.7, 0.5]), clickCount: 1, buttons: 0, ...pen })
+  await until(drawing, "document.querySelector('[data-deck-active]')?.dataset.slideId === 'the-important-part'")
+  await delay(800)
+  assert.match(readFileSync(saveDeck, 'utf8'), /id: the-important-part/)
+  assert.ok(existsSync(resolve(temp, 'save.ink.json')), 'the ink file is written')
+  assert.equal(await drawing.evaluate('window.__sameDocument === true'), true, 'saving does not reload the page')
+  await drawing.evaluate('location.reload()')
+  await until(drawing, "document.querySelectorAll('[data-deck-active] .slide-ink path').length === 1")
+
   // The launch page `mdeck dev` opens renders the deck's details from its API.
   const slides = resolve(root, 'examples/custom-templates/slides.md')
   const config = baseConfig(slides)
@@ -100,10 +125,11 @@ try {
   await phone.evaluate("document.querySelectorAll('.answer-options button')[1].click()")
   await until(projector, "[...document.querySelectorAll('.poll-count')].map(e => e.textContent).join() === '0,1'")
   await until(phone, "document.querySelector('.answer-status').textContent.includes('Thai')")
-  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, saved ink, drawing.')
+  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, saved ink, drawing, saving ink in dev.')
 } finally {
   await browser?.close()
   await dev?.close()
   await pollDev?.close()
+  await inkDev?.close()
   rmSync(temp, { recursive: true, force: true })
 }

@@ -6,6 +6,7 @@ import { loadRegistry, extensionRoots, manifestsOf } from '../extensions/discove
 import { stripNotes as stripNotesFrom } from '../core/editDeck.js'
 import { componentFolders, componentFiles } from './components.js'
 import { inkFileFor, normalizeInk, emptyInk } from '../core/ink.js'
+import { isOwnWrite } from './ownWrites.js'
 import { fileURLToPath } from 'node:url'
 import { marked } from 'marked'
 
@@ -194,7 +195,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       server.watcher.add([abs, inkPath, ...watchDirs()])
       const refresh = file => {
         if (isWatched(file)) reload(server, ALL_IDS, resolve(file))
-        else if (resolve(file) === inkPath) reload(server, [RESOLVED_INK_ID], inkPath)
+        else if (resolve(file) === inkPath && !(() => { try { return isOwnWrite(inkPath, readFileSync(inkPath, 'utf-8')) } catch { return false } })()) reload(server, [RESOLVED_INK_ID], inkPath)
       }
       for (const event of ['add', 'unlink', 'addDir', 'unlinkDir']) server.watcher.on(event, refresh)
     },
@@ -264,6 +265,13 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       const changed = resolve(file)
       if (isWatched(changed)) {
         reload(server, ALL_IDS, changed)
+        return []
+      }
+      // mdeck's own writes (saved ink, a new slide id) must not reload the
+      // windows mid-talk: the pages refresh their ink on `mdeck:ink` instead.
+      const own = [inkPath, abs].includes(changed) && (() => { try { return isOwnWrite(changed, readFileSync(changed, 'utf-8')) } catch { return false } })()
+      if (own) {
+        invalidate(server, changed === abs ? [RESOLVED_ID, RESOLVED_INK_ID] : [RESOLVED_INK_ID])
         return []
       }
       if (changed === inkPath) {

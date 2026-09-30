@@ -4,6 +4,7 @@
 
 - Slides can carry drawings (ink) from `<deck>.ink.json` beside the deck: pen strokes with pressure and highlighter, drawn above the slide in the deck, the reader view, builds and PDFs. `I` hides them; `mdeck build` and `mdeck pdf` leave them out with `--no-ink`; `mdeck check` reports a broken ink file and drawings for slides that no longer exist.
 - Drawing in the full-screen deck: `D` starts it. Pen (with pressure) and highlighter are kept, a marker fades after a few seconds, the eraser removes whole strokes; undo/redo (also Cmd/Ctrl+Z), clear slide, colours and sizes are on a floating toolbar. Once a pen is used, fingers no longer draw unless switched on; tap zones are off while drawing. Until a server saves the ink, it is kept in the browser and can be downloaded as the ink file.
+- `mdeck dev` saves drawings in `<deck>.ink.json` as they are made, without reloading the open windows. A slide that gets its first drawing and has no `id:` gets one from its heading, so the drawing stays with it when slides are added or moved; when an id is changed in the editor, the drawing moves along. Drawings from several windows or devices are merged stroke by stroke, and the ink file is backed up once per session in `.mdeck-backups`.
 
 ## 1.3.1 — 2026-09-30
 

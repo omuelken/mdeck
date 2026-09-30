@@ -3,7 +3,7 @@
 // `save(op)` when a server keeps the ink file; otherwise it is kept in this
 // browser (localStorage) and the file can be downloaded.
 import { currentInk, changeInk, slideStrokes } from './store.js'
-import { simplify, hitTest } from '../../core/ink.js'
+import { simplify, hitTest, serializeInk } from '../../core/ink.js'
 import { inkFileName } from 'virtual:deck-ink'
 
 function deviceId() {
@@ -57,6 +57,10 @@ export function createInkController({ storageKey, save = null } = {}) {
   return {
     device,
     subscribe(listener) { listeners.add(listener); listener(state()); return () => listeners.delete(listener) },
+    /** Changes kept in this browser, not saved anywhere yet. */
+    localChanges: () => log.slice(),
+    /** Sends a change without adding it to the undo history. */
+    replay(op) { send([op]) },
     /** From here on, changes go to `save(op)` and the local copy is dropped. */
     useServer(saveOp) {
       saving = saveOp
@@ -100,7 +104,7 @@ export function createInkController({ storageKey, save = null } = {}) {
 
     /** Saves the ink as its file, for putting it next to the deck. */
     download() {
-      const blob = new Blob([JSON.stringify(currentInk(), null, 1) + '\n'], { type: 'application/json' })
+      const blob = new Blob([serializeInk(currentInk())], { type: 'application/json' })
       const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: inkFileName })
       document.body.appendChild(link)
       link.click()

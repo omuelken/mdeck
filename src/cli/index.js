@@ -14,6 +14,7 @@ import { createEditorServer } from '../build/editorServer.js'
 import { homePlugin } from '../build/homePlugin.js'
 import { checkDeck } from '../build/check.js'
 import { livePlugin, startLiveServer } from '../live/server.js'
+import { inkPlugin } from '../build/inkPlugin.js'
 import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
 import { installSkill, readSkill, TARGETS } from './skill.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
@@ -444,7 +445,7 @@ if (command === 'new') {
   }
   const server = await createServer({
     ...base,
-    plugins: [...base.plugins, homePlugin(abs, { services }), livePlugin()],
+    plugins: [...base.plugins, homePlugin(abs, { services }), livePlugin(), inkPlugin(abs)],
     publicDir: dirname(abs),
     server: {
       ...base.server,
