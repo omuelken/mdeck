@@ -1,5 +1,6 @@
 // Drawing on a deck: turns the stage's ink events into changes of the ink,
-// with undo and redo of this device's own changes. Every change goes to
+// with undo and redo of this device's own changes; `publish(op)` passes each
+// change on to the other windows (bus.js). Every change goes to
 // `save(op)` when a server keeps the ink file; otherwise it is kept in this
 // browser (localStorage) and the file can be downloaded.
 import { currentInk, changeInk, slideStrokes } from './store.js'
@@ -14,10 +15,10 @@ function deviceId() {
   } catch { return (deviceId.fallback ??= Math.random().toString(36).slice(2, 8)) }
 }
 
-const readLog = key => { try { return JSON.parse(localStorage.getItem(key) ?? '[]') } catch { return [] } }
+export const readLog = key => { try { return JSON.parse(localStorage.getItem(key) ?? '[]') } catch { return [] } }
 const writeLog = (key, log) => { try { localStorage.setItem(key, JSON.stringify(log)); return true } catch { return false } }
 
-export function createInkController({ storageKey, save = null } = {}) {
+export function createInkController({ storageKey, save = null, publish = () => {} } = {}) {
   const device = deviceId()
   let counter = 0
   const undoStack = [], redoStack = []
@@ -32,8 +33,11 @@ export function createInkController({ storageKey, save = null } = {}) {
   const state = () => ({ canUndo: undoStack.length > 0, canRedo: redoStack.length > 0, unsaved: !saving && log.length > 0, saving: !!saving })
 
   function send(ops) {
+    // Another window of this deck may have added to the log meanwhile.
+    if (!saving) log = readLog(storageKey)
     for (const op of ops) {
       changeInk(op)
+      publish(op)
       if (saving) saving(op)
       else log.push(op)
     }

@@ -52,6 +52,25 @@ try {
   await inkRead.evaluate("[...document.querySelectorAll('.share-btn')].find(b => b.textContent.includes('Read')).click()")
   await until(inkRead, "document.querySelectorAll('.share-read .slide-ink path').length === 1")
 
+  // Drawing in the presenter view: Draw turns on the main frame's ink mode,
+  // and the audience window shows the stroke while it is drawn and after.
+  const inkPresenter = await open('ink.html?view=presenter')
+  const inkFrame = "document.querySelector('iframe')?.contentWindow?.document"
+  await until(inkPresenter, `${inkFrame}?.querySelectorAll('.slide-ink path').length === 1`)
+  await delay(200)
+  const inkSession = await inkPresenter.evaluate("new URL(location.href).searchParams.get('session')")
+  const inkAudience = await open('ink.html?view=audience&session=' + inkSession)
+  await until(inkAudience, "document.querySelectorAll('.slide-ink path').length === 1")
+  await inkPresenter.evaluate("document.querySelector('.presenter-draw').click()")
+  await until(inkPresenter, "document.querySelector('.presenter-draw').getAttribute('aria-pressed') === 'true'")
+  const frameBox = await inkPresenter.evaluate(`(() => { const f = document.querySelector('iframe').getBoundingClientRect(), r = ${inkFrame}.querySelector('deck-stage').getBoundingClientRect(); return [f.left + r.left, f.top + r.top, r.width, r.height] })()`)
+  const inFrame = ([fx, fy]) => ({ x: frameBox[0] + frameBox[2] * fx, y: frameBox[1] + frameBox[3] * fy })
+  await inkPresenter.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...inFrame([0.2, 0.3]), clickCount: 1, buttons: 1, ...pen })
+  for (let i = 1; i <= 6; i++) await inkPresenter.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...inFrame([0.2 + 0.05 * i, 0.3]), buttons: 1, ...pen })
+  await until(inkAudience, "document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-live path').length === 1")
+  await inkPresenter.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...inFrame([0.5, 0.3]), clickCount: 1, buttons: 0, ...pen })
+  await until(inkAudience, "document.querySelectorAll('.slide-ink path').length === 2 && document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-live path').length === 0")
+
   const presenter = await open('deck.html?view=presenter')
   const stage = "document.querySelector('iframe')?.contentWindow?.document.querySelector('deck-stage')"
   await until(presenter, `${stage}?.length === 2`)
@@ -125,7 +144,7 @@ try {
   await phone.evaluate("document.querySelectorAll('.answer-options button')[1].click()")
   await until(projector, "[...document.querySelectorAll('.poll-count')].map(e => e.textContent).join() === '0,1'")
   await until(phone, "document.querySelector('.answer-status').textContent.includes('Thai')")
-  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, saved ink, drawing, saving ink in dev.')
+  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, saved ink, drawing, drawing in the presenter view, saving ink in dev.')
 } finally {
   await browser?.close()
   await dev?.close()

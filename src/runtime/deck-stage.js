@@ -786,7 +786,8 @@
     // eraser. `inkTool` is { tool: 'pen' | 'highlighter' | 'marker' |
     // 'eraser', color, size }. Once a pen was used, fingers no longer draw
     // (palm rejection) unless `inkFinger` is set. `inkRenderer(stroke)` may
-    // return an SVG path for the stroke in progress.
+    // return an SVG path for the stroke in progress. While a stroke is drawn,
+    // `inkprogress` repeats it as it grows; `key` ties it to its end event.
 
     get inking() { return this.hasAttribute('data-inking'); }
     set inking(on) {
@@ -828,13 +829,26 @@
       this._inkDrawing = { pointerId: e.pointerId, tool, points: [point], slideId: this._inkSlideId(), gesture: this._inkGesture };
       if (tool.tool === 'eraser') { this._erase(point); return; }
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      const renderer = !!this.inkRenderer;
-      path.setAttribute(renderer ? 'fill' : 'stroke', tool.color);
-      if (!renderer) { path.setAttribute('fill', 'none'); path.setAttribute('stroke-width', tool.size); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round'); }
-      path.setAttribute(renderer ? 'fill-opacity' : 'stroke-opacity', tool.tool === 'highlighter' ? '0.35' : '1');
+      this._styleLive(path, tool);
       this._inkLive.appendChild(path);
       this._inkDrawing.path = path;
+      this._inkDrawing.key = `${this._inkGesture}`;
       this._drawLive(path, this._inkDrawing.points, tool);
+      this._inkProgress(this._inkDrawing);
+    }
+
+    _styleLive(path, { tool, color, size }) {
+      const renderer = !!this.inkRenderer;
+      path.setAttribute(renderer ? 'fill' : 'stroke', color);
+      if (!renderer) { path.setAttribute('fill', 'none'); path.setAttribute('stroke-width', size); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round'); }
+      path.setAttribute(renderer ? 'fill-opacity' : 'stroke-opacity', tool === 'highlighter' ? '0.35' : '1');
+    }
+
+    // Announces the stroke in progress (`inkprogress`, the same points array
+    // as it grows), so other windows can show it while it is drawn.
+    _inkProgress(drawing) {
+      const { tool, color, size } = drawing.tool;
+      this.dispatchEvent(new CustomEvent('inkprogress', { detail: { key: drawing.key, slideId: drawing.slideId, tool, color, size, points: drawing.points }, bubbles: true, composed: true }));
     }
 
     _onInkMove(e) {
@@ -844,7 +858,7 @@
       const events = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
       for (const ev of events.length ? events : [e]) drawing.points.push(this._inkPoint(ev));
       if (drawing.tool.tool === 'eraser') this._erase(drawing.points[drawing.points.length - 1]);
-      else this._drawLive(drawing.path, drawing.points, drawing.tool);
+      else { this._drawLive(drawing.path, drawing.points, drawing.tool); this._inkProgress(drawing); }
     }
 
     _onInkUp(e) {
@@ -857,7 +871,7 @@
       this._inkDrawing = null;
       if (!drawing || drawing.tool.tool === 'eraser' || !drawing.slideId) { drawing?.path?.remove(); return; }
       const { tool, color, size } = drawing.tool;
-      const detail = { slideId: drawing.slideId, tool: tool === 'marker' ? 'pen' : tool, color, size, points: drawing.points };
+      const detail = { key: drawing.key, slideId: drawing.slideId, tool: tool === 'marker' ? 'pen' : tool, color, size, points: drawing.points };
       if (tool === 'marker') {
         // Never saved: fades where it was drawn.
         drawing.path.classList.add('fading');
@@ -878,16 +892,32 @@
       this.dispatchEvent(new CustomEvent('inkerase', { detail: { slideId, point, radius: 14, gesture: this._inkDrawing?.gesture ?? 0 }, bubbles: true, composed: true }));
     }
 
-    /** Draws a stroke that arrives from elsewhere and fades, like the marker. */
-    showMarker({ points, color = '#e11d48', size = 6 }) {
+    /**
+     * Strokes being drawn in another window: `liveStroke(key, stroke)` shows
+     * or updates one ({ slideId, tool, color, size, points }), only while
+     * this window shows that slide; `endLiveStroke(key, { fade })` removes it,
+     * fading like the marker, or once the saved layer draws it.
+     */
+    liveStroke(key, { slideId, tool = 'pen', color = '#e11d48', size = 6, points }) {
       if (!this._inkLive || !points?.length) return;
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('fill', color);
-      this._inkLive.appendChild(path);
-      this._drawLive(path, points, { tool: 'pen', size });
-      if (!this.inkRenderer) { path.setAttribute('fill', 'none'); path.setAttribute('stroke', color); path.setAttribute('stroke-width', size); }
-      requestAnimationFrame(() => path.classList.add('fading'));
-      setTimeout(() => path.remove(), 3200);
+      this._remoteInk ??= new Map();
+      let path = this._remoteInk.get(key);
+      if (slideId && slideId !== this._inkSlideId()) { path?.remove(); this._remoteInk.delete(key); return; }
+      if (!path) {
+        path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        this._styleLive(path, { tool, color, size });
+        this._inkLive.appendChild(path);
+        this._remoteInk.set(key, path);
+      }
+      this._drawLive(path, points, { tool, size });
+    }
+
+    endLiveStroke(key, { fade = false } = {}) {
+      const path = this._remoteInk?.get(key);
+      if (!path) return;
+      this._remoteInk.delete(key);
+      if (fade) { requestAnimationFrame(() => path.classList.add('fading')); setTimeout(() => path.remove(), 3200); }
+      else requestAnimationFrame(() => requestAnimationFrame(() => path.remove()));
     }
 
     /** True while the deck is laid out for print or PDF. */

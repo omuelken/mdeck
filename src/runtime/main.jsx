@@ -13,7 +13,7 @@ import { ShareView } from './ShareView.jsx'
 import { configureLive, announce, setLookSource, actAsPresenter, useSteering } from '../live/client.js'
 import { registry } from './registry'
 import { followActiveRooms } from '../live/follow.js'
-import { attachInk } from './ink/attach.js'
+import { attachInk, watchInk } from './ink/attach.js'
 import { strokePath } from '../core/ink.js'
 import { inkFileName } from 'virtual:deck-ink'
 import { roomsIn, roomsOnSlide, findRoomTag, slideTitleFor } from '../live/roomTag.js'
@@ -104,11 +104,12 @@ function injectSpeakerNotes(slides) {
 }
 
 // URL for the presenter's own iframe and preview pane (uses postMessage)
-function buildChildUrl(design, palette, accent, accent2, slideIndex = null) {
+function buildChildUrl(design, palette, accent, accent2, slideIndex = null, { draw = false } = {}) {
   const url = new URL(window.location.href)
   url.searchParams.delete('v')
   url.searchParams.set('view', 'deck')
   url.searchParams.set('embedded', '1')
+  if (draw) url.searchParams.set('draw', '1')
   if (design) url.searchParams.set('design', design)
   else url.searchParams.delete('design')
   // Always set these params so an explicit "none" selection overrides the deck's frontmatter
@@ -147,6 +148,7 @@ function PresenterView({ deckConfig, slides }) {
   const [accent2, setAccent2] = useState(deckConfig.accent2 ?? '')
   const [audienceConnected, setAudienceConnected] = useState(false)
   const [noteSize, setNoteSize] = useState(13)
+  const [inking, setInking] = useState(false)
 
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [designOpen, setDesignOpen] = useState(false)
@@ -178,7 +180,7 @@ function PresenterView({ deckConfig, slides }) {
   const effectiveAccent2 = effectiveToken('--accent-2', appearance) || '#888888'
   const notes = useMemo(() => slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''), [slides])
   // Preserve current slide when design/palette causes an iframe reload
-  const iframeSrc = useMemo(() => buildChildUrl(design, palette, accent, accent2, indexRef.current), [design, palette, accent, accent2])
+  const iframeSrc = useMemo(() => buildChildUrl(design, palette, accent, accent2, indexRef.current, { draw: true }), [design, palette, accent, accent2])
   // previewSrc only recomputes on design/palette/accent change; slide changes use postMessage
   const previewSrc = useMemo(
     () => buildChildUrl(design, palette, accent, accent2, indexRef.current + 1),
@@ -200,6 +202,7 @@ function PresenterView({ deckConfig, slides }) {
   useEffect(() => {
     function onMessage({ data, source }) {
       if (source !== iframeRef.current?.contentWindow) return
+      if (typeof data?.inkMode === 'boolean') { setInking(data.inkMode); return }
       if (!data?.deckStateChanged) return
       const state = data.deckStateChanged
       const i = state.index
@@ -228,10 +231,11 @@ function PresenterView({ deckConfig, slides }) {
       const cmd =
         (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') ? 'next' :
         (e.key === 'ArrowLeft'  || e.key === 'PageUp')                    ? 'prev' :
-        (e.key === 'Home' || e.key === 'r' || e.key === 'R')              ? 'reset' : null
+        (e.key === 'Home' || e.key === 'r' || e.key === 'R')              ? 'reset' :
+        (e.key === 'd' || e.key === 'D')                                  ? 'ink' : null
       if (!cmd) return
       e.preventDefault()
-      sendTo(iframeRef.current?.contentWindow, cmd)
+      sendTo(iframeRef.current?.contentWindow, cmd, cmd === 'ink' ? 'toggle' : undefined)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -470,6 +474,13 @@ function PresenterView({ deckConfig, slides }) {
             <button style={S.btn} onClick={() => navCommand('next')}>Next →</button>
             <button style={S.btn} onClick={() => navCommand('reset')}>Reset</button>
             <button
+              class="presenter-draw"
+              title="Draw on the slide (D)"
+              aria-pressed={inking}
+              style={{ ...S.btn, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }}
+              onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}
+            >✎ Draw</button>
+            <button
               style={{
                 ...S.btn,
                 marginLeft: 'auto',
@@ -580,6 +591,10 @@ async function init() {
   const audienceMode  = view === 'audience'
   const embedded = url.searchParams.get('embedded') === '1'
   const shareMode = view === 'share' && !editorMode && !embedded
+  // The deck window and the presenter's main frame draw; the audience window
+  // and the next-slide preview show what is drawn.
+  const drawHere = !audienceMode && (!embedded || url.searchParams.get('draw') === '1')
+  const inkStorageKey = `mdeck-ink:${inkFileName}:${location.pathname}`
 
   injectSpeakerNotes(slides)
 
@@ -611,6 +626,7 @@ async function init() {
     else if (ctrl.command === 'reset') stage.reset()
     else if (ctrl.command === 'goTo' && Number.isInteger(ctrl.value)) stage.goTo(ctrl.value)
     else if (ctrl.command === 'setState') stage.setState(ctrl.value)
+    else if (ctrl.command === 'ink' && drawHere) stage.inking = ctrl.value === 'toggle' ? !stage.inking : !!ctrl.value
   }
 
   // Editor preview: the editor pushes whole sources; render best effort and
@@ -649,11 +665,14 @@ async function init() {
     document.body.appendChild(entry)
   }
 
-  // Drawing in the full-screen deck (D). The audience window only shows ink.
-  if (!embedded && !audienceMode) {
-    const stage = document.querySelector('deck-stage')
-    if (stage) attachInk(stage, { storageKey: `mdeck-ink:${inkFileName}:${location.pathname}` })
-  }
+  // Drawing (D) in the full-screen deck and the presenter's main frame.
+  const inkStage = document.querySelector('deck-stage')
+  if (inkStage && drawHere) {
+    attachInk(inkStage, {
+      storageKey: inkStorageKey,
+      onMode: inking => { if (embedded) window.parent.postMessage({ inkMode: inking }, window.location.origin) },
+    })
+  } else if (inkStage) watchInk(inkStage, { storageKey: inkStorageKey })
 
   // A full deck or audience window is a presenter's screen; previews are embedded.
   if (!embedded) {

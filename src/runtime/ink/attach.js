@@ -3,18 +3,31 @@
 // Cmd/Ctrl+Z undoes and Cmd/Ctrl+Shift+Z redoes.
 import { h, render } from 'preact'
 import { strokePath } from '../../core/ink.js'
-import { createInkController } from './controller.js'
+import { createInkController, readLog } from './controller.js'
+import { changeInk } from './store.js'
+import { createInkBus, broadcastTransport } from './bus.js'
 import { InkToolbar } from './Toolbar.jsx'
 import { connectInkServer } from './server.js'
 
 const typing = target => target?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"]')
 
-export function attachInk(stage, { storageKey, save = null, keys = true } = {}) {
+const channelName = storageKey => `mdeck-ink-live:${storageKey}`
+
+/** A window that only shows the ink others draw, such as the audience window. */
+export function watchInk(stage, { storageKey, transports = [] } = {}) {
   stage.inkRenderer = strokePath
-  const controller = createInkController({ storageKey, save })
+  for (const op of readLog(storageKey)) changeInk(op)
+  return createInkBus(stage, [broadcastTransport(channelName(storageKey)), ...transports])
+}
+
+export function attachInk(stage, { storageKey, save = null, keys = true, transports = [], onMode = () => {} } = {}) {
+  stage.inkRenderer = strokePath
+  const bus = createInkBus(stage, [broadcastTransport(channelName(storageKey)), ...transports])
+  const controller = createInkController({ storageKey, save, publish: op => bus.op(op) })
   // Saving through `mdeck dev` when it lets this page; otherwise in this browser.
   if (!save) connectInkServer(controller)
-  stage.addEventListener('inkstroke', event => controller.addStroke(event.detail))
+  stage.addEventListener('inkstroke', event => { controller.addStroke(event.detail); bus.strokeDone(event.detail) })
+  stage.addEventListener('inkmarker', event => bus.markerDone(event.detail))
   stage.addEventListener('inkerase', event => controller.erase(event.detail))
 
   const host = document.createElement('div')
@@ -22,7 +35,7 @@ export function attachInk(stage, { storageKey, save = null, keys = true } = {}) 
   document.body.appendChild(host)
   const done = () => { stage.inking = false }
   const showToolbar = on => render(on ? h(InkToolbar, { stage, controller, onDone: done }) : null, host)
-  stage.addEventListener('inkmode', event => showToolbar(event.detail.inking))
+  stage.addEventListener('inkmode', event => { showToolbar(event.detail.inking); onMode(event.detail.inking) })
 
   if (keys) {
     window.addEventListener('keydown', event => {
