@@ -21,7 +21,8 @@
 .poll-answer h1 { font-size: 26px; line-height: 1.25; margin: 0 0 24px; }
 .poll-options { display: grid; gap: 12px; }
 .poll-options button { padding: 18px 20px; border: 2px solid var(--rule, #ccc); border-radius: 14px; background: var(--bg, #fff); color: inherit; font: inherit; font-size: 20px; font-weight: 600; text-align: left; cursor: pointer; }
-.poll-options button.is-picked { border-color: var(--accent, #0d9488); background: color-mix(in srgb, var(--accent, #0d9488) 14%, var(--bg, #fff)); }
+.poll-options button:hover { border-color: color-mix(in srgb, var(--accent, #0d9488) 60%, var(--rule, #ccc)); }
+.poll-options button.is-picked { border-color: var(--accent, #0d9488); background: var(--accent, #0d9488); color: var(--on-accent, var(--bg, #fff)); }
 .poll-status { margin: 20px 0 0; color: var(--muted, #666); min-height: 2.8em; }
 .poll-join--local { max-width: 320px; margin: 0; background: none; color: var(--muted, #666); text-align: center; border: 2px dashed var(--rule, #ccc); }
 @media print { .poll-join--local { display: none; } }

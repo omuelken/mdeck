@@ -8,13 +8,15 @@ import { t } from '../core/labels.js'
 // follows the presentation and shows the activity on the presenter's current
 // slide, or a waiting note between them. `&room=<name>` shows one activity
 // directly. Either way only that component is rendered, in the deck's theme,
-// and it sees `responding(room)` so it shows its answer form.
+// and it sees `responding(room)` so it shows its answer form. The content sits
+// in `.slide-body`, so the theme's own heading and text rules apply; the
+// answer page's stylesheet only scales them to a phone.
 
 function Activity({ deck, room }) {
   const tag = findRoomTag(deck.source, room)
-  if (!tag) return <p class="respond-note">{t('respond.missing')}</p>
+  if (!tag) return <div class="respond-note slide-body"><p>{t('respond.missing')}</p></div>
   setRespondingSlideTitle(slideTitleFor(deck, room))
-  return <HtmlContent key={room} class="respond-body" html={tag} />
+  return <HtmlContent key={room} class="respond-body slide-body" html={tag} />
 }
 
 function Follow({ deck }) {
@@ -22,7 +24,7 @@ function Follow({ deck }) {
   setFollowedRoom(stage.room)
   if (stage.room) return <Activity key={stage.room} deck={deck} room={stage.room} />
   const rooms = roomsIn(deck.source)
-  return <div class="respond-note">
+  return <div class="respond-note slide-body">
     <p>{t('respond.waiting')}</p>
     {!stage.announced && rooms.length > 0 && <>
       <p>{t('respond.choose')}</p>
