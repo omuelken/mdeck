@@ -118,6 +118,7 @@ complete folder.
 | [FHNW](examples/fhnw/slides.md) | Slides using the FHNW theme |
 | [Python](examples/python/slides.md) | A short introductory programming talk |
 | [Custom templates](examples/custom-templates/slides.md) | A deck-local comparison design and named regions |
+| [Poll](examples/poll/slides.md) | Two live audience polls; start it with `mdeck dev slides.md --host` |
 
 ## Made at FHNW
 
