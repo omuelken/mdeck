@@ -37,7 +37,7 @@ Besides a poll, three more kinds work the same way: one line on a slide, answere
 | Tag | Phones show | The slide shows |
 |---|---|---|
 | `<scale>` | The numbers from `min` to `max` (1 to 5 unless set, at most 11 steps), with `low` and `high` as labels at the ends | How many chose each number, and the average. Each phone's latest answer counts |
-| `<wordcloud>` | A short text field | A cloud of every answer, packed around the middle, larger the more often it came in and some upright. Capitals and extra spaces do not matter. People may send several. `height` sets its height (520) |
+| `<wordcloud>` | A short text field | A cloud of every answer, packed around the middle, larger the more often it came in and some upright. Capitals and extra spaces do not matter. People may send several. `height` sets its height (520). Colours come from the palette; `--cloud-1` to `--cloud-6` override them |
 | `<question>` | A text field | The newest answers as cards, eight unless `limit` says otherwise. People may send several |
 
 All of them take `room`, `question` and `qr` like a poll, and `placeholder` for the text fields.

@@ -91,7 +91,7 @@ export default function WordCloud({ room = 'words', question = '', limit = '60',
       <div class="word-cloud" ref={ref} style={{ height: `${cloudHeight}px` }}>
         {words.length
           ? <svg viewBox={`${-measure.width / 2} ${-cloudHeight / 2} ${measure.width || 1} ${cloudHeight}`} width="100%" height="100%" role="img" aria-label={words.map(word => word.text).join(', ')}>
-            {placed.map(word => <text key={word.text} class={`word word--${hash(word.text) % 3}`} text-anchor="middle"
+            {placed.map(word => <text key={word.text} class={`word word--${word.text === words[0].text ? 0 : hash(word.text) % 6}`} text-anchor="middle"
               style={{ fontSize: `${word.size}px`, fontFamily: measure.font, transform: `translate(${word.x}px, ${word.y}px) rotate(${word.rotate}deg)` }}>{word.text}</text>)}
           </svg>
           : <p class="question-empty">{t('question.empty')}</p>}

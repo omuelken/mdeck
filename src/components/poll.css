@@ -33,9 +33,14 @@
 .word-cloud { position: relative; width: 100%; }
 .word-cloud svg { display: block; overflow: visible; }
 .word { font-weight: 700; transition: transform .7s cubic-bezier(.2, .8, .2, 1), font-size .7s cubic-bezier(.2, .8, .2, 1); }
-.word--0 { fill: var(--accent, #0d9488); }
-.word--1 { fill: var(--ink, #111); }
-.word--2 { fill: var(--accent-2, var(--ink-soft, #555)); }
+/* Six colours from the palette: its accents and inks, and two blends of
+   them, all readable on the slide. A theme or deck may set --cloud-1…6. */
+.word--0 { fill: var(--cloud-1, var(--accent, #0d9488)); }
+.word--1 { fill: var(--cloud-2, var(--accent-2, #7c3aed)); }
+.word--2 { fill: var(--cloud-3, var(--ink, #111)); }
+.word--3 { fill: var(--cloud-4, color-mix(in oklab, var(--accent, #0d9488) 50%, var(--accent-2, #7c3aed))); }
+.word--4 { fill: var(--cloud-5, var(--ink-soft, #444)); }
+.word--5 { fill: var(--cloud-6, color-mix(in oklab, var(--accent, #0d9488) 55%, var(--ink, #111))); }
 
 /* <scale> */
 .scale-columns { display: flex; gap: 20px; align-items: stretch; height: 320px; }
