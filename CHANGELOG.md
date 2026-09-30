@@ -1,23 +1,42 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 — 2026-09-30
 
-- A theme, palette or accent picked in the presenter view reaches the phones too. While a presenter view runs, other deck windows in the same browser no longer announce, so phones do not flip between two screens.
-- The phones' answer page uses the theme's own heading style and fills a chosen answer with the accent colour.
-- Polls follow the presenter reliably: the launch page's presenter, audience and deck buttons carry the presenter code (taken out of the address bar at once), the presenter view says whether phones follow it and why not, and the current poll is repeated every few seconds so late phones and a restarted room server catch up.
-- The launch page shows a small live preview of the deck and uses the same dark tool styling as the presenter view, the editor and the reader's bar; the presenter view's buttons and labels now match the editor's.
-- The launch page is the dev server's plain address (the slides are at `?view=deck`) and links a presenter view and an audience window that belong together. For a deck with `live.server` it checks the room server and shows the viewers' link and the presenter code from `MDECK_LIVE_KEY`.
-- One answer link per deck: every poll shows the same QR code, and phones follow the presenter to whichever poll is on screen, with a waiting note in between. Only the presenter's screen may announce the current poll. Polls keep a live connection only while their slide is shown, so decks with many polls stay within the browser's connection limit. Polls ignore `<poll>` examples inside code.
-- `lang` is now the deck's language: built pages are marked with it, and the reader view, the deck's control bar, polls and the answer page use German or English words to match. The new `labels:` setting replaces single words. Presenter tools stay English.
-- The launch page and the editor also answer on `*.localhost` names, as used by local development proxies.
-- Audience interaction: `<poll room=… options=…>` shows live results and a QR code; phones that scan it get one button per option. Components can build their own activities with `useRoom` from `mdeck/live`. Rooms run inside `mdeck dev` (with `--host` for phones) or on a hosted room server started with `mdeck live`, set with the `live:` deck setting. Answers are anonymous and kept in memory only.
-- Decks can share components: the `components:` setting lists extra folders, searched after the deck's own `components/` folder. The dev server allows and watches them, picks up changes to the list without a restart, and `mdeck check` reports folders that do not exist.
-- `mdeck dev` opens a launch page for the deck: presenter, deck and reader views; the visual editor and the guides, started on first click; buttons that build the folder, the file to send and the PDF; and the `mdeck check` results. `--host` makes the slides reachable from phones in the same network; the launch page and its actions answer only on this computer. `mdeck dev` and `mdeck present` accept `--port` and `--no-open`.
-- PDFs, printouts and the reader's Read mode show interactive slides in their finished state. Every step is revealed and the slides sit inside `[data-deck-static]`; the stage dispatches a `printchange` event when printing starts or ends. CSS transitions are off in print.
-- Up to date dependencies with no known vulnerabilities: Vite 8, marked 18, KaTeX 0.18, js-yaml 4.3. Step lists (`:::steps`) now have the same spacing as ordinary bullet lists.
-- The editor copies the deck into `.mdeck-backups/` beside it before the first change of each session and keeps the ten newest copies.
-- A slide's `title:` setting names it in the outline and reader navigation when it has no heading.
-- Code blocks stay left-aligned in centred layouts such as `focus`.
+### Launch page
+
+- `mdeck dev` opens a launch page at the dev server's plain address; the slides are at `?view=deck`. It has a live preview of the deck; links to the presenter view and an audience window that belong together, the full-screen deck and the reader view; the visual editor and the guides, started on first click; buttons that build the folder, the file to send and the PDF; and the `mdeck check` results. It uses the same dark styling as the presenter view and the editor, and answers only on this computer.
+- `mdeck dev` and `mdeck present` accept `--host` (reachable from phones in the same network), `--port` and `--no-open`.
+
+### Audience polls
+
+- `<poll room=… options=…>` shows live results and a QR code; people vote on their phones and can change their vote. Every poll in a deck shares one answer link, `?view=respond`, and phones follow the presenter to whichever poll is on screen, including a theme picked in the presenter view.
+- Rooms run inside `mdeck dev`, or on a room server started with `mdeck live` for hosted decks, set with the `live:` deck setting. Only the presenter moves the phones along and resets polls; on a room server this takes the `MDECK_LIVE_KEY` presenter code, which the launch page shows along with the server's health and the viewers' link. The presenter view says whether phones follow it.
+- Answers are anonymous and kept in memory only, with size and rate limits.
+- Components can build their own activities with `useRoom` and `QrCode` from `mdeck/live`.
+- New example deck `examples/poll` and the guide "Ask your audience".
+
+### Language
+
+- `lang` is the deck's language: built pages are marked with it, and the reader view, the deck controls, polls and the answer page use German or English words to match. The `labels:` setting replaces single words.
+
+### Components
+
+- Decks can share components: the `components:` setting lists extra folders, searched after the deck's own `components/` folder. The dev server watches them and follows changes to the list without a restart.
+- PDFs, printouts and the reader's Read mode show interactive slides in their finished state: every step is revealed and slides sit inside `[data-deck-static]`; the stage dispatches `printchange` when printing starts or ends.
+
+### Editing, slides and docs
+
+- The editor keeps a copy of the deck in `.mdeck-backups/` before the first change of each session, the ten newest per deck.
+- A slide's `title:` setting names it in the outline for slides without a heading.
+- Code blocks stay left-aligned in centred layouts. Step lists have the same spacing as ordinary lists.
+- New guide "Views, commands and servers".
+
+### Fixes and maintenance
+
+- Dependencies are up to date with no known vulnerabilities: Vite 8, marked 18, KaTeX 0.18, js-yaml 4.3.
+- The launch page and the editor answer on `*.localhost` names, as used by local development proxies.
+- A leftover temporary Chrome profile no longer fails `mdeck pdf`.
+- The real-browser check runs in CI.
 
 ## 1.1.0 — 2026-09-17
 
