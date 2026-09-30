@@ -136,3 +136,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--home-focus); ou
   .home-status { text-align: left; min-width: 0; }
   .home-live > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
+
+.home-pair { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+.home-pair canvas, .home-pair img, .home-pair svg { background: #fff; padding: 8px; border-radius: 6px; flex-shrink: 0; }
+.home-pair p, .home-tablet > p { font-size: 13px; margin: 0 0 8px; }

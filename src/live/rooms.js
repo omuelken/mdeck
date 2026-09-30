@@ -16,7 +16,7 @@ const ANSWER_TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript; c
 export const ROOM_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/
 const HOUR = 60 * 60 * 1000
 
-export function createRooms({ maxMessages = 5000, maxRooms = 500, idleMs = 12 * HOUR, now = Date.now } = {}) {
+export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500, idleMs = 12 * HOUR, now = Date.now } = {}) {
   const rooms = new Map()
   const prune = () => { for (const [id, room] of rooms) if (!room.listeners.size && now() - room.touched > idleMs) rooms.delete(id) }
   const get = id => {
@@ -24,7 +24,7 @@ export function createRooms({ maxMessages = 5000, maxRooms = 500, idleMs = 12 * 
     if (!room) {
       if (rooms.size >= maxRooms) prune()
       if (rooms.size >= maxRooms) throw Object.assign(new Error('Too many rooms are open on this server'), { status: 503 })
-      room = { messages: [], state: null, listeners: new Set(), next: 1, touched: now() }
+      room = { messages: [], state: null, stamp: 0, screens: new Map(), ink: [], listeners: new Set(), next: 1, touched: now() }
       rooms.set(id, room)
     }
     room.touched = now()
@@ -48,18 +48,42 @@ export function createRooms({ maxMessages = 5000, maxRooms = 500, idleMs = 12 * 
     // A state carries `at`, when its screen last changed it. The latest change
     // wins: a state older than the current one is ignored (returns false), so
     // a forgotten screen repeating an old slide cannot take the phones back.
+    // States that name their `screen` are ordered by when this server first
+    // heard of the change, not by the clocks of the devices (an iPad and a
+    // laptop rarely agree to the second); a screen that just opened says
+    // `at: 0` and is the oldest.
     setState(id, state) {
       const room = get(id)
       const next = state ?? null
+      const at = Number.isFinite(next?.at) ? next.at : 0
+      let stamp = at
+      if (typeof next?.screen === 'string' && at) {
+        const seen = room.screens.get(next.screen)
+        stamp = seen?.at === at ? seen.stamp : Math.max(now(), room.stamp + 1)
+        room.screens.delete(next.screen)
+        room.screens.set(next.screen, { at, stamp })
+        if (room.screens.size > 50) room.screens.delete(room.screens.keys().next().value)
+      }
       // A state without `at`, as from an outdated page, counts as the oldest.
-      const at = state => Number.isFinite(state?.at) ? state.at : 0
-      if (next && room.state && at(next) < at(room.state)) return false
+      if (next && room.state && stamp < room.stamp) return false
+      room.stamp = next ? stamp : 0
       // The presenter repeats its state; listeners only hear changes.
       if (JSON.stringify(next) === JSON.stringify(room.state)) return true
       room.state = next
       broadcast(room, { type: 'state', state: room.state })
       return true
     },
+    // Live ink (src/runtime/ink/bus.js): passed on at once and not kept,
+    // except the changes of the saved ink, which a screen that opens later
+    // gets with the snapshot. Returns how many listen.
+    relayInk(id, messages) {
+      const room = get(id)
+      const changes = messages.filter(message => message?.type === 'op')
+      if (changes.length) room.ink = [...room.ink, ...changes].slice(-maxInk)
+      broadcast(room, { type: 'ink', messages })
+      return room.listeners.size
+    },
+    ink: id => get(id).ink,
     snapshot: id => get(id).messages,
     state: id => get(id).state,
     subscribe(id, listener) {
@@ -106,6 +130,7 @@ export function keyMatches(request, key) {
 
 const MAX_BODY = 4096
 const MAX_STATE = 32768
+const MAX_INK = 65536
 
 function readBody(request, limit = MAX_BODY) {
   return new Promise((done, fail) => {
@@ -135,8 +160,9 @@ function reply(response, status, body) {
 //   POST /rooms/<id>           { from, data } → { n }
 //   POST /rooms/<id>/reset     presenter only
 //   POST /rooms/<id>/state     { state } — presenter only
+//   POST /rooms/<id>/ink       { messages } — presenter only, live ink
 // Answers carry no cookies and no personal data, so any page may use them.
-export function liveHandler({ rooms = createRooms(), canReset = () => false, info = () => ({}), limit = createLimiter(), heartbeatMs = 20000 } = {}) {
+export function liveHandler({ rooms = createRooms(), canReset = () => false, info = () => ({}), limit = createLimiter(), inkLimit = createLimiter({ burst: 60, perMs: 3000 }), heartbeatMs = 20000 } = {}) {
   return async (request, response, next = () => reply(response, 404, { error: 'Not found' })) => {
     const { pathname } = new URL(request.url, 'http://localhost')
     response.setHeader('Access-Control-Allow-Origin', '*')
@@ -151,20 +177,28 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
         response.writeHead(200, { 'Content-Type': ANSWER_TYPES[name.split('.').pop()], 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' })
         return response.end(ANSWER_FILES[name])
       }
-      const match = pathname.match(/^\/rooms\/([^/]+)(\/events|\/reset|\/state)?$/)
+      const match = pathname.match(/^\/rooms\/([^/]+)(\/events|\/reset|\/state|\/ink)?$/)
       if (!match) return next()
       const id = decodeURIComponent(match[1])
       if (!ROOM_RE.test(id)) return reply(response, 400, { error: 'Room names use letters, digits, dots, hyphens and underscores' })
       if (match[2] === '/events' && request.method === 'GET') {
         response.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' })
         const write = (event, data) => response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-        write('snapshot', { messages: rooms.snapshot(id), state: rooms.state(id) })
-        const unsubscribe = rooms.subscribe(id, event => write(event.type, event.type === 'message' ? event.message : event.type === 'state' ? { state: event.state } : {}))
+        const ink = rooms.ink(id)
+        write('snapshot', { messages: rooms.snapshot(id), state: rooms.state(id), ...(ink.length ? { ink } : {}) })
+        const unsubscribe = rooms.subscribe(id, event => write(event.type, event.type === 'message' ? event.message : event.type === 'state' ? { state: event.state } : event.type === 'ink' ? { messages: event.messages } : {}))
         const beat = setInterval(() => response.write(': ping\n\n'), heartbeatMs)
         request.on('close', () => { clearInterval(beat); unsubscribe() })
         return
       }
       if (request.method !== 'POST') return reply(response, 405, { error: 'Method not allowed' })
+      if (match[2] === '/ink') {
+        if (!canReset(request)) return reply(response, 403, { error: 'Only the presenter can draw' })
+        if (!inkLimit(clientAddress(request))) return reply(response, 429, { error: 'Too much ink at once' })
+        const { messages } = await readBody(request, MAX_INK)
+        if (!Array.isArray(messages) || messages.length > 100) return reply(response, 400, { error: 'Send { messages: [...] }' })
+        return reply(response, 200, { ok: true, listeners: rooms.relayInk(id, messages) })
+      }
       if (match[2] === '/reset' || match[2] === '/state') {
         if (!canReset(request)) return reply(response, 403, { error: 'Only the presenter can change a room' })
         if (match[2] === '/reset') rooms.reset(id)

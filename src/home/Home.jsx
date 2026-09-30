@@ -1,6 +1,7 @@
 import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import mark from '../../assets/logo/mark.svg'
+import QrCode from '../components/QrCode.jsx'
 
 // The launch page `mdeck dev` opens: every way to show, edit, share and check
 // the deck from one place. Data and actions come from /__mdeck/home.
@@ -221,6 +222,37 @@ function LivePolls({ live, onRecheck }) {
   </section>
 }
 
+// Presenting from an iPad: a one-time QR code opens the presenter view there,
+// paired with this server so it may save ink and steer the projector, which
+// shows the audience window on this computer.
+function Tablet({ pairing, onChange, onError }) {
+  const [url, setUrl] = useState(null)
+  const offer = () => api('/action', { action: 'pair' }).then(result => { setUrl(result.url); onChange() }).catch(error => onError(error.message))
+  const unpair = () => api('/action', { action: 'unpair' }).then(() => { setUrl(null); onChange() }).catch(error => onError(error.message))
+  return <section class="home-section home-tablet">
+    <div class="home-section-head">
+      <h2>Present from an iPad</h2>
+      {pairing.devices > 0 && <button class="home-btn home-btn--small" onClick={unpair}>Unpair {pairing.devices === 1 ? 'the device' : `${pairing.devices} devices`}</button>}
+    </div>
+    {!pairing.available
+      ? <p class="home-note">Start <code>mdeck dev</code> with <code>--host</code>, so an iPad in the same network can reach it.</p>
+      : url
+        ? <div class="home-pair">
+          <QrCode url={url} size="180" />
+          <div>
+            <p>Scan this with the iPad's camera. It opens the presenter view there, where you draw and go through the slides.</p>
+            <p>Show the <a href={`/?view=audience&session=${SESSION}`} target="_blank" rel="noopener">audience window</a> on the projector from this computer: it follows the iPad.</p>
+            <p class="home-note">The code works once, for ten minutes. {pairing.devices > 0 ? `${pairing.devices} paired so far.` : ''}</p>
+          </div>
+        </div>
+        : <>
+          <p>Draw and steer from an iPad while this computer drives the projector. Drawings are saved in the ink file beside the deck.</p>
+          <button class="home-btn" onClick={offer}>Show pairing code</button>
+          {pairing.devices > 0 && <p class="home-note">{pairing.devices} paired.</p>}
+        </>}
+  </section>
+}
+
 export function Home() {
   const [info, setInfo] = useState(null)
   const [error, setError] = useState('')
@@ -287,6 +319,8 @@ export function Home() {
       </section>
 
       {info.live && <LivePolls live={info.live} onRecheck={load} />}
+
+      {info.pairing && <Tablet pairing={info.pairing} onChange={load} onError={setError} />}
 
       <section class="home-section home-section--wide">
         <h2>Share</h2>

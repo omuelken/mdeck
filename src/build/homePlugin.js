@@ -61,7 +61,7 @@ export async function liveStatus(live, { key = null, fetch: get = fetch, timeout
 // `urls()` returns the server's addresses; `services` start the editor and the
 // guides; `fetch` reaches the room server. All are injected so tests can run
 // without a browser or network.
-export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network: [] }), services = {}, run = runCli, open = reveal, liveKey = process.env.MDECK_LIVE_KEY || null, fetch: get = fetch } = {}) {
+export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network: [] }), services = {}, pairing = null, run = runCli, open = reveal, liveKey = process.env.MDECK_LIVE_KEY || null, fetch: get = fetch } = {}) {
   const abs = resolve(slidesPath)
   const outputs = outputsFor(abs)
   const jobs = {}
@@ -90,6 +90,8 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       palette: config.palette ?? null,
       diagnostics: [...(registry?.warnings ?? []).map(message => ({ severity: 'warning', code: 'extension', message })), ...(registryError ? [{ severity: 'error', code: 'extension', message: registryError }] : []), ...diagnostics],
       live: await live(config, source, { local, network }),
+      // Presenting from an iPad needs an address it can reach (`--host`).
+      pairing: pairing ? { available: !!network[0], devices: pairing.devices } : null,
       chrome: !!findChrome(),
       services: Object.fromEntries(Object.keys(services).map(key => [key, serviceUrls[key] ?? null])),
       outputs: Object.fromEntries(Object.entries(outputs).map(([key, output]) => [key, {
@@ -128,8 +130,23 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
     return (await started[key]).url
   }
 
+  // The one-time address an iPad opens to present from: the presenter view,
+  // with the presenter code of the deck's own room server if there is one.
+  function pairUrl() {
+    const network = urls()?.network?.[0]
+    if (!pairing || !network) throw Object.assign(new Error('Start mdeck dev with --host so an iPad can reach it'), { status: 409 })
+    const url = new URL(network)
+    url.searchParams.set('view', 'presenter')
+    url.searchParams.set('pair', pairing.offer())
+    const config = parseSlides(readFileSync(abs, 'utf8')).deckConfig ?? {}
+    if (typeof config.live?.server === 'string' && liveKey) url.searchParams.set('livekey', liveKey)
+    return url.href
+  }
+
   async function act({ action, output } = {}) {
     if (Object.hasOwn(services, action)) return { url: await start(action) }
+    if (action === 'pair') return { url: pairUrl() }
+    if (action === 'unpair') { pairing?.revoke(); return { ok: true } }
     if (action === 'build') {
       if (!Object.hasOwn(outputs, output)) throw Object.assign(new Error(`Unknown output: ${output}`), { status: 400 })
       if (jobs[output]?.status === 'running') throw Object.assign(new Error('That build is already running'), { status: 409 })
@@ -162,7 +179,7 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
   }
 }
 
-export function homePlugin(slidesPath, { services } = {}) {
+export function homePlugin(slidesPath, { services, pairing } = {}) {
   return {
     name: 'vite-plugin-mdeck-home',
     configureServer(server) {
@@ -174,7 +191,7 @@ export function homePlugin(slidesPath, { services } = {}) {
         response.writeHead(302, { Location: '/home.html' })
         response.end()
       })
-      server.middlewares.use('/__mdeck/home', homeMiddleware(slidesPath, { urls: () => server.resolvedUrls, services }))
+      server.middlewares.use('/__mdeck/home', homeMiddleware(slidesPath, { urls: () => server.resolvedUrls, services, pairing }))
     },
   }
 }

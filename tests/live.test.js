@@ -168,3 +168,31 @@ test("the presenter's state may carry a whole activity and look", async () => {
   assert.equal(response.status, 200)
   assert.equal((await events('482113', 1))[0].data.state.activity.options.length, 20)
 })
+
+test('states from named screens are ordered by when the server heard them, not by their clocks', () => {
+  let t = 1000
+  const rooms = createRooms({ now: () => t })
+  // The iPad's clock is a minute behind the laptop's.
+  assert.equal(rooms.setState('s', { index: 1, screen: 'laptop', at: 90000 }), true)
+  t += 5000
+  assert.equal(rooms.setState('s', { index: 2, screen: 'ipad', at: 30000 }), true, 'a later change from a slow clock still wins')
+  t += 4000
+  assert.equal(rooms.setState('s', { index: 1, screen: 'laptop', at: 90000 }), false, 'the laptop repeating its older change')
+  assert.equal(rooms.setState('s', { index: 0, screen: 'new-tab', at: 0 }), false, 'a screen that just opened')
+  t += 1000
+  assert.equal(rooms.setState('s', { index: 3, screen: 'laptop', at: 95000 }), true, 'the laptop moves on')
+  assert.equal(rooms.state('s').index, 3)
+})
+
+test('only the presenter relays ink; listeners get it at once and late ones get the changes', async () => {
+  const relay = (messages, headers = {}) => fetch(`${live.url}/rooms/deck.stage/ink`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ messages }) })
+  const op = { type: 'op', key: 'a:op', op: { type: 'add', slideId: 's', stroke: { id: 'a:1', points: [[1, 2, 0.5]] } } }
+  assert.equal((await relay([op])).status, 403)
+  const reply = await relay([op], { Authorization: 'Bearer secret' })
+  assert.deepEqual(await reply.json(), { ok: true, listeners: 0 })
+  const segment = { type: 'segment', key: 'a:2', slideId: 's', from: 0, points: [[3, 4, 0.5]] }
+  const seen = await events('deck.stage', 2, () => relay([segment], { Authorization: 'Bearer secret' }))
+  assert.deepEqual(seen[0].data.ink, [op], 'the snapshot has the changes, not the strokes in progress')
+  assert.deepEqual(seen[1], { type: 'ink', data: { messages: [segment] } })
+  assert.equal((await relay(Array.from({ length: 101 }, () => segment), { Authorization: 'Bearer secret' })).status, 400)
+})

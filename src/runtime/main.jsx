@@ -14,6 +14,8 @@ import { configureLive, announce, setLookSource, actAsPresenter, useSteering } f
 import { registry } from './registry'
 import { followActiveRooms } from '../live/follow.js'
 import { attachInk, watchInk } from './ink/attach.js'
+import { roomTransport, followStageRoom, announceStagePosition } from './ink/room.js'
+import { claimPairing } from '../live/pairing.js'
 import { strokePath } from '../core/ink.js'
 import { inkFileName } from 'virtual:deck-ink'
 import { roomsIn, roomsOnSlide, findRoomTag, slideTitleFor } from '../live/roomTag.js'
@@ -35,7 +37,8 @@ export function requestedView(url, fallback = 'deck') {
 // Scope controls to this file and presenter session, including separate tabs.
 const controlUrl = new URL(window.location.href)
 if (requestedView(controlUrl) === 'presenter' && !controlUrl.searchParams.has('session')) {
-  controlUrl.searchParams.set('session', crypto.randomUUID())
+  // randomUUID only exists on https or localhost, not on an iPad at http://192.168…
+  controlUrl.searchParams.set('session', crypto.randomUUID?.() ?? Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''))
   history.replaceState(null, '', controlUrl)
 }
 const DECK_CHANNEL = `deck-control:${controlUrl.pathname}:${controlUrl.searchParams.get('session') ?? 'default'}`
@@ -605,6 +608,8 @@ function mountDeck({ deck, deckConfig, selection = null, editor = false }) {
 }
 
 async function init() {
+  // An iPad that opened the launch page's QR code pairs first.
+  await claimPairing()
   const parsed = parseSlides(slidesContent)
   const url = new URL(window.location.href)
   const editorMode = url.searchParams.get('editor') === '1'
@@ -703,11 +708,18 @@ async function init() {
 
   // Drawing (D) in the full-screen deck and the presenter's main frame.
   const inkStage = document.querySelector('deck-stage')
+  // Across devices, through the stage room: the drawing windows send ink and
+  // their position, the audience window follows them (src/runtime/ink/room.js).
   if (inkStage && drawHere) {
     attachInk(inkStage, {
       storageKey: inkStorageKey,
+      transports: [roomTransport()],
       onMode: inking => { if (embedded) window.parent.postMessage({ inkMode: inking }, window.location.origin) },
     })
+    announceStagePosition(inkStage)
+  } else if (inkStage && audienceMode) {
+    followStageRoom(inkStage)
+    watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true })] })
   } else if (inkStage) watchInk(inkStage, { storageKey: inkStorageKey })
 
   // A full deck or audience window is a presenter's screen; previews are embedded.

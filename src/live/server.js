@@ -5,14 +5,15 @@ import { liveHandler, createRooms, keyMatches } from './rooms.js'
 import { isAllowedRequest } from '../build/editorPlugin.js'
 
 // In the dev server only the presenter's own browser, on this computer and on
-// a page this server served, may reset rooms; phones in the network may answer.
-export function livePlugin() {
+// a page this server served, or a paired device (src/build/pairing.js) may
+// reset rooms; phones in the network may answer.
+export function livePlugin({ pairing = null } = {}) {
   return {
     name: 'vite-plugin-mdeck-live',
     configureServer(server) {
       const handler = liveHandler({
         rooms: createRooms(),
-        canReset: isAllowedRequest,
+        canReset: request => isAllowedRequest(request) || !!pairing?.allows(request),
         info: () => ({ network: server.resolvedUrls?.network?.[0] ?? null }),
       })
       server.middlewares.use('/__mdeck/live', (request, response, next) => handler(request, response, next))

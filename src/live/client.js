@@ -9,6 +9,7 @@
 // answers.
 import { useCallback, useEffect, useState } from 'preact/hooks'
 import { sessionCode } from './code.js'
+import { pairToken } from './pairing.js'
 import { t, deckLanguage } from '../core/labels.js'
 
 // The QR code component the built-in poll uses, for your own activities.
@@ -66,8 +67,11 @@ function takeKeyFromAddress() {
   url.searchParams.delete('livekey')
   try { history.replaceState(history.state, '', url) } catch {}
 }
+// The room server built into `mdeck dev` also lets a paired iPad in.
 function presenterKey() {
-  try { return localStorage.getItem(`mdeck-live-key:${serverBase()}`) ?? givenKey } catch { return givenKey }
+  let key = givenKey
+  try { key = localStorage.getItem(`mdeck-live-key:${serverBase()}`) ?? givenKey } catch {}
+  return key ?? (settings.server ? null : pairToken())
 }
 const withKey = (headers = {}) => { const key = presenterKey(); return key ? { ...headers, Authorization: `Bearer ${key}` } : headers }
 
@@ -167,7 +171,9 @@ const phoneWords = () => ({ waiting: t('respond.waiting'), pick: t('poll.pick'),
 // that restarted catch up; the server passes on only changes. Only the
 // presenter may: `steering` says whether this screen reaches the phones.
 const REPEAT_MS = 4000
-let current = { room: null, activity: null, title: '', at: 0 }, repeat = null
+// This window, so the room server can tell its repeats from new changes.
+const SCREEN = Math.random().toString(36).slice(2, 10)
+let current = { room: null, activity: null, title: '', at: 0, screen: SCREEN }, repeat = null
 let steering = null
 let lastLook = null
 const steeringListeners = new Set()
@@ -214,9 +220,17 @@ export function announce({ room = null, activity = null, title = '', initial = f
   // `at` marks this change; the room server keeps the latest change of all
   // screens. A screen that just opened says 0, so opening a tab to look at
   // the deck does not take the phones away from the presenter.
-  current = { room, activity, title, at: initial ? 0 : Date.now() }
+  current = { room, activity, title, at: initial ? 0 : Date.now(), screen: SCREEN }
   sendCurrent()
   repeat ??= setInterval(sendCurrent, REPEAT_MS)
+}
+
+/**
+ * The deck's stage room, which carries the presenter's position and live ink
+ * to screens on other devices (src/runtime/ink/room.js).
+ */
+export function stageRoom() {
+  return { url: `${sessionPath()}.stage`, headers: withKey, info: serverInfo, screen: SCREEN }
 }
 
 /** For the presenter view: null before the first announcement, else { ok, reason }. */

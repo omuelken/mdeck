@@ -17,7 +17,7 @@ import { inkPlugin } from '../src/build/inkPlugin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-browser-check-'))
-let browser, dev, pollDev, inkDev
+let browser, dev, pollDev, inkDev, tablet2
 try {
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-templates/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   browser = await launchChrome({ dir: temp, timeout: 45000 })
@@ -117,7 +117,7 @@ try {
   const saveDeck = resolve(temp, 'save.md')
   writeFileSync(saveDeck, '---\ndesign: neue\n---\n\n---\n# The important part\n\n---\n# Second\n')
   const saveConfig = baseConfig(saveDeck)
-  inkDev = await createServer({ ...saveConfig, plugins: [...saveConfig.plugins, inkPlugin(saveDeck)], server: { ...saveConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  inkDev = await createServer({ ...saveConfig, plugins: [...saveConfig.plugins, livePlugin(), inkPlugin(saveDeck)], server: { ...saveConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await inkDev.listen()
   const drawing = await open(new URL('?view=deck', inkDev.resolvedUrls.local[0]).href)
   await until(drawing, "document.querySelector('deck-stage')?.length === 2")
@@ -135,6 +135,28 @@ try {
   assert.equal(await drawing.evaluate('window.__sameDocument === true'), true, 'saving does not reload the page')
   await drawing.evaluate('location.reload()')
   await until(drawing, "document.querySelectorAll('[data-deck-active] .slide-ink path').length === 1")
+
+  // Two devices through the stage room: a presenter view in another browser
+  // (the iPad) moves and draws; this browser's audience window follows.
+  tablet2 = await launchChrome({ dir: temp, timeout: 45000 })
+  const inkBase = inkDev.resolvedUrls.local[0]
+  const projector2 = await open(new URL('?view=audience&session=room-check', inkBase).href)
+  await until(projector2, "document.querySelector('deck-stage')?.length === 2")
+  const ipad = await tablet2.open(new URL('?view=presenter', inkBase).href)
+  const ipadFrame = "document.querySelector('iframe')?.contentWindow?.document"
+  await until(ipad, `${ipadFrame}?.querySelector('deck-stage')?.length === 2`)
+  await delay(500)
+  await ipad.evaluate(`${ipadFrame}.querySelector('deck-stage').next()`)
+  await until(projector2, "document.querySelector('deck-stage').index === 1")
+  await ipad.evaluate("document.querySelector('.presenter-draw').click()")
+  await until(ipad, "document.querySelector('.presenter-draw').getAttribute('aria-pressed') === 'true'")
+  const ipadBox = await ipad.evaluate(`(() => { const f = document.querySelector('iframe').getBoundingClientRect(), r = ${ipadFrame}.querySelector('deck-stage').getBoundingClientRect(); return [f.left + r.left, f.top + r.top, r.width, r.height] })()`)
+  const onIpad = ([fx, fy]) => ({ x: ipadBox[0] + ipadBox[2] * fx, y: ipadBox[1] + ipadBox[3] * fy })
+  await ipad.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...onIpad([0.2, 0.6]), clickCount: 1, buttons: 1, ...pen })
+  for (let i = 1; i <= 8; i++) { await ipad.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...onIpad([0.2 + 0.05 * i, 0.6]), buttons: 1, ...pen }); await delay(30) }
+  await until(projector2, "document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-live path').length === 1")
+  await ipad.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...onIpad([0.6, 0.6]), clickCount: 1, buttons: 0, ...pen })
+  await until(projector2, "document.querySelectorAll('[data-deck-active] .slide-ink path').length === 1 && document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-live path').length === 0")
 
   // The launch page `mdeck dev` opens renders the deck's details from its API.
   const slides = resolve(root, 'examples/custom-templates/slides.md')
@@ -163,9 +185,10 @@ try {
   await phone.evaluate("document.querySelectorAll('.answer-options button')[1].click()")
   await until(projector, "[...document.querySelectorAll('.poll-count')].map(e => e.textContent).join() === '0,1'")
   await until(phone, "document.querySelector('.answer-status').textContent.includes('Thai')")
-  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, saved ink, drawing, drawing in the presenter view, touch, saving ink in dev.')
+  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, saved ink, drawing, drawing in the presenter view, touch, saving ink in dev, a second device through the stage room.')
 } finally {
   await browser?.close()
+  await tablet2?.close()
   await dev?.close()
   await pollDev?.close()
   await inkDev?.close()

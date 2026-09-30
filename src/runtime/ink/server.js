@@ -4,10 +4,12 @@
 // Anywhere else (a built deck, a device that may not save) this returns false
 // and the ink stays in this browser.
 import { replaceInk, renameSlide } from './store.js'
+import { pairHeaders } from '../../live/pairing.js'
 
 const BASE = '/__mdeck/ink'
 
-export async function connectInkServer(controller, { headers = () => ({}) } = {}) {
+// A paired iPad sends its token; this computer needs none.
+export async function connectInkServer(controller, { headers = () => pairHeaders() } = {}) {
   let response
   try { response = await fetch(BASE, { cache: 'no-store', headers: headers() }) } catch { return false }
   if (!response.ok) return false

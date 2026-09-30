@@ -15,6 +15,8 @@ import { homePlugin } from '../build/homePlugin.js'
 import { checkDeck } from '../build/check.js'
 import { livePlugin, startLiveServer } from '../live/server.js'
 import { inkPlugin } from '../build/inkPlugin.js'
+import { createPairing, pairingPlugin } from '../build/pairing.js'
+import { isAllowedRequest } from '../build/editorPlugin.js'
 import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
 import { installSkill, readSkill, TARGETS } from './skill.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
@@ -431,6 +433,7 @@ if (command === 'new') {
   const base = baseConfig(abs)
   const port = portOption()
   const exposed = hasFlag('--host')
+  const pairing = createPairing()
   // The launch page starts these on first use, inside this process.
   const services = {
     async editor() {
@@ -445,7 +448,8 @@ if (command === 'new') {
   }
   const server = await createServer({
     ...base,
-    plugins: [...base.plugins, homePlugin(abs, { services }), livePlugin(), inkPlugin(abs)],
+    // A paired iPad may save ink and steer the rooms, like this computer.
+    plugins: [...base.plugins, homePlugin(abs, { services, pairing }), pairingPlugin(pairing), livePlugin({ pairing }), inkPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) })],
     publicDir: dirname(abs),
     server: {
       ...base.server,
