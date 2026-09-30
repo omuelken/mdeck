@@ -56,10 +56,37 @@ It listens on `127.0.0.1:8787`. Make your web server pass one address to it, for
 ```nginx
 location /live/ {
   proxy_pass http://127.0.0.1:8787/;
+  proxy_http_version 1.1;
+  proxy_set_header Connection "";
+  proxy_set_header X-Forwarded-For $remote_addr;
   proxy_buffering off;
   proxy_read_timeout 1h;
 }
 ```
+
+The slides and phones keep a connection open to receive answers live, which is why buffering is off and the timeout long. `X-Forwarded-For` lets the room server limit each phone, not the web server as a whole.
+
+To keep the room server running and start it with the machine, a systemd service works well. Put the presenter code in a file only root can read, for example `/etc/mdeck-live.env` with the line `MDECK_LIVE_KEY=choose-a-secret`, and create `/etc/systemd/system/mdeck-live.service`:
+
+```ini
+[Unit]
+Description=mdeck room server
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/mdeck-live.env
+ExecStart=/usr/local/bin/mdeck live --port 8787
+User=www-data
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Adjust `ExecStart` to where `which mdeck` points; if Node is installed in a home folder, for example with nvm, also remove `ProtectHome=true`. Then run `sudo systemctl enable --now mdeck-live`. `journalctl -u mdeck-live` shows its log. After updating mdeck, `sudo systemctl restart mdeck-live`; rooms start empty again.
 
 Then tell the presentation where the room server is:
 
