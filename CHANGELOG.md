@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Slides can carry drawings (ink) from `<deck>.ink.json` beside the deck: pen strokes with pressure and highlighter, drawn above the slide in the deck, the reader view, builds and PDFs. `I` hides them; `mdeck build` and `mdeck pdf` leave them out with `--no-ink`; `mdeck check` reports a broken ink file and drawings for slides that no longer exist.
+
 ## 1.3.1 — 2026-09-30
 
 - Phones no longer flip between two screens showing the same presentation: the room server follows the screen where the slides were changed last, a screen that only opened does not take over, and the presenter view says when another screen has the phones. A screen that cannot read its theme yet no longer sends an empty look, which made the phones' fonts jump.

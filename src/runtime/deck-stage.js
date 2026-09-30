@@ -640,6 +640,10 @@
         this._go(0, 'keyboard');
       } else if (key === 'End') {
         this._go(this._slides.length - 1, 'keyboard');
+      } else if (key === 'i' || key === 'I') {
+        // Show or hide the saved ink.
+        e.preventDefault();
+        this.toggleAttribute('data-ink-hidden');
       } else if (key === 'r' || key === 'R') {
         this.reset();
       } else if (/^[0-9]$/.test(key)) {

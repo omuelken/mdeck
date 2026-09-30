@@ -314,6 +314,7 @@ const HELP = `
                                               Open in the reader view, strip speaker notes, add a PDF
     ${c.green}mdeck build${c.reset} <slides.md> --pdf         Also render deck.pdf with a local Chrome
     ${c.green}mdeck pdf${c.reset} <slides.md> [-o talk.pdf]    Render the slides to PDF
+      --no-ink    leave out the drawings of <slides>.ink.json (also for build)
     ${c.green}mdeck skill${c.reset} [--print] [--install <assistant>...] [--project]
                                               Slide-writing skill for AI assistants (claude, codex, cursor, copilot, gemini)
     ${c.green}mdeck preview${c.reset}                          Preview the last build
@@ -518,7 +519,7 @@ if (command === 'new') {
 
   await build({
     ...baseConfig(input, { selfContained, defaultView: share ? 'share' : 'deck' }),
-    plugins: [preact(), slidesPlugin(resolve(input), { inlineImages, inlineMedia: selfContained, stripNotes }), viteSingleFile()],
+    plugins: [preact(), slidesPlugin(resolve(input), { inlineImages, inlineMedia: selfContained, stripNotes, ink: !hasFlag('--no-ink') }), viteSingleFile()],
     build: {
       outDir,
       emptyOutDir: !tempDir,
@@ -582,7 +583,7 @@ if (command === 'new') {
   try {
     await build({
       ...baseConfig(input, { selfContained: true }),
-      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true }), viteSingleFile()],
+      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true, ink: !hasFlag('--no-ink') }), viteSingleFile()],
       build: { outDir: tempDir, emptyOutDir: true, target: 'esnext', assetsInlineLimit: 100 * 1024 * 1024 },
       logLevel: 'warn',
     })

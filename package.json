@@ -62,6 +62,7 @@
     "katex": "^0.18.9",
     "marked": "^18.0.14",
     "marked-katex-extension": "^5.1.13",
+    "perfect-freehand": "^1.2.3",
     "preact": "^10.29.8",
     "prismjs": "^1.30.0",
     "qrcode": "^1.5.4",

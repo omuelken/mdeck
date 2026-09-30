@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'preact/hooks'
 import { render } from 'preact'
 import { marked, Parser } from 'marked'
 import { registry } from '../runtime/registry'
+import { InkLayer } from '../runtime/ink/InkLayer.jsx'
 
 // ─── Content extraction ────────────────────────────────────────────────────
 
@@ -164,5 +165,6 @@ export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, 
     {children}
     <SlideFootnotes html={footnotesHtml} />
     {frame !== 'none' && <SlideFooter deckConfig={deckConfig} right={slideNum(index)} isTitle={title} />}
+    <InkLayer slideId={id} />
   </section>
 }

@@ -5,6 +5,7 @@ import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, extensionRoots, manifestsOf } from '../extensions/discover.js'
 import { stripNotes as stripNotesFrom } from '../core/editDeck.js'
 import { componentFolders, componentFiles } from './components.js'
+import { inkFileFor, normalizeInk, emptyInk } from '../core/ink.js'
 import { fileURLToPath } from 'node:url'
 import { marked } from 'marked'
 
@@ -15,6 +16,8 @@ const COMPONENTS_ID = 'virtual:deck-components'
 const RESOLVED_COMPONENTS_ID = '\0virtual:deck-components'
 const EXTENSIONS_ID = 'virtual:mdeck-extensions'
 const RESOLVED_EXTENSIONS_ID = '\0virtual:mdeck-extensions'
+const INK_ID = 'virtual:deck-ink'
+const RESOLVED_INK_ID = '\0virtual:deck-ink'
 
 const MIME_BY_EXT = {
   '.png': 'image/png',
@@ -155,8 +158,9 @@ export function generateExtensionsModule(registry) {
 // `editor` keeps the page alive while `mdeck edit` rewrites the deck: deck
 // changes only invalidate the module, validation errors are warnings, and
 // extension changes are announced instead of forcing a reload.
-export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false } = {}) {
+export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, ink = true } = {}) {
   const abs = resolve(slidesPath)
+  const inkPath = inkFileFor(abs)
   const extensionDirs = extensionRoots(abs).map(root => root.dir)
   let componentDirs = componentFolders(abs).map(folder => folder.dir)
   const watchDirs = () => [...extensionDirs, ...componentDirs]
@@ -171,7 +175,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     for (const dir of next) if (!allow.includes(dir)) allow.push(dir)
     return true
   }
-  const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID]
+  const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID, RESOLVED_INK_ID]
   const invalidate = (server, ids) => {
     for (const id of ids) {
       const mod = server.moduleGraph.getModuleById(id)
@@ -187,8 +191,11 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
   return {
     name: 'vite-plugin-slides',
     configureServer(server) {
-      server.watcher.add([abs, ...watchDirs()])
-      const refresh = file => { if (isWatched(file)) reload(server, ALL_IDS, resolve(file)) }
+      server.watcher.add([abs, inkPath, ...watchDirs()])
+      const refresh = file => {
+        if (isWatched(file)) reload(server, ALL_IDS, resolve(file))
+        else if (resolve(file) === inkPath) reload(server, [RESOLVED_INK_ID], inkPath)
+      }
       for (const event of ['add', 'unlink', 'addDir', 'unlinkDir']) server.watcher.on(event, refresh)
     },
     resolveId(id) {
@@ -197,6 +204,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       if (id === VIRTUAL_ID) return RESOLVED_ID
       if (id === COMPONENTS_ID) return RESOLVED_COMPONENTS_ID
       if (id === EXTENSIONS_ID) return RESOLVED_EXTENSIONS_ID
+      if (id === INK_ID) return RESOLVED_INK_ID
     },
     load(id) {
       if (id === RESOLVED_ID) {
@@ -212,6 +220,20 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         if (diagnostics.length) this.warn(formatDiagnostics(diagnostics, abs))
         const source = maybeInlineAssets(stripNotes ? stripNotesFrom(raw) : raw, abs, { inlineImages, inlineMedia })
         return `export default ${JSON.stringify(source)}`
+      }
+      // The deck's saved ink (<deck>.ink.json), scaled to its design size.
+      // Builds bundle it, so the reader view and PDFs show it too.
+      if (id === RESOLVED_INK_ID) {
+        // Only an existing file: Vite treats a missing watch file as a missing
+        // import. The dev server's watcher notices the file once it appears.
+        if (existsSync(inkPath)) this.addWatchFile(inkPath)
+        let size = {}
+        try { const config = parseSlides(readFileSync(abs, 'utf-8')).deckConfig ?? {}; size = { width: config.width ?? 1920, height: config.height ?? 1080 } } catch {}
+        let data = emptyInk(size)
+        if (ink && existsSync(inkPath)) {
+          try { data = normalizeInk(JSON.parse(readFileSync(inkPath, 'utf-8')), size) } catch (error) { this.warn(`${inkPath}: ${error.message}; showing no ink`) }
+        }
+        return `export default ${JSON.stringify(data)}`
       }
       if (id === RESOLVED_EXTENSIONS_ID) {
         const registry = loadRegistry(abs)
@@ -244,12 +266,17 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         reload(server, ALL_IDS, changed)
         return []
       }
+      if (changed === inkPath) {
+        reload(server, [RESOLVED_INK_ID], changed)
+        return []
+      }
       if (changed === abs) {
         if (followComponentFolders(server)) {
           reload(server, ALL_IDS, changed)
           return []
         }
-        invalidate(server, [RESOLVED_ID])
+        // The ink is scaled to the deck's design size, which the deck sets.
+        invalidate(server, [RESOLVED_ID, RESOLVED_INK_ID])
         if (editor) return []
         server.ws.send({ type: 'full-reload' })
       }

@@ -20,7 +20,8 @@ const { SlideRenderer, manifests } = await server.ssrLoadModule('/src/templates/
 function htmlFragments(node) {
   if (!node || typeof node !== 'object') return ''
   if (Array.isArray(node)) return node.map(htmlFragments).join('\n')
-  if (typeof node.type === 'function' && node.type.name !== 'HtmlContent') return htmlFragments(node.type(node.props))
+  // Components with hooks cannot be called outside a render; they add no slide HTML.
+  if (typeof node.type === 'function' && !['HtmlContent', 'InkLayer'].includes(node.type.name)) return htmlFragments(node.type(node.props))
   return [node.props?.html, node.props?.dangerouslySetInnerHTML?.__html, htmlFragments(node.props?.children)].filter(Boolean).join('\n')
 }
 

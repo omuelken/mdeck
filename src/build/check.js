@@ -7,6 +7,7 @@ import { validateDeck } from '../core/validateDeck.js'
 import { manifestsOf } from '../extensions/discover.js'
 import { collectLocalAssetRefs } from './slidesPlugin.js'
 import { componentFolders, isFolder } from './components.js'
+import { inkFileFor, validateInk, normalizeInk, orphanIds } from '../core/ink.js'
 
 export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath, 'utf8')) {
   const deck = parseSlides(source)
@@ -16,6 +17,16 @@ export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath
   }
   for (const folder of componentFolders(slidesPath, source).filter(folder => folder.source === 'shared')) {
     if (!isFolder(folder.dir)) diagnostics.push({ severity: 'error', code: 'missing-components', message: `Components folder not found: ${folder.path} (${folder.dir})`, line: 1, column: 1 })
+  }
+  // The deck's ink file: readable, and only for slides that still exist.
+  const inkPath = inkFileFor(resolve(slidesPath))
+  if (existsSync(inkPath)) {
+    let raw = null
+    try { raw = JSON.parse(readFileSync(inkPath, 'utf8')) } catch (error) { diagnostics.push({ severity: 'error', code: 'invalid-ink', message: `Ink file is not valid JSON: ${error.message}`, line: 1, column: 1 }) }
+    if (raw) {
+      for (const problem of validateInk(raw)) diagnostics.push({ severity: 'warning', code: 'invalid-ink', message: `Ink file: ${problem.message}`, line: 1, column: 1 })
+      for (const id of orphanIds(normalizeInk(raw), deck.slides)) diagnostics.push({ severity: 'warning', code: 'ink-orphan', message: `The ink file has drawings for slide "${id}", which is not in the deck`, line: 1, column: 1 })
+    }
   }
   return { deck, diagnostics }
 }

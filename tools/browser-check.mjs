@@ -25,6 +25,18 @@ try {
     if (!await page.waitFor(expression, { attempts: 150, interval: 50 })) throw new Error(`Condition did not become true: ${expression}`)
   }
 
+  // Saved ink from <deck>.ink.json is bundled and drawn in the deck and in Read mode.
+  const inkDeck = resolve(temp, 'ink.md')
+  writeFileSync(inkDeck, '---\ndesign: neue\n---\n\n---\nid: marked\n---\n# Marked up\n')
+  writeFileSync(resolve(temp, 'ink.ink.json'), JSON.stringify({ version: 1, width: 1920, height: 1080, slides: { marked: [{ id: 'check:1', tool: 'pen', color: '#e11d48', size: 8, points: [[200, 300, 0.4], [600, 320, 0.8], [900, 280, 0.6]] }] } }))
+  execFileSync(process.execPath, ['bin/mdeck.js', 'build', inkDeck, '-o', resolve(temp, 'ink.html')], { cwd: root, stdio: 'pipe' })
+  const inked = await open('ink.html?view=deck')
+  await until(inked, "document.querySelectorAll('.slide-ink path').length === 1")
+  const inkRead = await open('ink.html?view=share')
+  await until(inkRead, "[...document.querySelectorAll('.share-btn')].some(b => b.textContent.includes('Read'))")
+  await inkRead.evaluate("[...document.querySelectorAll('.share-btn')].find(b => b.textContent.includes('Read')).click()")
+  await until(inkRead, "document.querySelectorAll('.share-read .slide-ink path').length === 1")
+
   const presenter = await open('deck.html?view=presenter')
   const stage = "document.querySelector('iframe')?.contentWindow?.document.querySelector('deck-stage')"
   await until(presenter, `${stage}?.length === 2`)
@@ -74,7 +86,7 @@ try {
   await phone.evaluate("document.querySelectorAll('.answer-options button')[1].click()")
   await until(projector, "[...document.querySelectorAll('.poll-count')].map(e => e.textContent).join() === '0,1'")
   await until(phone, "document.querySelector('.answer-status').textContent.includes('Thai')")
-  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay.')
+  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, saved ink.')
 } finally {
   await browser?.close()
   await dev?.close()
