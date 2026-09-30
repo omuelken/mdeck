@@ -75,7 +75,7 @@ export function DeckSettings({ state, edit }) {
       {Object.entries(ENUMS).map(([key, options]) => <Field key={key} label={key}>
         <select value={config[key] ?? ''} onChange={e => text(key, e.currentTarget.value)}><option value="">default</option>{options.map(o => <option key={o} value={o}>{o}</option>)}</select>
       </Field>)}
-      <Field label="Language" hint="for callout labels"><input type="text" value={config.lang ?? ''} placeholder="en" onInput={e => text('lang', e.currentTarget.value)} /></Field>
+      <Field label="Language" hint="of the deck, e.g. en, de or de-CH"><input type="text" value={config.lang ?? ''} placeholder="en" onInput={e => text('lang', e.currentTarget.value)} /></Field>
     </div>
   </div>
 }

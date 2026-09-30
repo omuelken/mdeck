@@ -2,6 +2,7 @@ import { h } from 'preact'
 import { useState } from 'preact/hooks'
 import { useRoom, responding, latestByDevice, respondingSlideTitle } from '../live/client.js'
 import QrCode from './QrCode.jsx'
+import { t } from '../core/labels.js'
 import './poll.css'
 
 // <poll room="lunch" question="Where do we eat?" options="Mensa|Thai|Pizza" />
@@ -22,17 +23,17 @@ function Results({ question, choices, counts, total, joinUrl, connected, canRese
         </div>)}
       </div>
       <p class="poll-total">
-        <span class={`poll-dot${connected ? ' is-live' : ''}`} title={connected ? 'Live' : 'Not connected to the room server'} />
-        {total} {total === 1 ? 'answer' : 'answers'}
-        {canReset && total > 0 && <button class="poll-reset" onClick={() => reset().catch(() => {})}>Reset</button>}
+        <span class={`poll-dot${connected ? ' is-live' : ''}`} title={connected ? t('poll.live') : t('poll.offline')} />
+        {total === 1 ? t('poll.answer') : t('poll.answers', { n: total })}
+        {canReset && total > 0 && <button class="poll-reset" onClick={() => reset().catch(() => {})}>{t('poll.reset')}</button>}
       </p>
     </div>
     {joinUrl
       ? <a class="poll-join" href={joinUrl} target="_blank" rel="noopener">
         <QrCode url={joinUrl} size="300" />
-        <span>Scan to vote</span>
+        <span>{t('poll.scan')}</span>
       </a>
-      : <p class="poll-join poll-join--local">Phones cannot reach this address. Start with <code>mdeck dev --host</code>, or set <code>live.audience</code>.</p>}
+      : <p class="poll-join poll-join--local">{t('poll.unreachable', { command: <code>mdeck dev --host</code>, setting: <code>live.audience</code> })}</p>}
   </div>
 }
 
@@ -48,7 +49,7 @@ function Answer({ question, choices, send, mine }) {
     <div class="poll-options">
       {choices.map(choice => <button key={choice} class={picked === choice ? 'is-picked' : ''} aria-pressed={picked === choice} onClick={() => pick(choice)}>{choice}</button>)}
     </div>
-    <p class="poll-status" role="status">{error || (picked ? `Thanks! You chose “${picked}”. Tap another to change.` : 'Tap one answer.')}</p>
+    <p class="poll-status" role="status">{error || (picked ? t('poll.thanks', { choice: picked }) : t('poll.pick'))}</p>
   </div>
 }
 

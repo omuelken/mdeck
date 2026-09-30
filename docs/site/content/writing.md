@@ -103,6 +103,8 @@ layout: title
 
 Keep the spaces before `title` and `author`: they put those values inside the `meta` group. Use spaces rather than tabs. Quoting text is helpful when it contains punctuation.
 
+For a talk in German, add `lang: de` to these settings. The page is then marked as German, which helps screen readers and hyphenation, and the words mdeck adds for your audience, such as the buttons for readers and polls, are German too.
+
 ## Reading older examples
 
 Older decks put slide settings between `---` lines too:

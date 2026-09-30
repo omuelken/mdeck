@@ -21,6 +21,8 @@ The slide shows one bar per option, the number of answers and a QR code. Scannin
 
 Hover over the results to see **Reset**, which clears the answers, for example before the real session. Only the presenter's computer can reset.
 
+With `lang: de` in the settings, the slide and the phones show German words, such as “Scannen und abstimmen”.
+
 ## Try it on your computer
 
 ```sh

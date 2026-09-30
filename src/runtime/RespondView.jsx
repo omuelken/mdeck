@@ -2,6 +2,7 @@ import { h } from 'preact'
 import { HtmlContent } from '../templates/templateApi.jsx'
 import { findRoomTag, slideTitleFor } from '../live/roomTag.js'
 import { setRespondingSlideTitle } from '../live/client.js'
+import { t } from '../core/labels.js'
 
 // `?view=respond&room=<name>`: the page a phone opens from a slide's QR code.
 // It renders only the component whose `room` attribute matches, in the deck's
@@ -14,7 +15,7 @@ export function RespondView({ deck, deckConfig, room }) {
   return <main class="respond">
     {tag
       ? <HtmlContent class="respond-body" html={tag} />
-      : <p class="respond-missing">This question is not in the presentation any more. Ask the presenter for the current code.</p>}
+      : <p class="respond-missing">{t('respond.missing')}</p>}
     {title && <footer class="respond-footer">{title}</footer>}
   </main>
 }

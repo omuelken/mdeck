@@ -54,7 +54,8 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `authorDate` | `title` | When to show the author/date footer: `title`, `all`, or `none` |
 | `pageNumbers` | `slides` | Slide numbers: `slides` (all except title), `all`, or `none` |
 | `sections` | `all` | Whether to show section labels in the header: `all` or `none` |
-| `lang` | `en` | Language for built-in labels such as callout titles: `en` or `de` |
+| `lang` | `en` | Language of the deck, such as `en`, `de` or `de-CH`: sets the page language and the words the audience sees (see below) |
+| `labels` | — | Replace single words the audience sees (see below) |
 | `callouts` | — | Override individual callout titles (see below) |
 | `live.server` | the dev server | Room server for polls and other audience activities, e.g. `https://example.org/live` |
 | `live.audience` | this page | Where phones open the slides, when you present from elsewhere |
@@ -454,6 +455,64 @@ callouts:
 ```
 
 A title written after the type on the `:::` line still wins over both.
+
+---
+
+## Language
+
+`lang` is the language of the whole deck. The page is marked with it, so screen readers pronounce the slides correctly and browsers hyphenate them. It also picks the words mdeck itself shows the audience: the reader view's buttons, the deck's control bar, polls on the slide and on phones, and callout titles. German (`de`) and English (`en`) are built in; for any other language the words stay English. A regional code such as `de-CH` uses the German words.
+
+The presenter view, the launch page and the editor are tools for the author and always stay English.
+
+To change single words, name them under `labels`:
+
+```yaml
+lang: de
+labels:
+  poll.scan: "Jetzt abstimmen"
+  reader.present: "Vollbild"
+```
+
+`mdeck check` warns about names that do not exist. `{n}`, `{choice}`, `{command}` and `{setting}` are filled in by mdeck.
+
+| Label | English | German |
+|---|---|---|
+| `reader.outline` | Outline | Gliederung |
+| `reader.untitled` | Slides | Folien |
+| `reader.slides` | Slides | Folien |
+| `reader.read` | Read | Lesen |
+| `reader.look` | Look | Aussehen |
+| `reader.theme` | Theme | Design |
+| `reader.colors` | Colors | Farben |
+| `reader.themeColors` | Theme colors | Farben des Designs |
+| `reader.resetLook` | Reset to default | Zurücksetzen |
+| `reader.resetLookHint` | Return to the look the deck was made with | Zum ursprünglichen Aussehen zurück |
+| `reader.senderLook` | This is the look the deck was made with | Das ist das ursprüngliche Aussehen |
+| `reader.downloadPdf` | Download PDF | PDF herunterladen |
+| `reader.savePdf` | Save as PDF… | Als PDF sichern… |
+| `reader.savePdfHint` | Opens the browser's print dialog; choose Save as PDF | Öffnet den Druckdialog des Browsers; dort „Als PDF sichern“ wählen |
+| `reader.present` | Present | Präsentieren |
+| `reader.previous` | Previous | Zurück |
+| `reader.next` | Next | Weiter |
+| `reader.copyLink` | Copy link to this slide | Link zu dieser Folie kopieren |
+| `reader.linkCopied` | Link copied | Link kopiert |
+| `reader.slide` | Slide {n} | Folie {n} |
+| `deck.overview` | Overview | Übersicht |
+| `deck.controls` | Deck controls | Foliensteuerung |
+| `deck.previous` | Previous slide | Vorherige Folie |
+| `deck.next` | Next slide | Nächste Folie |
+| `deck.reset` | Reset | Neustart |
+| `deck.resetHint` | Reset to first slide | Zurück zur ersten Folie |
+| `poll.scan` | Scan to vote | Scannen und abstimmen |
+| `poll.answer` | 1 answer | 1 Antwort |
+| `poll.answers` | {n} answers | {n} Antworten |
+| `poll.reset` | Reset | Zurücksetzen |
+| `poll.live` | Live | Live |
+| `poll.offline` | Not connected to the room server | Keine Verbindung zum Raum-Server |
+| `poll.unreachable` | Phones cannot reach this address. Start with {command}, or set {setting}. | Handys erreichen diese Adresse nicht. Mit {command} starten oder {setting} setzen. |
+| `poll.pick` | Tap one answer. | Eine Antwort antippen. |
+| `poll.thanks` | Thanks! You chose “{choice}”. Tap another to change. | Danke! Gewählt: „{choice}“. Zum Ändern eine andere antippen. |
+| `respond.missing` | This question is not in the presentation any more. | Diese Frage ist nicht mehr in der Präsentation. |
 
 ---
 

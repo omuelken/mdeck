@@ -34,7 +34,7 @@ Please put your phone on silent.
 :::
 ```
 
-For German labels, put `lang: de` in the settings for the whole presentation. You can also customize individual labels:
+With `lang: de` in the settings for the whole presentation, tips and reminders get German labels, as do the buttons people see when you share the slides. You can also customize individual labels:
 
 ```yaml
 lang: de

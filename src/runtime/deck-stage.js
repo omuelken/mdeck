@@ -412,6 +412,8 @@
       this._stepProgressEl = overlay.querySelector('.step-progress');
       this._stepCurEl      = overlay.querySelector('.step-cur');
       this._stepTotalEl    = overlay.querySelector('.step-total');
+      this._overlay        = overlay;
+      if (this._labels) this.setLabels(this._labels);
     }
 
     /** @page must live in the document stylesheet — it's a no-op inside
@@ -703,6 +705,20 @@
     get index() { return this._index; }
     /** Total slide count. */
     get length() { return this._slides.length; }
+    /** Words on the control bar, in the deck's language:
+     *  { controls, previous, next, reset, resetHint }. */
+    setLabels(labels = {}) {
+      this._labels = labels;
+      const overlay = this._overlay;
+      if (!overlay) return;
+      if (labels.controls) overlay.setAttribute('aria-label', labels.controls);
+      if (labels.previous) overlay.querySelector('.prev').setAttribute('aria-label', labels.previous);
+      if (labels.next) overlay.querySelector('.next').setAttribute('aria-label', labels.next);
+      const reset = overlay.querySelector('.reset');
+      if (labels.resetHint) reset.setAttribute('aria-label', labels.resetHint);
+      if (labels.reset) reset.firstChild.textContent = labels.reset;
+      if (labels.resetHint) reset.title = `${labels.resetHint} (R)`;
+    }
     /** True while the deck is laid out for print or PDF. */
     get printing() { return !!this._printing; }
     /** Enter or leave print mode: reveal every step and tell slide code to show its final state. */

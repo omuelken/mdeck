@@ -229,6 +229,15 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         return `${imports}\nexport default {\n${entries}\n}\n`
       }
     },
+    // The deck page carries the deck's language before any script runs, for
+    // screen readers, hyphenation and search engines.
+    transformIndexHtml(html, context) {
+      if (!/(^|[\/])index\.html$/.test(context.filename ?? context.path ?? '')) return html
+      let lang = null
+      try { lang = parseSlides(readFileSync(abs, 'utf-8')).deckConfig?.lang } catch {}
+      if (typeof lang !== 'string' || !/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(lang)) return html
+      return html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`)
+    },
     handleHotUpdate({ file, server }) {
       const changed = resolve(file)
       if (isWatched(changed)) {

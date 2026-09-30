@@ -1,5 +1,6 @@
 import { diagnostic } from './source.js'
 import { isPlainObject } from './parseSlides.js'
+import { LABEL_KEYS } from './labels.js'
 import { resolveTemplateProps, propertyErrors } from '../templates/templateProps.js'
 
 // `templates`, `themes` and `palettes` are manifest maps from the extension
@@ -12,7 +13,7 @@ export function validateDeck(deck, { templates = null, themes = null, palettes =
   for (const key of ['width', 'height']) {
     if (config[key] != null && (typeof config[key] !== 'number' || !Number.isFinite(config[key]) || config[key] <= 0)) add('invalid-config', `${key} must be a positive number`, deck.configSource?.start)
   }
-  for (const key of ['meta', 'params', 'callouts', 'share', 'live']) {
+  for (const key of ['meta', 'params', 'callouts', 'labels', 'share', 'live']) {
     if (config[key] != null && !isPlainObject(config[key])) add('invalid-config', `${key} must be a mapping`, deck.configSource?.start)
   }
   if (isPlainObject(config.share)) {
@@ -20,6 +21,13 @@ export function validateDeck(deck, { templates = null, themes = null, palettes =
     for (const key of ['themes', 'notes']) if (config.share[key] != null && typeof config.share[key] !== 'boolean') add('invalid-config', `share.${key} must be true or false`, deck.configSource?.start)
   }
   if (config.components != null && (!Array.isArray(config.components) || config.components.some(path => typeof path !== 'string' || !path.trim()))) add('invalid-config', 'components must be a list of folder paths', deck.configSource?.start)
+  if (config.lang != null && (typeof config.lang !== 'string' || !/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(config.lang))) add('invalid-config', 'lang must be a language code such as en, de or de-CH', deck.configSource?.start)
+  if (isPlainObject(config.labels)) {
+    for (const [key, value] of Object.entries(config.labels)) {
+      if (!LABEL_KEYS.includes(key)) add('invalid-config', `labels.${key} is not a label; see the authoring reference for the list`, deck.configSource?.start, 'warning')
+      else if (typeof value !== 'string') add('invalid-config', `labels.${key} must be text`, deck.configSource?.start)
+    }
+  }
   if (isPlainObject(config.live)) {
     for (const key of Object.keys(config.live)) if (!['server', 'audience', 'id'].includes(key)) add('invalid-config', `live.${key} is not a setting; available: server, audience, id`, deck.configSource?.start, 'warning')
     for (const key of ['server', 'audience']) {

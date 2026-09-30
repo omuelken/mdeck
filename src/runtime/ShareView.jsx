@@ -5,6 +5,7 @@ import { deckOutline } from '../core/outline.js'
 import { manifests, SlideRenderer } from '../templates/renderSlide'
 import { loadTheme, THEME_METAS, PALETTES } from './themeLoader'
 import './share.css'
+import { t, stageLabels } from '../core/labels.js'
 
 // The reader view for decks sent around by email: outline, the slides at a
 // comfortable size or stacked for reading, a look picker, PDF and a way back
@@ -74,7 +75,7 @@ export function ShareView({ deck, deckConfig }) {
   const [readScale, setReadScale] = useState(0.5)
   const stageRef = useRef(null)
   const readRef = useRef(null)
-  const outline = useMemo(() => deckOutline(deck, manifests), [deck])
+  const outline = useMemo(() => deckOutline(deck, manifests, { slideName: n => t('reader.slide', { n }) }), [deck])
   const themedConfig = { ...deckConfig, design: look.design, palette: look.palette, accent: undefined, accent2: undefined }
   const pickerAllowed = deckConfig.share?.themes !== false
   const pdf = useMemo(pdfLink, [])
@@ -90,6 +91,7 @@ export function ShareView({ deck, deckConfig }) {
     const stage = stageRef.current
     if (!stage) return
     const onChange = event => setIndex(event.detail.index)
+    stage.setLabels(stageLabels())
     stage.addEventListener('slidechange', onChange)
     return () => stage.removeEventListener('slidechange', onChange)
   }, [mode])
@@ -141,7 +143,7 @@ export function ShareView({ deck, deckConfig }) {
     url.searchParams.delete('view')
     url.searchParams.set('v', 's')
     url.hash = encodeURIComponent(slides[index]?.id ?? String(index + 1))
-    try { await navigator.clipboard.writeText(url.toString()); setToast('Link copied') } catch { setToast(url.toString()) }
+    try { await navigator.clipboard.writeText(url.toString()); setToast(t('reader.linkCopied')) } catch { setToast(url.toString()) }
     setTimeout(() => setToast(''), 1800)
   }
 
@@ -157,28 +159,28 @@ export function ShareView({ deck, deckConfig }) {
 
   return <div class="share">
     <header class="share-top">
-      <button class="share-btn share-nav-toggle" onClick={() => setNavOpen(open => !open)} aria-label="Outline"><Icon name="menu" /></button>
-      <h1>{meta.title ?? 'Slides'}</h1>
+      <button class="share-btn share-nav-toggle" onClick={() => setNavOpen(open => !open)} aria-label={t('reader.outline')}><Icon name="menu" /></button>
+      <h1>{meta.title ?? t('reader.untitled')}</h1>
       {metaLine && <span class="share-meta">{metaLine}</span>}
       <span class="share-spacer" />
       <span class="share-count">{index + 1} / {slides.length}</span>
-      <button class={`share-btn${mode === 'slides' ? ' is-active' : ''}`} onClick={() => switchMode('slides')}><Icon name="slides" />Slides</button>
-      <button class={`share-btn${mode === 'read' ? ' is-active' : ''}`} onClick={() => switchMode('read')}><Icon name="read" />Read</button>
+      <button class={`share-btn${mode === 'slides' ? ' is-active' : ''}`} onClick={() => switchMode('slides')}><Icon name="slides" />{t('reader.slides')}</button>
+      <button class={`share-btn${mode === 'read' ? ' is-active' : ''}`} onClick={() => switchMode('read')}><Icon name="read" />{t('reader.read')}</button>
       {pickerAllowed && <div class="share-menu">
-        <button class={`share-btn${lookOpen ? ' is-active' : ''}`} onClick={() => setLookOpen(open => !open)}><Icon name="look" />Look</button>
+        <button class={`share-btn${lookOpen ? ' is-active' : ''}`} onClick={() => setLookOpen(open => !open)}><Icon name="look" />{t('reader.look')}</button>
         {lookOpen && <div class="share-menu-panel">
-          <label>Theme<select class="share-select" value={look.design} onChange={e => setLook({ ...look, design: e.currentTarget.value })}>{Object.values(THEME_METAS).map(theme => <option key={theme.id} value={theme.id}>{theme.title}</option>)}</select></label>
-          <label>Colors<select class="share-select" value={look.palette} onChange={e => setLook({ ...look, palette: e.currentTarget.value })}><option value="">Theme colors</option>{Object.values(PALETTES).map(palette => <option key={palette.id} value={palette.id}>{palette.title}</option>)}</select></label>
-          <button class="share-btn" disabled={isSenderLook} onClick={() => setLook(senderLook)} title={isSenderLook ? 'This is the look the deck was made with' : 'Return to the look the deck was made with'}><Icon name="reset" />Reset to default</button>
+          <label>{t('reader.theme')}<select class="share-select" value={look.design} onChange={e => setLook({ ...look, design: e.currentTarget.value })}>{Object.values(THEME_METAS).map(theme => <option key={theme.id} value={theme.id}>{theme.title}</option>)}</select></label>
+          <label>{t('reader.colors')}<select class="share-select" value={look.palette} onChange={e => setLook({ ...look, palette: e.currentTarget.value })}><option value="">{t('reader.themeColors')}</option>{Object.values(PALETTES).map(palette => <option key={palette.id} value={palette.id}>{palette.title}</option>)}</select></label>
+          <button class="share-btn" disabled={isSenderLook} onClick={() => setLook(senderLook)} title={isSenderLook ? t('reader.senderLook') : t('reader.resetLookHint')}><Icon name="reset" />{t('reader.resetLook')}</button>
         </div>}
       </div>}
       {pdf
-        ? <a class="share-btn" href={pdf} download={`${(meta.title ?? 'slides').replace(/[^\w.-]+/g, '-')}.pdf`}><Icon name="download" />Download PDF</a>
-        : <button class="share-btn" onClick={savePdf} title="Opens the browser's print dialog; choose Save as PDF"><Icon name="download" />Save as PDF…</button>}
-      <a class="share-btn" href={`?view=deck#${encodeURIComponent(slides[index]?.id ?? String(index + 1))}`}><Icon name="present" />Present</a>
+        ? <a class="share-btn" href={pdf} download={`${(meta.title ?? 'slides').replace(/[^\w.-]+/g, '-')}.pdf`}><Icon name="download" />{t('reader.downloadPdf')}</a>
+        : <button class="share-btn" onClick={savePdf} title={t('reader.savePdfHint')}><Icon name="download" />{t('reader.savePdf')}</button>}
+      <a class="share-btn" href={`?view=deck#${encodeURIComponent(slides[index]?.id ?? String(index + 1))}`}><Icon name="present" />{t('reader.present')}</a>
     </header>
     <div class="share-main" onClick={() => lookOpen && setLookOpen(false)}>
-      <nav class={`share-nav${navOpen ? ' is-open' : ''}`} aria-label="Slides">
+      <nav class={`share-nav${navOpen ? ' is-open' : ''}`} aria-label={t('reader.slides')}>
         <ol>
           {outline.map(item => <li key={item.index} class={`${item.index === index ? 'is-current' : ''}${item.chapter ? ' is-chapter' : ''}`} onClick={() => goTo(item.index)}>
             <span class="share-num">{String(item.index + 1).padStart(2, '0')}</span>
@@ -195,10 +197,10 @@ export function ShareView({ deck, deckConfig }) {
               </deck-stage>
             </div>
             <div class="share-bottom">
-              <button class="share-btn" onClick={() => stageRef.current?.prev('click')}><Icon name="prev" />Previous</button>
-              <button class="share-btn" onClick={() => stageRef.current?.next('click')}>Next<Icon name="next" /></button>
+              <button class="share-btn" onClick={() => stageRef.current?.prev('click')}><Icon name="prev" />{t('reader.previous')}</button>
+              <button class="share-btn" onClick={() => stageRef.current?.next('click')}>{t('reader.next')}<Icon name="next" /></button>
               <span class="share-spacer" />
-              <button class="share-btn" onClick={copyLink}><Icon name="link" />Copy link to this slide</button>
+              <button class="share-btn" onClick={copyLink}><Icon name="link" />{t('reader.copyLink')}</button>
             </div>
           </>
           : <div class="share-read" ref={readRef} data-deck-static>

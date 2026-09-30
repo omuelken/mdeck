@@ -17,6 +17,7 @@ import { SlideRenderer, manifests } from '../templates/renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import './deck-stage.js'
 
+import { setDeckLanguage, deckLanguage, stageLabels, t } from '../core/labels.js'
 // One address parameter selects the view. `?view=share` and the shortcut
 // `?v=s` mean the same; the letters are d, s, p, a and r.
 const VIEW_ALIASES = { d: 'deck', s: 'share', p: 'presenter', a: 'audience', r: 'respond' }
@@ -503,6 +504,7 @@ async function init() {
   const parsed = parseSlides(slidesContent)
   const url = new URL(window.location.href)
   const editorMode = url.searchParams.get('editor') === '1'
+  document.querySelector('deck-stage')?.setLabels(stageLabels())
   // One switch selects the view: deck, share, presenter or audience.
   const defaultView = typeof __MDECK_DEFAULT_VIEW__ !== 'undefined' ? __MDECK_DEFAULT_VIEW__ : 'deck'
   const view = requestedView(url, defaultView)
@@ -529,6 +531,8 @@ async function init() {
     return
   }
 
+  setDeckLanguage(deckConfig)
+  document.documentElement.lang = deckLanguage()
   injectSpeakerNotes(slides)
 
   if (presenterMode) {
@@ -565,7 +569,8 @@ async function init() {
   if (editorMode) {
     const post = message => window.parent.postMessage(message, window.location.origin)
     const bridge = createEditorBridge({
-      parse: parseSlides, validate: deck => validateDeck(deck, { templates: manifests }), loadTheme, setExtensionOverrides, setCalloutLabels,
+      parse: parseSlides, validate: deck => validateDeck(deck, { templates: manifests }), loadTheme, setExtensionOverrides,
+      setCalloutLabels: config => { setCalloutLabels(config); setDeckLanguage(config); document.documentElement.lang = deckLanguage() },
       applyOverrides: withConfigOverrides, mount: context => mountDeck({ ...context, editor: true }), post,
     })
     window.addEventListener('message', event => {
@@ -591,7 +596,7 @@ async function init() {
     const entry = document.createElement('a')
     entry.className = 'share-entry'
     entry.href = '?view=share'
-    entry.textContent = 'Overview'
+    entry.textContent = t('deck.overview')
     document.body.appendChild(entry)
   }
 

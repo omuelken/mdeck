@@ -98,7 +98,7 @@ Right column
 The request is the message that invoked this skill: topic, audience, length and language. If any of those are missing and matter, ask once, then write a complete deck.
 
 **Structure**
-- Start with the deck settings: pick a `design` and, if it suits the subject, a `palette` from the lists you gathered; fill in `meta.title`, `meta.author`, `meta.organization`, `meta.date`.
+- Start with the deck settings: pick a `design` and, if it suits the subject, a `palette` from the lists you gathered; fill in `meta.title`, `meta.author`, `meta.organization`, `meta.date`. For a talk that is not in English, set `lang` (for example `lang: de`).
 - The first slide is `layout: title` with an `h1` headline and an `h2` subtitle.
 - Use `layout: chapter` slides to divide major sections. End with a closing focus or title slide.
 
