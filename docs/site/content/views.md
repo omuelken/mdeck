@@ -51,4 +51,6 @@ The [command guide](commands.html) lists every option.
 
 Many large Wi-Fi networks do not let devices reach each other. If phones cannot reach your laptop, use a phone hotspot or a room server on the internet. Details are in [Ask your audience](audience.html).
 
+**Drawings.** `mdeck dev` and `mdeck present` save them in `my-talk.ink.json` next to the slides. An iPad next to your laptop pairs with `mdeck dev --host` through a QR code on the launch page; the audience window on the laptop then follows it through the room server. See [Draw on your slides](drawing.html).
+
 **PDFs.** Only building one needs Chrome. The PDF shows interactive slides finished, and polls with the answers they had at that moment.

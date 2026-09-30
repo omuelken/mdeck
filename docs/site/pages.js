@@ -8,6 +8,7 @@ export const pages = [
   { slug: 'appearance', title: 'Change the look', group: 'Make your presentation', file: 'appearance.md', description: 'Choose fonts and colors with themes and palettes.' },
   { slug: 'notes-and-presenting', title: 'Add notes and present', group: 'Present and share', file: 'presenting.md', description: 'See your notes, reveal points one at a time, and open the audience screen.' },
   { slug: 'audience', title: 'Ask your audience', group: 'Present and share', file: 'audience.md', description: 'Polls that people answer on their phones, with live results on the slide.' },
+  { slug: 'drawing', title: 'Draw on your slides', group: 'Present and share', file: 'drawing.md', description: 'Mark up slides with a pen or an iPad, live or ahead of time, and keep the drawings with the talk.' },
   { slug: 'sharing', title: 'Share or print your slides', group: 'Present and share', file: 'sharing.md', description: 'Make a shareable folder, a single file, or a PDF.' },
   { slug: 'more-content', title: 'Tables, tips, and more', group: 'Keep learning', file: 'more-content.md', description: 'Add tables, helpful callouts, QR codes, formulas, and code examples.' },
   { slug: 'reusable-designs', title: 'Use a reusable slide design', group: 'Keep learning', file: 'reusable-designs.md', description: 'Use a slide design someone has made for you, including the comparison example.', preview: 'custom-templates' },

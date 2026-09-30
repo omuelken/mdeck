@@ -66,6 +66,7 @@ The editor opens in your browser and writes every change into the slide file. `-
 | `mdeck build my-talk.md --self-contained -o talk.html` | Embed local images and media in one HTML file |
 | `mdeck build my-talk.md --presenter-launchers` | Include presenter launchers in the folder build |
 | `mdeck build my-talk.md --share` | Open in the reader view, remove speaker notes, add a PDF (`--with-notes`, `--no-pdf`) |
+| `mdeck build my-talk.md --no-ink` | Leave out the drawings from `my-talk.ink.json` (also for `mdeck pdf`) |
 | `mdeck build my-talk.md --pdf` | Also render `deck.pdf` next to the HTML |
 | `mdeck pdf my-talk.md -o talk.pdf` | Render the slides to a PDF file |
 

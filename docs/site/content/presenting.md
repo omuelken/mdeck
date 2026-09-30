@@ -33,7 +33,7 @@ The launch page that `mdeck dev my-talk.md` opens has a **Presenter view** butto
 
 Use its audience-window button to open a separate view of the slides. If you have a projector or second screen, move that audience window onto it. Keep the presenter window on your own screen.
 
-The two windows follow the same slide and reveal position. This works between windows in the same browser on your computer. It is not a remote-control service for a second computer or phone.
+The two windows follow the same slide and reveal position. This works between windows in the same browser on your computer. To present from an iPad while your laptop shows the slides, see [Draw on your slides](drawing.html#present-from-an-ipad).
 
 To let people answer a question on their phones, put a poll on a slide. See [Ask your audience](audience.html).
 
@@ -46,6 +46,10 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | Home | Go to the first slide |
 | End | Go to the last slide when the slide view has focus |
 | R | Start again and clear the reveals |
+| D | Start or stop drawing on the slide ([Draw on your slides](drawing.html)) |
+| I | Hide or show the drawings |
+| F | Full screen, where the browser allows it |
+| N | Open or close the notes drawer, in the presenter view's slide-only layout |
 
 Click the slide area if your keys are not controlling it. Keys behave normally while you are typing in a text field.
 

@@ -664,6 +664,29 @@ A deck's rooms are named `<code>.<room>` on the server, so decks sharing a serve
 
 ---
 
+## Drawings (ink)
+
+Drawings on slides live in `<deck>.ink.json` beside `<deck>.md` and are part of every view, build and PDF (`--no-ink` leaves them out). `mdeck dev` and `mdeck present` save them as they are drawn; the guide [Draw on your slides](../site/content/drawing.md) covers drawing and presenting from an iPad.
+
+```json
+{
+  "version": 1,
+  "width": 1920,
+  "height": 1080,
+  "slides": {
+    "the-important-part": [
+      {"id":"k3f9a2:lq1x0","tool":"pen","color":"#e11d48","size":6,"points":[[412,630,0.52],[598,641,0.61]]}
+    ]
+  }
+}
+```
+
+- Keys under `slides` are slide ids. A slide without an `id:` gets one from its heading when it receives its first drawing, written into its settings.
+- `points` are `[x, y, pressure]` in the deck's design pixels (`width` × `height`); if the deck's size changes, strokes are scaled. `tool` is `pen` or `highlighter`.
+- Drawings belong to a slide, not to a step of it.
+- `mdeck check` reports a broken ink file and drawings for slide ids that are not in the deck.
+- Keys: `D` draw, `I` hide or show drawings, `F` full screen.
+
 ## Deck-local components
 
 Components registered in `src/runtime/registry.jsx` are part of *every* deck. When a
