@@ -21,7 +21,7 @@ Every poll in a presentation shows the same QR code, so people scan once. Their 
 | `options` | The answers, separated by `\|` |
 | `question` | Optional question text. Without it, phones show the slide's heading. |
 
-With `lang: de` in the settings, the slide and the phones show German words, such as “Scannen und abstimmen”.
+With `lang: de` in the settings, the slide and the phones show German words, such as “Scannen und abstimmen”. The phones use the presentation's theme; if you pick another theme or palette in the presenter view, the phones change with it.
 
 Hover over the results to see **Reset**, which clears the answers, for example before the real session. Only the presenter's computer can reset.
 
@@ -65,7 +65,7 @@ live:
 
 `audience` is where phones open the slides. Leave it out when you present from the hosted address itself.
 
-On your presenting computer, open the presentation once with `?livekey=choose-a-secret` added to its address. If you prepare with `mdeck dev`, start it with the same key (`MDECK_LIVE_KEY=choose-a-secret mdeck dev my-talk.md`): its launch page then checks the room server, shows the link for viewers and has a link to the presenter view with the code. The key is remembered in that browser only. With it, your screen tells the phones which poll is showing, and you can reset polls. Without it, phones cannot follow along and instead offer a list of the presentation's questions. The presenter view says whether the phones follow it, and if not, why. It repeats the current poll every few seconds, so phones that join late, or a room server that restarted, catch up.
+On your presenting computer, open the presentation once with `?livekey=choose-a-secret` added to its address. If you prepare with `mdeck dev`, start it with the same key (`MDECK_LIVE_KEY=choose-a-secret mdeck dev my-talk.md`): its launch page then checks the room server, shows the link for viewers and has a link to the presenter view with the code. The key is remembered in that browser only. With it, your screen tells the phones which poll is showing, and you can reset polls. Without it, phones cannot follow along and instead offer a list of the presentation's questions. The presenter view says whether the phones follow it, and if not, why. While a presenter view is open, other windows of the presentation in the same browser leave the phones alone. It repeats the current poll every few seconds, so phones that join late, or a room server that restarted, catch up.
 
 ## What is stored
 

@@ -11,7 +11,7 @@ import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
 import { createEditorBridge } from './editorBridge.js'
 import { ShareView } from './ShareView.jsx'
 import { RespondView } from './RespondView.jsx'
-import { configureLive, announce, useSteering } from '../live/client.js'
+import { configureLive, announce, announceLook, actAsPresenter, useSteering } from '../live/client.js'
 import { followActiveRooms } from '../live/follow.js'
 import { roomsIn, roomsOnSlide } from '../live/roomTag.js'
 import './share.css'
@@ -59,6 +59,9 @@ function withConfigOverrides(deckConfig) {
 const hasActivities = () => roomsIn(slidesContent).length > 0
 function announceSlide(slides, index) {
   if (hasActivities()) announce(roomsOnSlide(slides[index])[0] ?? null)
+}
+function announceTheme({ design, palette, accent, accent2 }) {
+  if (hasActivities()) announceLook({ design: design ?? null, palette: palette ?? null, accent: accent ?? null, accent2: accent2 ?? null })
 }
 
 // Whether this presenter screen moves the phones along, shown only for decks
@@ -244,9 +247,11 @@ function PresenterView({ deckConfig, slides }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [paletteOpen])
 
-  // When design/palette changes, tell the audience to hot-swap its theme without a reload
+  // When design/palette changes, tell the audience to hot-swap its theme without
+  // a reload, and the phones through the room server.
   useEffect(() => {
     bcRef.current?.postMessage({ deckControl: { command: 'setTheme', design, palette, accent, accent2 } })
+    announceTheme({ design, palette, accent, accent2 })
   }, [design, palette, accent, accent2])
 
   // Nav buttons drive the presenter iframe; audience follows via slideIndexChanged
@@ -567,6 +572,7 @@ async function init() {
   injectSpeakerNotes(slides)
 
   if (presenterMode) {
+    actAsPresenter()
     document.body.style.margin = '0'
     const s = document.createElement('style')
     s.textContent = `
@@ -635,6 +641,7 @@ async function init() {
   if (!embedded) {
     const stage = document.querySelector('deck-stage')
     stage?.addEventListener('slidechange', event => announceSlide(slides, event.detail.index))
+    announceTheme(deckConfig)
     if (stage) announceSlide(slides, stage.index)
   }
 
@@ -652,6 +659,7 @@ async function init() {
       if (!ctrl) return
       if (ctrl.command === 'setTheme') {
         loadTheme({ design: ctrl.design, palette: ctrl.palette, accent: ctrl.accent, accent2: ctrl.accent2 })
+        announceTheme(ctrl)
       } else {
         handleDeckControl(ctrl)
       }

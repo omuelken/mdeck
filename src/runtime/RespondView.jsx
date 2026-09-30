@@ -1,4 +1,6 @@
 import { h } from 'preact'
+import { useEffect } from 'preact/hooks'
+import { loadTheme } from './themeLoader'
 import { HtmlContent } from '../templates/templateApi.jsx'
 import { findRoomTag, slideTitleFor, roomsIn } from '../live/roomTag.js'
 import { setRespondingSlideTitle, setFollowedRoom, useStage } from '../live/client.js'
@@ -19,8 +21,7 @@ function Activity({ deck, room }) {
   return <HtmlContent key={room} class="respond-body slide-body" html={tag} />
 }
 
-function Follow({ deck }) {
-  const stage = useStage()
+function Follow({ deck, stage }) {
   setFollowedRoom(stage.room)
   if (stage.room) return <Activity key={stage.room} deck={deck} room={stage.room} />
   const rooms = roomsIn(deck.source)
@@ -34,9 +35,15 @@ function Follow({ deck }) {
 }
 
 export function RespondView({ deck, deckConfig, room }) {
+  const stage = useStage()
+  // A theme the presenter picked in the presenter view reaches the phones too.
+  const look = JSON.stringify(stage.look ?? null)
+  useEffect(() => {
+    if (stage.look) loadTheme({ ...deckConfig, ...stage.look }).catch(error => console.warn(error.message))
+  }, [look])
   const title = deckConfig.meta?.title
   return <main class="respond">
-    {room ? <Activity deck={deck} room={room} /> : <Follow deck={deck} />}
+    {room ? <Activity deck={deck} room={room} /> : <Follow deck={deck} stage={stage} />}
     {title && <footer class="respond-footer">{title}</footer>}
   </main>
 }

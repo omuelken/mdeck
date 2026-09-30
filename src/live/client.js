@@ -171,12 +171,13 @@ export function useRoom(room, { listen = true } = {}) {
   return { messages, send, reset, connected, canReset: !!info.canReset, joinUrl: joinUrl(null, info), roomUrl: joinUrl(room, info), me: clientId(), respond: responding(room) }
 }
 
-// The presenter's screen names the activity on the current slide, or null.
-// It repeats this every few seconds, so phones that join late and a room
+// The presenter's screen names the activity on the current slide, or null,
+// and the look it shows (theme, palette, accents), so phones follow a theme
+// changed in the presenter view. It repeats this every few seconds, so phones that join late and a room
 // server that restarted catch up. Only the presenter may: `steering` says
 // whether this screen reaches the phones, and if not, why.
 const REPEAT_MS = 4000
-let current, repeat = null
+let current, currentLook = null, repeat = null
 let steering = null
 const steeringListeners = new Set()
 function report(next) {
@@ -185,13 +186,27 @@ function report(next) {
   for (const listener of steeringListeners) listener(next)
 }
 
+// A presenter view outranks other deck windows in the same browser: while it
+// runs, they stay quiet, so two screens on different slides or looks do not
+// make the phones flip between them.
+let role = 'screen'
+export function actAsPresenter() { role = 'presenter' }
+const presenterMark = () => `mdeck-live-presenter:${settings.deck}`
+function outranked() {
+  try {
+    if (role === 'presenter') { localStorage.setItem(presenterMark(), String(Date.now())); return false }
+    return Date.now() - Number(localStorage.getItem(presenterMark()) ?? 0) < REPEAT_MS * 2.5
+  } catch { return false }
+}
+
 async function sendCurrent() {
+  if (outranked()) return
   const info = await serverInfo()
   if (!info.reachable) return report({ ok: false, reason: 'unreachable' })
   if (!info.canReset) return report({ ok: false, reason: presenterKey() ? 'wrong-code' : 'no-code' })
   const key = presenterKey()
   try {
-    const response = await fetch(`${stagePath()}/state`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) }, body: JSON.stringify({ state: { room: current } }) })
+    const response = await fetch(`${stagePath()}/state`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) }, body: JSON.stringify({ state: { room: current, look: currentLook } }) })
     report(response.ok ? { ok: true } : { ok: false, reason: response.status === 403 ? 'wrong-code' : 'unreachable' })
   } catch { report({ ok: false, reason: 'unreachable' }) }
 }
@@ -200,6 +215,12 @@ export function announce(room) {
   current = room ?? null
   sendCurrent()
   repeat ??= setInterval(sendCurrent, REPEAT_MS)
+}
+
+/** The look this screen shows: { design, palette, accent, accent2 }. */
+export function announceLook(look) {
+  currentLook = look
+  if (repeat) sendCurrent()
 }
 
 /** For the presenter view: null before the first announcement, else { ok, reason }. */
@@ -215,14 +236,15 @@ export function useSteering() {
 
 /**
  * Follow which activity the presenter shows. `room` is its name or null;
+ * `look` the presenter's theme, palette and accents, or null;
  * `announced` is false until the presenter has named one at all.
  */
 export function useStage() {
-  const [stage, setStage] = useState({ room: null, announced: false, connected: false })
+  const [stage, setStage] = useState({ room: null, look: null, announced: false, connected: false })
   useEffect(() => {
     if (typeof EventSource === 'undefined') return
     const source = new EventSource(`${stagePath()}/events`)
-    const apply = state => setStage({ room: state?.room ?? null, announced: state != null, connected: true })
+    const apply = state => setStage({ room: state?.room ?? null, look: state?.look ?? null, announced: state != null, connected: true })
     source.addEventListener('snapshot', event => apply(JSON.parse(event.data).state))
     source.addEventListener('state', event => apply(JSON.parse(event.data).state))
     source.addEventListener('error', () => setStage(current => ({ ...current, connected: false })))

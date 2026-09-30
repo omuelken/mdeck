@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A theme, palette or accent picked in the presenter view reaches the phones too. While a presenter view runs, other deck windows in the same browser no longer announce, so phones do not flip between two screens.
 - The phones' answer page uses the theme's own heading style and fills a chosen answer with the accent colour.
 - Polls follow the presenter reliably: the launch page's presenter, audience and deck buttons carry the presenter code (taken out of the address bar at once), the presenter view says whether phones follow it and why not, and the current poll is repeated every few seconds so late phones and a restarted room server catch up.
 - The launch page shows a small live preview of the deck and uses the same dark tool styling as the presenter view, the editor and the reader's bar; the presenter view's buttons and labels now match the editor's.
