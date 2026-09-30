@@ -30,7 +30,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 - **Live polls:** only for a deck with `live.server` in its settings: whether that room server answers, the link for viewers' phones, and the presenter code that lets your browser move the phones along and reset polls (see below).
 - **Check:** the same problems `mdeck check` reports, such as missing pictures.
 
-The presenter code is the key the room server was started with. Start `mdeck dev` with the same key, for example `MDECK_LIVE_KEY=choose-a-secret mdeck dev my-talk.md`, and the launch page shows it with a link that opens the presenter view with it. The code never goes into the slide file, because that file reaches everyone who opens the slides.
+The presenter code is the key the room server was started with. Start `mdeck dev` with the same key, for example `MDECK_LIVE_KEY=choose-a-secret mdeck dev my-talk.md`, and the launch page shows it, and its presenter, audience and deck buttons open those views with it, so they move the phones along. The code is removed from the address as soon as a page has it. The code never goes into the slide file, because that file reaches everyone who opens the slides.
 
 Add `--host` to reach the slides from phones and tablets in the same network. The launch page itself and its buttons only work on your own computer. `--port 4000` chooses the port and `--no-open` starts without opening a browser. `mdeck present` takes the same options and opens the presenter view instead.
 

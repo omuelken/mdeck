@@ -41,7 +41,10 @@ export function createRooms({ maxMessages = 5000, maxRooms = 500, idleMs = 12 * 
     },
     setState(id, state) {
       const room = get(id)
-      room.state = state ?? null
+      const next = state ?? null
+      // The presenter repeats its state; listeners only hear changes.
+      if (JSON.stringify(next) === JSON.stringify(room.state)) return
+      room.state = next
       broadcast(room, { type: 'state', state: room.state })
     },
     snapshot: id => get(id).messages,

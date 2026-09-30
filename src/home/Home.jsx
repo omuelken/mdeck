@@ -239,6 +239,8 @@ export function Home() {
   const errors = info.diagnostics.filter(d => d.severity === 'error').length
   const warnings = info.diagnostics.length - errors
   const setOutput = (id, output) => setInfo(current => ({ ...current, outputs: { ...current.outputs, [id]: output } }))
+  // With a presenter code, every screen opened here may move the phones along.
+  const code = info.live?.key ? `&livekey=${encodeURIComponent(info.live.key)}` : ''
   const meta = [`${info.slides} slide${info.slides === 1 ? '' : 's'}`, info.notes ? `${info.notes} with notes` : 'no speaker notes', `theme ${info.design}${info.palette ? ` · ${info.palette}` : ''}`, `saved ${ago(info.modified)}`]
 
   return <main class="home">
@@ -263,9 +265,9 @@ export function Home() {
       <section class="home-section">
         <h2>Present</h2>
         <div class="home-tiles">
-          <ViewTile icon="presenter" title="Presenter view" text="Notes, timer and next slide, on your own screen." href={`/?view=presenter&session=${SESSION}`} />
-          <ViewTile icon="projector" title="Audience window" text="The slides for the projector, following the presenter view opened here." href={`/?view=audience&session=${SESSION}`} />
-          <ViewTile icon="deck" title="Full-screen deck" text="Just the slides, for rehearsing or a single screen." href="/?view=deck" />
+          <ViewTile icon="presenter" title="Presenter view" text="Notes, timer and next slide, on your own screen." href={`/?view=presenter&session=${SESSION}${code}`} />
+          <ViewTile icon="projector" title="Audience window" text="The slides for the projector, following the presenter view opened here." href={`/?view=audience&session=${SESSION}${code}`} />
+          <ViewTile icon="deck" title="Full-screen deck" text="Just the slides, for rehearsing or a single screen." href={`/?view=deck${code}`} />
           <ViewTile icon="reader" title="Reader view" text="Outline, reading mode and look picker, as people you send it to see it." href="/?view=share" />
         </div>
       </section>

@@ -64,9 +64,10 @@ test('only the presenter sets a room state, and listeners follow it', async () =
   assert.equal((await events('deck', 1))[0].data.state, null)
   const seen = await events('deck', 3, async () => {
     await set({ room: 'lunch' }, { Authorization: 'Bearer secret' })
+    await set({ room: 'lunch' }, { Authorization: 'Bearer secret' })
     await set({ room: null }, { Authorization: 'Bearer secret' })
   })
-  assert.deepEqual(seen.map(e => [e.type, e.data.state?.room ?? null]), [['snapshot', null], ['state', 'lunch'], ['state', null]])
+  assert.deepEqual(seen.map(e => [e.type, e.data.state?.room ?? null]), [['snapshot', null], ['state', 'lunch'], ['state', null]], 'a repeated state is not passed on again')
   assert.deepEqual((await events('deck', 1))[0].data.state, { room: null })
 })
 

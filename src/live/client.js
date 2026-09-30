@@ -19,6 +19,7 @@ const slug = text => String(text ?? '').normalize('NFKD').replace(/[̀-ͯ]/g, ''
 export function configureLive(deckConfig = {}) {
   const live = deckConfig.live ?? {}
   settings = { server: live.server ?? null, audience: live.audience ?? null, deck: slug(live.id ?? deckConfig.meta?.title) || 'deck' }
+  takeKeyFromAddress()
 }
 
 let answerTitle = ''
@@ -74,22 +75,33 @@ function clientId() {
   } catch { return (clientId.fallback ??= crypto.randomUUID()) }
 }
 
-// The presenter unlocks resetting on a standalone server once with
-// ?livekey=… in the address; the key stays in this browser only.
+// The presenter unlocks a standalone room server once with ?livekey=… in the
+// address. The code is kept in this browser, where the presenter view's other
+// windows find it, and taken out of the address bar at once, so it never shows
+// on a projector.
+let givenKey = null
+function takeKeyFromAddress() {
+  const url = page()
+  const given = url.searchParams.get('livekey')
+  if (!given) return
+  givenKey = given
+  try { localStorage.setItem(`mdeck-live-key:${serverBase()}`, given) } catch {}
+  url.searchParams.delete('livekey')
+  try { history.replaceState(history.state, '', url) } catch {}
+}
 function presenterKey() {
-  const storageKey = `mdeck-live-key:${serverBase()}`
-  const given = page().searchParams.get('livekey')
-  try {
-    if (given) localStorage.setItem(storageKey, given)
-    return given ?? localStorage.getItem(storageKey)
-  } catch { return given }
+  try { return localStorage.getItem(`mdeck-live-key:${serverBase()}`) ?? givenKey } catch { return givenKey }
 }
 
+// Only an answer is kept; after a failure the next call asks again, so a room
+// server that starts later is found. `reachable` is false when it did not answer.
 let infoRequest = null
 function serverInfo() {
   const key = presenterKey()
   infoRequest ??= fetch(`${serverBase()}/info`, { headers: key ? { Authorization: `Bearer ${key}` } : {} })
-    .then(response => response.ok ? response.json() : {}).catch(() => ({}))
+    .then(response => { if (!response.ok) throw new Error(String(response.status)); return response.json() })
+    .then(info => ({ ...info, reachable: true }))
+    .catch(() => { infoRequest = null; return { reachable: false } })
   return infoRequest
 }
 
@@ -160,16 +172,45 @@ export function useRoom(room, { listen = true } = {}) {
 }
 
 // The presenter's screen names the activity on the current slide, or null.
-// Only the presenter may, so other screens and phones cannot steer phones.
-let announced
-export async function announce(room) {
-  const next = room ?? null
-  if (next === announced) return
-  announced = next
+// It repeats this every few seconds, so phones that join late and a room
+// server that restarted catch up. Only the presenter may: `steering` says
+// whether this screen reaches the phones, and if not, why.
+const REPEAT_MS = 4000
+let current, repeat = null
+let steering = null
+const steeringListeners = new Set()
+function report(next) {
+  if (steering && steering.ok === next.ok && steering.reason === next.reason) return
+  steering = next
+  for (const listener of steeringListeners) listener(next)
+}
+
+async function sendCurrent() {
   const info = await serverInfo()
-  if (!info.canReset) return
+  if (!info.reachable) return report({ ok: false, reason: 'unreachable' })
+  if (!info.canReset) return report({ ok: false, reason: presenterKey() ? 'wrong-code' : 'no-code' })
   const key = presenterKey()
-  await fetch(`${stagePath()}/state`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) }, body: JSON.stringify({ state: { room: next } }) }).catch(() => {})
+  try {
+    const response = await fetch(`${stagePath()}/state`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) }, body: JSON.stringify({ state: { room: current } }) })
+    report(response.ok ? { ok: true } : { ok: false, reason: response.status === 403 ? 'wrong-code' : 'unreachable' })
+  } catch { report({ ok: false, reason: 'unreachable' }) }
+}
+
+export function announce(room) {
+  current = room ?? null
+  sendCurrent()
+  repeat ??= setInterval(sendCurrent, REPEAT_MS)
+}
+
+/** For the presenter view: null before the first announcement, else { ok, reason }. */
+export function useSteering() {
+  const [state, setState] = useState(steering)
+  useEffect(() => {
+    steeringListeners.add(setState)
+    setState(steering)
+    return () => steeringListeners.delete(setState)
+  }, [])
+  return state
 }
 
 /**

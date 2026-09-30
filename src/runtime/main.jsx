@@ -11,7 +11,7 @@ import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
 import { createEditorBridge } from './editorBridge.js'
 import { ShareView } from './ShareView.jsx'
 import { RespondView } from './RespondView.jsx'
-import { configureLive, announce } from '../live/client.js'
+import { configureLive, announce, useSteering } from '../live/client.js'
 import { followActiveRooms } from '../live/follow.js'
 import { roomsIn, roomsOnSlide } from '../live/roomTag.js'
 import './share.css'
@@ -59,6 +59,21 @@ function withConfigOverrides(deckConfig) {
 const hasActivities = () => roomsIn(slidesContent).length > 0
 function announceSlide(slides, index) {
   if (hasActivities()) announce(roomsOnSlide(slides[index])[0] ?? null)
+}
+
+// Whether this presenter screen moves the phones along, shown only for decks
+// with activities: a failure used to be silent.
+const STEERING = {
+  'no-code': 'Phones do not follow: this browser has no presenter code. Open the presenter view once with ?livekey=… (the launch page has a link).',
+  'wrong-code': "Phones do not follow: the room server does not accept this browser's presenter code.",
+  unreachable: 'Phones do not follow: the room server does not answer.',
+}
+function SteeringNote() {
+  const steering = useSteering()
+  if (!hasActivities() || !steering) return null
+  return <div role="status" style={{ flexShrink: 0, padding: '6px 10px', borderRadius: '5px', fontSize: '12px', lineHeight: 1.4, border: `1px solid ${steering.ok ? '#2c4a35' : '#5c2b28'}`, color: steering.ok ? '#81c995' : '#f28b82' }}>
+    {steering.ok ? 'Phones follow this presentation.' : STEERING[steering.reason]}
+  </div>
 }
 
 function injectSpeakerNotes(slides) {
@@ -279,6 +294,8 @@ function PresenterView({ deckConfig, slides }) {
             {String(index + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
           </span>
         </div>
+
+        <SteeringNote />
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '22px', letterSpacing: '0.05em', color: timerRunning ? '#f0f0f0' : '#555', fontWeight: 300 }}>
