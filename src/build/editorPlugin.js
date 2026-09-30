@@ -62,12 +62,16 @@ function hostname(host = '') {
   return match ? match[1].toLowerCase() : ''
 }
 
+// Names under .localhost always mean this computer and are never looked up
+// in DNS (RFC 6761), so local proxies such as `name.localhost` count too.
+const isLoopbackName = name => LOOPBACK.has(name) || name.endsWith('.localhost')
+
 // Browsers send Origin on cross-site requests; a page served by this server
 // has the same host. Everything else is refused, and only loopback hosts are
 // served at all.
 export function isAllowedRequest(request) {
   const host = request.headers.host ?? ''
-  if (!LOOPBACK.has(hostname(host))) return false
+  if (!isLoopbackName(hostname(host))) return false
   const origin = request.headers.origin
   if (origin == null) return true
   try { return new URL(origin).host.toLowerCase() === host.toLowerCase() } catch { return false }

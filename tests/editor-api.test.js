@@ -119,6 +119,9 @@ test('only same-host loopback requests are allowed', () => {
   assert.equal(isAllowedRequest(request({ host: '127.0.0.1:5173', origin: 'http://127.0.0.1:5174' })), false)
   assert.equal(isAllowedRequest(request({ host: '127.0.0.1:5173', origin: 'null' })), false)
   assert.equal(isAllowedRequest(request({ host: 'example.com' })), false)
+  assert.equal(isAllowedRequest(request({ host: 'deck.localhost:7777', origin: 'http://deck.localhost:7777' })), true)
+  assert.equal(isAllowedRequest(request({ host: 'deck.localhost:7777', origin: 'http://other.localhost:7777' })), false)
+  assert.equal(isAllowedRequest(request({ host: 'localhost.example.com' })), false)
   assert.equal(isAllowedRequest(request({})), false)
 })
 
