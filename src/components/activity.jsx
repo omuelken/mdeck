@@ -7,8 +7,8 @@ import { t } from '../core/labels.js'
 // answers, the live dot and Reset.
 
 export const shortLink = url => url.replace(/^https?:\/\//, '')
-// `qr="false"` (or "no", "off") shows only the short link: the code was on an
-// earlier slide, and people's phones follow along.
+// `qr="false"` (or "no", "off") leaves the code out: it was on an earlier
+// slide (<qrcode join />), and people's phones follow along.
 export const wantsQr = qr => !/^(false|no|off|0)$/i.test(String(qr ?? 'true'))
 
 /** The join code with the short link, or how to make phones reach the room server. */
@@ -22,14 +22,11 @@ export function JoinCode({ room, joinUrl, localJoinUrl, qr = true, size = 300, l
   </a>
 }
 
-/** Number of answers, whether the room is live, Reset for the presenter, and the link when the code is hidden. */
-export function ActivityFooter({ count, connected, canReset, reset, joinUrl, localJoinUrl, showLink = false }) {
+/** Number of answers, whether the room is live, and Reset for the presenter. */
+export function ActivityFooter({ count, connected, canReset, reset }) {
   return <p class="poll-total">
     <span class={`poll-dot${connected ? ' is-live' : ''}`} title={connected ? t('poll.live') : t('poll.offline')} />
     {count === 1 ? t('poll.answer') : t('poll.answers', { n: count })}
-    {showLink && (joinUrl
-      ? <span class="poll-inline-link">{t('join.at', { link: <code>{shortLink(joinUrl)}</code> })}</span>
-      : localJoinUrl && <a class="poll-inline-link" href={localJoinUrl} target="_blank" rel="noopener">{t('poll.tryHere')}</a>)}
     {canReset && count > 0 && <button class="poll-reset" onClick={() => reset().catch(() => {})}>{t('poll.reset')}</button>}
   </p>
 }

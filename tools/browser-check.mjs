@@ -171,7 +171,7 @@ try {
   // Relay mode: the projector announces the poll on screen, the phone opens the
   // room server's own answer page at /<code>, and its vote reaches the slide.
   const pollDeck = resolve(temp, 'poll.md')
-  writeFileSync(pollDeck, '---\ndesign: neue\nlang: de\nmeta:\n  title: Poll check\nlive:\n  code: 424242\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n\n---\n# Pace?\n\n<scale room="pace" min="1" max="5" qr="false" />\n\n---\n# Anything else?\n\n<question room="ask" qr="false" />\n')
+  writeFileSync(pollDeck, '---\ndesign: neue\nlang: de\nmeta:\n  title: Poll check\nlive:\n  code: 424242\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n\n---\n# Pace?\n\n<scale room="pace" min="1" max="5" qr="false" />\n\n---\n# Anything else?\n\n<question room="ask" qr="false" />\n\n---\n# One word?\n\n<wordcloud room="mood" qr="false" />\n\n---\n# Join\n\n<qrcode join />\n')
   const pollConfig = baseConfig(pollDeck)
   pollDev = await createServer({ ...pollConfig, plugins: [...pollConfig.plugins, livePlugin()], server: { ...pollConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await pollDev.listen()
@@ -194,7 +194,13 @@ try {
   await until(phone, "!!document.querySelector('.answer-text textarea')")
   await phone.evaluate("document.querySelector('.answer-text textarea').value = 'Does it work offline?'; document.querySelector('.answer-text button').click()")
   await until(projector, "document.querySelector('[data-deck-active] .question-cards li')?.textContent === 'Does it work offline?' && !document.querySelector('[data-deck-active] .poll-join')")
-  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale and open questions, saved ink, drawing, drawing in the presenter view, touch, saving ink in dev, a second device through the stage room.')
+  await projector.evaluate("document.querySelector('deck-stage').goTo(3)")
+  await until(phone, "!!document.querySelector('.answer-text textarea')")
+  await phone.evaluate("document.querySelector('.answer-text textarea').value = 'fun'; document.querySelector('.answer-text button').click()")
+  await until(projector, "[...document.querySelectorAll('[data-deck-active] .word-cloud text')].map(e => e.textContent).join() === 'fun'")
+  await projector.evaluate("document.querySelector('deck-stage').goTo(4)")
+  await until(projector, "!!document.querySelector('[data-deck-active] .poll-join-slide .poll-join')")
+  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, saved ink, drawing, drawing in the presenter view, touch, saving ink in dev, a second device through the stage room.')
 } finally {
   await browser?.close()
   await tablet2?.close()

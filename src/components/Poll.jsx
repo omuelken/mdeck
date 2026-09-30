@@ -5,7 +5,7 @@ import './poll.css'
 
 // <poll room="lunch" question="Where do we eat?" options="Mensa|Thai|Pizza" />
 // On the slide: live bars, the number of answers and the deck's join code
-// (`qr="false"` shows only the link, when the code was on an earlier slide).
+// (`qr="false"` leaves it out, when the code was on an earlier slide).
 // On the phones, the room server's answer page shows one button per option,
 // as described by Poll.phone. Each device has one vote and can change it; the
 // latest one counts.
@@ -29,7 +29,7 @@ export default function Poll({ room = 'poll', question = '', options = '', qr })
           <span class="poll-count">{counts[i]}</span>
         </div>)}
       </div>
-      <ActivityFooter count={votes.length} {...live} showLink={!code} />
+      <ActivityFooter count={votes.length} {...live} />
     </div>
     <JoinCode room={room} {...live} qr={code} />
   </div>

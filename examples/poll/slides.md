@@ -28,7 +28,7 @@ The deck shows every kind of question mdeck has: a poll, a scale, a word cloud a
 :::notes
 Leave this up until most people have scanned. The code is the same for the whole talk: phones that joined now follow along, and each question appears on them when its slide comes up.
 
-Latecomers find the short link at the bottom of every question slide.
+Come back to this slide for latecomers, or leave the join code on the last question too.
 :::
 
 ---
@@ -67,7 +67,7 @@ title: "Word cloud: slides"
 <wordcloud room="mood" placeholder="One word" qr="false" />
 
 :::notes
-A word cloud: people may send as many words as they like. The more often a word comes in, the larger it gets; capitals do not matter.
+A word cloud: people may send as many words as they like. The more often a word comes in, the larger it gets, packed around the middle; capitals do not matter.
 
 Pick out the largest word and one surprising small one.
 :::

@@ -18,9 +18,7 @@
 .poll-join { flex: none; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 18px; border: 1px solid var(--rule, rgba(0,0,0,.12)); border-radius: 12px; color: var(--ink, #111); text-decoration: none; font-size: var(--fs-small, 24px); }
 .poll-join--local { display: block; max-width: 460px; text-align: left; line-height: 1.4; color: var(--ink-soft, var(--ink, #333)); }
 .poll-join--local code { display: inline; font-size: .9em; }
-.poll-join--local a, a.poll-inline-link { color: var(--accent, #0d9488); }
-.poll-inline-link { color: var(--ink-soft, var(--ink, #333)); }
-.poll-inline-link code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95em; }
+.poll-join--local a { color: var(--accent, #0d9488); }
 
 /* <question>: the newest answers as cards */
 .question-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
@@ -31,12 +29,13 @@
 .question-empty { margin: 0; color: var(--muted, #666); font-style: italic; }
 @keyframes poll-in { from { opacity: 0; transform: translateY(8px); } }
 
-/* <wordcloud> */
-.word-cloud { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: .15em .6em; margin: 0; line-height: 1.1; }
-.word { font-weight: 600; transition: font-size .6s cubic-bezier(.2, .8, .2, 1); animation: poll-in .4s ease both; }
-.word--0 { color: var(--accent, #0d9488); }
-.word--1 { color: var(--ink, #111); }
-.word--2 { color: var(--accent-2, var(--ink-soft, #555)); }
+/* <wordcloud>: SVG text placed by d3-cloud */
+.word-cloud { position: relative; width: 100%; }
+.word-cloud svg { display: block; overflow: visible; }
+.word { font-weight: 700; transition: transform .7s cubic-bezier(.2, .8, .2, 1), font-size .7s cubic-bezier(.2, .8, .2, 1); }
+.word--0 { fill: var(--accent, #0d9488); }
+.word--1 { fill: var(--ink, #111); }
+.word--2 { fill: var(--accent-2, var(--ink-soft, #555)); }
 
 /* <scale> */
 .scale-columns { display: flex; gap: 20px; align-items: stretch; height: 320px; }

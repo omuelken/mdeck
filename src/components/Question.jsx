@@ -19,7 +19,7 @@ export default function Question({ room = 'question', question = '', limit = '8'
       {shown.length
         ? <ul class="question-cards">{shown.map(answer => <li key={answer.n}>{answer.text}</li>)}</ul>
         : <p class="question-empty">{t('question.empty')}</p>}
-      <ActivityFooter count={answers.length} {...live} showLink={!code} />
+      <ActivityFooter count={answers.length} {...live} />
     </div>
     <JoinCode room={room} {...live} qr={code} size={240} />
   </div>

@@ -34,7 +34,7 @@ export default function Scale({ room = 'scale', question = '', low = '', high = 
         </div>)}
       </div>
       {(low || high) && <p class="scale-labels"><span>{low}</span><span>{high}</span></p>}
-      <ActivityFooter count={values.length} {...live} showLink={!code} />
+      <ActivityFooter count={values.length} {...live} />
       {average && <p class="scale-average">{t('scale.average', { n: average })}</p>}
     </div>
     <JoinCode room={room} {...live} qr={code} size={240} />

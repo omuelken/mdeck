@@ -37,7 +37,7 @@ Besides a poll, three more kinds work the same way: one line on a slide, answere
 | Tag | Phones show | The slide shows |
 |---|---|---|
 | `<scale>` | The numbers from `min` to `max` (1 to 5 unless set, at most 11 steps), with `low` and `high` as labels at the ends | How many chose each number, and the average. Each phone's latest answer counts |
-| `<wordcloud>` | A short text field | Every answer, larger the more often it came in. Capitals and extra spaces do not matter. People may send several |
+| `<wordcloud>` | A short text field | A cloud of every answer, packed around the middle, larger the more often it came in and some upright. Capitals and extra spaces do not matter. People may send several. `height` sets its height (520) |
 | `<question>` | A text field | The newest answers as cards, eight unless `limit` says otherwise. People may send several |
 
 All of them take `room`, `question` and `qr` like a poll, and `placeholder` for the text fields.
@@ -58,7 +58,7 @@ Each question shows the QR code unless you say otherwise. To invite everybody on
 <poll room="tools" options="PowerPoint|Keynote|Markdown" qr="false" />
 ```
 
-`<qrcode join />` shows the presentation's join code large, with the link below it. Phones that scanned it follow along to every question. With `qr="false"`, a question shows the short link in its last line instead, for people who come in late. `size` sets the size of the code on the join slide.
+`<qrcode join />` shows the presentation's join code large, with the link below it. Phones that scanned it follow along to every question. With `qr="false"`, a question leaves out its own code. Leave the join slide up for a while, or come back to it, for people who arrive late. `size` sets the size of the code on the join slide.
 
 The code is drawn in the slide's colours, so it fits the theme; phone cameras also read light codes on dark slides.
 
