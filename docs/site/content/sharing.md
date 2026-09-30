@@ -17,7 +17,7 @@ Send `my-talk.html` by email. It opens in a **reader view**: an outline of all s
 - Leave out `--self-contained` to get a folder with the HTML, the media files and `deck.pdf` side by side, which stays smaller when the talk has videos.
 - To stop recipients changing the look, put `share:` with `themes: false` in the settings at the top of your slide file.
 
-Anyone who opens a normal build can reach the reader view through the small **Overview** link in the corner, or by adding `?view=share` to the address. Likewise `?view=presenter` opens the presenter view of any build, as long as the notes were kept in the file.
+Anyone who opens a normal build can reach the reader view through the small **Overview** link in the corner, or by adding `?view=share` to the address. [Views, commands and servers](views.html) lists every view. Likewise `?view=presenter` opens the presenter view of any build, as long as the notes were kept in the file.
 
 ## Make a PDF on its own
 

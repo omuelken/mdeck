@@ -2,6 +2,8 @@
 
 Type these commands in a terminal. Replace `my-talk.md` with your own slide filename. If a folder or filename contains spaces, put the path in quotation marks.
 
+For how the commands, the views and the servers fit together, see [Views, commands and servers](views.html).
+
 ## Everyday commands
 
 | Command | Use it to… |

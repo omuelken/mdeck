@@ -35,6 +35,7 @@ The `#` makes a heading. The line with `---` starts another slide. A dash before
 - **Getting ready to speak?** Set up [your notes and audience screen](notes-and-presenting.html).
 - **Want the room to vote?** [Ask your audience](audience.html) with a poll they answer on their phones.
 - **Sending your talk to someone?** Choose a [sharing or printing option](sharing.html).
+- **Which view or server do I need?** See [Views, commands and servers](views.html).
 - **Something looks wrong?** Try [the troubleshooting guide](troubleshooting.html).
 
 ## What mdeck does today
