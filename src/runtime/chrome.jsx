@@ -1,15 +1,16 @@
 import { h } from 'preact'
 
-// Dark control chrome shared by the presenter view and the editor.
+// Dark control chrome shared by the presenter view and the editor; the editor's
+// stylesheet and the launch page use the same values.
 export const S = {
   btn: {
     appearance: 'none',
     WebkitAppearance: 'none',
     padding: '5px 12px',
     borderRadius: '5px',
-    border: '1px solid #2e2e2e',
-    background: '#1e1e1e',
-    color: '#999',
+    border: '1px solid #3a3a3a',
+    background: '#222',
+    color: '#e0e0e0',
     cursor: 'pointer',
     fontSize: '13px',
     fontFamily: 'inherit',
@@ -19,16 +20,16 @@ export const S = {
   select: {
     padding: '5px 8px',
     borderRadius: '5px',
-    border: '1px solid #2e2e2e',
-    background: '#1e1e1e',
-    color: '#999',
+    border: '1px solid #3a3a3a',
+    background: '#222',
+    color: '#e0e0e0',
     cursor: 'pointer',
     fontSize: '13px',
     fontFamily: 'inherit',
     width: '100%',
   },
   label: {
-    color: '#555',
+    color: '#a0a0a0',
     fontSize: '11px',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
