@@ -13,6 +13,9 @@ import { ShareView } from './ShareView.jsx'
 import { configureLive, announce, setLookSource, actAsPresenter, useSteering } from '../live/client.js'
 import { registry } from './registry'
 import { followActiveRooms } from '../live/follow.js'
+import { attachInk } from './ink/attach.js'
+import { strokePath } from '../core/ink.js'
+import { inkFileName } from 'virtual:deck-ink'
 import { roomsIn, roomsOnSlide, findRoomTag, slideTitleFor } from '../live/roomTag.js'
 import './share.css'
 import { SlideRenderer, manifests } from '../templates/renderSlide'
@@ -542,6 +545,8 @@ function mountDeck({ deck, deckConfig, selection = null, editor = false }) {
   )
   render(app, document.body)
   document.querySelector('deck-stage')?.setLabels(stageLabels())
+  const stage = document.querySelector('deck-stage')
+  if (stage) stage.inkRenderer = strokePath
   followDeck?.()
   followDeck = followActiveRooms(document.querySelector('deck-stage'), slides)
   if (!selection) return
@@ -642,6 +647,12 @@ async function init() {
     entry.href = '?view=share'
     entry.textContent = t('deck.overview')
     document.body.appendChild(entry)
+  }
+
+  // Drawing in the full-screen deck (D). The audience window only shows ink.
+  if (!embedded && !audienceMode) {
+    const stage = document.querySelector('deck-stage')
+    if (stage) attachInk(stage, { storageKey: `mdeck-ink:${inkFileName}:${location.pathname}` })
   }
 
   // A full deck or audience window is a presenter's screen; previews are embedded.

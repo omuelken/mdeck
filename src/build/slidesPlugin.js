@@ -233,7 +233,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         if (ink && existsSync(inkPath)) {
           try { data = normalizeInk(JSON.parse(readFileSync(inkPath, 'utf-8')), size) } catch (error) { this.warn(`${inkPath}: ${error.message}; showing no ink`) }
         }
-        return `export default ${JSON.stringify(data)}`
+        return `export default ${JSON.stringify(data)}\nexport const inkFileName = ${JSON.stringify(basename(inkPath))}`
       }
       if (id === RESOLVED_EXTENSIONS_ID) {
         const registry = loadRegistry(abs)

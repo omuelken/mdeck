@@ -32,6 +32,20 @@ try {
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', inkDeck, '-o', resolve(temp, 'ink.html')], { cwd: root, stdio: 'pipe' })
   const inked = await open('ink.html?view=deck')
   await until(inked, "document.querySelectorAll('.slide-ink path').length === 1")
+  // Drawing: D starts ink mode, a pen stroke becomes saved ink on the same
+  // slide (tap zones stay off), and undo takes it back.
+  await inked.evaluate("document.querySelector('deck-stage').inking = true")
+  await until(inked, "!!document.querySelector('.ink-toolbar')")
+  const rect = await inked.evaluate("(() => { const r = document.querySelector('deck-stage').getBoundingClientRect(); return [r.left, r.top, r.width, r.height] })()")
+  const at = f => [rect[0] + rect[2] * f[0], rect[1] + rect[3] * f[1]]
+  const pen = { button: 'left', pointerType: 'pen', force: 0.6 }
+  await inked.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: at([0.2, 0.6])[0], y: at([0.2, 0.6])[1], clickCount: 1, buttons: 1, ...pen })
+  for (let i = 1; i <= 10; i++) { const [x, y] = at([0.2 + 0.07 * i, 0.6]); await inked.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y, buttons: 1, ...pen }) }
+  await inked.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: at([0.9, 0.6])[0], y: at([0.9, 0.6])[1], clickCount: 1, buttons: 0, ...pen })
+  await until(inked, "document.querySelectorAll('.slide-ink path').length === 2")
+  assert.equal(await inked.evaluate("document.querySelector('deck-stage').index"), 0, 'drawing does not change slides')
+  await inked.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
+  await until(inked, "document.querySelectorAll('.slide-ink path').length === 1")
   const inkRead = await open('ink.html?view=share')
   await until(inkRead, "[...document.querySelectorAll('.share-btn')].some(b => b.textContent.includes('Read'))")
   await inkRead.evaluate("[...document.querySelectorAll('.share-btn')].find(b => b.textContent.includes('Read')).click()")
@@ -86,7 +100,7 @@ try {
   await phone.evaluate("document.querySelectorAll('.answer-options button')[1].click()")
   await until(projector, "[...document.querySelectorAll('.poll-count')].map(e => e.textContent).join() === '0,1'")
   await until(phone, "document.querySelector('.answer-status').textContent.includes('Thai')")
-  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, saved ink.')
+  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, saved ink, drawing.')
 } finally {
   await browser?.close()
   await dev?.close()

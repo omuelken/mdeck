@@ -137,6 +137,35 @@
       .tapzones { display: none; }
     }
 
+    /* Ink: while drawing, a layer above the tap zones takes all pointer
+       input, and the stroke in progress is drawn on .ink-live, which sits in
+       the scaled canvas and so uses design pixels. */
+    .ink-input {
+      position: fixed;
+      inset: 0;
+      z-index: 2147482100;
+      display: none;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      cursor: crosshair;
+    }
+    :host([data-inking]) .ink-input { display: block; }
+    :host([data-inking]) .tapzones { display: none !important; }
+    :host([data-ink-tool="eraser"]) .ink-input { cursor: cell; }
+    .ink-live {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 1;
+    }
+    .ink-live .fading { transition: opacity 0.8s ease 2.2s; opacity: 0; }
+
     .overlay {
       position: fixed;
       left: 50%;
@@ -277,7 +306,7 @@
         break-after: auto;
         page-break-after: auto;
       }
-      .overlay, .tapzones { display: none !important; }
+      .overlay, .tapzones, .ink-input, .ink-live { display: none !important; }
     }
   `;
 
@@ -300,6 +329,13 @@
       this._onMouseMove = this._onMouseMove.bind(this);
       this._onTapBack = this._onTapBack.bind(this);
       this._onTapForward = this._onTapForward.bind(this);
+      this._onInkDown = this._onInkDown.bind(this);
+      this._onInkMove = this._onInkMove.bind(this);
+      this._onInkUp = this._onInkUp.bind(this);
+      this.inkTool = { tool: 'pen', color: '#e11d48', size: 6 };
+      this.inkFinger = false;
+      this.inkRenderer = null;
+      this._penSeen = false;
       this._onBeforePrint = () => { this.printing = true; };
       this._onAfterPrint = () => { this.printing = false; };
     }
@@ -341,6 +377,7 @@
         this._canvas.style.height = this.designHeight + 'px';
         this._canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
         this._canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
+        this._inkLive?.setAttribute('viewBox', `0 0 ${this.designWidth} ${this.designHeight}`);
         this._fit();
         this._syncPrintPageRule();
       }
@@ -363,7 +400,22 @@
       const slot = document.createElement('slot');
       slot.addEventListener('slotchange', this._onSlotChange);
       canvas.appendChild(slot);
+      const inkLive = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      inkLive.setAttribute('class', 'ink-live');
+      inkLive.setAttribute('viewBox', `0 0 ${this.designWidth} ${this.designHeight}`);
+      inkLive.setAttribute('preserveAspectRatio', 'none');
+      canvas.appendChild(inkLive);
       stage.appendChild(canvas);
+
+      const inkInput = document.createElement('div');
+      inkInput.className = 'ink-input export-hidden';
+      inkInput.addEventListener('pointerdown', this._onInkDown);
+      inkInput.addEventListener('pointermove', this._onInkMove);
+      inkInput.addEventListener('pointerup', this._onInkUp);
+      inkInput.addEventListener('pointercancel', this._onInkUp);
+      // iPad Safari: no scrolling, zooming or callouts while drawing.
+      inkInput.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+      this._inkLive = inkLive;
 
       // Tap zones (mobile): left third = back, right third = forward.
       const tapzones = document.createElement('div');
@@ -403,7 +455,7 @@
       overlay.querySelector('.next').addEventListener('click', () => this.next('click'));
       overlay.querySelector('.reset').addEventListener('click', () => this.reset());
 
-      this._root.append(style, stage, tapzones, overlay);
+      this._root.append(style, stage, tapzones, inkInput, overlay);
       this._canvas = canvas;
       this._slot = slot;
       this._overlay = overlay;
@@ -723,6 +775,121 @@
       if (labels.reset) reset.firstChild.textContent = labels.reset;
       if (labels.resetHint) reset.title = `${labels.resetHint} (R)`;
     }
+    // Ink input ---------------------------------------------------------------
+    //
+    // While `inking` is on, pen, finger and mouse input draws on the current
+    // slide instead of changing slides. Finished strokes are announced as
+    // `inkstroke` events ({ slideId, tool, color, size, points }), in design
+    // pixels with pressure; the marker's as `inkmarker`, which also fades on
+    // its own; the eraser sends `inkerase` ({ slideId, point, radius }) while
+    // it moves, all with the same `gesture` number for one stroke of the
+    // eraser. `inkTool` is { tool: 'pen' | 'highlighter' | 'marker' |
+    // 'eraser', color, size }. Once a pen was used, fingers no longer draw
+    // (palm rejection) unless `inkFinger` is set. `inkRenderer(stroke)` may
+    // return an SVG path for the stroke in progress.
+
+    get inking() { return this.hasAttribute('data-inking'); }
+    set inking(on) {
+      this.toggleAttribute('data-inking', !!on);
+      if (!on) this._endInk(null);
+      this.dispatchEvent(new CustomEvent('inkmode', { detail: { inking: !!on }, bubbles: true, composed: true }));
+    }
+
+    _inkSlideId() { return this._slides[this._index]?.dataset.slideId ?? null; }
+
+    _inkPoint(e) {
+      const rect = this._canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * this.designWidth / rect.width;
+      const y = (e.clientY - rect.top) * this.designHeight / rect.height;
+      const pressure = e.pointerType === 'pen' && e.pressure > 0 ? e.pressure : 0.5;
+      return [Math.round(x * 10) / 10, Math.round(y * 10) / 10, Math.round(pressure * 100) / 100];
+    }
+
+    _acceptsPointer(e) {
+      if (e.pointerType === 'mouse') return e.button === 0;
+      if (e.pointerType === 'pen') { this._penSeen = true; return true; }
+      return !this._penSeen || this.inkFinger;
+    }
+
+    _drawLive(path, points, tool) {
+      const stroke = { tool: tool.tool === 'highlighter' ? 'highlighter' : 'pen', size: tool.size, points };
+      const d = this.inkRenderer ? this.inkRenderer(stroke)
+        : 'M' + points.map(p => p[0] + ' ' + p[1]).join(' L');
+      path.setAttribute('d', d);
+    }
+
+    _onInkDown(e) {
+      if (this._inkDrawing || !this._acceptsPointer(e)) return;
+      e.preventDefault();
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+      const tool = { ...this.inkTool };
+      const point = this._inkPoint(e);
+      this._inkGesture = (this._inkGesture || 0) + 1;
+      this._inkDrawing = { pointerId: e.pointerId, tool, points: [point], slideId: this._inkSlideId(), gesture: this._inkGesture };
+      if (tool.tool === 'eraser') { this._erase(point); return; }
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const renderer = !!this.inkRenderer;
+      path.setAttribute(renderer ? 'fill' : 'stroke', tool.color);
+      if (!renderer) { path.setAttribute('fill', 'none'); path.setAttribute('stroke-width', tool.size); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round'); }
+      path.setAttribute(renderer ? 'fill-opacity' : 'stroke-opacity', tool.tool === 'highlighter' ? '0.35' : '1');
+      this._inkLive.appendChild(path);
+      this._inkDrawing.path = path;
+      this._drawLive(path, this._inkDrawing.points, tool);
+    }
+
+    _onInkMove(e) {
+      const drawing = this._inkDrawing;
+      if (!drawing || e.pointerId !== drawing.pointerId) return;
+      e.preventDefault();
+      const events = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
+      for (const ev of events.length ? events : [e]) drawing.points.push(this._inkPoint(ev));
+      if (drawing.tool.tool === 'eraser') this._erase(drawing.points[drawing.points.length - 1]);
+      else this._drawLive(drawing.path, drawing.points, drawing.tool);
+    }
+
+    _onInkUp(e) {
+      const drawing = this._inkDrawing;
+      if (!drawing || e.pointerId !== drawing.pointerId) return;
+      this._endInk(drawing);
+    }
+
+    _endInk(drawing) {
+      this._inkDrawing = null;
+      if (!drawing || drawing.tool.tool === 'eraser' || !drawing.slideId) { drawing?.path?.remove(); return; }
+      const { tool, color, size } = drawing.tool;
+      const detail = { slideId: drawing.slideId, tool: tool === 'marker' ? 'pen' : tool, color, size, points: drawing.points };
+      if (tool === 'marker') {
+        // Never saved: fades where it was drawn.
+        drawing.path.classList.add('fading');
+        setTimeout(() => drawing.path.remove(), 3200);
+        this.dispatchEvent(new CustomEvent('inkmarker', { detail, bubbles: true, composed: true }));
+        return;
+      }
+      this.dispatchEvent(new CustomEvent('inkstroke', { detail, bubbles: true, composed: true }));
+      // The saved layer draws the stroke from now on; keep this one a moment
+      // longer so nothing flickers.
+      const path = drawing.path;
+      requestAnimationFrame(() => requestAnimationFrame(() => path.remove()));
+    }
+
+    _erase(point) {
+      const slideId = this._inkDrawing?.slideId ?? this._inkSlideId();
+      if (!slideId) return;
+      this.dispatchEvent(new CustomEvent('inkerase', { detail: { slideId, point, radius: 14, gesture: this._inkDrawing?.gesture ?? 0 }, bubbles: true, composed: true }));
+    }
+
+    /** Draws a stroke that arrives from elsewhere and fades, like the marker. */
+    showMarker({ points, color = '#e11d48', size = 6 }) {
+      if (!this._inkLive || !points?.length) return;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('fill', color);
+      this._inkLive.appendChild(path);
+      this._drawLive(path, points, { tool: 'pen', size });
+      if (!this.inkRenderer) { path.setAttribute('fill', 'none'); path.setAttribute('stroke', color); path.setAttribute('stroke-width', size); }
+      requestAnimationFrame(() => path.classList.add('fading'));
+      setTimeout(() => path.remove(), 3200);
+    }
+
     /** True while the deck is laid out for print or PDF. */
     get printing() { return !!this._printing; }
     /** Enter or leave print mode: reveal every step and tell slide code to show its final state. */

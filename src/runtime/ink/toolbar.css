@@ -1,0 +1,28 @@
+/* The floating ink toolbar, in the dark chrome of the other tools. It sits
+   above the stage's ink input layer, so fingers always work on it. */
+.ink-toolbar {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+  z-index: 2147483000;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+  max-width: calc(100vw - 24px);
+  padding: 6px; border: 1px solid #3a3a3a; border-radius: 12px;
+  background: rgba(22, 22, 22, 0.94); color: #e6e6e6;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  font: 13px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+  touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+.ink-group { display: flex; align-items: center; gap: 4px; padding: 0 4px; }
+.ink-group + .ink-group { border-left: 1px solid #333; }
+.ink-btn, .ink-color, .ink-size {
+  display: grid; place-items: center; width: 40px; height: 40px; padding: 0;
+  border: 1px solid transparent; border-radius: 8px; background: none; color: inherit; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.ink-btn:hover:not(:disabled), .ink-size:hover { background: #262626; }
+.ink-btn.is-active, .ink-size.is-active { background: #27436a; border-color: #3d6094; color: #fff; }
+.ink-btn:disabled { opacity: 0.35; cursor: default; }
+.ink-color::after { content: ''; width: 22px; height: 22px; border-radius: 50%; background: var(--swatch); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25); }
+.ink-color.is-active { border-color: #e6e6e6; }
+.ink-size span { display: block; border-radius: 50%; background: currentColor; }
+@media (max-width: 700px) { .ink-btn, .ink-color, .ink-size { width: 36px; height: 36px; } }
+@media print { .ink-toolbar { display: none !important; } }

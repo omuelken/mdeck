@@ -81,7 +81,8 @@ test('the slides plugin bundles the ink file, scaled to the deck, or nothing wit
     const plugin = slidesPlugin(deck, options)
     const watched = []
     const code = plugin.load.call({ addWatchFile: file => watched.push(file), warn() {} }, plugin.resolveId('virtual:deck-ink'))
-    return { data: JSON.parse(code.replace(/^export default /, '')), watched }
+    const [first, second] = code.split('\n')
+    return { data: JSON.parse(first.replace(/^export default /, '')), name: JSON.parse(second.replace(/^export const inkFileName = /, '')), watched }
   }
   assert.deepEqual(load().data, emptyInk({ width: 960, height: 540 }), 'no ink file yet')
   assert.deepEqual(load().watched, [], 'a missing file is not watched as a dependency, or Vite fails to load the page')
@@ -89,6 +90,7 @@ test('the slides plugin bundles the ink file, scaled to the deck, or nothing wit
   const { data, watched } = load()
   assert.deepEqual(data.slides.intro[0].points, [[50, 50, 0.5]])
   assert.deepEqual(watched, [inkFileFor(deck)])
+  assert.equal(load().name, 'talk.ink.json', 'the name for downloading the file')
   assert.deepEqual(load({ ink: false }).data.slides, {})
 })
 
