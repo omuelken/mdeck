@@ -1,26 +1,17 @@
 // Launch page API for `mdeck dev`: what the deck contains, what `mdeck check`
-// says about it, where to open each view, and buttons that start the editor
-// and the guides or run a build. Like the editor API it answers loopback
+// says about it, the state of its room server, and buttons that start the
+// editor and the guides or run a build. Like the editor API it answers loopback
 // requests from its own pages only, even when the server is shared on the
 // network for phones.
 import { spawn } from 'node:child_process'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { resolve, dirname, basename } from 'node:path'
-import QRCode from 'qrcode'
 import { loadRegistry } from '../extensions/discover.js'
 import { parseSlides } from '../core/parseSlides.js'
 import { checkDeck } from './check.js'
-import { componentFiles } from './components.js'
 import { isAllowedRequest, send, readJson } from './editorPlugin.js'
 import { findChrome } from './chrome.js'
 import { frameworkRoot } from '../paths.js'
-
-const BUILT_IN_COMPONENTS = [
-  { tag: 'codeblock', example: '```python live copy\nprint("hello")\n```' },
-  { tag: 'qrcode', example: '<qrcode url="https://example.org" size="240" />' },
-  { tag: 'videoplayer', example: '<videoplayer src="./media/clip.mp4" />' },
-  { tag: 'poll', example: '<poll room="lunch" options="Mensa|Thai|Pizza" />' },
-]
 
 // Each output is one ordinary CLI run beside the deck, so the launch page
 // builds exactly what the command line would.
@@ -51,27 +42,38 @@ function reveal(file) {
   spawn(command, args, { stdio: 'ignore', detached: true }).on('error', () => {}).unref()
 }
 
-function starterFor(record) {
-  return record.manifest.starter ?? `---\nlayout: ${record.id}\n---\n`
+// The room server named in `live.server`: whether it answers, and whether it
+// accepts the presenter code (MDECK_LIVE_KEY, as given to the room server).
+export async function liveStatus(live, { key = null, fetch: get = fetch, timeoutMs = 2500 } = {}) {
+  const started = Date.now()
+  try {
+    const response = await get(`${live.server.replace(/\/+$/, '')}/info`, { headers: key ? { Authorization: `Bearer ${key}` } : {}, signal: AbortSignal.timeout(timeoutMs) })
+    if (!response.ok) return { reachable: false, error: `It answered with status ${response.status}` }
+    const body = await response.json()
+    return { reachable: true, ms: Date.now() - started, keyAccepted: key ? !!body.canReset : null }
+  } catch (error) {
+    return { reachable: false, error: error.name === 'TimeoutError' ? `No answer within ${timeoutMs / 1000} s` : error.cause?.code ?? error.message }
+  }
 }
 
 // `urls()` returns the server's addresses; `services` start the editor and the
-// guides. Both are injected so tests can run without a browser or network.
-export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network: [] }), services = {}, run = runCli, open = reveal } = {}) {
+// guides; `fetch` reaches the room server. All are injected so tests can run
+// without a browser or network.
+export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network: [] }), services = {}, run = runCli, open = reveal, liveKey = process.env.MDECK_LIVE_KEY || null, fetch: get = fetch } = {}) {
   const abs = resolve(slidesPath)
   const outputs = outputsFor(abs)
   const jobs = {}
   const started = {}, serviceUrls = {}
 
-  async function info() {
+  async function info(request) {
     const source = readFileSync(abs, 'utf8')
     let registry = null, registryError = null
     try { registry = loadRegistry(abs) } catch (error) { registryError = error.message }
     const { deck, diagnostics } = registry ? checkDeck(abs, registry, source) : { deck: parseSlides(source), diagnostics: [] }
     const config = deck.deckConfig ?? {}
-    const { local = [], network = [] } = urls() ?? {}
-    const phoneUrl = network[0] ?? null
-    const records = kind => Object.values(registry?.[`${kind}s`] ?? {})
+    const { local: serverLocal = [], network = [] } = urls() ?? {}
+    // The address this page was opened with, such as a local proxy's name.
+    const local = request?.headers?.host ? [`http://${request.headers.host}/`, ...serverLocal] : serverLocal
     return {
       file: abs,
       name: basename(abs),
@@ -79,19 +81,13 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       title: config.meta?.title ?? basename(abs).replace(/\.md$/i, ''),
       author: config.meta?.author ?? null,
       slides: deck.slides.length,
+      width: config.width ?? 1920,
+      height: config.height ?? 1080,
       notes: deck.slides.filter(slide => slide.meta.notes || slide.meta.note).length,
       design: config.design ?? 'neue',
       palette: config.palette ?? null,
       diagnostics: [...(registry?.warnings ?? []).map(message => ({ severity: 'warning', code: 'extension', message })), ...(registryError ? [{ severity: 'error', code: 'extension', message: registryError }] : []), ...diagnostics],
-      layouts: records('template').map(record => ({ id: record.id, title: record.title, description: record.description ?? '', source: record.source, starter: starterFor(record) })),
-      themes: records('theme').map(record => ({ id: record.id, title: record.title, description: record.description ?? '', source: record.source })),
-      palettes: records('palette').map(record => ({ id: record.id, title: record.title, description: record.description ?? '', source: record.source })),
-      components: [
-        ...componentFiles(abs).map(({ tag, source, folder }) => ({ tag, source, folder, example: `<${tag} />` })),
-        ...BUILT_IN_COMPONENTS.map(component => ({ ...component, source: 'built-in' })),
-      ],
-      urls: { local: local[0] ?? null, network: phoneUrl },
-      phoneQr: phoneUrl ? await QRCode.toString(new URL('?view=share', phoneUrl).href, { type: 'svg', margin: 1 }) : null,
+      live: await live(config.live, { local, network }),
       chrome: !!findChrome(),
       services: Object.fromEntries(Object.keys(services).map(key => [key, serviceUrls[key] ?? null])),
       outputs: Object.fromEntries(Object.entries(outputs).map(([key, output]) => [key, {
@@ -101,6 +97,21 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
         needsChrome: !!output.chrome,
         ...(jobs[key] ?? { status: 'idle' }),
       }])),
+    }
+  }
+
+  // Only decks with a room server of their own get this section: its address
+  // and health, the viewers' answer link and the presenter code.
+  async function live(settings, { local, network }) {
+    if (typeof settings?.server !== 'string') return null
+    const viewerBase = settings.audience ?? network[0] ?? local[0] ?? null
+    return {
+      server: settings.server,
+      ...(await liveStatus(settings, { key: liveKey, fetch: get })),
+      key: liveKey,
+      viewerUrl: viewerBase ? new URL('?view=respond', viewerBase).href : null,
+      viewerReachable: !!(settings.audience || network[0]),
+      hostedPresenterUrl: settings.audience && liveKey ? new URL(`?view=presenter&livekey=${encodeURIComponent(liveKey)}`, settings.audience).href : null,
     }
   }
 
@@ -134,7 +145,7 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
     if (!['/info', '/action'].includes(pathname)) return next()
     if (!isAllowedRequest(request)) return send(response, 403, { error: 'The launch page only answers on this computer' })
     try {
-      if (pathname === '/info' && request.method === 'GET') return send(response, 200, await info())
+      if (pathname === '/info' && request.method === 'GET') return send(response, 200, await info(request))
       if (pathname === '/action' && request.method === 'POST') return send(response, 200, await act(await readJson(request)))
       response.setHeader('Allow', pathname === '/info' ? 'GET' : 'POST')
       return send(response, 405, { error: 'Method not allowed' })
@@ -148,6 +159,14 @@ export function homePlugin(slidesPath, { services } = {}) {
   return {
     name: 'vite-plugin-mdeck-home',
     configureServer(server) {
+      // The bare address is the launch page; the slides are at ?view=deck.
+      // Only a plain page visit is redirected: every view, preview and editor
+      // frame carries a query.
+      server.middlewares.use((request, response, next) => {
+        if (request.method !== 'GET' || !['/', '/index.html'].includes(request.url) || !/text\/html/.test(request.headers.accept ?? '')) return next()
+        response.writeHead(302, { Location: '/home.html' })
+        response.end()
+      })
       server.middlewares.use('/__mdeck/home', homeMiddleware(slidesPath, { urls: () => server.resolvedUrls, services }))
     },
   }

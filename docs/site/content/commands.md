@@ -21,15 +21,18 @@ For how the commands, the views and the servers fit together, see [Views, comman
 
 ## The launch page
 
-`mdeck dev my-talk.md` opens a page on your own computer with everything for this talk:
+`mdeck dev my-talk.md` opens a page on your own computer with everything for this talk. It is what the preview's plain address, such as `http://localhost:5173/`, shows; the slides themselves are at `?view=deck`.
 
-- **Present:** the presenter view, the full-screen deck and the reader view, each in a new tab.
+- **Preview:** a small live copy of the deck to flip through; click it to open the full-screen deck at that slide.
+- **Present:** the presenter view and an audience window that follows it, the full-screen deck and the reader view, each in a new tab.
 - **Write and learn:** the visual editor and these guides. Each starts the first time you click it.
 - **Share:** buttons that make the `dist` folder, one file to send, or a PDF, next to your slide file, and show them in your file manager.
+- **Live polls:** only for a deck with `live.server` in its settings: whether that room server answers, the link for viewers' phones, and the presenter code that lets your browser move the phones along and reset polls (see below).
 - **Check:** the same problems `mdeck check` reports, such as missing pictures.
-- **What you can use:** every layout with a starter to copy, the components, themes and colour palettes available to this deck.
 
-Add `--host` to reach the slides from phones and tablets in the same network; the page then shows a QR code for the reader view. The launch page itself and its buttons only work on your own computer. `--port 4000` chooses the port and `--no-open` starts without opening a browser. `mdeck present` takes the same options and opens the presenter view instead.
+The presenter code is the key the room server was started with. Start `mdeck dev` with the same key, for example `MDECK_LIVE_KEY=choose-a-secret mdeck dev my-talk.md`, and the launch page shows it with a link that opens the presenter view with it. The code never goes into the slide file, because that file reaches everyone who opens the slides.
+
+Add `--host` to reach the slides from phones and tablets in the same network. The launch page itself and its buttons only work on your own computer. `--port 4000` chooses the port and `--no-open` starts without opening a browser. `mdeck present` takes the same options and opens the presenter view instead.
 
 ## Open a particular guide
 

@@ -82,7 +82,7 @@ mdeck build talk.md --share --self-contained -o talk.html   # one file to email,
 
 - **Layouts:** title, chapter, big statement, image and text, split, full-bleed image, and plain content slides, with points that appear one at a time.
 - **Looks:** six themes and eight colour palettes, changeable without touching the slides. Make your own as small `extension.toml` folders beside the deck.
-- **One launch page:** `mdeck dev` opens a page with the presenter, deck and reader views, the editor, the guides, one-click builds and PDF, the deck's check results, and every layout with a starter to copy.
+- **One launch page:** `mdeck dev` opens a page with a live preview, the presenter and audience views, the deck and reader views, the editor, the guides, one-click builds and PDF, the deck's check results, and for decks with a room server its health and the presenter code.
 - **Presenting:** a presenter view with notes and timer, and an audience window that stays in sync.
 - **Audience polls:** `<poll room="lunch" options="A|B|C" />` shows live results and a QR code; people vote on their phones. Rooms run inside `mdeck dev --host` or on a small room server (`mdeck live`).
 - **Sharing:** a reader view with an outline, a phone-friendly Read mode and a PDF download; speaker notes are stripped from shared builds, and interactive slides appear in their finished state.

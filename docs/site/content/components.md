@@ -42,7 +42,7 @@ components:
 
 Paths are relative to the deck's Markdown file; `~/` starts in your home folder. Every `.jsx` file in a listed folder becomes a tag, just like the deck's own `components` folder. Helper files in subfolders can be imported from those components.
 
-When two folders have a component with the same name, the deck's own `components` folder wins, then the listed folders in their order, then mdeck's built-in components. Edits to a shared component reload every deck that is open in `mdeck dev`. `mdeck check` reports a listed folder that does not exist, and the launch page shows which folder each component comes from.
+When two folders have a component with the same name, the deck's own `components` folder wins, then the listed folders in their order, then mdeck's built-in components. Edits to a shared component reload every deck that is open in `mdeck dev`. `mdeck check` reports a listed folder that does not exist.
 
 Builds contain the component code, so a built presentation does not need the shared folder. Someone who gets your slide file to work on needs that folder too.
 

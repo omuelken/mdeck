@@ -4,7 +4,7 @@ import { createServer, request } from 'node:http'
 import { mkdtempSync, copyFileSync, cpSync, writeFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { homeMiddleware, outputsFor } from '../src/build/homePlugin.js'
+import { homeMiddleware, outputsFor, liveStatus } from '../src/build/homePlugin.js'
 
 const dir = mkdtempSync(resolve(tmpdir(), 'mdeck-home-'))
 cpSync(new URL('../examples/custom-templates/extensions', import.meta.url), resolve(dir, 'extensions'), { recursive: true })
@@ -29,18 +29,14 @@ after(() => http.close())
 const get = (path, headers) => fetch(base + path, { headers })
 const act = body => fetch(base + '/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 
-test('info describes the deck, its check results, building blocks and addresses', async () => {
+test('info describes the deck, its check results and addresses', async () => {
   const response = await get('/info')
   assert.equal(response.status, 200)
   const info = await response.json()
   assert.equal(info.name, 'talk.md')
   assert.ok(info.slides > 0)
   assert.deepEqual(info.diagnostics.filter(d => d.severity === 'error'), [])
-  assert.ok(info.layouts.some(layout => layout.id === 'comparison' && layout.source !== 'built-in'))
-  assert.ok(info.layouts.every(layout => layout.starter.length > 0))
-  assert.deepEqual(info.components.find(c => c.tag === 'chart'), { tag: 'chart', source: 'deck', folder: 'components', example: '<chart />' })
-  assert.equal(info.urls.network, 'http://192.168.1.20:5173/')
-  assert.match(info.phoneQr, /^<svg/)
+  assert.equal(info.live, null, 'no live section without live.server')
   assert.deepEqual(Object.keys(info.outputs), ['folder', 'share', 'pdf'])
   assert.equal(info.services.editor, null)
 })
@@ -87,4 +83,41 @@ test('requests from other hosts or pages are refused', async () => {
   assert.equal(status, 403)
   assert.equal((await get('/info', { Origin: 'http://evil.example' })).status, 403)
   assert.equal((await fetch(base + '/info', { method: 'POST' })).status, 405)
+})
+
+test('a deck with a room server shows its health, the viewer link and the presenter code', async () => {
+  const liveDeck = resolve(dir, 'live.md')
+  writeFileSync(liveDeck, '---\ndesign: neue\nlive:\n  server: https://example.org/live/\n  audience: https://example.org/slides/talk/\n---\n\n---\n# Q\n\n<poll room="q" options="a|b" />\n')
+  const asked = []
+  const roomServer = async (url, { headers }) => { asked.push([url, headers.Authorization]); return { ok: true, json: async () => ({ canReset: headers.Authorization === 'Bearer s3cret' }) } }
+  const handler = homeMiddleware(liveDeck, { liveKey: 's3cret', fetch: roomServer, urls: () => ({ local: ['http://localhost:5173/'], network: [] }) })
+  const reply = await new Promise(done => {
+    const response = { headers: {}, setHeader() {}, writeHead(status) { this.status = status }, end(body) { done({ status: this.status, body: JSON.parse(body) }) } }
+    handler({ url: '/info', method: 'GET', headers: { host: 'localhost:5173' } }, response, () => {})
+  })
+  assert.equal(reply.status, 200)
+  const { live } = reply.body
+  assert.deepEqual(asked, [['https://example.org/live/info', 'Bearer s3cret']])
+  assert.equal(live.server, 'https://example.org/live/')
+  assert.equal(live.reachable, true)
+  assert.equal(live.keyAccepted, true)
+  assert.equal(live.key, 's3cret')
+  assert.equal(live.viewerUrl, 'https://example.org/slides/talk/?view=respond')
+  assert.equal(live.viewerReachable, true)
+  assert.equal(live.hostedPresenterUrl, 'https://example.org/slides/talk/?view=presenter&livekey=s3cret')
+  const plain = resolve(dir, 'plain-live.md')
+  writeFileSync(plain, '---\ndesign: neue\nlive:\n  server: https://example.org/live\n---\n\n---\n# Q\n')
+  const viaProxy = await new Promise(done => homeMiddleware(plain, { fetch: roomServer, urls: () => ({ local: ['http://localhost:4104/'], network: [] }) })({ url: '/info', method: 'GET', headers: { host: 'deck.localhost:7777' } }, { setHeader() {}, writeHead() {}, end: body => done(JSON.parse(body).live) }, () => {}))
+  assert.equal(viaProxy.viewerUrl, 'http://deck.localhost:7777/?view=respond', 'the address the page was opened with')
+  assert.equal(viaProxy.viewerReachable, false)
+  assert.equal(viaProxy.key, null)
+})
+
+test('room server problems are reported, not thrown', async () => {
+  const down = async () => { throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } }) }
+  assert.deepEqual(await liveStatus({ server: 'http://127.0.0.1:1' }, { fetch: down }), { reachable: false, error: 'ECONNREFUSED' })
+  const wrong = async () => ({ ok: false, status: 404 })
+  assert.deepEqual(await liveStatus({ server: 'http://x' }, { fetch: wrong }), { reachable: false, error: 'It answered with status 404' })
+  const noKey = async () => ({ ok: true, json: async () => ({ canReset: false }) })
+  assert.equal((await liveStatus({ server: 'http://x' }, { fetch: noKey })).keyAccepted, null, 'without a code there is nothing to accept')
 })

@@ -1,5 +1,5 @@
 import { h } from 'preact'
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import mark from '../../assets/logo/mark.svg'
 
 // The launch page `mdeck dev` opens: every way to show, edit, share and check
@@ -17,18 +17,20 @@ async function api(path, body) {
 const ICONS = {
   presenter: 'M3 4h12v9H3zM9 13v3M6 16h6M17 7h4M17 11h4M17 15h4',
   deck: 'M4 5h16v11H4zM12 16v4M8 20h8',
+  projector: 'M3 7h18v8H3zM7 19l2-4M17 19l-2-4M15 11h2',
   reader: 'M4 4h6v16H4zM12 4h8v16h-8zM14 8h4M14 12h4M14 16h2',
   editor: 'M4 20h4L19 9l-4-4L4 16zM13 7l4 4',
   docs: 'M5 4h10l4 4v12H5zM15 4v4h4M8 12h8M8 16h6',
   folder: 'M3 6h6l2 2h10v11H3z',
   file: 'M6 3h8l4 4v14H6zM14 3v4h4',
   pdf: 'M6 3h8l4 4v14H6zM9 13h6M9 17h4',
-  phone: 'M8 3h8v18H8zM11 18h2',
   check: 'M5 12l5 5 9-10',
   alert: 'M12 4l9 16H3zM12 10v4M12 17v.5',
   copy: 'M9 9h10v11H9zM5 15V4h10',
   reveal: 'M4 7h6l2 2h8v9H4zM12 12v4M10 14h4',
   arrow: 'M7 17L17 7M9 7h8v8',
+  prev: 'M15 5l-7 7 7 7',
+  next: 'M9 5l7 7-7 7',
 }
 function Icon({ name, size = 18 }) {
   return <svg class="home-icon" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ICONS[name]} /></svg>
@@ -54,27 +56,62 @@ function ViewTile({ icon, title, text, href }) {
 }
 
 // Opens the tab during the click so pop-up blockers allow it, then points it
-// at the service once the server has started.
+// at the service (and `page` within it) once the server has started.
+async function openService(action, page = '') {
+  const tab = window.open('about:blank', '_blank')
+  try {
+    const { url } = await api('/action', { action })
+    const target = new URL(page, url).href
+    if (tab) tab.location = target
+    else window.open(target, '_blank')
+  } catch (error) {
+    tab?.close()
+    throw error
+  }
+}
+
 function ServiceTile({ icon, title, text, action, url, onError, onStarted }) {
   const [starting, setStarting] = useState(false)
   const launch = async () => {
-    const tab = window.open('about:blank', '_blank')
     setStarting(true)
-    try {
-      const result = await api('/action', { action })
-      if (tab) tab.location = result.url
-      else window.open(result.url, '_blank')
-      onStarted()
-    } catch (error) {
-      tab?.close()
-      onError(error.message)
-    } finally { setStarting(false) }
+    try { await openService(action); onStarted() } catch (error) { onError(error.message) } finally { setStarting(false) }
   }
   return <button class="home-tile" onClick={launch} disabled={starting}>
     <span class="home-tile-icon"><Icon name={icon} size={22} /></span>
     <span class="home-tile-body"><strong>{title}</strong><span>{starting ? 'Starting…' : url ? url.replace(/^https?:\/\//, '') : text}</span></span>
     <Icon name="arrow" size={16} />
   </button>
+}
+
+// A small live copy of the deck. The embedded deck hides its controls, takes
+// next/previous commands from this page and reports its slide back; a click
+// opens the full-screen deck at that slide.
+function Preview({ info }) {
+  const frame = useRef(null)
+  const [index, setIndex] = useState(0)
+  useEffect(() => {
+    const follow = event => {
+      if (event.source === frame.current?.contentWindow && Number.isInteger(event.data?.slideIndexChanged)) setIndex(event.data.slideIndexChanged)
+    }
+    window.addEventListener('message', follow)
+    return () => window.removeEventListener('message', follow)
+  }, [])
+  const control = command => frame.current?.contentWindow?.postMessage({ deckControl: { command } }, window.location.origin)
+  const deckUrl = `/?view=deck#${index + 1}`
+  return <section class="home-section">
+    <h2>Preview</h2>
+    <div class="home-preview" style={{ aspectRatio: `${info.width} / ${info.height}` }}>
+      <iframe ref={frame} src="/?view=deck&embedded=1" title="Deck preview" tabIndex={-1} />
+      <a class="home-preview-open" href={deckUrl} target="_blank" rel="noopener" aria-label="Open the full-screen deck" />
+    </div>
+    <div class="home-preview-bar">
+      <button class="home-btn home-btn--small" onClick={() => control('prev')} aria-label="Previous"><Icon name="prev" size={14} /></button>
+      <button class="home-btn home-btn--small" onClick={() => control('next')} aria-label="Next"><Icon name="next" size={14} /></button>
+      <span class="home-preview-count">{index + 1} / {info.slides}</span>
+      <span class="home-spacer" />
+      <a class="home-btn home-btn--small" href={deckUrl} target="_blank" rel="noopener">Open deck <Icon name="arrow" size={13} /></a>
+    </div>
+  </section>
 }
 
 const OUTPUT_TEXT = {
@@ -132,46 +169,51 @@ function CopyButton({ text, label = 'Copy' }) {
   return <button class="home-btn home-btn--small" onClick={copy}><Icon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copied' : label}</button>
 }
 
-const TABS = [['layouts', 'Layouts'], ['components', 'Components'], ['themes', 'Themes'], ['palettes', 'Colour palettes']]
+// One session pairs the presenter view with the audience window, so both
+// links on this page drive each other.
+const SESSION = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)
 
-function BuildingBlocks({ info }) {
-  const [tab, setTab] = useState('layouts')
-  return <section class="home-section home-section--wide">
+// For decks with `live.server`: the room server's health, the viewers' link
+// and the presenter code (MDECK_LIVE_KEY) that lets a browser steer phones
+// and reset polls.
+function LivePolls({ live, onRecheck }) {
+  const presenterUrl = `/?view=presenter&session=${SESSION}${live.key ? `&livekey=${encodeURIComponent(live.key)}` : ''}`
+  const keyState = !live.key ? null : live.keyAccepted ? ['is-ok', 'Accepted by the room server'] : live.reachable ? ['is-bad', 'Not accepted by the room server'] : ['is-idle', 'Not checked']
+  return <section class="home-section">
     <div class="home-section-head">
-      <h2>What you can use</h2>
-      <div class="home-tabs" role="tablist">
-        {TABS.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} class={`home-tab${tab === id ? ' is-active' : ''}`} onClick={() => setTab(id)}>{label}</button>)}
-      </div>
+      <h2>Live polls</h2>
+      <button class="home-btn home-btn--small" onClick={onRecheck}>Check again</button>
     </div>
-    {tab === 'layouts' && <ul class="home-blocks">{info.layouts.map(layout => <li key={layout.id} class="home-block">
-      <div><strong>{layout.title}</strong> <code>layout: {layout.id}</code>{layout.source !== 'built-in' && <span class="home-tag">{layout.source}</span>}</div>
-      {layout.description && <p>{layout.description}</p>}
-      <pre>{layout.starter.trim()}</pre>
-      <CopyButton text={layout.starter} label="Copy starter" />
-    </li>)}</ul>}
-    {tab === 'components' && <ul class="home-blocks">{info.components.map(component => <li key={component.tag} class="home-block">
-      <div><strong>&lt;{component.tag}&gt;</strong><span class="home-tag" title={component.folder}>{component.source === 'deck' ? 'this deck' : component.source === 'shared' ? component.folder : 'built-in'}</span></div>
-      <pre>{component.example}</pre>
-      <CopyButton text={component.example} />
-    </li>)}</ul>}
-    {tab === 'themes' && <ul class="home-list">{info.themes.map(theme => <li key={theme.id} class={theme.id === info.design ? 'is-current' : ''}>
-      <strong>{theme.title}</strong> <code>design: {theme.id}</code>{theme.id === info.design && <span class="home-tag">in use</span>}
-      {theme.description && <p>{theme.description}</p>}
-    </li>)}</ul>}
-    {tab === 'palettes' && <ul class="home-list">{info.palettes.map(palette => <li key={palette.id} class={palette.id === info.palette ? 'is-current' : ''}>
-      <strong>{palette.title}</strong> <code>palette: {palette.id}</code>{palette.id === info.palette && <span class="home-tag">in use</span>}
-      {palette.description && <p>{palette.description}</p>}
-    </li>)}</ul>}
+    <dl class="home-live">
+      <div>
+        <dt>Room server</dt>
+        <dd>
+          <code>{live.server}</code>
+          <span class={`home-pill ${live.reachable ? 'is-ok' : 'is-bad'}`}>{live.reachable ? `Reachable · ${live.ms} ms` : `Not reachable · ${live.error}`}</span>
+        </dd>
+      </div>
+      <div>
+        <dt>Poll page for viewers</dt>
+        <dd>
+          {live.viewerUrl && <><a href={live.viewerUrl} target="_blank" rel="noopener"><code>{live.viewerUrl}</code></a> <CopyButton text={live.viewerUrl} /></>}
+          {!live.viewerReachable && <p class="home-note">Only this computer can open this address. Set <code>live.audience</code> to the hosted slides, or start with <code>--host</code>.</p>}
+        </dd>
+      </div>
+      <div>
+        <dt>Presenter code</dt>
+        <dd>
+          {live.key
+            ? <>
+              <code class="home-code">{live.key}</code> <CopyButton text={live.key} />
+              <span class={`home-pill ${keyState[0]}`}>{keyState[1]}</span>
+              <p>Open the presenter view with the code once in the browser you present from: <a href={presenterUrl} target="_blank" rel="noopener">presenter view here</a>{live.hostedPresenterUrl && <>, or <a href={live.hostedPresenterUrl} target="_blank" rel="noopener">on the hosted slides</a></>}.</p>
+            </>
+            : <p>Start <code>mdeck dev</code> with <code>MDECK_LIVE_KEY</code> set to the room server's key to see the code here.</p>}
+        </dd>
+      </div>
+    </dl>
   </section>
 }
-
-const KEYS = [
-  ['→  Space  PgDn', 'Next step or slide'],
-  ['←  PgUp', 'Previous step or slide'],
-  ['Home  End', 'First or last slide'],
-  ['1 … 9, 0', 'Jump to slide 1 to 10'],
-  ['R', 'Back to the start, steps reset'],
-]
 
 export function Home() {
   const [info, setInfo] = useState(null)
@@ -201,7 +243,7 @@ export function Home() {
 
   return <main class="home">
     <header class="home-header">
-      <img class="home-mark" src={mark} alt="mdeck" width="40" height="40" />
+      <img class="home-mark" src={mark} alt="mdeck" width="26" height="26" />
       <div class="home-heading">
         <h1>{info.title}</h1>
         <p class="home-meta">{meta.join(' · ')}</p>
@@ -216,31 +258,27 @@ export function Home() {
     {error && <div class="home-error" role="alert"><span>{error}</span><button class="home-link" onClick={() => setError('')}>Dismiss</button></div>}
 
     <div class="home-grid">
+      <Preview info={info} />
+
       <section class="home-section">
         <h2>Present</h2>
         <div class="home-tiles">
-          <ViewTile icon="presenter" title="Presenter view" text="Notes, timer and next slide; opens the audience window for the projector." href="/?view=presenter" />
+          <ViewTile icon="presenter" title="Presenter view" text="Notes, timer and next slide, on your own screen." href={`/?view=presenter&session=${SESSION}`} />
+          <ViewTile icon="projector" title="Audience window" text="The slides for the projector, following the presenter view opened here." href={`/?view=audience&session=${SESSION}`} />
           <ViewTile icon="deck" title="Full-screen deck" text="Just the slides, for rehearsing or a single screen." href="/?view=deck" />
           <ViewTile icon="reader" title="Reader view" text="Outline, reading mode and look picker, as people you send it to see it." href="/?view=share" />
         </div>
       </section>
 
-      <section class="home-section">
+      <section class={`home-section${info.live ? '' : ' home-section--wide'}`}>
         <h2>Write and learn</h2>
         <div class="home-tiles">
           <ServiceTile icon="editor" title="Visual editor" text="Forms and a live preview; saves into the file and keeps a backup." action="editor" url={info.services.editor} onError={setError} onStarted={load} />
           <ServiceTile icon="docs" title="Guides" text="How to write slides, layouts, presenting, sharing and more." action="docs" url={info.services.docs} onError={setError} onStarted={load} />
         </div>
-        <div class="home-phone">
-          <h3><Icon name="phone" /> Slides on a phone</h3>
-          {info.phoneQr
-            ? <div class="home-qr-row">
-              <div class="home-qr" dangerouslySetInnerHTML={{ __html: info.phoneQr }} />
-              <p>Scan to read the slides on a phone or tablet in the same network. They don't follow the presenter.<br /><code>{new URL('?view=share', info.urls.network).href}</code></p>
-            </div>
-            : <p>Start with <code>mdeck dev {info.name} --host</code> to make the slides reachable from phones and tablets in the same network. A QR code appears here.</p>}
-        </div>
       </section>
+
+      {info.live && <LivePolls live={info.live} onRecheck={load} />}
 
       <section class="home-section home-section--wide">
         <h2>Share</h2>
@@ -256,17 +294,6 @@ export function Home() {
         </div>
         <Diagnostics diagnostics={info.diagnostics} name={info.name} />
       </section>
-
-      <BuildingBlocks info={info} />
-
-      <section class="home-section home-section--wide">
-        <h2>While presenting</h2>
-        <dl class="home-keys">
-          {KEYS.map(([keys, action]) => <div key={keys}><dt>{keys.split('  ').map(k => <kbd key={k}>{k}</kbd>)}</dt><dd>{action}</dd></div>)}
-        </dl>
-      </section>
     </div>
-
-    <footer class="home-footer">mdeck · this page lives only on your computer while <code>mdeck dev</code> runs</footer>
   </main>
 }

@@ -59,7 +59,7 @@ mdeck dev my-talk.md
 
 Your browser opens the launch page for your talk. Click **Full-screen deck** to see the slides. Press the right arrow key to move to the second slide, and the left arrow key to go back.
 
-Keep the terminal open while working. If the browser does not open, click or copy the launch page address shown in the terminal. It usually is `http://localhost:5173/home.html`. The [command guide](commands.html#the-launch-page) describes everything else on the launch page.
+Keep the terminal open while working. If the browser does not open, click or copy the launch page address shown in the terminal. It usually is `http://localhost:5173/`. The [command guide](commands.html#the-launch-page) describes everything else on the launch page.
 
 ## Make a change
 

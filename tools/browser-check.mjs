@@ -53,9 +53,9 @@ try {
   dev = await createServer({ ...config, plugins: [...config.plugins, homePlugin(slides, { services: {} })], server: { ...config.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await dev.listen()
   const home = await open(new URL('home.html', dev.resolvedUrls.local[0]).href)
-  await until(home, "document.querySelectorAll('.home-tile').length === 5 && !!document.querySelector('.home-header h1')?.textContent")
+  await until(home, "document.querySelectorAll('.home-tile').length === 6 && !!document.querySelector('.home-header h1')?.textContent")
   assert.equal(await home.evaluate("document.querySelectorAll('.home-output').length"), 3)
-  assert.equal(await home.evaluate("[...document.querySelectorAll('.home-block strong')].some(el => el.textContent === 'Side-by-side comparison')"), true)
+  assert.equal(await home.evaluate("!!document.querySelector('.home-preview iframe') && !document.querySelector('.home-live')"), true, 'preview, and no live section without live.server')
 
   // A poll: a phone's vote reaches the slide through the dev server's rooms.
   const pollDeck = resolve(temp, 'poll.md')

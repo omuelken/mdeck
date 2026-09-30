@@ -19,7 +19,7 @@ Ways to switch between them:
 - The **Overview** link in the corner of the deck opens the reader view. Its outline is the overview of all slides.
 - **Present** in the reader view opens the full-screen deck at the current slide.
 - The presenter view's audience-window button opens the audience view in a new window. The two stay in step, in the same browser on the same computer.
-- The launch page of `mdeck dev` has a button for each view.
+- The launch page of `mdeck dev`, at the preview's plain address, has a button for each view. Its presenter and audience buttons belong together, so the audience window follows that presenter view.
 - A slide's QR code for a poll opens the answer page.
 
 ## Commands
