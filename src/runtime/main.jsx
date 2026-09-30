@@ -11,13 +11,15 @@ import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
 import { createEditorBridge } from './editorBridge.js'
 import { ShareView } from './ShareView.jsx'
 import { RespondView } from './RespondView.jsx'
-import { configureLive } from '../live/client.js'
+import { configureLive, announce } from '../live/client.js'
+import { followActiveRooms } from '../live/follow.js'
+import { roomsIn, roomsOnSlide } from '../live/roomTag.js'
 import './share.css'
 import { SlideRenderer, manifests } from '../templates/renderSlide'
 import { setCalloutLabels } from './markedSetup'
+import { setDeckLanguage, deckLanguage, stageLabels, t } from '../core/labels.js'
 import './deck-stage.js'
 
-import { setDeckLanguage, deckLanguage, stageLabels, t } from '../core/labels.js'
 // One address parameter selects the view. `?view=share` and the shortcut
 // `?v=s` mean the same; the letters are d, s, p, a and r.
 const VIEW_ALIASES = { d: 'deck', s: 'share', p: 'presenter', a: 'audience', r: 'respond' }
@@ -49,6 +51,14 @@ function withConfigOverrides(deckConfig) {
     ...(accent  !== null ? { accent }  : {}),
     ...(accent2 !== null ? { accent2 } : {}),
   }
+}
+
+// The presenter's screen tells phones on the deck's answer link which
+// activity is on the current slide. Decks without activities never call the
+// room server.
+const hasActivities = () => roomsIn(slidesContent).length > 0
+function announceSlide(slides, index) {
+  if (hasActivities()) announce(roomsOnSlide(slides[index])[0] ?? null)
 }
 
 function injectSpeakerNotes(slides) {
@@ -122,6 +132,7 @@ function PresenterView({ deckConfig, slides }) {
   const stateRef = useRef({ index: 0, step: -1 })
   const paletteDropRef = useRef(null)
   indexRef.current = index
+  useEffect(() => { announceSlide(slides, index) }, [index])
 
   const themeMeta = THEME_METAS[design]
   const usesAccent2 = themeMeta?.accent2 ?? false
@@ -475,6 +486,7 @@ function PresenterView({ deckConfig, slides }) {
 
 // Renders (or re-renders) the deck stage. Slides are keyed by id so an edit to
 // one slide leaves the others and the stage's position untouched.
+let followDeck = null
 function mountDeck({ deck, deckConfig, selection = null, editor = false }) {
   const { slides } = deck
   injectSpeakerNotes(slides)
@@ -492,6 +504,9 @@ function mountDeck({ deck, deckConfig, selection = null, editor = false }) {
     </deck-stage>
   )
   render(app, document.body)
+  document.querySelector('deck-stage')?.setLabels(stageLabels())
+  followDeck?.()
+  followDeck = followActiveRooms(document.querySelector('deck-stage'), slides)
   if (!selection) return
   // The stage re-collects its slides asynchronously after structural changes.
   setTimeout(() => {
@@ -504,7 +519,6 @@ async function init() {
   const parsed = parseSlides(slidesContent)
   const url = new URL(window.location.href)
   const editorMode = url.searchParams.get('editor') === '1'
-  document.querySelector('deck-stage')?.setLabels(stageLabels())
   // One switch selects the view: deck, share, presenter or audience.
   const defaultView = typeof __MDECK_DEFAULT_VIEW__ !== 'undefined' ? __MDECK_DEFAULT_VIEW__ : 'deck'
   const view = requestedView(url, defaultView)
@@ -516,6 +530,8 @@ async function init() {
   }
   const deckConfig = withConfigOverrides(parsed.deckConfig)
   setCalloutLabels(deckConfig)
+  setDeckLanguage(deckConfig)
+  document.documentElement.lang = deckLanguage()
   configureLive(deckConfig)
   const { slides } = parsed
   const presenterMode = view === 'presenter'
@@ -531,8 +547,6 @@ async function init() {
     return
   }
 
-  setDeckLanguage(deckConfig)
-  document.documentElement.lang = deckLanguage()
   injectSpeakerNotes(slides)
 
   if (presenterMode) {
@@ -598,6 +612,13 @@ async function init() {
     entry.href = '?view=share'
     entry.textContent = t('deck.overview')
     document.body.appendChild(entry)
+  }
+
+  // A full deck or audience window is a presenter's screen; previews are embedded.
+  if (!embedded) {
+    const stage = document.querySelector('deck-stage')
+    stage?.addEventListener('slidechange', event => announceSlide(slides, event.detail.index))
+    if (stage) announceSlide(slides, stage.index)
   }
 
   // Embedded iframes (presenter view + preview pane) receive commands via postMessage

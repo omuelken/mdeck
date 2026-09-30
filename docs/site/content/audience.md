@@ -13,15 +13,17 @@ A slide can ask a question that people answer on their phones, with the results 
 
 The slide shows one bar per option, the number of answers and a QR code. Scanning the code opens a page on the phone with one button per option. Each phone has one vote and can change it; the bars follow the latest answer.
 
+Every poll in a presentation shows the same QR code, so people scan once. Their phones then follow along: when you reach a slide with a poll, its buttons appear on every phone; between polls, the phones say that the next question will appear there. You can leave the code on a title slide at the start, or show it on the first poll.
+
 | Setting | Meaning |
 |---|---|
 | `room` | A short name for this question, different for each poll in the deck. Letters, digits, hyphens and underscores. |
 | `options` | The answers, separated by `\|` |
 | `question` | Optional question text. Without it, phones show the slide's heading. |
 
-Hover over the results to see **Reset**, which clears the answers, for example before the real session. Only the presenter's computer can reset.
-
 With `lang: de` in the settings, the slide and the phones show German words, such as “Scannen und abstimmen”.
+
+Hover over the results to see **Reset**, which clears the answers, for example before the real session. Only the presenter's computer can reset.
 
 ## Try it on your computer
 
@@ -63,7 +65,7 @@ live:
 
 `audience` is where phones open the slides. Leave it out when you present from the hosted address itself.
 
-To be able to reset rooms on a room server, open the presentation once with `?livekey=choose-a-secret` added to its address on your presenting computer. The key is remembered in that browser only.
+On your presenting computer, open the presentation once with `?livekey=choose-a-secret` added to its address. The key is remembered in that browser only. With it, your screen tells the phones which poll is showing, and you can reset polls. Without it, phones cannot follow along and instead offer a list of the presentation's questions.
 
 ## What is stored
 

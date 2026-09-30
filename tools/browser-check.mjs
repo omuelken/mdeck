@@ -59,7 +59,7 @@ try {
 
   // A poll: a phone's vote reaches the slide through the dev server's rooms.
   const pollDeck = resolve(temp, 'poll.md')
-  writeFileSync(pollDeck, '---\ndesign: neue\nmeta:\n  title: Poll check\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n')
+  writeFileSync(pollDeck, '---\ndesign: neue\nmeta:\n  title: Poll check\nlive:\n  audience: https://example.org/talk/\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n')
   const pollConfig = baseConfig(pollDeck)
   pollDev = await createServer({ ...pollConfig, plugins: [...pollConfig.plugins, livePlugin()], server: { ...pollConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await pollDev.listen()
@@ -71,7 +71,11 @@ try {
   await phone.evaluate("document.querySelectorAll('.poll-options button')[1].click()")
   await until(projector, "[...document.querySelectorAll('.poll-count')].map(e => e.textContent).join() === '0,1'")
   await until(phone, "document.querySelector('.poll-status').textContent.includes('Thai')")
-  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll.')
+  // The deck's one link follows the presenter's slide: here the poll's.
+  const follower = await open(new URL('?view=respond', pollBase).href)
+  await until(follower, "document.querySelectorAll('.poll-options button').length === 2")
+  assert.equal(await projector.evaluate("document.querySelector('a.poll-join')?.href"), 'https://example.org/talk/?view=respond')
+  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll, following the presenter.')
 } finally {
   await browser?.close()
   await dev?.close()

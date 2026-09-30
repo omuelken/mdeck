@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- One answer link per deck: every poll shows the same QR code, and phones follow the presenter to whichever poll is on screen, with a waiting note in between. Only the presenter's screen may announce the current poll. Polls keep a live connection only while their slide is shown, so decks with many polls stay within the browser's connection limit. Polls ignore `<poll>` examples inside code.
 - `lang` is now the deck's language: built pages are marked with it, and the reader view, the deck's control bar, polls and the answer page use German or English words to match. The new `labels:` setting replaces single words. Presenter tools stay English.
 - The launch page and the editor also answer on `*.localhost` names, as used by local development proxies.
 - Audience interaction: `<poll room=… options=…>` shows live results and a QR code; phones that scan it get one button per option. Components can build their own activities with `useRoom` from `mdeck/live`. Rooms run inside `mdeck dev` (with `--host` for phones) or on a hosted room server started with `mdeck live`, set with the `live:` deck setting. Answers are anonymous and kept in memory only.

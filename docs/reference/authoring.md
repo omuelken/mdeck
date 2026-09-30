@@ -513,6 +513,8 @@ labels:
 | `poll.pick` | Tap one answer. | Eine Antwort antippen. |
 | `poll.thanks` | Thanks! You chose “{choice}”. Tap another to change. | Danke! Gewählt: „{choice}“. Zum Ändern eine andere antippen. |
 | `respond.missing` | This question is not in the presentation any more. | Diese Frage ist nicht mehr in der Präsentation. |
+| `respond.waiting` | The next question will appear here. | Die nächste Frage erscheint hier. |
+| `respond.choose` | Or pick a question: | Oder eine Frage wählen: |
 
 ---
 
@@ -646,7 +648,7 @@ For `play="auto"` the video pauses and resets to the beginning when you navigate
 | `options` | — | Answers separated by `\|` |
 | `question` | — | Question text; phones fall back to the slide heading |
 
-The slide shows live bars, the number of answers and a QR code. Phones that scan it open `?view=respond&room=<room>`, which renders only that component. Each device's latest vote counts. The presenter's own browser can reset the room (hover over the results).
+The slide shows live bars, the number of answers and a QR code. All polls in a deck share one link, `?view=respond`: phones that open it show the poll on the presenter's current slide, and a waiting note between polls. The presenter's screen (the presenter view or a full deck window, never an embedded preview) announces the current poll to the room server, which only accepts that from the presenter. `?view=respond&room=<room>` opens one poll directly. Each device's latest vote counts. The presenter's own browser can reset the room (hover over the results).
 
 Rooms run inside `mdeck dev` (add `--host` so phones can reach it) or on a standalone server started with `mdeck live`. Built decks find a standalone server through the `live` deck settings:
 

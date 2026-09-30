@@ -1,6 +1,8 @@
 // Rooms for audience interaction. A room is a list of small messages that
 // phones post and slides follow live; the server never interprets them, so a
 // new kind of activity (poll, word cloud, questions) needs no server change.
+// A room also has one state value that only the presenter sets; the deck uses
+// it to tell phones which activity is on screen.
 // Everything lives in memory: nothing is written to disk, and idle rooms are
 // forgotten. The same handler runs inside `mdeck dev` and as `mdeck live`.
 import { timingSafeEqual } from 'node:crypto'
@@ -16,7 +18,7 @@ export function createRooms({ maxMessages = 5000, maxRooms = 500, idleMs = 12 * 
     if (!room) {
       if (rooms.size >= maxRooms) prune()
       if (rooms.size >= maxRooms) throw Object.assign(new Error('Too many rooms are open on this server'), { status: 503 })
-      room = { messages: [], listeners: new Set(), next: 1, touched: now() }
+      room = { messages: [], state: null, listeners: new Set(), next: 1, touched: now() }
       rooms.set(id, room)
     }
     room.touched = now()
@@ -37,7 +39,13 @@ export function createRooms({ maxMessages = 5000, maxRooms = 500, idleMs = 12 * 
       room.messages = []
       broadcast(room, { type: 'reset' })
     },
+    setState(id, state) {
+      const room = get(id)
+      room.state = state ?? null
+      broadcast(room, { type: 'state', state: room.state })
+    },
     snapshot: id => get(id).messages,
+    state: id => get(id).state,
     subscribe(id, listener) {
       const room = get(id)
       room.listeners.add(listener)
@@ -105,9 +113,10 @@ function reply(response, status, body) {
 
 // Routes, relative to where the handler is mounted:
 //   GET  /info                 { canReset, ...extra }
-//   GET  /rooms/<id>/events    Server-Sent Events: snapshot, message, reset
+//   GET  /rooms/<id>/events    Server-Sent Events: snapshot, message, reset, state
 //   POST /rooms/<id>           { from, data } → { n }
 //   POST /rooms/<id>/reset     presenter only
+//   POST /rooms/<id>/state     { state } — presenter only
 // Answers carry no cookies and no personal data, so any page may use them.
 export function liveHandler({ rooms = createRooms(), canReset = () => false, info = () => ({}), limit = createLimiter(), heartbeatMs = 20000 } = {}) {
   return async (request, response, next = () => reply(response, 404, { error: 'Not found' })) => {
@@ -118,23 +127,24 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
     if (request.method === 'OPTIONS') { response.writeHead(204); response.end(); return }
     try {
       if (pathname === '/info' && request.method === 'GET') return reply(response, 200, { canReset: !!canReset(request), ...info(request) })
-      const match = pathname.match(/^\/rooms\/([^/]+)(\/events|\/reset)?$/)
+      const match = pathname.match(/^\/rooms\/([^/]+)(\/events|\/reset|\/state)?$/)
       if (!match) return next()
       const id = decodeURIComponent(match[1])
       if (!ROOM_RE.test(id)) return reply(response, 400, { error: 'Room names use letters, digits, dots, hyphens and underscores' })
       if (match[2] === '/events' && request.method === 'GET') {
         response.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' })
         const write = (event, data) => response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-        write('snapshot', { messages: rooms.snapshot(id) })
-        const unsubscribe = rooms.subscribe(id, event => write(event.type, event.type === 'message' ? event.message : {}))
+        write('snapshot', { messages: rooms.snapshot(id), state: rooms.state(id) })
+        const unsubscribe = rooms.subscribe(id, event => write(event.type, event.type === 'message' ? event.message : event.type === 'state' ? { state: event.state } : {}))
         const beat = setInterval(() => response.write(': ping\n\n'), heartbeatMs)
         request.on('close', () => { clearInterval(beat); unsubscribe() })
         return
       }
       if (request.method !== 'POST') return reply(response, 405, { error: 'Method not allowed' })
-      if (match[2] === '/reset') {
-        if (!canReset(request)) return reply(response, 403, { error: 'Only the presenter can reset a room' })
-        rooms.reset(id)
+      if (match[2] === '/reset' || match[2] === '/state') {
+        if (!canReset(request)) return reply(response, 403, { error: 'Only the presenter can change a room' })
+        if (match[2] === '/reset') rooms.reset(id)
+        else rooms.setState(id, (await readBody(request)).state)
         return reply(response, 200, { ok: true })
       }
       if (!limit(clientAddress(request))) return reply(response, 429, { error: 'Too many answers at once; wait a moment' })

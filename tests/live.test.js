@@ -2,7 +2,7 @@ import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
 import { createRooms, createLimiter, clientAddress } from '../src/live/rooms.js'
 import { startLiveServer } from '../src/live/server.js'
-import { findRoomTag } from '../src/live/roomTag.js'
+import { findRoomTag, roomsIn, roomsOnSlide, slideTitleFor } from '../src/live/roomTag.js'
 import { parseSlides } from '../src/core/parseSlides.js'
 import { validateDeck } from '../src/core/validateDeck.js'
 
@@ -58,6 +58,18 @@ test('only the key holder can reset a room, and listeners hear it', async () => 
   assert.equal((await (await fetch(`${live.url}/info`)).json()).canReset, false)
 })
 
+test('only the presenter sets a room state, and listeners follow it', async () => {
+  const set = (state, headers = {}) => fetch(`${live.url}/rooms/deck/state`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ state }) })
+  assert.equal((await set({ room: 'evil' })).status, 403)
+  assert.equal((await events('deck', 1))[0].data.state, null)
+  const seen = await events('deck', 3, async () => {
+    await set({ room: 'lunch' }, { Authorization: 'Bearer secret' })
+    await set({ room: null }, { Authorization: 'Bearer secret' })
+  })
+  assert.deepEqual(seen.map(e => [e.type, e.data.state?.room ?? null]), [['snapshot', null], ['state', 'lunch'], ['state', null]])
+  assert.deepEqual((await events('deck', 1))[0].data.state, { room: null })
+})
+
 test('bad requests are refused', async () => {
   assert.equal((await post('bad%20room', { data: 1 })).status, 400)
   assert.equal((await post('deck.x', { nothing: true })).status, 400)
@@ -92,6 +104,13 @@ test('the answer page finds the component by its room', () => {
   assert.equal(findRoomTag(source, 'q1'), "<quiz room='q1'>What is 2+2?</quiz>")
   assert.equal(findRoomTag(source, 'lun'), null)
   assert.equal(findRoomTag(source, 'a.b'), null)
+  assert.deepEqual(roomsIn(source), [{ tag: 'poll', room: 'lunch' }, { tag: 'quiz', room: 'q1' }])
+  const deck = parseSlides('---\ndesign: neue\n---\n\n---\ntitle: Outline name\n---\n# On screen\n\n<poll room="a" options="x|y" />\n\n---\n# Plain\n')
+  assert.deepEqual(deck.slides.map(roomsOnSlide), [['a'], []])
+  assert.equal(slideTitleFor(deck, 'a'), 'On screen', 'phones see the heading the audience saw')
+  const shown = '# Syntax\n\n```markdown\n<poll room="a" options="x|y" />\n```\n\nOr inline: `<poll room="b" />`\n\n<poll room="a" options="real|one" />\n'
+  assert.deepEqual(roomsIn(shown), [{ tag: 'poll', room: 'a' }], 'code is not an activity')
+  assert.equal(findRoomTag(shown, 'a'), '<poll room="a" options="real|one" />')
 })
 
 test('live settings are validated', () => {

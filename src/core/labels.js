@@ -42,6 +42,8 @@ export const LABELS = {
     'poll.pick': 'Tap one answer.',
     'poll.thanks': 'Thanks! You chose “{choice}”. Tap another to change.',
     'respond.missing': 'This question is not in the presentation any more.',
+    'respond.waiting': 'The next question will appear here.',
+    'respond.choose': 'Or pick a question:',
   },
   de: {
     'reader.outline': 'Gliederung',
@@ -80,6 +82,8 @@ export const LABELS = {
     'poll.pick': 'Eine Antwort antippen.',
     'poll.thanks': 'Danke! Gewählt: „{choice}“. Zum Ändern eine andere antippen.',
     'respond.missing': 'Diese Frage ist nicht mehr in der Präsentation.',
+    'respond.waiting': 'Die nächste Frage erscheint hier.',
+    'respond.choose': 'Oder eine Frage wählen:',
   },
 }
 

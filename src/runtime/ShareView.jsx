@@ -6,6 +6,7 @@ import { manifests, SlideRenderer } from '../templates/renderSlide'
 import { loadTheme, THEME_METAS, PALETTES } from './themeLoader'
 import './share.css'
 import { t, stageLabels } from '../core/labels.js'
+import { followActiveRooms } from '../live/follow.js'
 
 // The reader view for decks sent around by email: outline, the slides at a
 // comfortable size or stacked for reading, a look picker, PDF and a way back
@@ -90,10 +91,11 @@ export function ShareView({ deck, deckConfig }) {
   useEffect(() => {
     const stage = stageRef.current
     if (!stage) return
-    const onChange = event => setIndex(event.detail.index)
     stage.setLabels(stageLabels())
+    const stopFollowing = followActiveRooms(stage, slides)
+    const onChange = event => setIndex(event.detail.index)
     stage.addEventListener('slidechange', onChange)
-    return () => stage.removeEventListener('slidechange', onChange)
+    return () => { stage.removeEventListener('slidechange', onChange); stopFollowing() }
   }, [mode])
 
   // Read mode shows every slide finished: all steps revealed, as in print.
