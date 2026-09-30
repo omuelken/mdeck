@@ -52,7 +52,10 @@ export async function launchChrome({ dir, chrome = findChrome(), timeout = 90000
     socket?.close()
     server.close()
     if (browser.exitCode === null) { browser.kill(); await new Promise(done => browser.once('exit', done)) }
-    rmSync(temp, { recursive: true, force: true })
+    // Chrome's helper processes may still write to the profile for a moment
+    // after the browser exits; retry, and never fail a finished job over a
+    // temporary folder.
+    try { rmSync(temp, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) } catch {}
   }
   try {
     const endpoint = await new Promise((resolveEndpoint, reject) => {
