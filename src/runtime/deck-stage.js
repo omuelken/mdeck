@@ -165,6 +165,12 @@
       z-index: 1;
     }
     .ink-live .fading { transition: opacity 0.8s ease 2.2s; opacity: 0; }
+    /* The ink toolbar replaces the overlay while drawing. */
+    :host([data-inking]) .overlay { display: none; }
+    .btn.draw, .btn.fullscreen { display: none; }
+    :host([data-ink-enabled]) .btn.draw { display: inline-flex; }
+    :host([data-fullscreen-available]) .btn.fullscreen { display: inline-flex; }
+    @media (pointer: coarse) { .overlay .btn { height: 40px; min-width: 40px; } }
 
     .overlay {
       position: fixed;
@@ -310,6 +316,20 @@
     }
   `;
 
+  // Full screen, with Safari's prefixed names (iPad); unavailable on an iPhone.
+  function fullscreenAvailable() {
+    return !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  }
+  function fullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+  function toggleFullscreen(element = document.documentElement) {
+    if (fullscreenElement()) return (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    const request = element.requestFullscreen || element.webkitRequestFullscreen;
+    return request?.call(element);
+  }
+  window.mdeckFullscreen = { available: fullscreenAvailable, element: fullscreenElement, toggle: toggleFullscreen };
+
   class DeckStage extends HTMLElement {
     static get observedAttributes() { return ['width', 'height', 'noscale']; }
 
@@ -449,11 +469,21 @@
         </button>
         <span class="divider"></span>
         <button class="btn reset" type="button" aria-label="Reset to first slide" title="Reset (R)">Reset<span class="kbd">R</span></button>
+        <button class="btn draw" type="button" aria-label="Draw on the slide" title="Draw (D)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l1-3.5L10.5 3a1.4 1.4 0 012 2L6 11.5z"/></svg>
+        </button>
+        <button class="btn fullscreen" type="button" aria-label="Full screen" title="Full screen (F)">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6V3h3M10 3h3v3M13 10v3h-3M6 13H3v-3"/></svg>
+        </button>
       `;
 
       overlay.querySelector('.prev').addEventListener('click', () => this.prev('click'));
       overlay.querySelector('.next').addEventListener('click', () => this.next('click'));
       overlay.querySelector('.reset').addEventListener('click', () => this.reset());
+      overlay.querySelector('.draw').addEventListener('click', () => { this.inking = !this.inking; });
+      overlay.querySelector('.fullscreen').addEventListener('click', () => toggleFullscreen());
+      // Only a top-level window can go full screen (an iPhone cannot at all).
+      if (window.top === window && fullscreenAvailable()) this.setAttribute('data-fullscreen-available', '');
 
       this._root.append(style, stage, tapzones, inkInput, overlay);
       this._canvas = canvas;
@@ -696,6 +726,8 @@
         // Show or hide the saved ink.
         e.preventDefault();
         this.toggleAttribute('data-ink-hidden');
+      } else if ((key === 'f' || key === 'F') && window.top === window && fullscreenAvailable()) {
+        toggleFullscreen();
       } else if (key === 'r' || key === 'R') {
         this.reset();
       } else if (/^[0-9]$/.test(key)) {

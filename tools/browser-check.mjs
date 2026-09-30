@@ -71,6 +71,25 @@ try {
   await inkPresenter.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...inFrame([0.5, 0.3]), clickCount: 1, buttons: 0, ...pen })
   await until(inkAudience, "document.querySelectorAll('.slide-ink path').length === 2 && document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-live path').length === 0")
 
+  // On a touch screen (an iPad): a finger draws until a pen was used, and
+  // the presenter view opens with the slide filling the screen.
+  const tablet = await open('ink.html?view=deck')
+  await tablet.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  await until(tablet, "document.querySelectorAll('.slide-ink path').length === 2")
+  await tablet.evaluate("document.querySelector('deck-stage').inking = true")
+  const finger = (type, x, y) => tablet.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, radiusX: 4, radiusY: 4, force: 0.5, id: 1 }] })
+  await finger('touchStart', 300, 300)
+  for (let i = 1; i < 8; i++) await finger('touchMove', 300 + i * 30, 300 + i * 8)
+  await finger('touchEnd')
+  await until(tablet, "document.querySelectorAll('.slide-ink path').length === 3")
+  assert.equal(await tablet.evaluate("document.querySelector('deck-stage').index"), 0, 'a finger stroke does not change slides')
+  const tabletPresenter = await open('about:blank')
+  await tabletPresenter.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
+  await tabletPresenter.send('Page.navigate', { url: new URL('ink.html?view=presenter', await tablet.evaluate('location.href')).href })
+  await until(tabletPresenter, "!!document.querySelector('.presenter--slide .presenter-pill') && getComputedStyle(document.querySelector('.presenter-aside')).display === 'none'")
+  await tabletPresenter.evaluate("document.querySelector('.presenter-notes').click()")
+  await until(tabletPresenter, "getComputedStyle(document.querySelector('.presenter-aside')).display === 'flex'")
+
   const presenter = await open('deck.html?view=presenter')
   const stage = "document.querySelector('iframe')?.contentWindow?.document.querySelector('deck-stage')"
   await until(presenter, `${stage}?.length === 2`)
@@ -144,7 +163,7 @@ try {
   await phone.evaluate("document.querySelectorAll('.answer-options button')[1].click()")
   await until(projector, "[...document.querySelectorAll('.poll-count')].map(e => e.textContent).join() === '0,1'")
   await until(phone, "document.querySelector('.answer-status').textContent.includes('Thai')")
-  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, saved ink, drawing, drawing in the presenter view, saving ink in dev.')
+  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, saved ink, drawing, drawing in the presenter view, touch, saving ink in dev.')
 } finally {
   await browser?.close()
   await dev?.close()

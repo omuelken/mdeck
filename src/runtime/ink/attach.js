@@ -35,7 +35,12 @@ export function attachInk(stage, { storageKey, save = null, keys = true, transpo
   document.body.appendChild(host)
   const done = () => { stage.inking = false }
   const showToolbar = on => render(on ? h(InkToolbar, { stage, controller, onDone: done }) : null, host)
-  stage.addEventListener('inkmode', event => { showToolbar(event.detail.inking); onMode(event.detail.inking) })
+  stage.setAttribute('data-ink-enabled', '')
+  stage.addEventListener('inkmode', event => {
+    showToolbar(event.detail.inking)
+    document.documentElement.classList.toggle('is-inking', event.detail.inking)
+    onMode(event.detail.inking)
+  })
 
   if (keys) {
     window.addEventListener('keydown', event => {

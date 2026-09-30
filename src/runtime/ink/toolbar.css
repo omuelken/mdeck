@@ -1,7 +1,7 @@
 /* The floating ink toolbar, in the dark chrome of the other tools. It sits
    above the stage's ink input layer, so fingers always work on it. */
 .ink-toolbar {
-  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+  position: fixed; left: 0; right: 0; bottom: max(16px, env(safe-area-inset-bottom)); margin: 0 auto; width: fit-content;
   z-index: 2147483000;
   display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
   max-width: calc(100vw - 24px);
@@ -25,4 +25,8 @@
 .ink-color.is-active { border-color: #e6e6e6; }
 .ink-size span { display: block; border-radius: 50%; background: currentColor; }
 @media (max-width: 700px) { .ink-btn, .ink-color, .ink-size { width: 36px; height: 36px; } }
+/* Fingers need bigger targets than a mouse. */
+@media (pointer: coarse) { .ink-btn, .ink-color, .ink-size { width: 44px; height: 44px; } }
+/* No rubber-band scrolling or pull-to-refresh while drawing. */
+html.is-inking, html.is-inking body { overscroll-behavior: none; overflow: hidden; }
 @media print { .ink-toolbar { display: none !important; } }

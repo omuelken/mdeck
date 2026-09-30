@@ -2,7 +2,8 @@ import { h } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import './toolbar.css'
 
-// The floating ink toolbar: tools, colours, sizes, undo/redo, clear slide,
+// The floating ink toolbar: previous/next (so a lone iPad can present while
+// drawing), tools, colours, sizes, undo/redo, clear slide,
 // hide saved ink, drawing with a finger, and the ink file. It drives a
 // <deck-stage> (inkTool, inkFinger, data-ink-hidden) and an ink controller.
 
@@ -23,6 +24,8 @@ const ICON = {
   finger: 'M9 11V5a2 2 0 014 0v5M13 10V8a2 2 0 014 0v5a7 7 0 01-7 7h-.5A5.5 5.5 0 014 16l-1-3a2 2 0 013.5-1.8L9 14',
   download: 'M12 4v11m0 0l-4-4m4 4l4-4M5 19h14',
   done: 'M5 12l5 5 9-10',
+  prev: 'M15 5l-7 7 7 7',
+  next: 'M9 5l7 7-7 7',
 }
 const Icon = ({ d }) => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={d} /></svg>
 
@@ -48,6 +51,10 @@ export function InkToolbar({ stage, controller, onDone }) {
     <button type="button" class={`ink-btn${active ? ' is-active' : ''}`} title={label} aria-label={label} aria-pressed={active} disabled={disabled} onClick={action}><Icon d={icon} /></button>
 
   return <div class="ink-toolbar" role="toolbar" aria-label="Ink">
+    <div class="ink-group">
+      {button('Previous', ICON.prev, () => stage.prev('click'))}
+      {button('Next', ICON.next, () => stage.next('click'))}
+    </div>
     <div class="ink-group">
       {TOOLS.map(([id, label, icon]) => button(label, icon, () => setTool(id), { active: tool === id }))}
     </div>

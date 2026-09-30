@@ -149,6 +149,20 @@ function PresenterView({ deckConfig, slides }) {
   const [audienceConnected, setAudienceConnected] = useState(false)
   const [noteSize, setNoteSize] = useState(13)
   const [inking, setInking] = useState(false)
+  // 'slide': the slide fills the screen (an iPad); the notes open as a drawer.
+  const [layout, setLayout] = useState(() => {
+    try { const saved = localStorage.getItem('mdeck-presenter-layout'); if (saved) return saved } catch {}
+    return matchMedia('(pointer: coarse)').matches ? 'slide' : 'speaker'
+  })
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const slideLayout = layout === 'slide'
+  function chooseLayout(next) {
+    setLayout(next)
+    setDrawerOpen(false)
+    try { localStorage.setItem('mdeck-presenter-layout', next) } catch {}
+  }
+  const fullscreen = window.mdeckFullscreen
+  const canFullscreen = !!fullscreen?.available()
 
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [designOpen, setDesignOpen] = useState(false)
@@ -233,6 +247,8 @@ function PresenterView({ deckConfig, slides }) {
         (e.key === 'ArrowLeft'  || e.key === 'PageUp')                    ? 'prev' :
         (e.key === 'Home' || e.key === 'r' || e.key === 'R')              ? 'reset' :
         (e.key === 'd' || e.key === 'D')                                  ? 'ink' : null
+      if ((e.key === 'f' || e.key === 'F') && fullscreen?.available()) { e.preventDefault(); fullscreen.toggle(); return }
+      if (e.key === 'n' || e.key === 'N') { e.preventDefault(); setDrawerOpen(open => !open); return }
       if (!cmd) return
       e.preventDefault()
       sendTo(iframeRef.current?.contentWindow, cmd, cmd === 'ink' ? 'toggle' : undefined)
@@ -294,16 +310,31 @@ function PresenterView({ deckConfig, slides }) {
   const note = notes[index] || ''
   const hasNext = index + 1 < slides.length
 
+  const clock = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`
+  const pill = { ...S.btn, minWidth: '40px', height: '40px', padding: '0 10px', fontSize: '15px' }
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', height: '100vh', background: '#111', overflow: 'hidden' }}>
+    <div class={`presenter presenter--${layout}`} style={{ display: 'grid', gridTemplateColumns: slideLayout ? '1fr' : '2fr 1fr', height: '100dvh', background: '#111', overflow: 'hidden' }}>
       <iframe
         ref={iframeRef}
         title="Presenter deck"
         src={iframeSrc}
         style={{ width: '100%', height: '100%', border: '0' }}
       />
-      <aside style={{
-        display: 'flex',
+      {slideLayout && (
+        <div class="presenter-pill" role="toolbar" aria-label="Presenter" style={{ position: 'fixed', top: 'max(10px, env(safe-area-inset-top))', right: 'max(10px, env(safe-area-inset-right))', zIndex: 20, display: 'flex', gap: '4px', alignItems: 'center', padding: '4px', borderRadius: '12px', background: 'rgba(17,17,17,0.88)', border: '1px solid #2a2a2a', color: '#ccc', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ padding: '0 8px', color: '#888' }}>{index + 1}/{slides.length}</span>
+          <button style={{ ...pill, color: timerRunning ? '#f0f0f0' : '#777' }} title="Start or pause the timer" onClick={() => setTimerRunning(r => !r)}>{clock}</button>
+          <button style={pill} title="Previous" onClick={() => navCommand('prev')}>←</button>
+          <button style={pill} title="Next" onClick={() => navCommand('next')}>→</button>
+          <button class="presenter-draw" title="Draw on the slide (D)" aria-pressed={inking} style={{ ...pill, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }} onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}>✎</button>
+          <button class="presenter-notes" title="Notes (N)" aria-pressed={drawerOpen} style={{ ...pill, ...(drawerOpen ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={() => setDrawerOpen(open => !open)}>Notes</button>
+          {canFullscreen && <button style={pill} title="Full screen (F)" onClick={() => fullscreen.toggle()}>⛶</button>}
+          <button style={pill} title="Speaker layout: slide, notes and next slide side by side" onClick={() => chooseLayout('speaker')}>▥</button>
+        </div>
+      )}
+      <aside class="presenter-aside" style={{
+        display: slideLayout && !drawerOpen ? 'none' : 'flex',
         flexDirection: 'column',
         gap: '14px',
         padding: '16px',
@@ -313,12 +344,17 @@ function PresenterView({ deckConfig, slides }) {
         fontFamily: 'ui-sans-serif, system-ui, sans-serif',
         fontSize: '13px',
         overflow: 'hidden',
+        ...(slideLayout ? { position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(380px, 92vw)', zIndex: 19, paddingTop: '64px', boxShadow: '-12px 0 32px rgba(0,0,0,0.5)' } : {}),
       }}>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontWeight: 600, color: '#f0f0f0', fontSize: '14px' }}>Speaker View</span>
-          <span style={{ color: '#666', fontVariantNumeric: 'tabular-nums' }}>
-            {String(index + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {!slideLayout && canFullscreen && <button style={{ ...S.btn, padding: '3px 8px' }} title="Full screen (F)" onClick={() => fullscreen.toggle()}>⛶</button>}
+            {!slideLayout && <button class="presenter-layout" style={{ ...S.btn, padding: '3px 8px' }} title="Slide only, notes in a drawer (for an iPad)" onClick={() => chooseLayout('slide')}>▢</button>}
+            <span style={{ color: '#666', fontVariantNumeric: 'tabular-nums' }}>
+              {String(index + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
+            </span>
           </span>
         </div>
 
