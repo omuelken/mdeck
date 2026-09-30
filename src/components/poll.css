@@ -48,7 +48,7 @@
 .scale-labels { display: flex; justify-content: space-between; margin: 12px 0 0; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
 .scale-average { margin: 6px 0 0; font-size: var(--fs-small, 24px); font-weight: 600; }
 
-/* <qrcode /> without a url: the join code, large, on a slide of its own */
+/* <qrcode join />: the join code, large, on a slide of its own */
 .poll-join-slide { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
 .poll-join-slide .poll-join { font-size: var(--fs-body, 32px); gap: 16px; padding: 24px 32px; }
 .poll-join-slide .poll-link { font-size: 28px; }

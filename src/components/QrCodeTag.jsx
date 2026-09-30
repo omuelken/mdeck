@@ -6,9 +6,9 @@ import { t } from '../core/labels.js'
 import './poll.css'
 
 // <qrcode url="https://example.com" size="240" /> on a slide.
-// Without `url`: the deck's join link for audience questions, with the short
-// link below it, so a slide early in the talk can invite everyone once and
-// the questions after it can leave out their own code (`qr="false"`).
+// <qrcode join />: the deck's join link for audience questions, with the
+// short link below it, so a slide early in the talk can invite everyone once
+// and the questions after it can leave out their own code (`qr="false"`).
 
 function JoinQr({ size }) {
   const link = useJoinLink()
@@ -17,6 +17,10 @@ function JoinQr({ size }) {
   </div>
 }
 
-export default function QrCodeTag({ url, size }) {
-  return url ? <QrCode url={url} size={size ?? '200'} /> : <JoinQr size={size} />
+// A bare `join` attribute arrives as "", so only "false" and the like turn it off.
+const isOn = value => value != null && !/^(false|no|off|0)$/i.test(String(value))
+
+export default function QrCodeTag({ url, join, size }) {
+  if (isOn(join)) return <JoinQr size={size} />
+  return <QrCode url={url} size={size ?? '200'} />
 }

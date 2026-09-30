@@ -20,7 +20,7 @@ Every poll in a presentation shows the same code, so people scan once. Their pho
 | `room` | A short name for this question, different for each poll in the deck. Letters, digits, hyphens and underscores. |
 | `options` | The answers, separated by `\|` |
 | `question` | Optional question text. Without it, phones show the slide's heading. |
-| `qr` | `false` leaves out the QR code, when an earlier slide showed it with `<qrcode />`. |
+| `qr` | `false` leaves out the QR code, when an earlier slide showed it with `<qrcode join />`. |
 
 With `lang: de` in the settings, the slide and the phones show German words, such as “Scannen und abstimmen”. The phones use the presentation's colours and fonts; if you pick another theme or palette in the presenter view, the phones change with it.
 
@@ -50,7 +50,7 @@ Each question shows the QR code unless you say otherwise. To invite everybody on
 ---
 # Take out your phone.
 
-<qrcode />
+<qrcode join />
 
 ---
 # How do you make slides today?
@@ -58,7 +58,7 @@ Each question shows the QR code unless you say otherwise. To invite everybody on
 <poll room="tools" options="PowerPoint|Keynote|Markdown" qr="false" />
 ```
 
-A `<qrcode />` without `url` shows the presentation's join code large, with the link below it. Phones that scanned it follow along to every question. With `qr="false"`, a question shows the short link in its last line instead, for people who come in late. `size` sets the size of the code on the join slide.
+`<qrcode join />` shows the presentation's join code large, with the link below it. Phones that scanned it follow along to every question. With `qr="false"`, a question shows the short link in its last line instead, for people who come in late. `size` sets the size of the code on the join slide.
 
 The code is drawn in the slide's colours, so it fits the theme; phone cameras also read light codes on dark slides.
 

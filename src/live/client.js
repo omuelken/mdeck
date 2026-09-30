@@ -131,7 +131,7 @@ export function useRoom(room) {
   return { messages, reset, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code }
 }
 
-/** The deck's join link alone, for a slide that only invites people in (<qrcode> without a url). */
+/** The deck's join link alone, for a slide that only invites people in (<qrcode join />). */
 export function useJoinLink() {
   const [info, setInfo] = useState({})
   useEffect(() => { serverInfo().then(setInfo) }, [])

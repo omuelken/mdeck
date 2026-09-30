@@ -84,7 +84,7 @@ A QR code lets people open a link on their phones. Replace the address below wit
 
 `size` sets its width in slide pixels. The code takes the slide's text colour on the slide's background, so it fits every theme. If a scanner struggles, give it a white background with `--qr-bg: #fff` and `--qr-ink: #000` in a theme or a `style` around it. Keep enough space around it, and test it on the screen you will use.
 
-To ask the audience a question instead, a poll shows its own QR code and the answers as they come in, and `<qrcode />` without a `url` shows the join code for all your questions at once. See [Ask your audience](audience.html).
+To ask the audience a question instead, a poll shows its own QR code and the answers as they come in, and `<qrcode join />` shows the join code for all your questions at once. See [Ask your audience](audience.html).
 
 ## Show a formula
 

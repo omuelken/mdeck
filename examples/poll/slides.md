@@ -23,7 +23,7 @@ The deck shows every kind of question mdeck has: a poll, a scale, a word cloud a
 ---
 # Take out your phone.
 
-<qrcode />
+<qrcode join />
 
 :::notes
 Leave this up until most people have scanned. The code is the same for the whole talk: phones that joined now follow along, and each question appears on them when its slide comes up.
@@ -89,7 +89,7 @@ Answer one or two now, and promise to go through the rest afterwards; the room k
 # Each question is one line.
 
 ```markdown
-<qrcode />
+<qrcode join />
 <poll room="tools" options="PowerPoint|Keynote|Markdown" />
 <scale room="markdown" min="1" max="5" low="Never" high="Daily" />
 <wordcloud room="mood" />
@@ -97,7 +97,7 @@ Answer one or two now, and promise to go through the rest afterwards; the room k
 ```
 
 - **room** — a short name, different for every question in the deck.
-- **qr="false"** — leave out the code when `<qrcode />` showed it earlier.
+- **qr="false"** — leave out the code when `<qrcode join />` showed it earlier.
 - **question** — optional; without it, phones show the slide heading.
 
 :::notes
