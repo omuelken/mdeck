@@ -85,32 +85,37 @@ test('requests from other hosts or pages are refused', async () => {
   assert.equal((await fetch(base + '/info', { method: 'POST' })).status, 405)
 })
 
-test('a deck with a room server shows its health, the viewer link and the presenter code', async () => {
+// Calls the launch page API for a deck, as a browser at `host` would.
+const infoFor = (deck, options, host = 'localhost:5173') => new Promise(done => homeMiddleware(deck, options)({ url: '/info', method: 'GET', headers: { host } }, { setHeader() {}, writeHead() {}, end: body => done(JSON.parse(body)) }, () => {}))
+
+test('a deck with its own room server shows its health, the join link and the presenter code', async () => {
   const liveDeck = resolve(dir, 'live.md')
-  writeFileSync(liveDeck, '---\ndesign: neue\nlive:\n  server: https://example.org/live/\n  audience: https://example.org/slides/talk/\n---\n\n---\n# Q\n\n<poll room="q" options="a|b" />\n')
+  writeFileSync(liveDeck, '---\ndesign: neue\nmeta:\n  title: Live talk\nlive:\n  server: https://example.org/live/\n---\n\n---\n# Q\n\n<poll room="q" options="a|b" />\n')
   const asked = []
   const roomServer = async (url, { headers }) => { asked.push([url, headers.Authorization]); return { ok: true, json: async () => ({ canReset: headers.Authorization === 'Bearer s3cret' }) } }
-  const handler = homeMiddleware(liveDeck, { liveKey: 's3cret', fetch: roomServer, urls: () => ({ local: ['http://localhost:5173/'], network: [] }) })
-  const reply = await new Promise(done => {
-    const response = { headers: {}, setHeader() {}, writeHead(status) { this.status = status }, end(body) { done({ status: this.status, body: JSON.parse(body) }) } }
-    handler({ url: '/info', method: 'GET', headers: { host: 'localhost:5173' } }, response, () => {})
-  })
-  assert.equal(reply.status, 200)
-  const { live } = reply.body
+  const { live } = await infoFor(liveDeck, { liveKey: 's3cret', fetch: roomServer, urls: () => ({ local: ['http://localhost:5173/'], network: [] }) })
   assert.deepEqual(asked, [['https://example.org/live/info', 'Bearer s3cret']])
   assert.equal(live.server, 'https://example.org/live/')
   assert.equal(live.reachable, true)
   assert.equal(live.keyAccepted, true)
   assert.equal(live.key, 's3cret')
-  assert.equal(live.viewerUrl, 'https://example.org/slides/talk/?view=respond')
-  assert.equal(live.viewerReachable, true)
-  assert.equal(live.hostedPresenterUrl, 'https://example.org/slides/talk/?view=presenter&livekey=s3cret')
+  assert.match(live.code, /^\d{6}$/)
+  assert.equal(live.joinUrl, `https://example.org/live/${live.code}`)
+})
+
+test("a deck with polls and no room server uses the dev server's, on the network or here", async () => {
   const plain = resolve(dir, 'plain-live.md')
-  writeFileSync(plain, '---\ndesign: neue\nlive:\n  server: https://example.org/live\n---\n\n---\n# Q\n')
-  const viaProxy = await new Promise(done => homeMiddleware(plain, { fetch: roomServer, urls: () => ({ local: ['http://localhost:4104/'], network: [] }) })({ url: '/info', method: 'GET', headers: { host: 'deck.localhost:7777' } }, { setHeader() {}, writeHead() {}, end: body => done(JSON.parse(body).live) }, () => {}))
-  assert.equal(viaProxy.viewerUrl, 'http://deck.localhost:7777/?view=respond', 'the address the page was opened with')
-  assert.equal(viaProxy.viewerReachable, false)
-  assert.equal(viaProxy.key, null)
+  writeFileSync(plain, '---\ndesign: neue\nmeta:\n  title: Plain\n---\n\n---\n# Q\n\n<poll room="q" options="a|b" />\n')
+  const local = await infoFor(plain, { urls: () => ({ local: ['http://localhost:4104/'], network: [] }) }, 'deck.localhost:7777')
+  assert.equal(local.live.server, null)
+  assert.equal(local.live.joinUrl, null, 'phones cannot reach this computer')
+  assert.equal(local.live.localJoinUrl, `http://deck.localhost:7777/__mdeck/live/${local.live.code}`, 'the address the page was opened with')
+  assert.equal(local.live.key, null)
+  const shared = await infoFor(plain, { urls: () => ({ local: ['http://localhost:4104/'], network: ['http://192.168.1.20:4104/'] }) })
+  assert.equal(shared.live.joinUrl, `http://192.168.1.20:4104/__mdeck/live/${shared.live.code}`)
+  const none = resolve(dir, 'no-polls.md')
+  writeFileSync(none, '---\ndesign: neue\n---\n\n---\n# Nothing to ask\n')
+  assert.equal((await infoFor(none, {})).live, null)
 })
 
 test('room server problems are reported, not thrown', async () => {

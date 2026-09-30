@@ -188,29 +188,35 @@ function LivePolls({ live, onRecheck }) {
       <div>
         <dt>Room server</dt>
         <dd>
-          <code>{live.server}</code>
-          <span class={`home-pill ${live.reachable ? 'is-ok' : 'is-bad'}`}>{live.reachable ? `Reachable · ${live.ms} ms` : `Not reachable · ${live.error}`}</span>
+          {live.server
+            ? <><code>{live.server}</code><span class={`home-pill ${live.reachable ? 'is-ok' : 'is-bad'}`}>{live.reachable ? `Reachable · ${live.ms} ms` : `Not reachable · ${live.error}`}</span></>
+            : <span>Built into this dev server</span>}
         </dd>
       </div>
       <div>
-        <dt>Poll page for viewers</dt>
+        <dt>Join link for phones</dt>
         <dd>
-          {live.viewerUrl && <><a href={live.viewerUrl} target="_blank" rel="noopener"><code>{live.viewerUrl}</code></a> <CopyButton text={live.viewerUrl} /></>}
-          {!live.viewerReachable && <p class="home-note">Only this computer can open this address. Set <code>live.audience</code> to the hosted slides, or start with <code>--host</code>.</p>}
+          {live.joinUrl
+            ? <><a href={live.joinUrl} target="_blank" rel="noopener"><code>{live.joinUrl}</code></a> <CopyButton text={live.joinUrl} /></>
+            : <>
+              <p class="home-note">Phones cannot reach this computer. Start with <code>--host</code>, or set <code>live.server</code>.</p>
+              {live.localJoinUrl && <p><a href={live.localJoinUrl} target="_blank" rel="noopener">Try the answer page here</a> <span>in another browser tab or window.</span></p>}
+            </>}
+          <p>Session code <code class="home-code">{live.code}</code>, the same for every poll in this deck.</p>
         </dd>
       </div>
-      <div>
+      {live.server && <div>
         <dt>Presenter code</dt>
         <dd>
           {live.key
             ? <>
               <code class="home-code">{live.key}</code> <CopyButton text={live.key} />
               <span class={`home-pill ${keyState[0]}`}>{keyState[1]}</span>
-              <p>Open the presenter view with the code once in the browser you present from: <a href={presenterUrl} target="_blank" rel="noopener">presenter view here</a>{live.hostedPresenterUrl && <>, or <a href={live.hostedPresenterUrl} target="_blank" rel="noopener">on the hosted slides</a></>}.</p>
+              <p>The presenter view, audience window and deck buttons above carry it. Or open <a href={presenterUrl} target="_blank" rel="noopener">the presenter view with the code</a>.</p>
             </>
             : <p>Start <code>mdeck dev</code> with <code>MDECK_LIVE_KEY</code> set to the room server's key to see the code here.</p>}
         </dd>
-      </div>
+      </div>}
     </dl>
   </section>
 }

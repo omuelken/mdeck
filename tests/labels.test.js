@@ -26,7 +26,7 @@ test('lang picks the label set and labels override single entries', () => {
 test('placeholders can hold elements', () => {
   setDeckLanguage({ lang: 'en' })
   const code = { type: 'code' }
-  assert.deepEqual(t('poll.unreachable', { command: code, setting: 'x' }), ['Phones cannot reach this address. Start with ', code, ', or set ', 'x', '.'])
+  assert.deepEqual(t('poll.unreachable', { command: code, setting: 'x' }), ['Phones cannot reach this computer. Start with ', code, ', or set ', 'x', '.'])
   assert.equal(t('poll.thanks', {}), 'Thanks! You chose “{choice}”. Tap another to change.')
 })
 

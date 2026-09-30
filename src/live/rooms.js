@@ -1,11 +1,17 @@
 // Rooms for audience interaction. A room is a list of small messages that
 // phones post and slides follow live; the server never interprets them, so a
 // new kind of activity (poll, word cloud, questions) needs no server change.
-// A room also has one state value that only the presenter sets; the deck uses
-// it to tell phones which activity is on screen.
+// A room also has one state value that only the presenter sets: the deck's
+// session room holds the activity on screen, which the answer page shows.
 // Everything lives in memory: nothing is written to disk, and idle rooms are
 // forgotten. The same handler runs inside `mdeck dev` and as `mdeck live`.
 import { timingSafeEqual } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { CODE_RE } from './code.js'
+
+// The phones' answer page, served by the room server itself at /<code>.
+const ANSWER_FILES = Object.fromEntries(['answer.html', 'answer.js', 'answer.css'].map(name => [name, readFileSync(new URL(`./answer/${name}`, import.meta.url))]))
+const ANSWER_TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8' }
 
 export const ROOM_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/
 const HOUR = 60 * 60 * 1000
@@ -92,15 +98,16 @@ export function keyMatches(request, key) {
 }
 
 const MAX_BODY = 4096
+const MAX_STATE = 32768
 
-function readBody(request) {
+function readBody(request, limit = MAX_BODY) {
   return new Promise((done, fail) => {
     if (!/^application\/json\b/i.test(request.headers['content-type'] ?? '')) return fail(Object.assign(new Error('Send JSON'), { status: 415 }))
     let size = 0
     const chunks = []
     request.on('data', chunk => {
       size += chunk.length
-      if (size > MAX_BODY) { request.pause(); fail(Object.assign(new Error('Message too large'), { status: 413, close: true })); return }
+      if (size > limit) { request.pause(); fail(Object.assign(new Error('Message too large'), { status: 413, close: true })); return }
       chunks.push(chunk)
     })
     request.on('end', () => { try { done(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}')) } catch { fail(Object.assign(new Error('Not valid JSON'), { status: 400 })) } })
@@ -115,6 +122,7 @@ function reply(response, status, body) {
 }
 
 // Routes, relative to where the handler is mounted:
+//   GET  /<code>               the phones' answer page (and answer.js, answer.css)
 //   GET  /info                 { canReset, ...extra }
 //   GET  /rooms/<id>/events    Server-Sent Events: snapshot, message, reset, state
 //   POST /rooms/<id>           { from, data } → { n }
@@ -130,6 +138,12 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
     if (request.method === 'OPTIONS') { response.writeHead(204); response.end(); return }
     try {
       if (pathname === '/info' && request.method === 'GET') return reply(response, 200, { canReset: !!canReset(request), ...info(request) })
+      const page = pathname.slice(1)
+      if (request.method === 'GET' && (CODE_RE.test(page) || Object.hasOwn(ANSWER_FILES, page))) {
+        const name = CODE_RE.test(page) ? 'answer.html' : page
+        response.writeHead(200, { 'Content-Type': ANSWER_TYPES[name.split('.').pop()], 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' })
+        return response.end(ANSWER_FILES[name])
+      }
       const match = pathname.match(/^\/rooms\/([^/]+)(\/events|\/reset|\/state)?$/)
       if (!match) return next()
       const id = decodeURIComponent(match[1])
@@ -147,7 +161,7 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
       if (match[2] === '/reset' || match[2] === '/state') {
         if (!canReset(request)) return reply(response, 403, { error: 'Only the presenter can change a room' })
         if (match[2] === '/reset') rooms.reset(id)
-        else rooms.setState(id, (await readBody(request)).state)
+        else rooms.setState(id, (await readBody(request, MAX_STATE)).state)
         return reply(response, 200, { ok: true })
       }
       if (!limit(clientAddress(request))) return reply(response, 429, { error: 'Too many answers at once; wait a moment' })

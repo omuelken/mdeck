@@ -58,8 +58,8 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `labels` | — | Replace single words the audience sees (see below) |
 | `callouts` | — | Override individual callout titles (see below) |
 | `live.server` | the dev server | Room server for polls and other audience activities, e.g. `https://example.org/live` |
-| `live.audience` | this page | Where phones open the slides, when you present from elsewhere |
-| `live.id` | from the title | Keeps the rooms of different decks apart on a shared room server |
+| `live.id` | from the title | Name the session code is derived from |
+| `live.code` | from `live.id` | The session code itself, 4 to 8 digits; phones join at `<server>/<code>` |
 | `components` | — | Extra folders of Preact components shared between decks, relative to the deck or starting with `~/` |
 | `params` | — | Theme-specific color/font overrides (see below) |
 | `share.themes` | `true` | Whether the reader view of a shared build offers other themes and palettes (see below) |
@@ -509,12 +509,13 @@ labels:
 | `poll.reset` | Reset | Zurücksetzen |
 | `poll.live` | Live | Live |
 | `poll.offline` | Not connected to the room server | Keine Verbindung zum Raum-Server |
-| `poll.unreachable` | Phones cannot reach this address. Start with {command}, or set {setting}. | Handys erreichen diese Adresse nicht. Mit {command} starten oder {setting} setzen. |
+| `poll.unreachable` | Phones cannot reach this computer. Start with {command}, or set {setting}. | Handys erreichen diesen Computer nicht. Mit {command} starten oder {setting} setzen. |
+| `poll.tryHere` | Try the answer page here | Antwortseite hier ausprobieren |
 | `poll.pick` | Tap one answer. | Eine Antwort antippen. |
 | `poll.thanks` | Thanks! You chose “{choice}”. Tap another to change. | Danke! Gewählt: „{choice}“. Zum Ändern eine andere antippen. |
-| `respond.missing` | This question is not in the presentation any more. | Diese Frage ist nicht mehr in der Präsentation. |
 | `respond.waiting` | The next question will appear here. | Die nächste Frage erscheint hier. |
-| `respond.choose` | Or pick a question: | Oder eine Frage wählen: |
+| `respond.send` | Send | Senden |
+| `respond.sent` | Sent. Thank you! | Gesendet. Danke! |
 
 ---
 
@@ -648,18 +649,18 @@ For `play="auto"` the video pauses and resets to the beginning when you navigate
 | `options` | — | Answers separated by `\|` |
 | `question` | — | Question text; phones fall back to the slide heading |
 
-The slide shows live bars, the number of answers and a QR code. All polls in a deck share one link, `?view=respond`: phones that open it show the poll on the presenter's current slide, and a waiting note between polls. The presenter's screen (the presenter view or a full deck window, never an embedded preview) announces the current poll to the room server, which only accepts that from the presenter. `?view=respond&room=<room>` opens one poll directly. Each device's latest vote counts. The presenter's own browser can reset the room (hover over the results).
+The slide shows live bars, the number of answers, a QR code and a short link. Phones never load the deck: they open the room server's own answer page at `<server>/<code>`, where the six-digit session code is the same for every poll in the deck. The presenter's screen (the presenter view or a full deck window, never an embedded preview) announces the poll on the current slide with what the phones should show and the deck's look; the room server only accepts that from the presenter. Between polls the phones wait. Each device's latest vote counts. The presenter can reset the room (hover over the results).
 
-Rooms run inside `mdeck dev` (add `--host` so phones can reach it) or on a standalone server started with `mdeck live`. Built decks find a standalone server through the `live` deck settings:
+Rooms run inside `mdeck dev` (add `--host` so phones can reach it) or on a room server started with `mdeck live`, set in the deck:
 
 ```yaml
 live:
-  server: https://example.org/live            # room server
-  audience: https://example.org/slides/talk/  # where phones open the deck
-  id: talk                                    # optional; defaults to the title
+  server: https://example.org/live   # room server; phones join at https://example.org/live/<code>
+  id: talk                           # optional: name the code is derived from, defaults to the title
+  code: 482113                       # optional: the code itself
 ```
 
-Rooms of a deck are named `<id>.<room>` on the server, so decks sharing a server stay apart. See the [Ask your audience](../site/content/audience.md) guide for hosting, and [Create interactive content](../site/content/components.md) for writing other activities with `useRoom` from `mdeck/live`.
+A deck's rooms are named `<code>.<room>` on the server, so decks sharing a server stay apart. See the [Ask your audience](../site/content/audience.md) guide for hosting, and [Create interactive content](../site/content/components.md) for writing other activities with `useRoom` and a `phone` description.
 
 ---
 

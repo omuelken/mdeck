@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { createRooms, createLimiter, clientAddress } from '../src/live/rooms.js'
 import { startLiveServer } from '../src/live/server.js'
 import { findRoomTag, roomsIn, roomsOnSlide, slideTitleFor } from '../src/live/roomTag.js'
+import { sessionCode } from '../src/live/code.js'
 import { parseSlides } from '../src/core/parseSlides.js'
 import { validateDeck } from '../src/core/validateDeck.js'
 
@@ -116,7 +117,39 @@ test('the answer page finds the component by its room', () => {
 
 test('live settings are validated', () => {
   const codes = config => validateDeck(parseSlides(`---\n${config}\n---\n\n---\n# A\n`)).map(d => d.code)
-  assert.deepEqual(codes('live:\n  server: https://example.org/live\n  audience: https://example.org/slides/\n  id: talk'), [])
+  assert.deepEqual(codes('live:\n  server: https://example.org/live\n  id: talk\n  code: 482113'), [])
   assert.deepEqual(codes('live:\n  server: example.org'), ['invalid-config'])
+  assert.deepEqual(codes('live:\n  code: 12'), ['invalid-config'])
+  assert.deepEqual(codes('live:\n  audience: https://example.org/slides/'), ['invalid-config'], 'the old hosted-deck setting says it is gone')
   assert.deepEqual(codes('live: yes'), ['invalid-config'])
+})
+
+test("a deck's session code is six stable digits, unless it sets one", () => {
+  const a = sessionCode({ meta: { title: 'Ask the room' } })
+  assert.match(a, /^[1-9]\d{5}$/)
+  assert.equal(sessionCode({ meta: { title: 'Ask the room' } }), a)
+  assert.equal(sessionCode({ meta: { title: 'Ask the room' }, live: { id: 'ask-the-room' } }), a, 'live.id and the title give the same name')
+  assert.notEqual(sessionCode({ meta: { title: 'Another talk' } }), a)
+  assert.equal(sessionCode({ live: { code: 4711 } }), '4711')
+})
+
+test("the room server serves the phones' answer page at /<code>", async () => {
+  const pageResponse = await fetch(`${live.url}/482113`)
+  assert.equal(pageResponse.status, 200)
+  assert.match(pageResponse.headers.get('content-type'), /text\/html/)
+  const html = await pageResponse.text()
+  assert.match(html, /answer\.js/)
+  for (const [file, type] of [['answer.js', /javascript/], ['answer.css', /css/]]) {
+    const response = await fetch(`${live.url}/${file}`)
+    assert.equal(response.status, 200, file)
+    assert.match(response.headers.get('content-type'), type)
+  }
+  assert.equal((await fetch(`${live.url}/12`)).status, 404, 'too short to be a code')
+})
+
+test("the presenter's state may carry a whole activity and look", async () => {
+  const state = { room: 'q', activity: { type: 'choice', question: 'Q?', options: Array.from({ length: 20 }, (_, i) => `Option ${i}`) }, look: { tokens: Object.fromEntries(Array.from({ length: 11 }, (_, i) => [`--t${i}`, 'x'.repeat(60)])) }, labels: { waiting: 'w'.repeat(200) } }
+  const response = await fetch(`${live.url}/rooms/482113/state`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer secret' }, body: JSON.stringify({ state }) })
+  assert.equal(response.status, 200)
+  assert.equal((await events('482113', 1))[0].data.state.activity.options.length, 20)
 })

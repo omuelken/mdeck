@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Polls use relay mode: phones no longer load the slides. They open the room server's own answer page at `<server>/<code>`, and the presenter's screen sends it the activity on screen, what the phones should show, the deck's look and the words in its language. You present from your own computer with the slides as they are; only the room server has to be reachable, and it works the same inside `mdeck dev` on localhost. The session code comes from the deck (`live.id`, `live.code`).
+- Components describe their phone side with a static `phone` function returning a `choice`, `text` or `scale` form; answers arrive as `data.value`.
+- Removed: `?view=respond` and the `live.audience` setting, which `mdeck check` now reports.
+
 ## 1.2.0 — 2026-09-30
 
 ### Launch page

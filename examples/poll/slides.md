@@ -89,10 +89,10 @@ mdeck dev slides.md --host
 ```
 
 - **Same network** — phones must be able to reach your computer.
-- **Lecture hall** — host the slides and run `mdeck live` on a web server.
+- **Lecture hall** — run `mdeck live` on a web server; the slides stay on your laptop.
 
 :::notes
-For a lecture hall, host the slides and run `mdeck live` on a web server. The "Ask your audience" guide shows the three settings needed.
+For a lecture hall, run `mdeck live` on a web server once and point `live.server` at it. The phones only talk to that room server; the slides never leave this laptop. The "Ask your audience" guide has the details.
 
-Many university networks keep devices apart. If phones cannot open the page, use a phone hotspot or the hosted setup.
+Many university networks keep devices apart. If phones cannot open the page, use a phone hotspot or a room server on the internet.
 :::

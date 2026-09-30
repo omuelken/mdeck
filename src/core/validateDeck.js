@@ -29,11 +29,10 @@ export function validateDeck(deck, { templates = null, themes = null, palettes =
     }
   }
   if (isPlainObject(config.live)) {
-    for (const key of Object.keys(config.live)) if (!['server', 'audience', 'id'].includes(key)) add('invalid-config', `live.${key} is not a setting; available: server, audience, id`, deck.configSource?.start, 'warning')
-    for (const key of ['server', 'audience']) {
-      const value = config.live[key]
-      if (value != null && (typeof value !== 'string' || !/^https?:\/\//.test(value))) add('invalid-config', `live.${key} must be an http:// or https:// address`, deck.configSource?.start)
-    }
+    if (config.live.audience != null) add('invalid-config', 'live.audience is gone: phones now open the room server\'s own answer page, so the slides need not be hosted', deck.configSource?.start)
+    for (const key of Object.keys(config.live)) if (!['server', 'id', 'code', 'audience'].includes(key)) add('invalid-config', `live.${key} is not a setting; available: server, id, code`, deck.configSource?.start, 'warning')
+    if (config.live.server != null && (typeof config.live.server !== 'string' || !/^https?:\/\//.test(config.live.server))) add('invalid-config', 'live.server must be an http:// or https:// address', deck.configSource?.start)
+    if (config.live.code != null && !/^\d{4,8}$/.test(String(config.live.code))) add('invalid-config', 'live.code must be 4 to 8 digits', deck.configSource?.start)
   }
   const enums = { institution: ['title', 'all', 'none'], authorDate: ['title', 'all', 'none'], pageNumbers: ['slides', 'all', 'none'], sections: ['all', 'none'] }
   for (const [key, values] of Object.entries(enums)) {

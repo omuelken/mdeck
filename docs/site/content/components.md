@@ -60,40 +60,51 @@ Slides stay mounted while navigating. For media or ongoing work, listen to the `
 
 ## Audience interaction
 
-Components can collect answers from phones. `useRoom` from `mdeck/live` connects to a room on the room server: phones post small messages to it, and every slide showing the room receives them live. The server does not interpret the messages, so any kind of activity works without changing it.
+Components can collect answers from phones. An activity has two halves:
 
-A component is written once and shown twice. On the slide it shows results and a QR code for `joinUrl`, the deck's one answer link. Phones that open it follow the presentation: whenever the presenter's current slide holds a component with a `room` attribute, mdeck renders only that component on the phones, with `respond` true. `?view=respond&room=<name>` opens one activity directly. Only the current slide's rooms stay connected, so a deck can hold many activities:
+- **On the slide**, the component itself shows the answers. `useRoom` from `mdeck/live` follows its room on the room server and receives every answer live.
+- **On the phones**, the room server's answer page shows a form. The component describes that form with a static `phone` function; mdeck calls it for the activity on the presenter's current slide and sends the result to the phones.
+
+The phones never load the deck, so the form is a description, not code. Three kinds are available:
+
+| `type` | Shows | Other fields | An answer's `value` |
+|---|---|---|---|
+| `choice` | One button per option; the latest tap counts | `options` (list of text) | The chosen option |
+| `text` | A text box and a send button; any number of answers | `placeholder`, `maxLength` (default 200) | The text |
+| `scale` | A row of numbers | `min` (default 1), `max` (default 5), `minLabel`, `maxLabel` | The number |
+
+Each takes a `question`. A word collector:
 
 ```jsx
 import { h } from 'preact'
 import { useRoom, QrCode } from 'mdeck/live'
 
 export default function Words({ room }) {
-  const { messages, send, respond, joinUrl } = useRoom(room)
-  if (respond) return <form onSubmit={e => { e.preventDefault(); send({ word: e.currentTarget.word.value }) }}>
-    <input name="word" /> <button>Send</button>
-  </form>
+  const { messages, joinUrl, localJoinUrl } = useRoom(room)
   return <div>
-    <p>{messages.map(m => m.data.word).join(' · ')}</p>
-    {joinUrl && <QrCode url={joinUrl} size="280" />}
+    <p>{messages.map(m => m.data.value).join(' · ')}</p>
+    {joinUrl ? <QrCode url={joinUrl} size="280" /> : <a href={localJoinUrl}>Try the answer page</a>}
   </div>
 }
+
+// What the phones show while this slide is on screen.
+Words.phone = ({ question }, { slideTitle }) => ({ type: 'text', question: question || slideTitle, placeholder: 'One word' })
 ```
+
+`phone(props, { slideTitle })` receives the tag's attributes and the slide's heading. A component without `phone` still shows answers on the slide, but the phones keep waiting while it is on screen. Only the current slide's rooms stay connected, so a deck can hold many activities.
 
 `useRoom(room)` returns:
 
 | Value | Meaning |
 |---|---|
-| `messages` | Every message so far, oldest first: `{ n, at, from, data }` |
-| `send(data)` | Posts one message; resolves when the server has it. Keep `data` small (under 4 KB). |
-| `respond` | True on a phone's answer page for this room |
-| `joinUrl` | The deck's answer link for the QR code, or `null` when phones cannot reach the deck |
-| `roomUrl` | A link to this activity alone |
-| `me` | This device's id, the `from` of its own messages |
+| `messages` | Every answer so far, oldest first: `{ n, at, from, data: { value } }` |
+| `joinUrl` | The deck's join link for the QR code, or `null` when phones cannot reach the room server |
+| `localJoinUrl` | The answer page on this computer, for trying it out |
+| `code` | The deck's session code |
 | `canReset`, `reset()` | Whether this browser may clear the room, and doing it |
 | `connected` | Whether the live connection is open |
 
-`QrCode` draws the code. `latestByDevice(messages)`, also from `mdeck/live`, keeps each device's latest message, for answers people may change. Where the room server runs and how phones reach the deck is described in [Ask your audience](audience.html).
+`QrCode` draws the code. `latestByDevice(messages)`, also from `mdeck/live`, keeps each device's latest answer, for answers people may change. Where the room server runs is described in [Ask your audience](audience.html).
 
 ## Print, PDF and Read mode
 

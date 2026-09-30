@@ -9,6 +9,8 @@ import { resolve, dirname, basename } from 'node:path'
 import { loadRegistry } from '../extensions/discover.js'
 import { parseSlides } from '../core/parseSlides.js'
 import { checkDeck } from './check.js'
+import { sessionCode } from '../live/code.js'
+import { roomsIn } from '../live/roomTag.js'
 import { isAllowedRequest, send, readJson } from './editorPlugin.js'
 import { findChrome } from './chrome.js'
 import { frameworkRoot } from '../paths.js'
@@ -87,7 +89,7 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       design: config.design ?? 'neue',
       palette: config.palette ?? null,
       diagnostics: [...(registry?.warnings ?? []).map(message => ({ severity: 'warning', code: 'extension', message })), ...(registryError ? [{ severity: 'error', code: 'extension', message: registryError }] : []), ...diagnostics],
-      live: await live(config.live, { local, network }),
+      live: await live(config, source, { local, network }),
       chrome: !!findChrome(),
       services: Object.fromEntries(Object.keys(services).map(key => [key, serviceUrls[key] ?? null])),
       outputs: Object.fromEntries(Object.entries(outputs).map(([key, output]) => [key, {
@@ -100,18 +102,23 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
     }
   }
 
-  // Only decks with a room server of their own get this section: its address
-  // and health, the viewers' answer link and the presenter code.
-  async function live(settings, { local, network }) {
-    if (typeof settings?.server !== 'string') return null
-    const viewerBase = settings.audience ?? network[0] ?? local[0] ?? null
+  // Decks with activities, or with a room server of their own, get this
+  // section: the room server and its health, the join link phones open and,
+  // for a room server of their own, the presenter code.
+  async function live(config, source, { local, network }) {
+    const settings = config.live ?? {}
+    const own = typeof settings.server === 'string'
+    if (!own && roomsIn(source).length === 0) return null
+    const code = sessionCode(config)
+    const builtIn = base => new URL(`__mdeck/live/${code}`, base).href
+    const joinUrl = own ? `${settings.server.replace(/\/+$/, '')}/${code}` : network[0] ? builtIn(network[0]) : null
     return {
-      server: settings.server,
-      ...(await liveStatus(settings, { key: liveKey, fetch: get })),
-      key: liveKey,
-      viewerUrl: viewerBase ? new URL('?view=respond', viewerBase).href : null,
-      viewerReachable: !!(settings.audience || network[0]),
-      hostedPresenterUrl: settings.audience && liveKey ? new URL(`?view=presenter&livekey=${encodeURIComponent(liveKey)}`, settings.audience).href : null,
+      server: own ? settings.server : null,
+      code,
+      ...(own ? await liveStatus(settings, { key: liveKey, fetch: get }) : { reachable: true }),
+      key: own ? liveKey : null,
+      joinUrl,
+      localJoinUrl: joinUrl ?? (local[0] ? builtIn(local[0]) : null),
     }
   }
 

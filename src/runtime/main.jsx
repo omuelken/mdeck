@@ -10,10 +10,10 @@ import { S, PaletteSwatches } from './chrome.jsx'
 import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
 import { createEditorBridge } from './editorBridge.js'
 import { ShareView } from './ShareView.jsx'
-import { RespondView } from './RespondView.jsx'
-import { configureLive, announce, announceLook, actAsPresenter, useSteering } from '../live/client.js'
+import { configureLive, announce, setLookSource, actAsPresenter, useSteering } from '../live/client.js'
+import { registry } from './registry'
 import { followActiveRooms } from '../live/follow.js'
-import { roomsIn, roomsOnSlide } from '../live/roomTag.js'
+import { roomsIn, roomsOnSlide, findRoomTag, slideTitleFor } from '../live/roomTag.js'
 import './share.css'
 import { SlideRenderer, manifests } from '../templates/renderSlide'
 import { setCalloutLabels } from './markedSetup'
@@ -21,8 +21,8 @@ import { setDeckLanguage, deckLanguage, stageLabels, t } from '../core/labels.js
 import './deck-stage.js'
 
 // One address parameter selects the view. `?view=share` and the shortcut
-// `?v=s` mean the same; the letters are d, s, p, a and r.
-const VIEW_ALIASES = { d: 'deck', s: 'share', p: 'presenter', a: 'audience', r: 'respond' }
+// `?v=s` mean the same; the letters are d, s, p and a.
+const VIEW_ALIASES = { d: 'deck', s: 'share', p: 'presenter', a: 'audience' }
 export function requestedView(url, fallback = 'deck') {
   const raw = url.searchParams.get('view') ?? url.searchParams.get('v')
   if (raw == null) return fallback
@@ -57,11 +57,20 @@ function withConfigOverrides(deckConfig) {
 // activity is on the current slide. Decks without activities never call the
 // room server.
 const hasActivities = () => roomsIn(slidesContent).length > 0
-function announceSlide(slides, index) {
-  if (hasActivities()) announce(roomsOnSlide(slides[index])[0] ?? null)
+// What the phones show for the activity on a slide: its component's `phone`
+// description, from the tag's attributes and the slide's heading.
+function activityOn(deck, slide) {
+  const room = roomsOnSlide(slide)[0]
+  if (!room) return { room: null, activity: null }
+  const tag = findRoomTag(slide.content ?? '', room) ?? Object.values(slide.regions ?? {}).map(region => findRoomTag(region.content ?? '', room)).find(Boolean)
+  const element = tag && new DOMParser().parseFromString(tag, 'text/html').body.firstElementChild
+  const component = element && registry[element.localName]
+  if (typeof component?.phone !== 'function') return { room, activity: null }
+  const props = Object.fromEntries([...element.attributes].map(attribute => [attribute.name, attribute.value]))
+  try { return { room, activity: component.phone(props, { slideTitle: slideTitleFor(deck, room) }) } } catch (error) { console.warn(error); return { room, activity: null } }
 }
-function announceTheme({ design, palette, accent, accent2 }) {
-  if (hasActivities()) announceLook({ design: design ?? null, palette: palette ?? null, accent: accent ?? null, accent2: accent2 ?? null })
+function announceSlide(deck, index) {
+  if (hasActivities()) announce({ ...activityOn(deck, deck.slides[index]), title: deck.deckConfig?.meta?.title ?? '' })
 }
 
 // Whether this presenter screen moves the phones along, shown only for decks
@@ -150,7 +159,9 @@ function PresenterView({ deckConfig, slides }) {
   const stateRef = useRef({ index: 0, step: -1 })
   const paletteDropRef = useRef(null)
   indexRef.current = index
-  useEffect(() => { announceSlide(slides, index) }, [index])
+  // Phones see the look of the slide this view shows, read from its frame.
+  useEffect(() => { setLookSource(() => iframeRef.current?.contentDocument) }, [])
+  useEffect(() => { announceSlide({ slides, deckConfig }, index) }, [index])
 
   const themeMeta = THEME_METAS[design]
   const usesAccent2 = themeMeta?.accent2 ?? false
@@ -248,10 +259,9 @@ function PresenterView({ deckConfig, slides }) {
   }, [paletteOpen])
 
   // When design/palette changes, tell the audience to hot-swap its theme without
-  // a reload, and the phones through the room server.
+  // a reload. Phones pick it up with the next announcement.
   useEffect(() => {
     bcRef.current?.postMessage({ deckControl: { command: 'setTheme', design, palette, accent, accent2 } })
-    announceTheme({ design, palette, accent, accent2 })
   }, [design, palette, accent, accent2])
 
   // Nav buttons drive the presenter iframe; audience follows via slideIndexChanged
@@ -561,14 +571,6 @@ async function init() {
   const embedded = url.searchParams.get('embedded') === '1'
   const shareMode = view === 'share' && !editorMode && !embedded
 
-  // A phone that scanned a slide's QR code: only that component, no slides.
-  if (view === 'respond' && !editorMode) {
-    await loadTheme(deckConfig)
-    document.body.className = 'respond-page'
-    render(<RespondView deck={parsed} deckConfig={deckConfig} room={url.searchParams.get('room')} />, document.body)
-    return
-  }
-
   injectSpeakerNotes(slides)
 
   if (presenterMode) {
@@ -640,9 +642,8 @@ async function init() {
   // A full deck or audience window is a presenter's screen; previews are embedded.
   if (!embedded) {
     const stage = document.querySelector('deck-stage')
-    stage?.addEventListener('slidechange', event => announceSlide(slides, event.detail.index))
-    announceTheme(deckConfig)
-    if (stage) announceSlide(slides, stage.index)
+    stage?.addEventListener('slidechange', event => announceSlide(parsed, event.detail.index))
+    if (stage) announceSlide(parsed, stage.index)
   }
 
   // Embedded iframes (presenter view + preview pane) receive commands via postMessage
@@ -659,7 +660,6 @@ async function init() {
       if (!ctrl) return
       if (ctrl.command === 'setTheme') {
         loadTheme({ design: ctrl.design, palette: ctrl.palette, accent: ctrl.accent, accent2: ctrl.accent2 })
-        announceTheme(ctrl)
       } else {
         handleDeckControl(ctrl)
       }

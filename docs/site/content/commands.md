@@ -27,7 +27,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 - **Present:** the presenter view and an audience window that follows it, the full-screen deck and the reader view, each in a new tab.
 - **Write and learn:** the visual editor and these guides. Each starts the first time you click it.
 - **Share:** buttons that make the `dist` folder, one file to send, or a PDF, next to your slide file, and show them in your file manager.
-- **Live polls:** only for a deck with `live.server` in its settings: whether that room server answers, the link for viewers' phones, and the presenter code that lets your browser move the phones along and reset polls (see below).
+- **Live polls:** for a deck with polls: the room server (built in, or `live.server` and whether it answers), the join link and session code for phones, and for a room server of your own the presenter code that lets your browser move the phones along and reset polls (see below).
 - **Check:** the same problems `mdeck check` reports, such as missing pictures.
 
 The presenter code is the key the room server was started with. Start `mdeck dev` with the same key, for example `MDECK_LIVE_KEY=choose-a-secret mdeck dev my-talk.md`, and the launch page shows it, and its presenter, audience and deck buttons open those views with it, so they move the phones along. The code is removed from the address as soon as a page has it. The code never goes into the slide file, because that file reaches everyone who opens the slides.

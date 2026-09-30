@@ -74,7 +74,7 @@ Use this with a folder build; it cannot be combined with `--self-contained`.
 
 ## Put the presentation on a website
 
-The built folder can be hosted as an ordinary static website. Upload its contents together so the relative image and video paths keep working. Every build contains every view; the address picks it: `?view=deck`, `?view=share`, `?view=presenter` or `?view=audience`. The short forms `?v=d`, `?v=s`, `?v=p` and `?v=a` mean the same. Phones that scan a poll's QR code open `?view=respond`; for polls in a hosted presentation, also see [Ask your audience](audience.html#use-it-in-a-real-session).
+The built folder can be hosted as an ordinary static website. Upload its contents together so the relative image and video paths keep working. Every build contains every view; the address picks it: `?view=deck`, `?view=share`, `?view=presenter` or `?view=audience`. The short forms `?v=d`, `?v=s`, `?v=p` and `?v=a` mean the same. Polls do not need the slides to be hosted; see [Ask your audience](audience.html#use-it-in-a-real-session).
 
 Building does not publish anything automatically. Uploading or deploying the files is a separate step with your hosting provider.
 

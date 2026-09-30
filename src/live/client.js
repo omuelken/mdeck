@@ -1,38 +1,36 @@
 // Audience interaction for slide components: `import { useRoom } from 'mdeck/live'`.
 //
-// A component is written once and shown twice. On the slide it shows results
-// and a QR code. Every activity in a deck shares one link, `?view=respond`:
-// phones that open it follow the presentation and show the activity that is
-// on screen, with `responding(room)` true so it can show the answer form.
-// `?view=respond&room=<name>` opens one activity directly.
+// Relay mode: the room server connects the presenter's screen and the phones
+// and never needs the deck. Every activity in a deck shares one join link,
+// <server>/<code>. The presenter's screen announces the activity on the current
+// slide together with what the phone should show (a component's `phone`
+// description), the deck's look and the words in its language; the room
+// server's answer page shows that. On the slides, `useRoom` follows the
+// answers.
 import { useCallback, useEffect, useState } from 'preact/hooks'
+import { sessionCode } from './code.js'
+import { t, deckLanguage } from '../core/labels.js'
 
 // The QR code component the built-in poll uses, for your own activities.
 export { default as QrCode } from '../components/QrCode.jsx'
 
-let settings = { server: null, audience: null, deck: 'deck' }
+let settings = { server: null, code: '000000' }
 
-const slug = text => String(text ?? '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
-
-// Called by the runtime with the deck settings; `live.id` or the title keeps
-// rooms of different decks apart on a shared server.
+// Called by the runtime with the deck settings.
 export function configureLive(deckConfig = {}) {
   const live = deckConfig.live ?? {}
-  settings = { server: live.server ?? null, audience: live.audience ?? null, deck: slug(live.id ?? deckConfig.meta?.title) || 'deck' }
+  settings = { server: typeof live.server === 'string' ? live.server.replace(/\/+$/, '') : null, code: sessionCode(deckConfig) }
   takeKeyFromAddress()
 }
 
-let answerTitle = ''
-// The answer page names the slide the question came from, for components
-// whose question is the slide's heading.
-export function setRespondingSlideTitle(title) { answerTitle = title ?? '' }
-export function respondingSlideTitle() { return answerTitle }
+/** The deck's session code, the last part of its join link. */
+export const liveCode = () => settings.code
 
 const page = () => new URL(window.location.href)
-const serverBase = () => (settings.server ?? new URL('/__mdeck/live', window.location.origin).href).replace(/\/+$/, '')
-const roomPath = room => `${serverBase()}/rooms/${encodeURIComponent(`${settings.deck}.${room}`)}`
-// The deck's own room carries only its state: which activity is on screen.
-const stagePath = () => `${serverBase()}/rooms/${encodeURIComponent(settings.deck)}`
+// Without `live.server`, the room server built into `mdeck dev`.
+const serverBase = () => settings.server ?? new URL('/__mdeck/live', window.location.origin).href
+const roomPath = room => `${serverBase()}/rooms/${encodeURIComponent(`${settings.code}.${room}`)}`
+const sessionPath = () => `${serverBase()}/rooms/${encodeURIComponent(settings.code)}`
 
 // Which rooms keep a live connection: those on the current slide, set by the
 // runtime for each deck it shows. Browsers allow only six connections per
@@ -51,28 +49,7 @@ function useActive(room) {
     activeListeners.add(listener)
     return () => activeListeners.delete(listener)
   }, [])
-  return activeRooms == null || activeRooms.has(String(room)) || responding(room)
-}
-
-let followed = null
-/** The answer page tells the client which activity it is showing. */
-export function setFollowedRoom(room) { followed = room ?? null }
-
-const onAnswerPage = () => { const url = page(); return (url.searchParams.get('view') ?? url.searchParams.get('v')) === 'respond' }
-
-/** True on a phone's answer page while it shows this room. */
-export function responding(room) {
-  if (!onAnswerPage()) return false
-  const direct = page().searchParams.get('room')
-  return direct != null ? direct === String(room) : followed === String(room)
-}
-
-function clientId() {
-  try {
-    let id = localStorage.getItem('mdeck-live-client')
-    if (!id) localStorage.setItem('mdeck-live-client', id = crypto.randomUUID())
-    return id
-  } catch { return (clientId.fallback ??= crypto.randomUUID()) }
+  return activeRooms == null || activeRooms.has(String(room))
 }
 
 // The presenter unlocks a standalone room server once with ?livekey=… in the
@@ -92,52 +69,39 @@ function takeKeyFromAddress() {
 function presenterKey() {
   try { return localStorage.getItem(`mdeck-live-key:${serverBase()}`) ?? givenKey } catch { return givenKey }
 }
+const withKey = (headers = {}) => { const key = presenterKey(); return key ? { ...headers, Authorization: `Bearer ${key}` } : headers }
 
 // Only an answer is kept; after a failure the next call asks again, so a room
 // server that starts later is found. `reachable` is false when it did not answer.
 let infoRequest = null
 function serverInfo() {
-  const key = presenterKey()
-  infoRequest ??= fetch(`${serverBase()}/info`, { headers: key ? { Authorization: `Bearer ${key}` } : {} })
+  infoRequest ??= fetch(`${serverBase()}/info`, { headers: withKey() })
     .then(response => { if (!response.ok) throw new Error(String(response.status)); return response.json() })
     .then(info => ({ ...info, reachable: true }))
     .catch(() => { infoRequest = null; return { reachable: false } })
   return infoRequest
 }
 
-const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]'])
-
-// Phones open the deck where it is reachable: the `live.audience` setting,
-// the network address of `mdeck dev --host`, or this page's own address.
-// Without a room it is the deck's one link that follows the presentation.
-// An address only this computer can open is no use to a phone: null.
-function joinUrl(room, info) {
-  const here = page()
-  const base = settings.audience ? new URL(settings.audience, here)
-    : info.network ? new URL(here.pathname, info.network)
-    : new URL(here.pathname, here.origin)
-  base.search = ''
-  base.hash = ''
-  base.searchParams.set('view', 'respond')
-  if (room != null) base.searchParams.set('room', room)
-  return LOCAL_HOSTS.has(base.hostname) ? null : base.href
+// The join link phones can open: `live.server`, or `mdeck dev --host`'s
+// network address. null when only this computer can reach the room server;
+// `localJoinUrl` then still opens the answer page here, for trying it out.
+function joinUrl(info) {
+  if (settings.server) return `${settings.server}/${settings.code}`
+  return info.network ? new URL(`__mdeck/live/${settings.code}`, info.network).href : null
 }
+const localJoinUrl = () => `${serverBase()}/${settings.code}`
 
 /**
- * Follow and post to a room.
- *   messages  every message so far: { n, at, from, data }
- *   send(data)  post one; resolves when the server has it
- *   me        this device's id (the `from` of its own messages)
- *   joinUrl   the deck's answer link for the QR code, or null if phones cannot
- *             reach this deck; roomUrl opens this activity directly
+ * Follow a room's answers on a slide.
+ *   messages  every answer so far: { n, at, from, data: { value } }
+ *   joinUrl   the deck's join link for the QR code, or null if phones cannot
+ *             reach the room server; localJoinUrl works on this computer
  *   canReset / reset()  presenter only
  *   connected false until the live stream is open
- * Pass { listen: false } on the answer form when it does not need results.
  * Off the current slide the room keeps its last messages but disconnects.
  */
-export function useRoom(room, { listen = true } = {}) {
-  const active = useActive(room)
-  const live = listen && active
+export function useRoom(room) {
+  const live = useActive(room)
   const [messages, setMessages] = useState([])
   const [connected, setConnected] = useState(false)
   const [info, setInfo] = useState({})
@@ -155,29 +119,52 @@ export function useRoom(room, { listen = true } = {}) {
     return () => { source.close(); setConnected(false) }
   }, [room, live])
 
-  const send = useCallback(async data => {
-    const response = await fetch(roomPath(room), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: clientId(), data }) })
-    const body = await response.json().catch(() => ({}))
-    if (!response.ok) throw new Error(body.error ?? `Could not send (${response.status})`)
-    return body
-  }, [room])
-
   const reset = useCallback(async () => {
-    const key = presenterKey()
-    const response = await fetch(`${roomPath(room)}/reset`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) }, body: '{}' })
+    const response = await fetch(`${roomPath(room)}/reset`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: '{}' })
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error ?? 'Could not reset')
   }, [room])
 
-  return { messages, send, reset, connected, canReset: !!info.canReset, joinUrl: joinUrl(null, info), roomUrl: joinUrl(room, info), me: clientId(), respond: responding(room) }
+  return { messages, reset, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code }
 }
 
-// The presenter's screen names the activity on the current slide, or null,
-// and the look it shows (theme, palette, accents), so phones follow a theme
-// changed in the presenter view. It repeats this every few seconds, so phones that join late and a room
-// server that restarted catch up. Only the presenter may: `steering` says
-// whether this screen reaches the phones, and if not, why.
+/** The latest answer of each device, e.g. to count votes that can be changed. */
+export function latestByDevice(messages) {
+  const latest = new Map()
+  for (const message of messages) latest.set(message.from ?? `#${message.n}`, message)
+  return [...latest.values()]
+}
+
+// ── The presenter's screen ──────────────────────────────────────────────────
+
+// The deck's look as the answer page needs it: theme variables, font
+// stylesheets and the style of a slide heading, read from the page that shows
+// the slides (the presenter's current-slide frame, or the deck itself).
+const LOOK_TOKENS = ['--bg', '--ink', '--ink-soft', '--muted', '--rule', '--surface', '--accent', '--accent-2', '--on-accent', '--font-body', '--font-display']
+let lookSource = () => document
+export function setLookSource(source) { lookSource = source }
+export function captureLook(doc = lookSource()) {
+  if (!doc?.documentElement) return null
+  const style = getComputedStyle(doc.documentElement)
+  const tokens = Object.fromEntries(LOOK_TOKENS.map(name => [name, style.getPropertyValue(name).trim()]).filter(([, value]) => value))
+  const fonts = [...doc.querySelectorAll('link[data-deck-theme-font]')].map(link => link.href)
+  const h1 = doc.querySelector('.slide-body h1')
+  const hs = h1 && doc.defaultView.getComputedStyle(h1)
+  // Letter spacing relative to the font size, so a slide heading's spacing
+  // fits the much smaller heading on a phone.
+  const spacing = hs && (hs.letterSpacing === 'normal' ? 'normal' : `${(parseFloat(hs.letterSpacing) / parseFloat(hs.fontSize)).toFixed(3)}em`)
+  const heading = hs ? { family: hs.fontFamily, weight: hs.fontWeight, spacing, transform: hs.textTransform } : null
+  return { tokens, fonts, heading }
+}
+
+// The words the answer page shows, in the deck's language.
+const phoneWords = () => ({ waiting: t('respond.waiting'), pick: t('poll.pick'), thanks: t('poll.thanks'), send: t('respond.send'), sent: t('respond.sent') })
+
+// The presenter's screen announces the activity on the current slide and
+// repeats it every few seconds, so phones that join late and a room server
+// that restarted catch up; the server passes on only changes. Only the
+// presenter may: `steering` says whether this screen reaches the phones.
 const REPEAT_MS = 4000
-let current, currentLook = null, repeat = null
+let current = { room: null, activity: null, title: '' }, repeat = null
 let steering = null
 const steeringListeners = new Set()
 function report(next) {
@@ -191,7 +178,7 @@ function report(next) {
 // make the phones flip between them.
 let role = 'screen'
 export function actAsPresenter() { role = 'presenter' }
-const presenterMark = () => `mdeck-live-presenter:${settings.deck}`
+const presenterMark = () => `mdeck-live-presenter:${settings.code}`
 function outranked() {
   try {
     if (role === 'presenter') { localStorage.setItem(presenterMark(), String(Date.now())); return false }
@@ -204,23 +191,22 @@ async function sendCurrent() {
   const info = await serverInfo()
   if (!info.reachable) return report({ ok: false, reason: 'unreachable' })
   if (!info.canReset) return report({ ok: false, reason: presenterKey() ? 'wrong-code' : 'no-code' })
-  const key = presenterKey()
+  const state = { ...current, look: captureLook(), lang: deckLanguage(), labels: phoneWords() }
   try {
-    const response = await fetch(`${stagePath()}/state`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) }, body: JSON.stringify({ state: { room: current, look: currentLook } }) })
+    const response = await fetch(`${sessionPath()}/state`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state }) })
     report(response.ok ? { ok: true } : { ok: false, reason: response.status === 403 ? 'wrong-code' : 'unreachable' })
   } catch { report({ ok: false, reason: 'unreachable' }) }
 }
 
-export function announce(room) {
-  current = room ?? null
+/**
+ * The activity on the current slide: { room, activity, title }, where
+ * `activity` is what the phones show ({ type: 'choice' | 'text' | 'scale', … }),
+ * or nothing between activities.
+ */
+export function announce({ room = null, activity = null, title = '' } = {}) {
+  current = { room, activity, title }
   sendCurrent()
   repeat ??= setInterval(sendCurrent, REPEAT_MS)
-}
-
-/** The look this screen shows: { design, palette, accent, accent2 }. */
-export function announceLook(look) {
-  currentLook = look
-  if (repeat) sendCurrent()
 }
 
 /** For the presenter view: null before the first announcement, else { ok, reason }. */
@@ -232,30 +218,4 @@ export function useSteering() {
     return () => steeringListeners.delete(setState)
   }, [])
   return state
-}
-
-/**
- * Follow which activity the presenter shows. `room` is its name or null;
- * `look` the presenter's theme, palette and accents, or null;
- * `announced` is false until the presenter has named one at all.
- */
-export function useStage() {
-  const [stage, setStage] = useState({ room: null, look: null, announced: false, connected: false })
-  useEffect(() => {
-    if (typeof EventSource === 'undefined') return
-    const source = new EventSource(`${stagePath()}/events`)
-    const apply = state => setStage({ room: state?.room ?? null, look: state?.look ?? null, announced: state != null, connected: true })
-    source.addEventListener('snapshot', event => apply(JSON.parse(event.data).state))
-    source.addEventListener('state', event => apply(JSON.parse(event.data).state))
-    source.addEventListener('error', () => setStage(current => ({ ...current, connected: false })))
-    return () => source.close()
-  }, [])
-  return stage
-}
-
-/** The latest message of each device, e.g. to count votes that can be changed. */
-export function latestByDevice(messages) {
-  const latest = new Map()
-  for (const message of messages) latest.set(message.from ?? `#${message.n}`, message)
-  return [...latest.values()]
 }
