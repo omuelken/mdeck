@@ -9,10 +9,13 @@
 - For an iPad: the presenter view has a layout where the slide fills the screen, with a small bar (timer, previous/next, draw, notes, full screen) and the notes and next slide in a drawer (`N`). It is the default on touch screens and is remembered. `F` and a button go full screen where the browser allows it, in the presenter view and the deck. The deck's controls gain a draw button, the ink toolbar has previous/next, and buttons are larger on touch screens. Added to the Home Screen, a deck opens without Safari's bars.
 - Present from an iPad while the laptop drives the projector: with `mdeck dev --host`, the launch page shows a one-time QR code ("Present from an iPad") that opens the presenter view on the iPad, paired with the dev server so it may save drawings and steer the phones; "Unpair" ends it. The audience window follows a presenter view on another device, slide, step and drawings as they are drawn, through the room server (the one in `mdeck dev` or `mdeck live`, with its presenter code). A window that opens later gets the drawings made so far.
 - The room server orders the presenter's announcements by when it heard them, so two devices with clocks that disagree no longer take the phones back to an older slide. New route `POST /rooms/<id>/ink` (presenter only) for live drawings.
-- Fixed: the presenter view and the phones' answer page failed on plain `http://` network addresses (as with `mdeck dev --host`), where browsers offer no `crypto.randomUUID`.
 - More kinds of audience questions: `<scale>` (a number from `min` to `max`, with counts and the average), `<wordcloud>` (a real word cloud of short answers, packed around the middle and sized by how often they came in) and `<question>` (open answers as cards). Phones answer them on the same page as polls.
 - `<qrcode join />` shows the deck's join code, large and with its link, for a slide at the start; `qr="false"` on a poll or another question leaves out its own code.
 - QR codes (`<qrcode>` and the questions) are drawn as SVG in the slide's own colours instead of black on white, so they fit dark themes too; `--qr-ink` and `--qr-bg` override them.
+
+## 1.3.2 — 2026-10-01
+
+- Fixed: on plain `http://` network addresses, as with `mdeck dev --host`, browsers offer no `crypto.randomUUID`. A phone on the answer page then got a new identity with every reload, so a changed vote could count twice, and the presenter view did not open at all. Both now use a fallback that works everywhere.
 
 ## 1.3.1 — 2026-09-30
 
