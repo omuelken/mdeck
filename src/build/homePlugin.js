@@ -90,6 +90,7 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       palette: config.palette ?? null,
       diagnostics: [...(registry?.warnings ?? []).map(message => ({ severity: 'warning', code: 'extension', message })), ...(registryError ? [{ severity: 'error', code: 'extension', message: registryError }] : []), ...diagnostics],
       live: await live(config, source, { local, network }),
+      presence: presenceUrl(config),
       // Presenting from an iPad needs an address it can reach (`--host`).
       pairing: pairing ? { available: !!relay || !!network[0], devices: pairing.devices } : null,
       relay: relay ? { url: relay.url, state: relay.state, reason: relay.reason } : null,
@@ -103,6 +104,15 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
         ...(jobs[key] ?? { status: 'idle' }),
       }])),
     }
+  }
+
+  // Where the launch page asks who is connected: the deck's stage room, on
+  // the deck's own server, or here when this server passes the rooms on
+  // (with MDECK_SERVER_KEY) or keeps them itself. Relative to the page.
+  function presenceUrl(config) {
+    const address = serverAddress ?? config.server
+    const room = `rooms/${encodeURIComponent(`${sessionCode(config)}.stage`)}/presence`
+    return typeof address === 'string' && !serverKey ? `${address.replace(/\/+$/, '')}/${room}` : `__mdeck/live/${room}`
   }
 
   // Decks with activities, or with a server of their own, get this

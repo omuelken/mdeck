@@ -104,6 +104,18 @@ test('a deck with its own server shows its health, the join link and the key', a
   assert.equal(live.joinUrl, `https://example.org/live/${live.code}`)
 })
 
+test('the launch page hears who is connected where the deck windows meet', async () => {
+  const deck = resolve(dir, 'live.md')
+  const fetchInfo = async () => ({ ok: true, json: async () => ({ canReset: true }) })
+  const direct = await infoFor(deck, { serverKey: null, fetch: fetchInfo })
+  assert.match(direct.presence, /^https:\/\/example\.org\/live\/rooms\/\d{6}\.stage\/presence$/)
+  const proxied = await infoFor(deck, { serverKey: 's3cret', fetch: fetchInfo })
+  assert.match(proxied.presence, /^__mdeck\/live\/rooms\/\d{6}\.stage\/presence$/, 'through this server, which holds the key')
+  const none = resolve(dir, 'presence-plain.md')
+  writeFileSync(none, '---\ntheme: neue\n---\n\n---\n# Nothing to ask\n')
+  assert.match((await infoFor(none, { serverKey: null })).presence, /^__mdeck\/live\/rooms\/\d{6}\.stage\/presence$/)
+})
+
 test("a deck with polls and no server setting uses the dev server's, on the network or here", async () => {
   const plain = resolve(dir, 'plain-live.md')
   writeFileSync(plain, '---\ntheme: neue\nmeta:\n  title: Plain\n---\n\n---\n# Q\n\n<poll room="q" options="a|b" />\n')

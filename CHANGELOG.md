@@ -129,6 +129,8 @@ Polls work without hosting the slides. This changes how phones join; see *Remove
 - A slide's `title:` setting names it in the outline for slides without a heading.
 - Code blocks stay left-aligned in centred layouts. Step lists have the same spacing as ordinary lists.
 - New guide "Views, commands and servers".
+- The presenter view and the launch page show what is connected to the deck: presenter views, audience windows and phones, and on which devices, such as a paired iPad. Windows say what they are when they connect to the room server; the launch page asks `GET /rooms/<id>/presence`. A standalone `mdeck server` needs this version for it.
+- The launch page explains that the iPad runs the same presenter view, and that pairing is what lets it save drawings and steer.
 - One icon set everywhere: the launch page, presenter, reader, deck controls, drawing toolbar, code blocks and editor use the same line icons ([Lucide](https://lucide.dev), ISC license) instead of a mix of drawings and text symbols.
 
 ### Fixes and maintenance

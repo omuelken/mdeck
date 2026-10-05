@@ -44,7 +44,7 @@ There are two ways.
 **The iPad next to your laptop.** The laptop shows the slides on the projector; you draw and go through the slides on the iPad, with your notes on it.
 
 1. Start `mdeck run my-talk.md --network`, so the iPad in the same network can reach your laptop.
-2. On the launch page, under **Present from an iPad**, choose **Show pairing code** and scan it with the iPad's camera. The presenter view opens on the iPad, paired with your laptop, so it may save drawings and steer the phones of a poll.
+2. On the launch page, under **Present from an iPad**, choose **Show pairing code** and scan it with the iPad's camera. The presenter view opens on the iPad, paired with your laptop, so it may save drawings and steer the phones of a poll. It is the same presenter view as on the laptop; pairing only gives it these rights. Once it is open, the launch page says so.
 3. On the laptop, open the **audience window** from the same place and move it to the projector. It follows the iPad: slides, revealed points, and drawings as you draw them. Navigation in the audience window also updates the iPad's slide, notes and next-slide preview.
 
 A pairing code works once, for ten minutes. **Unpair** on the launch page ends every pairing; so does stopping `mdeck run`. Scan a new code afterwards.

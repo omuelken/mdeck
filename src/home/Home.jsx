@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import mark from '../../assets/logo/mark.svg'
 import QrCode from '../components/QrCode.jsx'
 import { Icon } from '../components/Icon.jsx'
+import { ConnectedViews } from '../components/ConnectedViews.jsx'
+import { devicesText, phonesText } from '../live/presence.js'
 import { devPath } from '../core/devPath.js'
 
 // Where the dev server serves from: / normally, /t/<id>/ with `mdeck run --server`.
@@ -33,10 +35,27 @@ function ago(iso) {
   return new Date(iso).toLocaleDateString()
 }
 
-function ViewTile({ icon, title, text, href }) {
+// Who is connected, asked of the deck's room server every few seconds; null
+// until it answers. Asking holds no connection: browsers allow six per
+// server, which the open deck windows need.
+const PRESENCE_MS = 3000
+function usePresence(url) {
+  const [presence, setPresence] = useState(null)
+  useEffect(() => {
+    if (!url) return
+    const ask = () => fetch(new URL(url, new URL(BASE, location.href)), { cache: 'no-store' })
+      .then(response => response.ok ? response.json() : null).catch(() => null).then(setPresence)
+    ask()
+    const timer = setInterval(ask, PRESENCE_MS)
+    return () => clearInterval(timer)
+  }, [url])
+  return presence
+}
+
+function ViewTile({ icon, title, text, href, open }) {
   return <a class="home-tile" href={href} target="_blank" rel="noopener">
     <span class="home-tile-icon"><HomeIcon name={icon} size={22} /></span>
-    <span class="home-tile-body"><strong>{title}</strong><span>{text}</span></span>
+    <span class="home-tile-body"><strong>{title}{open && <span class="home-open">Open on {open}</span>}</strong><span>{text}</span></span>
     <HomeIcon name="external" size={16} />
   </a>
 }
@@ -162,7 +181,7 @@ const SESSION = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.rand
 // For decks with a `server` setting: the server's health, the viewers' link
 // and the key (MDECK_SERVER_KEY) that lets a browser steer phones and reset
 // polls.
-function LivePolls({ live, onRecheck }) {
+function LivePolls({ live, presence, onRecheck }) {
   const presenterUrl = `${BASE}?view=presenter&session=${SESSION}${live.key ? `&serverkey=${encodeURIComponent(live.key)}` : ''}`
   const keyState = !live.key ? null : live.keyAccepted ? ['is-ok', 'Accepted by the server'] : live.reachable ? ['is-bad', 'Not accepted by the server'] : ['is-idle', 'Not checked']
   return <section class="home-section">
@@ -189,6 +208,7 @@ function LivePolls({ live, onRecheck }) {
               {live.localJoinUrl && <p><a href={live.localJoinUrl} target="_blank" rel="noopener">Try the answer page here</a> <span>in another browser tab or window.</span></p>}
             </>}
           <p>Session code <code class="home-code">{live.code}</code>, the same for every poll in this deck.</p>
+          {presence && <p>{presence.phones ? `${phonesText(presence.phones)} connected now.` : 'No phones connected yet.'}</p>}
         </dd>
       </div>
       {live.server && <div>
@@ -210,7 +230,8 @@ function LivePolls({ live, onRecheck }) {
 // Presenting from an iPad: a one-time QR code opens the presenter view there,
 // paired with this server so it may save ink and steer the projector, which
 // shows the audience window on this computer.
-function Tablet({ pairing, relay, onChange, onError }) {
+function Tablet({ pairing, relay, presence, onChange, onError }) {
+  const away = (presence?.views ?? []).filter(entry => entry.view === 'presenter' && entry.device !== 'computer')
   const [url, setUrl] = useState(null)
   const offer = () => api('/action', { action: 'pair' }).then(result => { setUrl(result.url); onChange() }).catch(error => onError(error.message))
   const unpair = () => api('/action', { action: 'unpair' }).then(() => { setUrl(null); onChange() }).catch(error => onError(error.message))
@@ -220,6 +241,7 @@ function Tablet({ pairing, relay, onChange, onError }) {
       {pairing.devices > 0 && <button class="home-btn home-btn--small" onClick={unpair}>Unpair {pairing.devices === 1 ? 'the device' : `${pairing.devices} devices`}</button>}
     </div>
     {relay && <p class={`home-note home-relay home-relay--${relay.state}`}>{relay.state === 'up' ? 'Connected to your server: the iPad can reach this computer from any network.' : relay.state === 'refused' ? `Connecting to the server failed: ${relay.reason}` : relay.state === 'down' ? 'Lost the connection to the server; reconnecting…' : 'Connecting to your server…'}</p>}
+    {away.length > 0 && <p class="home-ok"><HomeIcon name="check" /> Presenter view open on {devicesText(away)}.</p>}
     {!pairing.available
       ? <p class="home-note">Start <code>mdeck run</code> with <code>--network</code>, so an iPad in the same network can reach it, or with <code>--server</code> to reach it through your server.</p>
       : url
@@ -232,9 +254,10 @@ function Tablet({ pairing, relay, onChange, onError }) {
           </div>
         </div>
         : <>
-          <p>Draw and steer from an iPad while this computer drives the projector. Drawings are saved in the drawings file beside the deck.</p>
+          <p>The iPad opens the same presenter view as this computer, laid out for its screen: you draw and go through the slides there while this computer drives the projector. Drawings are saved in the drawings file beside the deck.</p>
+          <p class="home-note">Pairing is what lets the iPad save drawings and steer the audience window here. Other devices in the network can open the presenter view too, but only watch.</p>
           <button class="home-btn" onClick={offer}>Show pairing code</button>
-          {pairing.devices > 0 && <p class="home-note">{pairing.devices} paired.</p>}
+          {pairing.devices > 0 && <p class="home-note">{pairing.devices === 1 ? 'One device' : `${pairing.devices} devices`} paired.</p>}
         </>}
   </section>
 }
@@ -261,6 +284,8 @@ export function Home() {
     return () => clearInterval(timer)
   }, [sharing])
 
+  const presence = usePresence(info?.presence)
+
   if (!info) return <main class="home home--empty">
     <img src={mark} alt="" width="48" height="48" />
     <p>{loadError ? `The launch page could not load: ${loadError}` : 'Loading…'}</p>
@@ -272,6 +297,7 @@ export function Home() {
   const setOutput = (id, output) => setInfo(current => ({ ...current, outputs: { ...current.outputs, [id]: output } }))
   // With the server key, every screen opened here may move the phones along.
   const code = info.live?.key ? `&serverkey=${encodeURIComponent(info.live.key)}` : ''
+  const openOn = view => { const views = presence?.views.filter(entry => entry.view === view) ?? []; return views.length ? devicesText(views) : null }
   const meta = [`${info.slides} slide${info.slides === 1 ? '' : 's'}`, info.notes ? `${info.notes} with notes` : 'no speaker notes', `theme ${info.theme}${info.palette ? ` · ${info.palette}` : ''}`, `saved ${ago(info.modified)}`]
 
   return <main class="home">
@@ -294,10 +320,13 @@ export function Home() {
       <Preview info={info} />
 
       <section class="home-section">
-        <h2>Present</h2>
+        <div class="home-section-head">
+          <h2>Present</h2>
+          <ConnectedViews presence={presence} phones={!!info.live} />
+        </div>
         <div class="home-tiles">
-          <ViewTile icon="presenter" title="Presenter view" text="Present and draw, with notes, timer and next slide. Switch to slides only or fullscreen." href={`${BASE}?view=presenter&session=${SESSION}${code}`} />
-          <ViewTile icon="projector" title="Audience window" text="Slides for the projector, without notes. Navigation stays in sync with the presenter." href={`${BASE}?view=audience&session=${SESSION}${code}`} />
+          <ViewTile icon="presenter" title="Presenter view" text="Present and draw, with notes, timer and next slide. Switch to slides only or fullscreen." href={`${BASE}?view=presenter&session=${SESSION}${code}`} open={openOn('presenter')} />
+          <ViewTile icon="projector" title="Audience window" text="Slides for the projector, without notes. Navigation stays in sync with the presenter." href={`${BASE}?view=audience&session=${SESSION}${code}`} open={openOn('audience')} />
           <ViewTile icon="reader" title="Reader view" text="Outline, reading mode and look picker, as people you send it to see it." href={`${BASE}?view=reader`} />
         </div>
       </section>
@@ -310,9 +339,9 @@ export function Home() {
         </div>
       </section>
 
-      {info.live && <LivePolls live={info.live} onRecheck={load} />}
+      {info.live && <LivePolls live={info.live} presence={presence} onRecheck={load} />}
 
-      {info.pairing && <Tablet pairing={info.pairing} relay={info.relay} onChange={load} onError={setError} />}
+      {info.pairing && <Tablet pairing={info.pairing} relay={info.relay} presence={presence} onChange={load} onError={setError} />}
 
       <section class="home-section home-section--wide">
         <h2>Share</h2>

@@ -122,7 +122,8 @@
   }
 
   render()
-  const source = new EventSource(new URL(`rooms/${encodeURIComponent(code)}/events`, base))
+  // view=phone: the presenter sees how many phones are connected.
+  const source = new EventSource(new URL(`rooms/${encodeURIComponent(code)}/events?view=phone&device=phone`, base))
   source.addEventListener('snapshot', event => { connected = true; follow(JSON.parse(event.data).state) })
   source.addEventListener('error', () => { connected = false; render() })
   source.addEventListener('state', event => follow(JSON.parse(event.data).state))

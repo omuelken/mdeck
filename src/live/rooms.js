@@ -14,6 +14,10 @@ const ANSWER_FILES = Object.fromEntries(['answer.html', 'answer.js', 'answer.css
 const ANSWER_TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8' }
 
 export const ROOM_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/
+// What a connected window may say it is, for the presenter's overview of
+// who is connected (src/components/ConnectedViews.jsx); phones only count.
+export const VIEWS = ['presenter', 'audience', 'deck', 'phone']
+export const DEVICES = ['computer', 'ipad', 'tablet', 'phone']
 const HOUR = 60 * 60 * 1000
 
 export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500, idleMs = 12 * HOUR, now = Date.now } = {}) {
@@ -24,13 +28,21 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
     if (!room) {
       if (rooms.size >= maxRooms) prune()
       if (rooms.size >= maxRooms) throw Object.assign(new Error('Too many rooms are open on this server'), { status: 503 })
-      room = { messages: [], state: null, stamp: 0, screens: new Map(), ink: [], listeners: new Set(), next: 1, touched: now() }
+      room = { messages: [], state: null, stamp: 0, screens: new Map(), ink: [], listeners: new Set(), present: new Map(), next: 1, touched: now() }
       rooms.set(id, room)
     }
     room.touched = now()
     return room
   }
   const broadcast = (room, event) => { for (const listener of room.listeners) listener(event) }
+  // A session is a room and the rooms named after it (`<code>.stage`, …).
+  const sessionRooms = id => { const session = id.split('.')[0]; return [...rooms].filter(([name]) => name === session || name.startsWith(`${session}.`)).map(([, room]) => room) }
+  const presence = id => {
+    const present = sessionRooms(id).flatMap(room => [...room.present.values()])
+    const views = present.filter(entry => entry.view !== 'phone').sort((a, b) => VIEWS.indexOf(a.view) - VIEWS.indexOf(b.view))
+    return { views, phones: present.length - views.length }
+  }
+  const announcePresence = id => { const event = { type: 'presence', presence: presence(id) }; for (const room of sessionRooms(id)) broadcast(room, event) }
   return {
     post(id, { from = null, data }) {
       const room = get(id)
@@ -86,10 +98,18 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
     ink: id => get(id).ink,
     snapshot: id => get(id).messages,
     state: id => get(id).state,
-    subscribe(id, listener) {
+    presence: id => { get(id); return presence(id) },
+    // A listener that says what it is ({ view, device }) counts in the
+    // session's presence; every change reaches all of the session's rooms.
+    subscribe(id, listener, present = null) {
       const room = get(id)
       room.listeners.add(listener)
-      return () => { room.listeners.delete(listener); room.touched = now() }
+      if (present) { room.present.set(listener, present); announcePresence(id) }
+      return () => {
+        room.listeners.delete(listener)
+        room.touched = now()
+        if (room.present.delete(listener)) announcePresence(id)
+      }
     },
     get size() { return rooms.size },
   }
@@ -156,7 +176,10 @@ function reply(response, status, body) {
 // Routes, relative to where the handler is mounted:
 //   GET  /<code>               the phones' answer page (and answer.js, answer.css)
 //   GET  /info                 { canReset, ...extra }
-//   GET  /rooms/<id>/events    Server-Sent Events: snapshot, message, reset, state
+//   GET  /rooms/<id>/events    Server-Sent Events: snapshot, message, reset, state;
+//                              ?view=…&device=… counts this window as connected,
+//                              ?presence=1 adds who is connected to the session
+//   GET  /rooms/<id>/presence  who is connected to the session, once
 //   POST /rooms/<id>           { from, data } → { n }
 //   POST /rooms/<id>/reset     presenter only
 //   POST /rooms/<id>/state     { state } — presenter only
@@ -177,7 +200,7 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
         response.writeHead(200, { 'Content-Type': ANSWER_TYPES[name.split('.').pop()], 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' })
         return response.end(ANSWER_FILES[name])
       }
-      const match = pathname.match(/^\/rooms\/([^/]+)(\/events|\/reset|\/state|\/ink)?$/)
+      const match = pathname.match(/^\/rooms\/([^/]+)(\/events|\/presence|\/reset|\/state|\/ink)?$/)
       if (!match) return next()
       const id = decodeURIComponent(match[1])
       if (!ROOM_RE.test(id)) return reply(response, 400, { error: 'Room names use letters, digits, dots, hyphens and underscores' })
@@ -185,12 +208,19 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
         response.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' })
         const write = (event, data) => response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
         const ink = rooms.ink(id)
-        write('snapshot', { messages: rooms.snapshot(id), state: rooms.state(id), ...(ink.length ? { ink } : {}) })
-        const unsubscribe = rooms.subscribe(id, event => write(event.type, event.type === 'message' ? event.message : event.type === 'state' ? { state: event.state } : event.type === 'ink' ? { messages: event.messages } : {}))
+        const view = searchParams.get('view'), device = searchParams.get('device')
+        const present = VIEWS.includes(view) ? { view, device: DEVICES.includes(device) ? device : 'computer' } : null
+        const wantsPresence = searchParams.get('presence') === '1'
+        write('snapshot', { messages: rooms.snapshot(id), state: rooms.state(id), ...(ink.length ? { ink } : {}), ...(wantsPresence ? { presence: rooms.presence(id) } : {}) })
+        const unsubscribe = rooms.subscribe(id, event => {
+          if (event.type === 'presence') { if (wantsPresence) write('presence', event.presence); return }
+          write(event.type, event.type === 'message' ? event.message : event.type === 'state' ? { state: event.state } : event.type === 'ink' ? { messages: event.messages } : {})
+        }, present)
         const beat = setInterval(() => response.write(': ping\n\n'), heartbeatMs)
         request.on('close', () => { clearInterval(beat); unsubscribe() })
         return
       }
+      if (match[2] === '/presence' && request.method === 'GET') return reply(response, 200, rooms.presence(id))
       if (request.method !== 'POST') return reply(response, 405, { error: 'Method not allowed' })
       if (match[2] === '/ink') {
         if (!canReset(request, id)) return reply(response, 403, { error: 'Only the presenter can draw' })

@@ -12,9 +12,9 @@ after(() => live.close())
 const post = (room, body, headers = {}) => fetch(`${live.url}/rooms/${room}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) })
 
 // Reads Server-Sent Events until `count` events arrived.
-async function events(room, count, during = async () => {}) {
+async function events(room, count, during = async () => {}, query = '') {
   const controller = new AbortController()
-  const response = await fetch(`${live.url}/rooms/${room}/events`, { signal: controller.signal })
+  const response = await fetch(`${live.url}/rooms/${room}/events${query}`, { signal: controller.signal })
   assert.equal(response.headers.get('content-type'), 'text/event-stream; charset=utf-8')
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
@@ -195,4 +195,32 @@ test('only the presenter relays ink; listeners get it at once and late ones get 
   assert.deepEqual(seen[0].data.ink, [op], 'the snapshot has the changes, not the strokes in progress')
   assert.deepEqual(seen[1], { type: 'ink', data: { messages: [segment] } })
   assert.equal((await relay(Array.from({ length: 101 }, () => segment), { Authorization: 'Bearer secret' })).status, 400)
+})
+
+test('windows that say what they are count as connected to their session, and leave when they close', async () => {
+  const open = []
+  const connect = async (room, query) => { const controller = new AbortController(); open.push(controller); await fetch(`${live.url}/rooms/${room}/events?${query}`, { signal: controller.signal }) }
+  const seen = await events('424242.stage', 4, async () => {
+    await connect('424242.stage', 'view=presenter&device=ipad')
+    await connect('424242', 'view=phone&device=phone')
+    open.shift().abort()
+  }, '?presence=1')
+  assert.deepEqual(seen[0].data.presence, { views: [], phones: 0 })
+  assert.deepEqual(seen.slice(1).map(event => event.data), [
+    { views: [{ view: 'presenter', device: 'ipad' }], phones: 0 },
+    { views: [{ view: 'presenter', device: 'ipad' }], phones: 1 },
+    { views: [], phones: 1 },
+  ])
+  for (const controller of open) controller.abort()
+  // Unknown views do not count, unknown devices are computers, and only asking windows hear it.
+  const rooms = createRooms()
+  rooms.subscribe('1.stage', () => {}, { view: 'audience', device: 'computer' })
+  rooms.subscribe('2.stage', () => {}, { view: 'deck', device: 'computer' })
+  assert.deepEqual(rooms.presence('1'), { views: [{ view: 'audience', device: 'computer' }], phones: 0 })
+  // The same, asked once; closed connections leave a moment after they close.
+  const ask = async () => (await fetch(`${live.url}/rooms/424242.stage/presence`)).json()
+  for (let tries = 0; (await ask()).phones && tries < 50; tries++) await new Promise(done => setTimeout(done, 20))
+  assert.deepEqual(await ask(), { views: [], phones: 0 })
+  const quiet = await events('424243.stage', 1, undefined, '?view=nonsense&device=toaster')
+  assert.equal(quiet[0].data.presence, undefined)
 })

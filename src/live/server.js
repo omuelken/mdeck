@@ -49,7 +49,7 @@ export function controlProxy({ upstream, key, session, authorize }) {
   return (request, response) => {
     const url = new URL(request.url, 'http://localhost')
     let room
-    try { room = decodeURIComponent(url.pathname.match(/^\/rooms\/([^/]+)(?:\/(?:events|reset|state|ink))?$/)?.[1] ?? '') } catch {}
+    try { room = decodeURIComponent(url.pathname.match(/^\/rooms\/([^/]+)(?:\/(?:events|presence|reset|state|ink))?$/)?.[1] ?? '') } catch {}
     const code = session()
     const scoped = room === code || room?.startsWith(`${code}.`)
     const allowed = authorize(request)

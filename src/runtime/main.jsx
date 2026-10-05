@@ -25,6 +25,7 @@ import { SlideRenderer, manifests } from '../layouts/renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import { setDeckLanguage, deckLanguage, stageLabels, t } from '../core/labels.js'
 import { Icon } from '../components/Icon.jsx'
+import { ConnectedViews } from '../components/ConnectedViews.jsx'
 import './deck-stage.js'
 
 const PresenterIcon = ({ name, size = 18 }) => <Icon name={name} size={size} style={{ display: 'block' }} />
@@ -143,6 +144,28 @@ function sendTo(win, command, value) {
   win.postMessage({ deckControl: { command, value } }, '*')
 }
 
+// Who is connected, as the presenter's main frame hears it from the server.
+// Kept from the first message on, since a presenter view opened in a
+// background tab runs its effects only once it is shown.
+let lastPresence = null
+const presenceListeners = new Set()
+function followPresence() {
+  window.addEventListener('message', ({ data, origin }) => {
+    if (origin !== window.location.origin || !data?.presence) return
+    lastPresence = data.presence
+    for (const listener of presenceListeners) listener(lastPresence)
+  })
+}
+function usePresence() {
+  const [presence, setPresence] = useState(lastPresence)
+  useEffect(() => {
+    presenceListeners.add(setPresence)
+    setPresence(lastPresence)
+    return () => presenceListeners.delete(setPresence)
+  }, [])
+  return presence
+}
+
 function PresenterView({ deckConfig, slides }) {
   const [index, setIndex] = useState(0)
   const [theme, setTheme] = useState(deckConfig.theme ?? 'neue')
@@ -152,6 +175,7 @@ function PresenterView({ deckConfig, slides }) {
   const [audienceConnected, setAudienceConnected] = useState(false)
   const [noteSize, setNoteSize] = useState(13)
   const [inking, setInking] = useState(false)
+  const presence = usePresence()
   // 'slide': the slide fills the screen (an iPad); the notes open as a drawer.
   const [layout, setLayout] = useState(() => {
     try { const saved = localStorage.getItem('mdeck-presenter-layout'); if (saved) return saved } catch {}
@@ -332,6 +356,7 @@ function PresenterView({ deckConfig, slides }) {
       {slideLayout && (
         <div class="presenter-pill" role="toolbar" aria-label="Presenter" style={{ position: 'fixed', top: 'max(10px, env(safe-area-inset-top))', right: 'max(10px, env(safe-area-inset-right))', zIndex: 20, display: 'flex', gap: '4px', alignItems: 'center', padding: '4px', borderRadius: '12px', background: 'rgba(17,17,17,0.88)', border: '1px solid #2a2a2a', color: '#ccc', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
           <span style={{ padding: '0 8px', color: '#888' }}>{index + 1}/{slides.length}</span>
+          <ConnectedViews presence={presence} phones={hasActivities()} style={{ color: '#888', padding: '0 6px' }} />
           <button style={{ ...pill, color: timerRunning ? '#f0f0f0' : '#777' }} title="Start or pause the timer" onClick={() => setTimerRunning(r => !r)}>{clock}</button>
           <button style={pill} title="Previous" aria-label="Previous" onClick={() => navCommand('prev')}><PresenterIcon name="prev" /></button>
           <button style={pill} title="Next" aria-label="Next" onClick={() => navCommand('next')}><PresenterIcon name="next" /></button>
@@ -356,7 +381,10 @@ function PresenterView({ deckConfig, slides }) {
       }}>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <span style={{ fontWeight: 600, color: '#f0f0f0', fontSize: '14px' }}>Speaker View</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontWeight: 600, color: '#f0f0f0', fontSize: '14px' }}>Speaker View</span>
+            <ConnectedViews presence={presence} phones={hasActivities()} style={{ color: '#888' }} />
+          </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {!slideLayout && canFullscreen && <button style={{ ...S.btn, padding: '3px 8px' }} title="Full screen (F)" onClick={() => fullscreen.toggle()}><PresenterIcon name="fullscreen" /></button>}
             {!slideLayout && <button class="presenter-layout" style={{ ...S.btn, padding: '3px 8px' }} title="Slide only, notes in a drawer (for an iPad)" onClick={() => chooseLayout('slide')}><PresenterIcon name="tablet" /></button>}
@@ -646,6 +674,7 @@ async function init() {
 
   if (presenterMode) {
     actAsPresenter()
+    followPresence()
     document.body.style.margin = '0'
     const s = document.createElement('style')
     s.textContent = `
@@ -722,11 +751,12 @@ async function init() {
   if (inkStage && drawHere) {
     attachInk(inkStage, {
       storageKey: inkStorageKey,
-      transports: [roomTransport({ receive: true })],
+      // The presenter's main frame tells the presenter view who is connected.
+      transports: [roomTransport({ receive: true, view: embedded ? 'presenter' : 'deck', onPresence: embedded ? presence => window.parent.postMessage({ presence }, window.location.origin) : null })],
       onMode: inking => { if (embedded) window.parent.postMessage({ inkMode: inking }, window.location.origin) },
     })
   } else if (inkStage && audienceMode) {
-    watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true })] })
+    watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true, view: 'audience' })] })
   } else if (inkStage) watchInk(inkStage, { storageKey: inkStorageKey })
 
   // A full deck or audience window is a presenter's screen; previews are embedded.

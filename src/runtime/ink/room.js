@@ -7,11 +7,15 @@
 // position. Next-slide previews do not connect, since browsers allow few
 // connections per server.
 import { stageRoom } from '../../live/client.js'
+import { presenceQuery } from '../../live/presence.js'
 
 const BATCH_MS = 80
 
-/** An ink bus transport through the stage room; `listen` only when `receive`. */
-export function roomTransport({ receive = false } = {}) {
+/**
+ * An ink bus transport through the stage room; `listen` only when `receive`.
+ * `view` counts this window as connected; `onPresence` hears who else is.
+ */
+export function roomTransport({ receive = false, view = null, onPresence = null } = {}) {
   const room = stageRoom()
   let queue = [], timer = null, allowed = null, listeners = 1, source = null
 
@@ -42,8 +46,13 @@ export function roomTransport({ receive = false } = {}) {
     },
     listen(handler) {
       if (!receive || typeof EventSource === 'undefined') return
-      source = new EventSource(`${room.url}/events`)
-      source.addEventListener('snapshot', event => { for (const message of JSON.parse(event.data).ink ?? []) handler(message) })
+      source = new EventSource(`${room.url}/events?${presenceQuery({ view, listen: !!onPresence })}`)
+      source.addEventListener('snapshot', event => {
+        const snapshot = JSON.parse(event.data)
+        for (const message of snapshot.ink ?? []) handler(message)
+        if (snapshot.presence) onPresence?.(snapshot.presence)
+      })
+      if (onPresence) source.addEventListener('presence', event => onPresence(JSON.parse(event.data)))
       source.addEventListener('ink', event => { for (const message of JSON.parse(event.data).messages) handler(message) })
       for (const listener of stateListeners) source.addEventListener('snapshot', event => listener(JSON.parse(event.data).state))
       for (const listener of stateListeners) source.addEventListener('state', event => listener(JSON.parse(event.data).state))
