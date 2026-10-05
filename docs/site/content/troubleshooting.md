@@ -17,12 +17,12 @@ Check that the terminal is open in the folder containing your talk. Look at the 
 For a file in another folder, give its path:
 
 ```sh
-mdeck dev "talks/my garden talk.md"
+mdeck run "talks/my garden talk.md"
 ```
 
 ## The preview does not update
 
-Save the slide file, and check that the terminal running `mdeck dev` is still open. Make sure you are viewing the browser address printed by that command.
+Save the slide file, and check that the terminal running `mdeck run` is still open. Make sure you are viewing the browser address printed by that command.
 
 If you changed the file's name or moved it, stop the old preview with `Ctrl+C` and start it with the new path.
 
@@ -68,7 +68,7 @@ Online videos and live Python need a network connection. A self-contained build 
 
 ## Phones cannot open the poll
 
-The QR code points at your computer when you present with `mdeck dev my-talk.md --host`. The phones must be in the same network. Many large Wi-Fi networks, often at universities, do not let devices reach each other, even when both are connected.
+The QR code points at your computer when you present with `mdeck run my-talk.md --host`. The phones must be in the same network. Many large Wi-Fi networks, often at universities, do not let devices reach each other, even when both are connected.
 
 Try a phone hotspot that both your computer and the phones join, or use a room server on the internet as described in [Ask your audience](audience.html#use-it-in-a-real-session). If the slide says phones cannot reach it, you started without `--host`.
 

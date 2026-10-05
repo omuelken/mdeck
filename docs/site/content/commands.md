@@ -9,9 +9,8 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | Command | Use it to… |
 |---|---|
 | `mdeck new` | Make a presentation with guided questions |
-| `mdeck dev my-talk.md` | Open the launch page: present, edit, share and check from one place; slides reload when you save |
+| `mdeck run my-talk.md` | Open the launch page: present, edit, share and check from one place; slides reload when you save |
 | `mdeck edit my-talk.md` | Edit slides, colors and designs in the browser; saves to the file |
-| `mdeck present my-talk.md` | Open your slides with presenter notes and controls |
 | `mdeck check my-talk.md` | Check settings and look for missing local files |
 | `mdeck build my-talk.md` | Make a shareable presentation in the `dist` folder |
 | `mdeck preview` | Open the last build from the current folder |
@@ -21,7 +20,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 
 ## The launch page
 
-`mdeck dev my-talk.md` opens a page on your own computer with everything for this talk. It is what the preview's plain address, such as `http://localhost:5173/`, shows; the slides themselves are at `?view=deck`.
+`mdeck run my-talk.md` opens a page on your own computer with everything for this talk. It is what the preview's plain address, such as `http://localhost:5173/`, shows; the slides themselves are at `?view=deck`.
 
 - **Preview:** a small live copy of the deck to flip through; click it to open the full-screen deck at that slide.
 - **Present:** the presenter view and an audience window that follows it, the full-screen deck and the reader view, each in a new tab.
@@ -30,9 +29,9 @@ For how the commands, the views and the servers fit together, see [Views, comman
 - **Live polls:** for a deck with polls: the room server (built in, or `live.server` and whether it answers), the join link and session code for phones, and for a room server of your own the presenter code that lets your browser move the phones along and reset polls (see below).
 - **Check:** the same problems `mdeck check` reports, such as missing pictures.
 
-The presenter code is the key the room server was started with. Start `mdeck dev` with the same key, for example `MDECK_LIVE_KEY=choose-a-secret mdeck dev my-talk.md`, and the launch page shows it, and its presenter, audience and deck buttons open those views with it, so they move the phones along. The code is removed from the address as soon as a page has it. The code never goes into the slide file, because that file reaches everyone who opens the slides.
+The presenter code is the key the room server was started with. Start `mdeck run` with the same key, for example `MDECK_LIVE_KEY=choose-a-secret mdeck run my-talk.md`, and the launch page shows it, and its presenter, audience and deck buttons open those views with it, so they move the phones along. The code is removed from the address as soon as a page has it. The code never goes into the slide file, because that file reaches everyone who opens the slides.
 
-Add `--host` to reach the slides from phones and tablets in the same network. The launch page itself and its buttons only work on your own computer. `--port 4000` chooses the port and `--no-open` starts without opening a browser. `mdeck present` takes the same options and opens the presenter view instead.
+Add `--host` to reach the slides from phones and tablets in the same network. Add `--share` to present from an iPad on any network through your own room server: the deck needs `live: server:` and the key goes in `MDECK_LIVE_KEY`. See [Draw on your slides](drawing.html#present-from-an-ipad). The launch page itself and its buttons only work on your own computer. `--port 4000` chooses the port and `--no-open` starts without opening a browser.
 
 ## Open a particular guide
 
@@ -113,4 +112,4 @@ Installs the slide-writing skill for the assistants you use, or prints it for an
 
 `node bin/mdeck.js` runs the same program directly from its project folder. It is useful when working on mdeck itself, but it is not a replacement you need to learn for everyday use.
 
-From the project folder, `npm run dev -- my-talk.md` and `npm run build -- my-talk.md` are also available. These use the same program.
+From the project folder, `npm start -- my-talk.md` and `npm run build -- my-talk.md` are also available. These use the same program.

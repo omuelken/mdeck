@@ -11,13 +11,13 @@ function byId(list = []) { return Object.fromEntries(list.map(item => [item.id, 
 
 export function derive(source, manifests) {
   const deck = parseSlides(source)
-  const diagnostics = validateDeck(deck, { templates: manifests.templates, themes: manifests.themes, palettes: manifests.palettes })
+  const diagnostics = validateDeck(deck, { layouts: manifests.layouts, themes: manifests.themes, palettes: manifests.palettes })
   return { deck, diagnostics }
 }
 
 export const initialState = {
   loaded: false, path: '', name: '', source: '', hash: null, savedSource: '',
-  deck: null, diagnostics: [], registry: null, manifests: { templates: {}, themes: {}, palettes: {} }, warnings: [],
+  deck: null, diagnostics: [], registry: null, manifests: { layouts: {}, themes: {}, palettes: {} }, warnings: [],
   selectedIndex: 0, tab: 'slide', inspectorMode: 'form',
   history: { past: [], future: [] },
   status: 'saved', conflict: null, error: null, preview: { error: null, slideCount: 0 },
@@ -30,7 +30,7 @@ export function selectedSlide(state) { return state.deck?.slides[state.selectedI
 export function reduce(state, action) {
   switch (action.type) {
     case 'load': {
-      const manifests = { templates: byId(action.registry?.templates), themes: byId(action.registry?.themes), palettes: byId(action.registry?.palettes) }
+      const manifests = { layouts: byId(action.registry?.layouts), themes: byId(action.registry?.themes), palettes: byId(action.registry?.palettes) }
       const { deck, diagnostics } = derive(action.source, manifests)
       return { ...state, loaded: true, path: action.path, name: action.name, source: action.source, savedSource: action.source, hash: action.hash, deck, diagnostics,
         registry: action.registry ?? null, manifests, warnings: action.warnings ?? [], selectedIndex: clamp(state.selectedIndex, deck), history: { past: [], future: [] }, status: 'saved', conflict: null, error: null }
@@ -82,7 +82,7 @@ export function reduce(state, action) {
       return { ...state, source: action.source, savedSource: action.source, hash: action.hash, deck, diagnostics, selectedIndex: clamp(state.selectedIndex, deck), history: { past: [...state.history.past, entry].slice(-HISTORY_LIMIT), future: [] }, status: 'saved' }
     }
     case 'setRegistry': {
-      const manifests = { templates: byId(action.registry?.templates), themes: byId(action.registry?.themes), palettes: byId(action.registry?.palettes) }
+      const manifests = { layouts: byId(action.registry?.layouts), themes: byId(action.registry?.themes), palettes: byId(action.registry?.palettes) }
       const { deck, diagnostics } = derive(state.source, manifests)
       return { ...state, registry: action.registry, manifests, warnings: action.registry?.warnings ?? state.warnings, deck, diagnostics }
     }

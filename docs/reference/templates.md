@@ -26,7 +26,7 @@ extension files are changed, added or removed.
 
 ```toml
 schema = 1
-kind = "template"
+kind = "layout"
 id = "comparison"
 title = "Side-by-side comparison"
 
@@ -68,7 +68,7 @@ footnotes, ID, and navigation behavior.
 
 ```jsx
 import { h } from 'preact'
-import { MarkdownRegion } from 'mdeck/template-api'
+import { MarkdownRegion } from 'mdeck/layout'
 
 export default function Comparison({ regions, props }) {
   return <div class="slide-body">
@@ -91,7 +91,7 @@ in the shared frame.
 
 The framework wraps the result in `SlideFrame`; do not add a second `<section>`
 or frame in your renderer. `SlideFrame`, `MarkdownRegion`, and `HtmlContent` are
-also exported from `mdeck/template-api` for integrations. The API import resolves
+also exported from `mdeck/layout` for integrations. The API import resolves
 through mdeck's build plugin, including when the deck is outside the framework.
 
 Keep CSS scoped to `.slide--comparison` and use theme variables:
@@ -134,12 +134,12 @@ template galleries, or future editor inspectors. Listing and validation do not
 execute template JSX. Packages and a visual editor are not implemented here.
 
 Built-in layouts are ordinary templates under the framework's
-`assets/extensions/templates/` folder and use the same `mdeck/template-api`
+`assets/extensions/templates/` folder and use the same `mdeck/layout`
 import, so they double as worked examples.
 
 See the runnable [custom template example](../../examples/custom-templates/slides.md):
 
 ```sh
-mdeck dev examples/custom-templates/slides.md
+mdeck run examples/custom-templates/slides.md
 mdeck build examples/custom-templates/slides.md
 ```

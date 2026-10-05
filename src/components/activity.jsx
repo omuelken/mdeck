@@ -14,7 +14,7 @@ export const wantsQr = qr => !/^(false|no|off|0)$/i.test(String(qr ?? 'true'))
 /** The join code with the short link, or how to make phones reach the room server. */
 export function JoinCode({ room, joinUrl, localJoinUrl, qr = true, size = 300, label = t('poll.scan') }) {
   if (!qr) return null
-  if (!joinUrl) return <p class="poll-join poll-join--local">{t('poll.unreachable', { command: <code>mdeck dev --host</code>, setting: <code>live.server</code> })} <a href={localJoinUrl} target="_blank" rel="noopener">{t('poll.tryHere')}</a></p>
+  if (!joinUrl) return <p class="poll-join poll-join--local">{t('poll.unreachable', { command: <code>mdeck run --host</code>, setting: <code>live.server</code> })} <a href={localJoinUrl} target="_blank" rel="noopener">{t('poll.tryHere')}</a></p>
   return <a class="poll-join" href={joinUrl} target="_blank" rel="noopener" data-room={room}>
     <QrCode url={joinUrl} size={String(size)} />
     <span>{label}</span>

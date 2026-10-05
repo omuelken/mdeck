@@ -17,8 +17,8 @@ export function DeckSettings({ state, edit }) {
   const { deck, manifests, diagnostics, warnings } = state
   const config = deck.deckConfig
   const patch = (values, group) => edit(d => setDeckConfig(d, values), { group })
-  const design = config.design ?? 'neue'
-  const theme = manifests.themes[design]
+  const themeId = config.theme ?? 'neue'
+  const theme = manifests.themes[themeId]
   const palette = config.palette ? manifests.palettes[config.palette] : null
   const appearance = { theme, palette, params: config.params, accent: config.accent, accent2: config.accent2 }
   const text = (key, value) => patch({ [key]: value === '' ? undefined : value }, `deck:${key}`)
@@ -29,8 +29,8 @@ export function DeckSettings({ state, edit }) {
     <Diagnostics items={[...warnings.map(message => ({ severity: 'warning', message, code: 'extension' })), ...problems]} />
     <p class="section-title">Look</p>
     <Field label="Theme" hint={theme?.description}>
-      <select value={design} onChange={e => text('design', e.currentTarget.value)}>
-        {!theme && <option value={design}>{design}</option>}
+      <select value={themeId} onChange={e => text('theme', e.currentTarget.value)}>
+        {!theme && <option value={themeId}>{themeId}</option>}
         {Object.values(manifests.themes).map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
       </select>
     </Field>

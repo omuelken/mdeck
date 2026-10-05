@@ -1,6 +1,6 @@
 # Share or print your slides
 
-The launch page that `mdeck dev my-talk.md` opens has buttons for the three most common results: a folder to host, one file to send, and a PDF. Each is made next to your slide file. The commands below do the same from the terminal and offer more options.
+The launch page that `mdeck run my-talk.md` opens has buttons for the three most common results: a folder to host, one file to send, and a PDF. Each is made next to your slide file. The commands below do the same from the terminal and offer more options.
 
 ## Send slides to someone
 

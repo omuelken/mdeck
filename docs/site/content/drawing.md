@@ -23,7 +23,7 @@ The audience window, and any other deck window in the same browser, shows every 
 
 Drawings live in a file next to your slides: `my-talk.ink.json` for `my-talk.md`. Keep the two together, and send or check in both.
 
-- **With `mdeck dev` or `mdeck present`**, each stroke is saved in that file as soon as you lift the pen. Nothing reloads, and the talk goes on.
+- **With `mdeck run`**, each stroke is saved in that file as soon as you lift the pen. Nothing reloads, and the talk goes on.
 - A slide that gets its first drawing receives an `id:` in its settings, made from its heading, for example `id: the-important-part`. The drawing stays with that slide when you add or move slides. If you change the `id:` in the editor, the drawing moves with it.
 - If you delete a slide that has drawings, they stay in the file. `mdeck check` tells you about them; bring the slide back, or delete them from the file.
 - The first save of a session keeps a copy of the previous file in `.mdeck-backups`, next to your slides.
@@ -43,11 +43,20 @@ There are two ways.
 
 **The iPad next to your laptop.** The laptop shows the slides on the projector; you draw and go through the slides on the iPad, with your notes on it.
 
-1. Start `mdeck dev my-talk.md --host`, so the iPad in the same network can reach your laptop.
+1. Start `mdeck run my-talk.md --host`, so the iPad in the same network can reach your laptop.
 2. On the launch page, under **Present from an iPad**, choose **Show pairing code** and scan it with the iPad's camera. The presenter view opens on the iPad, paired with your laptop, so it may save drawings and steer the phones of a poll.
 3. On the laptop, open the **audience window** from the same place and move it to the projector. It follows the iPad: slides, revealed points, and drawings as you draw them.
 
-A pairing code works once, for ten minutes. **Unpair** on the launch page ends every pairing; so does stopping `mdeck dev`. Scan a new code afterwards.
+A pairing code works once, for ten minutes. **Unpair** on the launch page ends every pairing; so does stopping `mdeck run`. Scan a new code afterwards.
+
+**The iPad on another network.** Some networks, often big Wi-Fi networks at universities, do not let devices reach each other, and a laptop's firewall may not let the iPad in. With a room server of your own (see [Ask your audience](audience.html#use-it-in-a-real-session)) the iPad does not need to reach your laptop at all: your laptop connects out to the room server, and the room server passes the iPad's requests to it. The slides are not uploaded or stored anywhere.
+
+1. Give the deck the address of your room server, with `live: server: https://example.org` in its settings.
+2. Start `MDECK_LIVE_KEY=your-key mdeck run my-talk.md --share`. The key is the presenter code the room server was started with.
+3. On the launch page, choose **Show pairing code** under **Present from an iPad** and scan it. The address in the code is on your room server and contains a long random name, so treat it like a private link.
+4. Open the **audience window** on the laptop as before. It follows the iPad through the room server.
+
+Everything else works as with `--host`: drawings are saved in the ink file beside the deck, and the iPad may steer polls. Editing the slides on the laptop reloads the iPad too. The room server only passes on what the presenter and audience pages need; the launch page, the editor and the other files in your folder are not reachable through it. Stopping `mdeck run` ends the sharing, and a pairing code stops working when you unpair or stop.
 
 On a touch screen the presenter view shows only the slide, with a small bar at the top: timer, previous and next, draw, **Notes** (a drawer with your notes and the next slide, also **N**), full screen, and a button back to the layout with notes beside the slide. Your choice is remembered on that device.
 

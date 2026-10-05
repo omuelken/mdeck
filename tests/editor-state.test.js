@@ -7,13 +7,13 @@ import { slideTitle, regionsFor, propSource, slideDiagnostics } from '../src/edi
 import { setRegion, insertSlide, removeSlide } from '../src/core/editDeck.js'
 import { loadRegistry, serializeRegistry } from '../src/extensions/discover.js'
 
-const registry = serializeRegistry(loadRegistry('examples/custom-templates/slides.md'))
+const registry = serializeRegistry(loadRegistry('examples/custom-layouts/slides.md'))
 const source = '---\ndesign: neue\n---\n\n---\n:::meta\nlayout: split\nid: one\n:::\n# One\n\n---\n# Two\n'
 const loaded = reduce(initialState, { type: 'load', path: '/x/slides.md', name: 'slides.md', source, hash: 'h1', registry })
 
 test('loading derives the deck, manifests and diagnostics', () => {
   assert.equal(loaded.deck.slides.length, 2)
-  assert.equal(loaded.manifests.templates.split.title, 'Split content')
+  assert.equal(loaded.manifests.layouts.split.title, 'Split content')
   assert.equal(loaded.manifests.themes.neue.tokens['--accent'], '#0d9488')
   assert.deepEqual(loaded.diagnostics, [])
   assert.equal(loaded.status, 'saved')
@@ -123,9 +123,9 @@ test('schema and model helpers', () => {
   assert.equal(formatFieldValue('yaml', [1, 2]), '[1, 2]')
   assert.equal(formatFieldValue('text', undefined), '')
   const slide = loaded.deck.slides[0]
-  assert.equal(slideTitle(slide, 0, loaded.manifests.templates.split), 'One')
+  assert.equal(slideTitle(slide, 0, loaded.manifests.layouts.split), 'One')
   assert.equal(slideTitle({ content: '', meta: {} }, 3, null), 'Slide 4')
-  const regions = regionsFor(slide, loaded.manifests.templates.split)
+  const regions = regionsFor(slide, loaded.manifests.layouts.split)
   assert.deepEqual(regions.map(r => [r.name, r.present]), [['body', true], ['left', false], ['right', false]])
   assert.equal(propSource({ image: 'x.png' }, 'image'), 'legacy')
   assert.equal(propSource({ props: { image: 'x.png' } }, 'image'), 'props')

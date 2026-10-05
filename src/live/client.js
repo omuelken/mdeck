@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from 'preact/hooks'
 import { sessionCode } from './code.js'
 import { pairToken } from './pairing.js'
+import { devPath } from '../core/devPath.js'
 import { t, deckLanguage } from '../core/labels.js'
 
 // The QR code component the built-in poll uses, for your own activities.
@@ -18,9 +19,13 @@ export { default as QrCode } from '../components/QrCode.jsx'
 let settings = { server: null, code: '000000' }
 
 // Called by the runtime with the deck settings.
+// `mdeck run --server <address>` and MDECK_SERVER name the server without the
+// deck; the dev server passes it in as __MDECK_SERVER__ and it wins.
+const givenServer = typeof __MDECK_SERVER__ === 'string' ? __MDECK_SERVER__ : null
+
 export function configureLive(deckConfig = {}) {
-  const live = deckConfig.live ?? {}
-  settings = { server: typeof live.server === 'string' ? live.server.replace(/\/+$/, '') : null, code: sessionCode(deckConfig) }
+  const server = givenServer ?? deckConfig.server
+  settings = { server: typeof server === 'string' ? server.replace(/\/+$/, '') : null, code: sessionCode(deckConfig) }
   takeKeyFromAddress()
 }
 
@@ -28,8 +33,8 @@ export function configureLive(deckConfig = {}) {
 export const liveCode = () => settings.code
 
 const page = () => new URL(window.location.href)
-// Without `live.server`, the room server built into `mdeck dev`.
-const serverBase = () => settings.server ?? new URL('/__mdeck/live', window.location.origin).href
+// Without a `server` setting, the room server built into `mdeck run`.
+const serverBase = () => settings.server ?? new URL(devPath('__mdeck/live'), window.location.origin).href
 const roomPath = room => `${serverBase()}/rooms/${encodeURIComponent(`${settings.code}.${room}`)}`
 const sessionPath = () => `${serverBase()}/rooms/${encodeURIComponent(settings.code)}`
 
@@ -53,25 +58,31 @@ function useActive(room) {
   return activeRooms == null || activeRooms.has(String(room))
 }
 
-// The presenter unlocks a standalone room server once with ?livekey=… in the
+// The presenter unlocks a standalone server once with ?serverkey=… in the
 // address. The code is kept in this browser, where the presenter view's other
 // windows find it, and taken out of the address bar at once, so it never shows
 // on a projector.
 let givenKey = null
 function takeKeyFromAddress() {
   const url = page()
-  const given = url.searchParams.get('livekey')
+  const given = url.searchParams.get('serverkey')
   if (!given) return
   givenKey = given
-  try { localStorage.setItem(`mdeck-live-key:${serverBase()}`, given) } catch {}
-  url.searchParams.delete('livekey')
+  try { localStorage.setItem(`mdeck-server-key:${serverBase()}`, given) } catch {}
+  url.searchParams.delete('serverkey')
   try { history.replaceState(history.state, '', url) } catch {}
 }
-// The room server built into `mdeck dev` also lets a paired iPad in.
+// The room server built into `mdeck run` also lets a paired iPad in, and so
+// does the room server that relays `mdeck run --share`: this page then comes
+// from it, so it is the same origin. The token is never sent to another server.
+function ownServer() {
+  if (!settings.server) return true
+  try { return new URL(settings.server).origin === window.location.origin } catch { return false }
+}
 function presenterKey() {
   let key = givenKey
-  try { key = localStorage.getItem(`mdeck-live-key:${serverBase()}`) ?? givenKey } catch {}
-  return key ?? (settings.server ? null : pairToken())
+  try { key = localStorage.getItem(`mdeck-server-key:${serverBase()}`) ?? givenKey } catch {}
+  return key ?? (ownServer() ? pairToken() : null)
 }
 const withKey = (headers = {}) => { const key = presenterKey(); return key ? { ...headers, Authorization: `Bearer ${key}` } : headers }
 
@@ -86,7 +97,7 @@ function serverInfo() {
   return infoRequest
 }
 
-// The join link phones can open: `live.server`, or `mdeck dev --host`'s
+// The join link phones can open: `live.server`, or `mdeck run --host`'s
 // network address. null when only this computer can reach the room server;
 // `localJoinUrl` then still opens the answer page here, for trying it out.
 function joinUrl(info) {

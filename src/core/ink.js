@@ -1,7 +1,7 @@
 // Slide annotations ("ink"): the file format and the operations on it, as
 // pure functions for the browser and for Node.
 //
-// A deck's ink lives in `<deck>.ink.json` beside `<deck>.md`:
+// A deck's ink (its drawings) lives in `<deck>.drawings.json` beside `<deck>.md`:
 //   { version: 1, width, height, slides: { <slideId>: [stroke, …] } }
 //   stroke = { id: '<device>:<n>', tool: 'pen' | 'highlighter', color, size,
 //              points: [[x, y, pressure], …] }
@@ -13,8 +13,11 @@ export const INK_VERSION = 1
 export const INK_TOOLS = ['pen', 'highlighter']
 const COLOR_RE = /^#[0-9a-f]{3,8}$|^[a-z]+$/i
 
-/** The ink file that belongs to a deck file. */
-export const inkFileFor = deckPath => String(deckPath).replace(/\.md$/i, '') + '.ink.json'
+/** The drawings file that belongs to a deck file. */
+export const inkFileFor = deckPath => String(deckPath).replace(/\.md$/i, '') + '.drawings.json'
+
+/** Where drawings were kept before 2.0; nothing reads it any more. */
+export const oldInkFileFor = deckPath => String(deckPath).replace(/\.md$/i, '') + '.ink.json'
 
 export function emptyInk({ width = 1920, height = 1080 } = {}) {
   return { version: INK_VERSION, width, height, slides: {} }

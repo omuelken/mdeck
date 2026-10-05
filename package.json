@@ -45,10 +45,10 @@
   "scripts": {
     "test": "node --test",
     "test:browser": "node tools/browser-check.mjs",
+    "test:share": "node tools/share-check.mjs",
     "docs": "node bin/mdeck.js docs",
     "docs:build": "node docs/site/build.js",
-    "dev": "node bin/mdeck.js dev",
-    "present": "node bin/mdeck.js present",
+    "start": "node bin/mdeck.js run",
     "edit": "node bin/mdeck.js edit",
     "build": "node bin/mdeck.js build",
     "preview": "node bin/mdeck.js preview",
@@ -69,6 +69,7 @@
     "qrcode": "^1.5.4",
     "smol-toml": "^1.9.0",
     "vite": "^8.3.1",
-    "vite-plugin-singlefile": "^2.3.3"
+    "vite-plugin-singlefile": "^2.3.3",
+    "ws": "^8.22.0"
   }
 }

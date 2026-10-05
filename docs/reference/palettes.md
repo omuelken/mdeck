@@ -8,7 +8,7 @@ Set `palette:` in the deck frontmatter:
 
 ```yaml
 ---
-design: neue
+theme: neue
 palette: paper
 ---
 ```

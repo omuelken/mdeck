@@ -1,8 +1,0 @@
-schema = 1
-kind = "template"
-id = "generic"
-title = "Content slide"
-description = "Ordinary slide: heading, text, lists, tables, code or pictures."
-
-[regions.body]
-description = "Markdown content"

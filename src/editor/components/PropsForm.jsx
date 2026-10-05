@@ -1,6 +1,6 @@
 import { h } from 'preact'
 import { useState } from 'preact/hooks'
-import { resolveTemplateProps, propertyErrors } from '../../templates/templateProps.js'
+import { resolveLayoutProps, propertyErrors } from '../../layouts/layoutProps.js'
 import { setSlideMeta } from '../../core/editDeck.js'
 import { fieldKind, parseFieldValue, formatFieldValue } from '../schema.js'
 import { propSource } from '../model.js'
@@ -30,7 +30,7 @@ function PropControl({ name, schema, value, authored, onChange }) {
 export function PropsForm({ slide, manifest, slideEdit }) {
   const properties = manifest?.properties ?? {}
   if (!Object.keys(properties).length) return null
-  const values = resolveTemplateProps(manifest, slide.meta)
+  const values = resolveLayoutProps(manifest, slide.meta)
   const write = (key, value) => slideEdit((deck, id, current) => {
     if (propSource(current.authoredMeta, key) === 'legacy') return setSlideMeta(deck, id, { [key]: value })
     const props = { ...(current.authoredMeta.props ?? {}) }

@@ -1,0 +1,31 @@
+schema = 1
+kind = "layout"
+id = "full-bleed-image"
+title = "Full-bleed image"
+description = "A picture filling the whole slide with an optional overlay title."
+frame = "none"
+
+[regions.body]
+description = "Overlay heading and text"
+
+[properties.image]
+type = "string"
+description = "Image path"
+
+[properties.alt]
+type = "string"
+default = ""
+
+[properties.fit]
+type = "string"
+enum = ["cover", "contain"]
+default = "cover"
+
+[properties.position]
+type = "string"
+default = "center"
+
+[properties.overlay]
+type = "boolean"
+description = "Darken the picture behind the text"
+default = false

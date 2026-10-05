@@ -1,7 +1,8 @@
 ---
-design: neue
-institution: none
-authorDate: none
+theme: neue
+show:
+  organization: none
+  author: none
 ---
 
 ---

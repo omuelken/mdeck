@@ -1,8 +1,0 @@
-schema = 1
-kind = "template"
-id = "focus"
-title = "Big statement"
-description = "One strong idea, quote or conclusion in large type."
-
-[regions.body]
-description = "The statement"

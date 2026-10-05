@@ -47,13 +47,13 @@ function syncThemeFonts(urls) {
   }
 }
 
-export async function loadTheme({ design = 'neue', palette, accent, accent2, params = {}, meta = {} } = {}) {
-  const theme = themeEntry(design)
-  if (!theme) throw new Error(`Unknown theme: "${design}". Available: ${THEME_NAMES.join(', ')}`)
+export async function loadTheme({ theme = 'neue', palette, accent, accent2, params = {}, meta = {} } = {}) {
+  const entry = themeEntry(theme)
+  if (!entry) throw new Error(`Unknown theme: "${theme}". Available: ${THEME_NAMES.join(', ')}`)
 
-  const styles = await theme.load()
+  const styles = await entry.load()
   const appearance = buildAppearance({
-    theme: theme.manifest, palette: paletteManifest(palette) ?? null, paletteId: palette ?? '',
+    theme: entry.manifest, palette: paletteManifest(palette) ?? null, paletteId: palette ?? '',
     params, accent, accent2, meta, offline: SELF_CONTAINED,
   })
   for (const warning of appearance.warnings) console.warn(warning)

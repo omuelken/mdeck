@@ -14,7 +14,7 @@ export function Inspector({ state, dispatch, edit }) {
   // Helpers receive the slide as it exists when the edit is applied, so ids
   // shifted by earlier edits never go stale.
   const slideEdit = (fn, options = {}) => edit(d => { const current = d.slides[selectedIndex]; return current ? fn(d, current.id, current) : d.source }, { ...options, group: options.group ? `${options.group}:${selectedIndex}` : undefined })
-  const manifest = manifests.templates[slide.meta.layout ?? 'generic']
+  const manifest = manifests.layouts[slide.meta.layout ?? 'generic']
   const problems = slideDiagnostics(diagnostics, slide)
   return <>
     <div class="tabs">

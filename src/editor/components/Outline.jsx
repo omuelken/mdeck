@@ -8,7 +8,7 @@ export function Outline({ deck, manifests, diagnostics, selectedIndex, onSelect,
     {count === 0 && <p class="empty">No slides yet. Add one to get started.</p>}
     <ol class="outline-list">
       {deck.slides.map((slide, index) => {
-        const manifest = manifests.templates[slide.meta.layout ?? 'generic']
+        const manifest = manifests.layouts[slide.meta.layout ?? 'generic']
         const errors = slideDiagnostics(diagnostics, slide).some(d => d.severity === 'error')
         return <li key={index} class={`outline-item${index === selectedIndex ? ' is-selected' : ''}`} onClick={() => onSelect(index)}>
           <span class="num">{String(index + 1).padStart(2, '0')}</span>

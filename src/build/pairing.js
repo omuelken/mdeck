@@ -1,9 +1,9 @@
-// Pairing another device (an iPad) with `mdeck dev`, so it may do what only
+// Pairing another device (an iPad) with `mdeck run`, so it may do what only
 // this computer may: save ink and steer the rooms. The launch page, which
 // only answers on this computer, offers a one-time address as a QR code; the
 // device trades the one-time token in it for a token of its own, which it
 // sends as `Authorization: Bearer …`. Tokens live in memory: restarting
-// `mdeck dev` or "Unpair" on the launch page ends every pairing.
+// `mdeck run` or "Unpair" on the launch page ends every pairing.
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { send, readJson } from './editorPlugin.js'
 
@@ -14,6 +14,8 @@ const same = (a, b) => { const x = Buffer.from(a), y = Buffer.from(b); return x.
 export function createPairing({ now = Date.now } = {}) {
   const offers = new Map() // one-time token → expiry
   const devices = new Set()
+  const listeners = new Set()
+  const changed = () => { for (const listener of listeners) listener() }
   const bearer = request => (request.headers?.authorization ?? '').replace(/^Bearer\s+/i, '')
 
   return {
@@ -33,6 +35,7 @@ export function createPairing({ now = Date.now } = {}) {
         if (expires < now()) return null
         const device = token()
         devices.add(device)
+        changed()
         return device
       }
       return null
@@ -44,7 +47,11 @@ export function createPairing({ now = Date.now } = {}) {
       for (const device of devices) if (same(device, given)) return true
       return false
     },
-    revoke() { devices.clear(); offers.clear() },
+    revoke() { devices.clear(); offers.clear(); changed() },
+    /** The paired devices' tokens, for the room server of `mdeck run --share`. */
+    tokens: () => [...devices],
+    /** Calls back when a device pairs or all are unpaired; returns a function that stops it. */
+    onChange(listener) { listeners.add(listener); return () => listeners.delete(listener) },
     get devices() { return devices.size },
   }
 }

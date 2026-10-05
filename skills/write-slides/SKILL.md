@@ -33,7 +33,7 @@ If `mdeck` is not installed, rely on the quick reference below.
 
 ```markdown
 ---
-design: neue            # theme id from `mdeck extensions`
+theme: neue            # theme id from `mdeck extensions`
 palette: paper          # optional palette id
 meta:
   title: "Talk title"
@@ -91,7 +91,7 @@ Right column
 - Named areas use `:::slot name … :::`; the layout's regions and settings come from `mdeck templates --json`.
 - `:::notes … :::` holds speaker notes. `:::steps … :::` reveals list items one at a time. `:::tip`, `:::warning`, `:::info` are callouts. `:::columns … +++ … :::` makes columns inside a slide.
 - Code fences get syntax highlighting; `$…$` and `$$…$$` render math.
-- `<poll room="lunch" options="Mensa|Thai|Pizza" />` lets the audience vote on their phones through a QR code on the slide; each poll needs its own `room`. `<scale room="pace" min="1" max="5" low="Too slow" high="Too fast" />`, `<wordcloud room="mood" />` and `<question room="ask" />` ask for a rating, short words or open answers the same way. With several of them, put `<qrcode join />` (the deck's join code) on an early slide to show the QR code once, and add `qr="false"` to the questions. It works when the deck is presented with `mdeck dev <deck>.md --host` or with a room server set under `live:`.
+- `<poll room="lunch" options="Mensa|Thai|Pizza" />` lets the audience vote on their phones through a QR code on the slide; each poll needs its own `room`. `<scale room="pace" min="1" max="5" low="Too slow" high="Too fast" />`, `<wordcloud room="mood" />` and `<question room="ask" />` ask for a rating, short words or open answers the same way. With several of them, put `<qrcode join />` (the deck's join code) on an early slide to show the QR code once, and add `qr="false"` to the questions. It works when the deck is presented with `mdeck run <deck>.md --host` or with a room server set under `live:`.
 
 ## 3. Write the deck
 
@@ -122,4 +122,4 @@ Save the deck as a `.md` file named after the topic (for example `enzyme-kinetic
 mdeck check <deck>.md
 ```
 
-Fix anything it reports. Finish by telling the user the three commands they will want next: `mdeck dev <deck>.md` for the launch page (preview, editor, builds and checks), `mdeck present <deck>.md` to present, and `mdeck build <deck>.md --share --self-contained -o <deck>.html` for a file to send around (a reader view with a PDF; notes are removed unless `--with-notes` is added).
+Fix anything it reports. Finish by telling the user the two commands they will want next: `mdeck run <deck>.md` for the launch page (preview, presenting, editor, builds and checks), and `mdeck build <deck>.md --share --self-contained -o <deck>.html` for a file to send around (a reader view with a PDF; notes are removed unless `--with-notes` is added).

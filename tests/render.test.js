@@ -12,10 +12,10 @@ import { resolve } from 'node:path'
 
 // Own Vite cache per test file: files run in parallel and would otherwise
 // rebuild the shared node_modules/.vite cache at the same time.
-const server = await createServer({ configFile: false, plugins: [preact(), slidesPlugin('examples/custom-templates/slides.md')], server: { middlewareMode: true, hmr: { server: createHttpServer() } }, optimizeDeps: { noDiscovery: true, include: [] }, cacheDir: mkdtempSync(resolve(tmpdir(), 'mdeck-vite-cache-')), appType: 'custom' })
+const server = await createServer({ configFile: false, plugins: [preact(), slidesPlugin('examples/custom-layouts/slides.md')], server: { middlewareMode: true, hmr: { server: createHttpServer() } }, optimizeDeps: { noDiscovery: true, include: [] }, cacheDir: mkdtempSync(resolve(tmpdir(), 'mdeck-vite-cache-')), appType: 'custom' })
 after(() => server.close())
 await server.ssrLoadModule('/src/runtime/markedSetup.js')
-const { SlideRenderer, manifests } = await server.ssrLoadModule('/src/templates/renderSlide.jsx')
+const { SlideRenderer, manifests } = await server.ssrLoadModule('/src/layouts/renderSlide.jsx')
 
 function htmlFragments(node) {
   if (!node || typeof node !== 'object') return ''
@@ -45,7 +45,7 @@ test('nested directives render correctly and preserve code delimiters', () => {
   assert.match(html, /<codeblock[^>]*>\+\+\+/)
 })
 
-test('deck-local templates load through the real plugin and share the frame', () => {
+test('deck-local layouts load through the real plugin and share the frame', () => {
   assert.equal(Object.keys(manifests).length, 8)
   assert.equal(manifests.comparison.title, 'Side-by-side comparison')
   const slide = parseSlides(':::meta\nlayout: comparison\nid: local\n:::\n# Shared\n:::slot left\nLeft[^a]\n:::\n:::slot right\nRight[^b]\n\n[^a]: First source\n[^b]: Second source\n:::').slides[0]

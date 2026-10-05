@@ -32,7 +32,7 @@ function preactAliases() {
 }
 
 // ── Vite config ───────────────────────────────────────────────────────────────
-export function baseConfig(slidesPath, { selfContained = false, defaultView = 'deck' } = {}) {
+export function baseConfig(slidesPath, { selfContained = false, defaultView = 'deck', server = null } = {}) {
   const abs = resolve(slidesPath)
   return {
     configFile: false,
@@ -53,6 +53,7 @@ export function baseConfig(slidesPath, { selfContained = false, defaultView = 'd
     define: {
       __MDECK_SELF_CONTAINED__: JSON.stringify(selfContained),
       __MDECK_DEFAULT_VIEW__: JSON.stringify(defaultView),
+      __MDECK_SERVER__: JSON.stringify(server),
     },
   }
 }

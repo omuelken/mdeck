@@ -1,4 +1,4 @@
-// Maps template property schemas to form controls and back.
+// Maps layout property schemas to form controls and back.
 import yaml from 'js-yaml'
 
 export function fieldKind(schema = {}) {

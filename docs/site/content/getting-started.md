@@ -54,7 +54,7 @@ Save the file. Make sure its name ends in `.md`, not `.md.txt`.
 In a terminal opened in your talk's folder, run:
 
 ```sh
-mdeck dev my-talk.md
+mdeck run my-talk.md
 ```
 
 Your browser opens the launch page for your talk. Click **Full-screen deck** to see the slides. Press the right arrow key to move to the second slide, and the left arrow key to go back.

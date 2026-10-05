@@ -13,7 +13,7 @@ export function MetaFields({ slide, slideEdit }) {
   }} />
   return <>
     <Field label="Slide id" hint="stable anchor and link target">{text('id')}</Field>
-    <Field label="Speaker notes"><TextArea rows={4} value={slide.meta.notes ?? slide.meta.note ?? ''} onInput={value => slideEdit((deck, id) => setSlideNotes(deck, id, value), { group: 'notes' })} /></Field>
+    <Field label="Speaker notes"><TextArea rows={4} value={slide.meta.notes ?? ''} onInput={value => slideEdit((deck, id) => setSlideNotes(deck, id, value), { group: 'notes' })} /></Field>
     <details class="more" open={MORE.some(([key]) => meta[key] != null)}>
       <summary>More metadata</summary>
       <div class="form">

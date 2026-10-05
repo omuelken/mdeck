@@ -9,8 +9,8 @@ import { Resizer } from './Resizer.jsx'
 
 const SAVE_DELAY = 500
 
-// Palette, theme and template editing. Unsaved palettes and themes are
-// previewed live through runtime overrides; template layouts show up after
+// Palette, theme and layout editing. Unsaved palettes and themes are
+// previewed live through runtime overrides; layout code shows up after
 // they are saved and the preview frame reloads.
 export function ExtensionsMode({ state, dispatch, previewReload, onResize }) {
   const [current, setCurrent] = useState(null) // { kind, id, source, files, dirty: {} }
@@ -60,7 +60,7 @@ export function ExtensionsMode({ state, dispatch, previewReload, onResize }) {
       const result = await saveExtension(kind, id, files)
       dispatch({ type: 'setRegistry', registry: result.registry })
       setCurrent({ kind, id, source: 'local', dir: result.dir, files: result.files, dirty: {} }); setStatus('saved'); setError(null)
-      if (kind === 'template') previewReload()
+      if (kind === 'layout') previewReload()
     } catch (caught) { setError(caught.message) }
   }
 
@@ -70,7 +70,7 @@ export function ExtensionsMode({ state, dispatch, previewReload, onResize }) {
       const result = await deleteExtension(target.kind, target.id)
       dispatch({ type: 'setRegistry', registry: result.registry })
       setCurrent(null)
-      if (target.kind === 'template') previewReload()
+      if (target.kind === 'layout') previewReload()
     } catch (caught) { setError(caught.message) }
   }
 
@@ -89,8 +89,8 @@ export function ExtensionsMode({ state, dispatch, previewReload, onResize }) {
   let source = state.source, config = null, overrides = null
   if (current && model) {
     if (current.kind === 'palette') { config = { palette: current.id }; overrides = { palettes: { [current.id]: toRuntimeManifest(model) } } }
-    if (current.kind === 'theme') { config = { design: current.id, palette: '' }; overrides = { themes: { [current.id]: { manifest: toRuntimeManifest(model), styles: current.files['styles.css'] ?? '' } } } }
-    if (current.kind === 'template') source = deckHeader(state.deck) + '\n---\n' + (current.files['starter.md'] ?? `:::meta\nlayout: ${current.id}\n:::\n# ${model.title}\n`)
+    if (current.kind === 'theme') { config = { theme: current.id, palette: '' }; overrides = { themes: { [current.id]: { manifest: toRuntimeManifest(model), styles: current.files['styles.css'] ?? '' } } } }
+    if (current.kind === 'layout') source = deckHeader(state.deck) + '\n---\n' + (current.files['starter.md'] ?? `:::meta\nlayout: ${current.id}\n:::\n# ${model.title}\n`)
   }
   const existing = new Set(Object.values(state.manifests).flatMap(byId => Object.keys(byId)))
 
@@ -102,7 +102,7 @@ export function ExtensionsMode({ state, dispatch, previewReload, onResize }) {
       <Resizer onResize={onResize} />
       {current
         ? <ExtensionEditor extension={current} status={status} error={error} onFiles={onFiles} onDelete={remove} onCopy={() => setDialog({ kind: current.kind, initial: { from: current.id, title: `${current.files[MANIFEST]?.match(/^title = "(.*)"$/m)?.[1] ?? current.id} copy`, id: `${current.id}-copy` } })} />
-        : <div class="form"><p class="empty">Pick a palette, theme or template on the left, or create a new one.{error ? ` ${error}` : ''}</p></div>}
+        : <div class="form"><p class="empty">Pick a palette, theme or layout on the left, or create a new one.{error ? ` ${error}` : ''}</p></div>}
     </aside>
     {dialog && <NewExtensionDialog kind={dialog.kind} initial={dialog.initial ?? null} registry={state.registry} existing={existing} onCreate={create} onClose={() => setDialog(null)} />}
   </>

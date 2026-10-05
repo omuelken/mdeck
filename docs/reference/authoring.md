@@ -10,7 +10,7 @@ A deck is a single `.md` file. The first block is the **deck frontmatter** — i
 
 ```markdown
 ---
-design: neue
+theme: neue
 palette: paper
 meta:
   title: "My Talk"
@@ -665,7 +665,7 @@ Three more activities take the same `room`, `question` and `qr`:
 
 The slide shows live bars, the number of answers, a QR code and a short link. Phones never load the deck: they open the room server's own answer page at `<server>/<code>`, where the six-digit session code is the same for every poll in the deck. The presenter's screen (the presenter view or a full deck window, never an embedded preview) announces the poll on the current slide with what the phones should show and the deck's look; the room server only accepts that from the presenter. Between polls the phones wait. Each device's latest vote counts. The presenter can reset the room (hover over the results).
 
-Rooms run inside `mdeck dev` (add `--host` so phones can reach it) or on a room server started with `mdeck live`, set in the deck:
+Rooms run inside `mdeck run` (add `--host` so phones can reach it) or on a room server started with `mdeck live`, set in the deck:
 
 ```yaml
 live:
@@ -680,7 +680,7 @@ A deck's rooms are named `<code>.<room>` on the server, so decks sharing a serve
 
 ## Drawings (ink)
 
-Drawings on slides live in `<deck>.ink.json` beside `<deck>.md` and are part of every view, build and PDF (`--no-ink` leaves them out). `mdeck dev` and `mdeck present` save them as they are drawn; the guide [Draw on your slides](../site/content/drawing.md) covers drawing and presenting from an iPad.
+Drawings on slides live in `<deck>.ink.json` beside `<deck>.md` and are part of every view, build and PDF (`--no-ink` leaves them out). `mdeck run` saves them as they are drawn; the guide [Draw on your slides](../site/content/drawing.md) covers drawing and presenting from an iPad.
 
 ```json
 {

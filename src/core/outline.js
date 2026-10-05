@@ -25,9 +25,9 @@ export function slideTitle(slide, index, manifest, { slideName = null } = {}) {
   return manifest?.title ?? slide.meta.layout ?? `Slide ${index + 1}`
 }
 
-export function deckOutline(deck, templates = {}, options = {}) {
+export function deckOutline(deck, layouts = {}, options = {}) {
   return deck.slides.map((slide, index) => {
     const layout = slide.meta.layout ?? 'generic'
-    return { index, id: slide.id, title: slideTitle(slide, index, templates[layout], options), layout, chapter: layout === 'chapter', part: slide.meta.part ?? null, section: slide.meta.section ?? null, notes: slide.meta.notes ?? slide.meta.note ?? '' }
+    return { index, id: slide.id, title: slideTitle(slide, index, layouts[layout], options), layout, chapter: layout === 'chapter', part: slide.meta.part ?? null, section: slide.meta.section ?? null, notes: slide.meta.notes ?? '' }
   })
 }

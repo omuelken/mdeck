@@ -1,0 +1,35 @@
+schema = 1
+kind = "layout"
+id = "comparison"
+title = "Side-by-side comparison"
+description = "Two options next to each other, with one of them optionally highlighted."
+
+# layout.jsx, styles.css and starter.md are picked up from this folder by default.
+
+[regions.body]
+description = "Shared heading and introduction"
+
+[regions.left]
+required = true
+description = "First option"
+
+[regions.right]
+required = true
+description = "Second option"
+
+[properties.ratio]
+type = "array"
+description = "Relative widths of the two options"
+minItems = 2
+maxItems = 2
+default = [1, 1]
+
+[properties.ratio.items]
+type = "number"
+minimum = 0.01
+
+[properties.emphasis]
+type = "string"
+description = "Which option gets the highlighted border"
+enum = ["none", "left", "right"]
+default = "none"

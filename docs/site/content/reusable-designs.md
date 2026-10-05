@@ -47,7 +47,7 @@ The example shipped with this project contains two slides. The first uses an ext
 Open it from the project folder:
 
 ```sh
-mdeck dev examples/custom-templates/slides.md
+mdeck run examples/custom-templates/slides.md
 ```
 
 The comparison slide has settings like these:

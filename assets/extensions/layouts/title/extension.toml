@@ -1,0 +1,26 @@
+schema = 1
+kind = "layout"
+id = "title"
+title = "Title slide"
+description = "Opening slide with a headline, subtitle and optional picture."
+frame = "title"
+
+[regions.body]
+description = "Headline, subtitle and any introduction"
+
+[properties.image]
+type = "string"
+description = "Image path"
+
+[properties.alt]
+type = "string"
+default = ""
+
+[properties.fit]
+type = "string"
+enum = ["cover", "contain"]
+default = "cover"
+
+[properties.position]
+type = "string"
+default = "center"

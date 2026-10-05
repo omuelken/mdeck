@@ -35,7 +35,7 @@ export function Preview({ source, selection, config = null, overrides = null, re
     return () => clearTimeout(id)
   }, [ready, source, overridesKey])
 
-  // Template layouts are code inside the preview's module graph: after they
+  // Layout code is code inside the preview's module graph: after they
   // change on disk the frame reloads and reports ready again.
   useEffect(() => { if (reloadKey && frame.current) { setReady(false); frame.current.contentWindow?.location.reload() } }, [reloadKey])
 

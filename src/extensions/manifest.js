@@ -1,14 +1,14 @@
-// The extension manifest contract: one TOML format for templates, themes and
+// The extension manifest contract: one TOML format for layouts, themes and
 // palettes. Parsing and validation happen in Node; the normalized result is
 // plain data that the runtime, CLI and documentation can all share.
 import { existsSync } from 'node:fs'
 import { resolve, relative, isAbsolute, sep } from 'node:path'
 import { parse as parseToml, TomlError } from 'smol-toml'
 import { TOKEN_NAME_RE } from './tokens.js'
-import { propertyErrors } from '../templates/templateProps.js'
+import { propertyErrors } from '../layouts/layoutProps.js'
 
 export const SCHEMA_VERSION = 1
-export const KINDS = ['template', 'theme', 'palette']
+export const KINDS = ['layout', 'theme', 'palette']
 export const ID_RE = /^[a-z][a-z0-9-]*$/
 export const MANIFEST_FILENAME = 'extension.toml'
 
@@ -16,7 +16,7 @@ const FRAMES = ['standard', 'title', 'chapter', 'none']
 const PROPERTY_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object']
 const SHARED_KEYS = ['schema', 'kind', 'id', 'title', 'description']
 const KEYS = {
-  template: [...SHARED_KEYS, 'frame', 'files', 'regions', 'properties'],
+  layout: [...SHARED_KEYS, 'frame', 'files', 'regions', 'properties'],
   theme: [...SHARED_KEYS, 'dark', 'fonts', 'files', 'tokens', 'params', 'accent2', 'accent2Preview'],
   palette: [...SHARED_KEYS, 'dark', 'tokens'],
 }
@@ -64,14 +64,14 @@ export function validateManifest(raw, { file, dir, folderName, fileExists = exis
 
   const files = resolveFiles(raw.files, kind, { dir, fail, fileExists })
   const shared = { id: raw.id, title: raw.title.trim(), description: raw.description?.trim() || '' }
-  const manifest = kind === 'template' ? validateTemplate(raw, shared, fail)
+  const manifest = kind === 'layout' ? validateLayout(raw, shared, fail)
     : kind === 'theme' ? validateTheme(raw, shared, fail)
     : validatePalette(raw, shared, fail)
   return { kind, id: raw.id, title: shared.title, description: shared.description, dir, file, manifest, files }
 }
 
-const FILE_KEYS = { template: ['layout', 'styles', 'starter'], theme: ['styles'], palette: [] }
-const FILE_DEFAULTS = { template: { layout: 'layout.jsx', styles: 'styles.css', starter: 'starter.md' }, theme: { styles: 'styles.css' } }
+const FILE_KEYS = { layout: ['layout', 'styles', 'starter'], theme: ['styles'], palette: [] }
+const FILE_DEFAULTS = { layout: { layout: 'layout.jsx', styles: 'styles.css', starter: 'starter.md' }, theme: { styles: 'styles.css' } }
 
 function resolveFiles(section, kind, { dir, fail, fileExists }) {
   if (section != null && !isPlainObject(section)) fail('files must be a table', 'files')
@@ -96,7 +96,7 @@ function resolveFiles(section, kind, { dir, fail, fileExists }) {
       const fallback = FILE_DEFAULTS[kind]?.[key]
       const abs = fallback ? resolve(dir ?? '.', fallback) : null
       if (abs && fileExists(abs)) files[key] = key === 'styles' ? [abs] : abs
-      else if (kind === 'template' && key === 'layout') fail(`layout.jsx is missing; add it or point files.layout at the layout file`, path)
+      else if (kind === 'layout' && key === 'layout') fail(`layout.jsx is missing; add it or point files.layout at the layout file`, path)
       else files[key] = key === 'styles' ? [] : null
     } else if (key === 'styles') {
       const list = Array.isArray(value) ? value : [value]
@@ -107,7 +107,7 @@ function resolveFiles(section, kind, { dir, fail, fileExists }) {
   return files
 }
 
-function validateTemplate(raw, shared, fail) {
+function validateLayout(raw, shared, fail) {
   if (raw.frame != null && !FRAMES.includes(raw.frame)) fail(`frame must be one of: ${FRAMES.join(', ')}`, 'frame')
   if (!isPlainObject(raw.regions) || !Object.hasOwn(raw.regions, 'body')) fail('regions must include a [regions.body] table', 'regions')
   const regions = {}

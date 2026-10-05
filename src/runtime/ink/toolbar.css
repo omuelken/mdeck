@@ -27,6 +27,34 @@
 @media (max-width: 700px) { .ink-btn, .ink-color, .ink-size { width: 36px; height: 36px; } }
 /* Fingers need bigger targets than a mouse. */
 @media (pointer: coarse) { .ink-btn, .ink-color, .ink-size { width: 44px; height: 44px; } }
+/* The small confirmation popover over the clear button. */
+.ink-anchor { position: relative; display: flex; }
+.ink-pop {
+  position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(calc(-50% + var(--shift, 0px)));
+  display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  padding: 6px 6px 6px 12px; border: 1px solid #3a3a3a; border-radius: 10px;
+  background: #1c1c1c; color: #e6e6e6; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  animation: ink-pop-in 100ms ease-out;
+}
+/* A caret pointing at the button; it stays on the button when the popover is shifted. */
+.ink-pop::after {
+  content: ''; position: absolute; top: 100%; left: calc(50% - var(--shift, 0px)); width: 9px; height: 9px;
+  margin: -5px 0 0 -5px; transform: rotate(45deg);
+  background: #1c1c1c; border: solid #3a3a3a; border-width: 0 1px 1px 0;
+}
+.ink-pop-text { padding-right: 4px; font-size: 13px; color: #cfcfcf; }
+.ink-pop-btn {
+  height: 30px; padding: 0 12px; border: 1px solid #3a3a3a; border-radius: 7px;
+  background: #262626; color: inherit; font: 500 13px/1 system-ui, -apple-system, "Segoe UI", sans-serif; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.ink-pop-btn:hover { background: #303030; }
+.ink-pop-btn.is-danger { background: #e11d48; border-color: #e11d48; color: #fff; }
+.ink-pop-btn.is-danger:hover { background: #f43f5e; border-color: #f43f5e; }
+.ink-pop-btn:focus-visible { outline: 2px solid #6ea0e8; outline-offset: 1px; }
+@keyframes ink-pop-in { from { opacity: 0; margin-bottom: -4px; } }
+@media (pointer: coarse) { .ink-pop-btn { height: 40px; padding: 0 16px; } .ink-pop-text { font-size: 14px; } }
+@media (prefers-reduced-motion: reduce) { .ink-pop { animation: none; } }
 /* No rubber-band scrolling or pull-to-refresh while drawing. */
 html.is-inking, html.is-inking body { overscroll-behavior: none; overflow: hidden; }
 @media print { .ink-toolbar { display: none !important; } }

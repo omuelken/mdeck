@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve, relative } from 'node:path'
 
-// Phones and tablets reach `mdeck dev --host` at http://192.168…, which is not
+// Phones and tablets reach `mdeck run --host` at http://192.168…, which is not
 // a secure context: browsers leave out crypto.randomUUID there, and a page
 // that calls it without a fallback fails to start (polls showed nothing on
 // phones in 1.2). crypto.getRandomValues works everywhere.

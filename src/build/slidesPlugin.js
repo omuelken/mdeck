@@ -110,7 +110,7 @@ export function collectLocalAssetRefs(markdown) {
     add(slide.meta.image)
     add(slide.meta.logo)
     add(slide.meta.props?.image)
-    const bodies = [...Object.values(slide.regions).map(r => r.content), slide.meta.notes ?? slide.meta.note ?? '']
+    const bodies = [...Object.values(slide.regions).map(r => r.content), slide.meta.notes ?? '']
     for (const body of bodies) {
       if (typeof body !== 'string') continue
       marked.walkTokens(marked.lexer(body), token => {
@@ -137,14 +137,14 @@ function maybeInlineAssets(markdown, abs, { inlineImages, inlineMedia }) {
 }
 
 // ─── Extension registry module ────────────────────────────────────────────
-// Templates, themes and palettes are discovered in Node and handed to the
-// browser as one generated module. Template layouts and styles are imported
+// Layouts, themes and palettes are discovered in Node and handed to the
+// browser as one generated module. Layout code and styles are imported
 // eagerly; theme stylesheets stay lazy so only the chosen theme is loaded.
 // Layout JSX is trusted code, not sandboxed data.
 
 export function generateExtensionsModule(registry) {
   const imports = []
-  const templates = Object.values(registry.templates).map((t, i) => {
+  const layouts = Object.values(registry.layouts).map((t, i) => {
     imports.push(`import L${i} from ${JSON.stringify(t.files.layout)}`, ...t.files.styles.map(s => `import ${JSON.stringify(s)}`))
     return `${JSON.stringify(t.id)}: { manifest: ${JSON.stringify(t.manifest)}, render: L${i} }`
   })
@@ -153,7 +153,7 @@ export function generateExtensionsModule(registry) {
     return `${JSON.stringify(t.id)}: { manifest: ${JSON.stringify(t.manifest)}, load: () => Promise.all([${loads.join(', ')}]).then(mods => mods.map(m => m.default).join('\\n')) }`
   })
   const palettes = Object.values(registry.palettes).map(p => `${JSON.stringify(p.id)}: { manifest: ${JSON.stringify(p.manifest)} }`)
-  return `${imports.join('\n')}\nexport const templates = {\n${templates.join(',\n')}\n}\nexport const themes = {\n${themes.join(',\n')}\n}\nexport const palettes = {\n${palettes.join(',\n')}\n}\n`
+  return `${imports.join('\n')}\nexport const layouts = {\n${layouts.join(',\n')}\n}\nexport const themes = {\n${themes.join(',\n')}\n}\nexport const palettes = {\n${palettes.join(',\n')}\n}\n`
 }
 
 // `editor` keeps the page alive while `mdeck edit` rewrites the deck: deck
@@ -200,7 +200,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       for (const event of ['add', 'unlink', 'addDir', 'unlinkDir']) server.watcher.on(event, refresh)
     },
     resolveId(id) {
-      if (id === 'mdeck/template-api') return fileURLToPath(new URL('../templates/templateApi.jsx', import.meta.url))
+      if (id === 'mdeck/layout') return fileURLToPath(new URL('../layouts/layoutApi.jsx', import.meta.url))
       if (id === 'mdeck/live') return fileURLToPath(new URL('../live/client.js', import.meta.url))
       if (id === VIRTUAL_ID) return RESOLVED_ID
       if (id === COMPONENTS_ID) return RESOLVED_COMPONENTS_ID
@@ -214,7 +214,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         const registry = loadRegistry(abs)
         for (const warning of registry.warnings) this.warn(warning)
         const diagnostics = validateDeck(parseSlides(raw), {
-          templates: manifestsOf(registry, 'template'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette'),
+          layouts: manifestsOf(registry, 'layout'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette'),
         })
         const errors = diagnostics.filter(d => d.severity === 'error')
         if (errors.length && !editor) throw new Error(formatDiagnostics(errors, abs))
@@ -222,7 +222,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         const source = maybeInlineAssets(stripNotes ? stripNotesFrom(raw) : raw, abs, { inlineImages, inlineMedia })
         return `export default ${JSON.stringify(source)}`
       }
-      // The deck's saved ink (<deck>.ink.json), scaled to its design size.
+      // The deck's saved ink (<deck>.drawings.json), scaled to its design size.
       // Builds bundle it, so the reader view and PDFs show it too.
       if (id === RESOLVED_INK_ID) {
         // Only an existing file: Vite treats a missing watch file as a missing

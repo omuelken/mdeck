@@ -1,5 +1,5 @@
 import { h } from 'preact'
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import './toolbar.css'
 
 // The floating ink toolbar: previous/next (so a lone iPad can present while
@@ -8,6 +8,7 @@ import './toolbar.css'
 // <deck-stage> (inkTool, inkFinger, data-ink-hidden) and an ink controller.
 
 export const INK_COLORS = ['#e11d48', '#2563eb', '#16a34a', '#f59e0b', '#111111', '#ffffff']
+const COLOR_NAMES = { '#e11d48': 'Red', '#2563eb': 'Blue', '#16a34a': 'Green', '#f59e0b': 'Amber', '#111111': 'Black', '#ffffff': 'White' }
 const SIZES = { pen: [3, 6, 12], highlighter: [18, 30, 48], marker: [4, 8, 14] }
 const TOOLS = [
   ['pen', 'Pen', 'M4 20l4-1 11-11-3-3L5 16zM14 6l3 3'],
@@ -21,7 +22,7 @@ const ICON = {
   clear: 'M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
   eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z',
   eyeOff: 'M3 3l18 18M10.6 5.1A10 10 0 0112 5c6 0 10 7 10 7a17 17 0 01-3 3.8M6.2 6.2C3.6 8 2 12 2 12s4 7 10 7a9.6 9.6 0 004.3-1',
-  finger: 'M9 11V5a2 2 0 014 0v5M13 10V8a2 2 0 014 0v5a7 7 0 01-7 7h-.5A5.5 5.5 0 014 16l-1-3a2 2 0 013.5-1.8L9 14',
+  finger: 'M9 12V5a1.5 1.5 0 013 0v6M12 10.5V9.5a1.5 1.5 0 013 0V12M15 11.5v-.5a1.5 1.5 0 013 0v2M18 12.5a1.5 1.5 0 013 0V15a6 6 0 01-6 6h-2a6 6 0 01-4.4-1.9L4.3 15.7a1.6 1.6 0 012.3-2.2L9 15.5',
   download: 'M12 4v11m0 0l-4-4m4 4l4-4M5 19h14',
   done: 'M5 12l5 5 9-10',
   prev: 'M15 5l-7 7 7 7',
@@ -29,12 +30,53 @@ const ICON = {
 }
 const Icon = ({ d }) => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={d} /></svg>
 
+// A small "are you sure" popover above the button that opened it. It does not
+// dim anything. While open it takes the keys, so the deck behind it does not
+// turn slides; Escape or a tap elsewhere cancels, and focus stays inside.
+function ConfirmPopover({ message, confirmLabel, onConfirm, onCancel }) {
+  const cancelRef = useRef(null)
+  const popRef = useRef(null)
+  useEffect(() => {
+    const pop = popRef.current
+    // Keep it on screen when the button sits near an edge of a narrow window.
+    const rect = pop.getBoundingClientRect()
+    const shift = Math.max(8 - rect.left, Math.min(0, innerWidth - 8 - rect.right))
+    pop.style.setProperty('--shift', `${Math.round(shift)}px`)
+    const opener = document.activeElement
+    cancelRef.current?.focus()
+    const onKey = event => {
+      event.stopPropagation()
+      if (event.key === 'Escape') { event.preventDefault(); onCancel() }
+      else if (event.key === 'Tab') {
+        const items = [...pop.querySelectorAll('button')]
+        const at = items.indexOf(document.activeElement)
+        event.preventDefault()
+        items[(at + (event.shiftKey ? items.length - 1 : 1)) % items.length].focus()
+      }
+    }
+    const onDown = event => { if (!pop.parentElement.contains(event.target)) onCancel() }
+    window.addEventListener('keydown', onKey, true)
+    window.addEventListener('pointerdown', onDown, true)
+    return () => {
+      window.removeEventListener('keydown', onKey, true)
+      window.removeEventListener('pointerdown', onDown, true)
+      opener?.focus?.()
+    }
+  }, [])
+  return <div class="ink-pop" ref={popRef} role="alertdialog" aria-label={message}>
+    <span class="ink-pop-text">{message}</span>
+    <button type="button" class="ink-pop-btn" ref={cancelRef} onClick={onCancel}>Cancel</button>
+    <button type="button" class="ink-pop-btn is-danger" onClick={onConfirm}>{confirmLabel}</button>
+  </div>
+}
+
 export function InkToolbar({ stage, controller, onDone }) {
   const [tool, setTool] = useState(stage.inkTool?.tool ?? 'pen')
   const [color, setColor] = useState(stage.inkTool?.color ?? INK_COLORS[0])
   const [sizeIndex, setSizeIndex] = useState(1)
   const [hidden, setHidden] = useState(stage.hasAttribute('data-ink-hidden'))
   const [finger, setFinger] = useState(!!stage.inkFinger)
+  const [clearing, setClearing] = useState(null) // the slide id awaiting confirmation
   const [history, setHistory] = useState({ canUndo: false, canRedo: false, unsaved: false })
 
   useEffect(() => controller.subscribe(setHistory), [controller])
@@ -59,7 +101,7 @@ export function InkToolbar({ stage, controller, onDone }) {
       {TOOLS.map(([id, label, icon]) => button(label, icon, () => setTool(id), { active: tool === id }))}
     </div>
     <div class="ink-group">
-      {INK_COLORS.map(value => <button type="button" key={value} class={`ink-color${value === color ? ' is-active' : ''}`} style={{ '--swatch': value }} title={value} aria-label={`Colour ${value}`} aria-pressed={value === color} onClick={() => { setColor(value); if (tool === 'eraser') setTool('pen') }} />)}
+      {INK_COLORS.map(value => <button type="button" key={value} class={`ink-color${value === color ? ' is-active' : ''}`} style={{ '--swatch': value }} title={COLOR_NAMES[value] ?? value} aria-label={`Colour ${COLOR_NAMES[value] ?? value}`} aria-pressed={value === color} onClick={() => { setColor(value); if (tool === 'eraser') setTool('pen') }} />)}
     </div>
     <div class="ink-group">
       {[0, 1, 2].map(i => <button type="button" key={i} class={`ink-size${i === sizeIndex ? ' is-active' : ''}`} title={['Thin', 'Medium', 'Thick'][i]} aria-label={['Thin', 'Medium', 'Thick'][i]} aria-pressed={i === sizeIndex} onClick={() => setSizeIndex(i)}><span style={{ width: `${6 + i * 5}px`, height: `${6 + i * 5}px` }} /></button>)}
@@ -67,7 +109,15 @@ export function InkToolbar({ stage, controller, onDone }) {
     <div class="ink-group">
       {button('Undo', ICON.undo, () => controller.undo(), { disabled: !history.canUndo })}
       {button('Redo', ICON.redo, () => controller.redo(), { disabled: !history.canRedo })}
-      {button('Clear this slide', ICON.clear, () => { const id = slideId(); if (id && confirm('Remove all drawings on this slide?')) controller.clearSlide(id) })}
+      <span class="ink-anchor">
+        {button('Clear this slide', ICON.clear, () => { const id = slideId(); setClearing(open => open || !id ? null : id) })}
+        {clearing && <ConfirmPopover
+          message="Clear this slide?"
+          confirmLabel="Clear"
+          onCancel={() => setClearing(null)}
+          onConfirm={() => { controller.clearSlide(clearing); setClearing(null) }}
+        />}
+      </span>
     </div>
     <div class="ink-group">
       {button(hidden ? 'Show saved ink' : 'Hide saved ink', hidden ? ICON.eyeOff : ICON.eye, () => setHidden(!hidden), { active: hidden })}

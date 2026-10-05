@@ -1,12 +1,13 @@
-// Saving ink through `mdeck dev` (src/build/inkPlugin.js). When the page was
+// Saving ink through `mdeck run` (src/build/inkPlugin.js). When the page was
 // served by a dev server that lets it save, the controller's changes go
 // there, batched, and changes from other windows arrive as `mdeck:ink`.
 // Anywhere else (a built deck, a device that may not save) this returns false
 // and the ink stays in this browser.
 import { replaceInk, renameSlide } from './store.js'
 import { pairHeaders } from '../../live/pairing.js'
+import { devPath } from '../../core/devPath.js'
 
-const BASE = '/__mdeck/ink'
+const BASE = devPath('__mdeck/ink')
 
 // A paired iPad sends its token; this computer needs none.
 export async function connectInkServer(controller, { headers = () => pairHeaders() } = {}) {

@@ -7,9 +7,9 @@ import { resolve } from 'node:path'
 import { homeMiddleware, outputsFor, liveStatus } from '../src/build/homePlugin.js'
 
 const dir = mkdtempSync(resolve(tmpdir(), 'mdeck-home-'))
-cpSync(new URL('../examples/custom-templates/extensions', import.meta.url), resolve(dir, 'extensions'), { recursive: true })
+cpSync(new URL('../examples/custom-layouts/extensions', import.meta.url), resolve(dir, 'extensions'), { recursive: true })
 const deck = resolve(dir, 'talk.md')
-copyFileSync(new URL('../examples/custom-templates/slides.md', import.meta.url), deck)
+copyFileSync(new URL('../examples/custom-layouts/slides.md', import.meta.url), deck)
 mkdirSync(resolve(dir, 'components'))
 writeFileSync(resolve(dir, 'components', 'Chart.jsx'), 'export default () => null\n')
 
@@ -45,7 +45,7 @@ test('missing pictures show up as check errors', async () => {
   writeFileSync(deck, '---\ndesign: neue\n---\n\n---\n# Hi\n\n![](./img/missing.png)\n')
   const info = await (await get('/info')).json()
   assert.deepEqual(info.diagnostics.map(d => d.code), ['missing-asset'])
-  copyFileSync(new URL('../examples/custom-templates/slides.md', import.meta.url), deck)
+  copyFileSync(new URL('../examples/custom-layouts/slides.md', import.meta.url), deck)
 })
 
 test('services start once and report their address', async () => {

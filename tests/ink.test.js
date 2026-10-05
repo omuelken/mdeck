@@ -16,7 +16,7 @@ test('the ink file sits beside the deck', () => {
   assert.equal(inkFileFor('slides.MD'), 'slides.ink.json')
 })
 
-test('normalizing drops broken strokes, rounds points and scales to the design size', () => {
+test('normalizing drops broken strokes, rounds points and scales to the theme size', () => {
   const raw = { version: 1, width: 1920, height: 1080, slides: {
     intro: [stroke('a:1', [[10.26, 20.71, 0.444], [30, 40]]), { id: 'bad', points: [] }, 'nonsense'],
     empty: [],

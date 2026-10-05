@@ -8,7 +8,7 @@ Put the theme name under `design` in the settings at the very top of your file:
 
 ```yaml
 ---
-design: neue
+theme: neue
 palette: paper
 ---
 ```
@@ -43,7 +43,7 @@ The accent is the color used for highlights. You can set it directly:
 
 ```yaml
 ---
-design: neue
+theme: neue
 palette: paper
 accent: "#2455c7"
 ---
@@ -53,10 +53,10 @@ The value beginning with `#` is a color code. Many color pickers let you copy th
 
 ## Try a look before saving it
 
-Open the presenter view:
+Open the launch page and choose **Presenter view**:
 
 ```sh
-mdeck present my-talk.md
+mdeck run my-talk.md
 ```
 
 Its appearance controls let you try themes and colors. These changes are a preview: they do not save back to your text file. Once you find a look you like, put its settings in the file and save.
@@ -65,7 +65,7 @@ Its appearance controls let you try themes and colors. These changes are a previ
 
 ```yaml
 ---
-design: neue
+theme: neue
 meta:
   title: "A place to grow"
   author: "Alex Morgan"

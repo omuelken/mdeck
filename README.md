@@ -15,7 +15,7 @@
 
 ```markdown
 ---
-design: neue
+theme: neue
 meta:
   title: Enzyme kinetics
   author: Alex Morgan
@@ -38,7 +38,7 @@ Ask who has seen the curve before.
 :::
 ```
 
-Save that as `talk.md`, run `mdeck dev talk.md`, and it is a slide deck with a
+Save that as `talk.md`, run `mdeck run talk.md`, and it is a slide deck with a
 title slide, a content slide, a theme, and your notes in the presenter view.
 
 <p align="center"><img src="docs/images/hero.png" alt="The showcase deck's title slide in the Neue theme" width="800"></p>
@@ -71,9 +71,9 @@ Working from a clone instead? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```sh
 mdeck new                 # answer a few questions, get a starter file
-mdeck dev talk.md         # launch page: present, edit, share and check; reloads on save
-mdeck present talk.md     # presenter view with notes, timer and audience window
-mdeck dev talk.md --host  # also reachable from phones, e.g. for a poll
+mdeck run talk.md         # launch page: present, edit, share and check; reloads on save
+mdeck run talk.md --host  # also reachable from phones, e.g. for a poll
+mdeck run talk.md --share # present from an iPad on any network, through your room server
 mdeck build talk.md       # dist/ folder to hand out or host
 mdeck build talk.md --share --self-contained -o talk.html   # one file to email, with PDF
 ```
@@ -82,10 +82,10 @@ mdeck build talk.md --share --self-contained -o talk.html   # one file to email,
 
 - **Layouts:** title, chapter, big statement, image and text, split, full-bleed image, and plain content slides, with points that appear one at a time.
 - **Looks:** six themes and eight colour palettes, changeable without touching the slides. Make your own as small `extension.toml` folders beside the deck.
-- **One launch page:** `mdeck dev` opens a page with a live preview, the presenter and audience views, the deck and reader views, the editor, the guides, one-click builds and PDF, the deck's check results, and for decks with a room server its health and the presenter code.
+- **One launch page:** `mdeck run` opens a page with a live preview, the presenter and audience views, the deck and reader views, the editor, the guides, one-click builds and PDF, the deck's check results, and for decks with a room server its health and the presenter code.
 - **Presenting:** a presenter view with notes and timer, and an audience window that stays in sync.
 - **Drawing on slides:** pen with pressure, highlighter and a fading marker, with a mouse, a finger or an iPad pencil (`D`). Drawings are saved in `<deck>.ink.json` beside the deck and appear in every view, build and PDF. An iPad can present on its own, or pair with the laptop through a QR code on the launch page while the laptop's audience window follows it.
-- **Audience questions:** `<poll room="lunch" options="A|B|C" />` shows live results and a QR code; people vote on their phones. `<scale>`, `<wordcloud>` and `<question>` ask for a rating, words or open answers, and `<qrcode join />` shows the join code once for all of them. Rooms run inside `mdeck dev --host` or on a small room server (`mdeck live`).
+- **Audience questions:** `<poll room="lunch" options="A|B|C" />` shows live results and a QR code; people vote on their phones. `<scale>`, `<wordcloud>` and `<question>` ask for a rating, words or open answers, and `<qrcode join />` shows the join code once for all of them. Rooms run inside `mdeck run --host` or on a small room server (`mdeck live`).
 - **Sharing:** a reader view with an outline, a phone-friendly Read mode and a PDF download; speaker notes are stripped from shared builds, and interactive slides appear in their finished state.
 - **Content:** pictures, video, tables, callouts, code with syntax highlighting and live execution, formulas, QR codes, and your own Preact components, kept with one deck or shared between decks.
 - **Editing in the browser** *(experimental)*: `mdeck edit talk.md` opens an editor with a live preview and forms for slides, settings, palettes, themes and templates. It writes back into your text file.
@@ -119,7 +119,7 @@ complete folder.
 | [FHNW](examples/fhnw/slides.md) | Slides using the FHNW theme |
 | [Python](examples/python/slides.md) | A short introductory programming talk |
 | [Custom templates](examples/custom-templates/slides.md) | A deck-local comparison design and named regions |
-| [Poll](examples/poll/slides.md) | A join slide, then a poll, a scale, a word cloud and open questions; start it with `mdeck dev slides.md --host` |
+| [Poll](examples/poll/slides.md) | A join slide, then a poll, a scale, a word cloud and open questions; start it with `mdeck run slides.md --host` |
 
 ## Made at FHNW
 

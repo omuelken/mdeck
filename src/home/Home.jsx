@@ -2,12 +2,16 @@ import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import mark from '../../assets/logo/mark.svg'
 import QrCode from '../components/QrCode.jsx'
+import { devPath } from '../core/devPath.js'
 
-// The launch page `mdeck dev` opens: every way to show, edit, share and check
+// Where the dev server serves from: / normally, /t/<id>/ with `mdeck run --server`.
+const BASE = devPath('')
+
+// The launch page `mdeck run` opens: every way to show, edit, share and check
 // the deck from one place. Data and actions come from /__mdeck/home.
 
 async function api(path, body) {
-  const response = await fetch('/__mdeck/home' + path, body
+  const response = await fetch(devPath('__mdeck/home') + path, body
     ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
     : { cache: 'no-store' })
   const data = await response.json().catch(() => ({}))
@@ -98,11 +102,11 @@ function Preview({ info }) {
     return () => window.removeEventListener('message', follow)
   }, [])
   const control = command => frame.current?.contentWindow?.postMessage({ deckControl: { command } }, window.location.origin)
-  const deckUrl = `/?view=deck#${index + 1}`
+  const deckUrl = `${BASE}?view=deck#${index + 1}`
   return <section class="home-section">
     <h2>Preview</h2>
     <div class="home-preview" style={{ aspectRatio: `${info.width} / ${info.height}` }}>
-      <iframe ref={frame} src="/?view=deck&embedded=1" title="Deck preview" tabIndex={-1} />
+      <iframe ref={frame} src={`${BASE}?view=deck&embedded=1`} title="Deck preview" tabIndex={-1} />
       <a class="home-preview-open" href={deckUrl} target="_blank" rel="noopener" aria-label="Open the full-screen deck" />
     </div>
     <div class="home-preview-bar">
@@ -117,7 +121,7 @@ function Preview({ info }) {
 
 const OUTPUT_TEXT = {
   folder: { icon: 'folder', text: 'dist/ with the page, pictures and videos, for a web server or a USB stick.' },
-  share: { icon: 'file', text: 'A single HTML file without speaker notes that opens in the reader, with the PDF inside.' },
+  send: { icon: 'file', text: 'A single HTML file without speaker notes that opens in the reader, with the PDF inside.' },
   pdf: { icon: 'pdf', text: 'One page per slide, with interactive slides shown finished.' },
 }
 
@@ -174,20 +178,20 @@ function CopyButton({ text, label = 'Copy' }) {
 // links on this page drive each other.
 const SESSION = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)
 
-// For decks with `live.server`: the room server's health, the viewers' link
-// and the presenter code (MDECK_LIVE_KEY) that lets a browser steer phones
-// and reset polls.
+// For decks with a `server` setting: the server's health, the viewers' link
+// and the key (MDECK_SERVER_KEY) that lets a browser steer phones and reset
+// polls.
 function LivePolls({ live, onRecheck }) {
-  const presenterUrl = `/?view=presenter&session=${SESSION}${live.key ? `&livekey=${encodeURIComponent(live.key)}` : ''}`
-  const keyState = !live.key ? null : live.keyAccepted ? ['is-ok', 'Accepted by the room server'] : live.reachable ? ['is-bad', 'Not accepted by the room server'] : ['is-idle', 'Not checked']
+  const presenterUrl = `${BASE}?view=presenter&session=${SESSION}${live.key ? `&serverkey=${encodeURIComponent(live.key)}` : ''}`
+  const keyState = !live.key ? null : live.keyAccepted ? ['is-ok', 'Accepted by the server'] : live.reachable ? ['is-bad', 'Not accepted by the server'] : ['is-idle', 'Not checked']
   return <section class="home-section">
     <div class="home-section-head">
-      <h2>Live polls</h2>
+      <h2>Polls</h2>
       <button class="home-btn home-btn--small" onClick={onRecheck}>Check again</button>
     </div>
     <dl class="home-live">
       <div>
-        <dt>Room server</dt>
+        <dt>Server</dt>
         <dd>
           {live.server
             ? <><code>{live.server}</code><span class={`home-pill ${live.reachable ? 'is-ok' : 'is-bad'}`}>{live.reachable ? `Reachable · ${live.ms} ms` : `Not reachable · ${live.error}`}</span></>
@@ -200,22 +204,22 @@ function LivePolls({ live, onRecheck }) {
           {live.joinUrl
             ? <><a href={live.joinUrl} target="_blank" rel="noopener"><code>{live.joinUrl}</code></a> <CopyButton text={live.joinUrl} /></>
             : <>
-              <p class="home-note">Phones cannot reach this computer. Start with <code>--host</code>, or set <code>live.server</code>.</p>
+              <p class="home-note">Phones cannot reach this computer. Start with <code>--network</code>, or set <code>server</code> in the deck.</p>
               {live.localJoinUrl && <p><a href={live.localJoinUrl} target="_blank" rel="noopener">Try the answer page here</a> <span>in another browser tab or window.</span></p>}
             </>}
           <p>Session code <code class="home-code">{live.code}</code>, the same for every poll in this deck.</p>
         </dd>
       </div>
       {live.server && <div>
-        <dt>Presenter code</dt>
+        <dt>Server key</dt>
         <dd>
           {live.key
             ? <>
               <code class="home-code">{live.key}</code> <CopyButton text={live.key} />
               <span class={`home-pill ${keyState[0]}`}>{keyState[1]}</span>
-              <p>The presenter view, audience window and deck buttons above carry it. Or open <a href={presenterUrl} target="_blank" rel="noopener">the presenter view with the code</a>.</p>
+              <p>The presenter view, audience window and deck buttons above carry it. Or open <a href={presenterUrl} target="_blank" rel="noopener">the presenter view with the key</a>.</p>
             </>
-            : <p>Start <code>mdeck dev</code> with <code>MDECK_LIVE_KEY</code> set to the room server's key to see the code here.</p>}
+            : <p>Start <code>mdeck run</code> with <code>MDECK_SERVER_KEY</code> set to the server's key to see it here.</p>}
         </dd>
       </div>}
     </dl>
@@ -225,7 +229,7 @@ function LivePolls({ live, onRecheck }) {
 // Presenting from an iPad: a one-time QR code opens the presenter view there,
 // paired with this server so it may save ink and steer the projector, which
 // shows the audience window on this computer.
-function Tablet({ pairing, onChange, onError }) {
+function Tablet({ pairing, relay, onChange, onError }) {
   const [url, setUrl] = useState(null)
   const offer = () => api('/action', { action: 'pair' }).then(result => { setUrl(result.url); onChange() }).catch(error => onError(error.message))
   const unpair = () => api('/action', { action: 'unpair' }).then(() => { setUrl(null); onChange() }).catch(error => onError(error.message))
@@ -234,14 +238,15 @@ function Tablet({ pairing, onChange, onError }) {
       <h2>Present from an iPad</h2>
       {pairing.devices > 0 && <button class="home-btn home-btn--small" onClick={unpair}>Unpair {pairing.devices === 1 ? 'the device' : `${pairing.devices} devices`}</button>}
     </div>
+    {relay && <p class={`home-note home-relay home-relay--${relay.state}`}>{relay.state === 'up' ? 'Connected to your server: the iPad can reach this computer from any network.' : relay.state === 'refused' ? `Connecting to the server failed: ${relay.reason}` : relay.state === 'down' ? 'Lost the connection to the server; reconnecting…' : 'Connecting to your server…'}</p>}
     {!pairing.available
-      ? <p class="home-note">Start <code>mdeck dev</code> with <code>--host</code>, so an iPad in the same network can reach it.</p>
+      ? <p class="home-note">Start <code>mdeck run</code> with <code>--network</code>, so an iPad in the same network can reach it, or with <code>--server</code> to reach it through your server.</p>
       : url
         ? <div class="home-pair">
           <QrCode url={url} size="180" />
           <div>
             <p>Scan this with the iPad's camera. It opens the presenter view there, where you draw and go through the slides.</p>
-            <p>Show the <a href={`/?view=audience&session=${SESSION}`} target="_blank" rel="noopener">audience window</a> on the projector from this computer: it follows the iPad.</p>
+            <p>Show the <a href={`${BASE}?view=audience&session=${SESSION}`} target="_blank" rel="noopener">audience window</a> on the projector from this computer: it follows the iPad.</p>
             <p class="home-note">The code works once, for ten minutes. {pairing.devices > 0 ? `${pairing.devices} paired so far.` : ''}</p>
           </div>
         </div>
@@ -267,19 +272,26 @@ export function Home() {
     return () => window.removeEventListener('focus', load)
   }, [])
   useEffect(() => { if (info) document.title = `${info.title} · mdeck` }, [info?.title])
+  // The connection to the server comes up a moment after the page; look again until it does.
+  const sharing = info?.relay && info.relay.state !== 'up' && info.relay.state !== 'refused'
+  useEffect(() => {
+    if (!sharing) return
+    const timer = setInterval(load, 2000)
+    return () => clearInterval(timer)
+  }, [sharing])
 
   if (!info) return <main class="home home--empty">
     <img src={mark} alt="" width="48" height="48" />
     <p>{loadError ? `The launch page could not load: ${loadError}` : 'Loading…'}</p>
-    {loadError && <p><a href="/?view=deck">Open the deck</a></p>}
+    {loadError && <p><a href={`${BASE}?view=deck`}>Open the deck</a></p>}
   </main>
 
   const errors = info.diagnostics.filter(d => d.severity === 'error').length
   const warnings = info.diagnostics.length - errors
   const setOutput = (id, output) => setInfo(current => ({ ...current, outputs: { ...current.outputs, [id]: output } }))
-  // With a presenter code, every screen opened here may move the phones along.
-  const code = info.live?.key ? `&livekey=${encodeURIComponent(info.live.key)}` : ''
-  const meta = [`${info.slides} slide${info.slides === 1 ? '' : 's'}`, info.notes ? `${info.notes} with notes` : 'no speaker notes', `theme ${info.design}${info.palette ? ` · ${info.palette}` : ''}`, `saved ${ago(info.modified)}`]
+  // With the server key, every screen opened here may move the phones along.
+  const code = info.live?.key ? `&serverkey=${encodeURIComponent(info.live.key)}` : ''
+  const meta = [`${info.slides} slide${info.slides === 1 ? '' : 's'}`, info.notes ? `${info.notes} with notes` : 'no speaker notes', `theme ${info.theme}${info.palette ? ` · ${info.palette}` : ''}`, `saved ${ago(info.modified)}`]
 
   return <main class="home">
     <header class="home-header">
@@ -303,10 +315,10 @@ export function Home() {
       <section class="home-section">
         <h2>Present</h2>
         <div class="home-tiles">
-          <ViewTile icon="presenter" title="Presenter view" text="Notes, timer and next slide, on your own screen." href={`/?view=presenter&session=${SESSION}${code}`} />
-          <ViewTile icon="projector" title="Audience window" text="The slides for the projector, following the presenter view opened here." href={`/?view=audience&session=${SESSION}${code}`} />
-          <ViewTile icon="deck" title="Full-screen deck" text="Just the slides, for rehearsing or a single screen." href={`/?view=deck${code}`} />
-          <ViewTile icon="reader" title="Reader view" text="Outline, reading mode and look picker, as people you send it to see it." href="/?view=share" />
+          <ViewTile icon="presenter" title="Presenter view" text="Notes, timer and next slide, on your own screen." href={`${BASE}?view=presenter&session=${SESSION}${code}`} />
+          <ViewTile icon="projector" title="Audience window" text="The slides for the projector, following the presenter view opened here." href={`${BASE}?view=audience&session=${SESSION}${code}`} />
+          <ViewTile icon="deck" title="Full-screen deck" text="Just the slides, for rehearsing or a single screen." href={`${BASE}?view=deck${code}`} />
+          <ViewTile icon="reader" title="Reader view" text="Outline, reading mode and look picker, as people you send it to see it." href={`${BASE}?view=reader`} />
         </div>
       </section>
 
@@ -320,7 +332,7 @@ export function Home() {
 
       {info.live && <LivePolls live={info.live} onRecheck={load} />}
 
-      {info.pairing && <Tablet pairing={info.pairing} onChange={load} onError={setError} />}
+      {info.pairing && <Tablet pairing={info.pairing} relay={info.relay} onChange={load} onError={setError} />}
 
       <section class="home-section home-section--wide">
         <h2>Share</h2>

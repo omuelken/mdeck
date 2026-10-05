@@ -1,5 +1,5 @@
 ---
-design: aurora
+theme: aurora
 meta:
   title: "Slide Framework Demo"
   author: "Tilman Schieber"
@@ -38,7 +38,7 @@ description: How content, design, and components fit together.
 Three independently replaceable layers:
 
 1. **Content** — Markdown frontmatter + body, parsed at build time
-2. **Design** — theme `tokens.css` + `templates.css`, zero JS
+2. **Design** — theme `tokens.css` + `layouts.css`, zero JS
 3. **Behaviour** — Preact components registered in `registry.jsx`
 
 *Changing any one layer doesn't touch the others.*

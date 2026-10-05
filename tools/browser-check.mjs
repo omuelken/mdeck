@@ -19,7 +19,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-browser-check-'))
 let browser, dev, pollDev, inkDev, tablet2
 try {
-  execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-templates/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
+  execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-layouts/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   browser = await launchChrome({ dir: temp, timeout: 45000 })
   const open = path => browser.open(path)
   async function until(page, expression) {
@@ -47,10 +47,10 @@ try {
   assert.equal(await inked.evaluate("document.querySelector('deck-stage').index"), 0, 'drawing does not change slides')
   await inked.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
   await until(inked, "document.querySelectorAll('.slide-ink path').length === 1")
-  const inkRead = await open('ink.html?view=share')
-  await until(inkRead, "[...document.querySelectorAll('.share-btn')].some(b => b.textContent.includes('Read'))")
-  await inkRead.evaluate("[...document.querySelectorAll('.share-btn')].find(b => b.textContent.includes('Read')).click()")
-  await until(inkRead, "document.querySelectorAll('.share-read .slide-ink path').length === 1")
+  const inkRead = await open('ink.html?view=reader')
+  await until(inkRead, "[...document.querySelectorAll('.reader-btn')].some(b => b.textContent.includes('Read'))")
+  await inkRead.evaluate("[...document.querySelectorAll('.reader-btn')].find(b => b.textContent.includes('Read')).click()")
+  await until(inkRead, "document.querySelectorAll('.reader-read .slide-ink path').length === 1")
 
   // Drawing in the presenter view: Draw turns on the main frame's ink mode,
   // and the audience window shows the stroke while it is drawn and after.
@@ -158,8 +158,8 @@ try {
   await ipad.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...onIpad([0.6, 0.6]), clickCount: 1, buttons: 0, ...pen })
   await until(projector2, "document.querySelectorAll('[data-deck-active] .slide-ink path').length === 1 && document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-live path').length === 0")
 
-  // The launch page `mdeck dev` opens renders the deck's details from its API.
-  const slides = resolve(root, 'examples/custom-templates/slides.md')
+  // The launch page `mdeck run` opens renders the deck's details from its API.
+  const slides = resolve(root, 'examples/custom-layouts/slides.md')
   const config = baseConfig(slides)
   dev = await createServer({ ...config, plugins: [...config.plugins, homePlugin(slides, { services: {} })], server: { ...config.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await dev.listen()
@@ -200,7 +200,7 @@ try {
   await until(projector, "[...document.querySelectorAll('[data-deck-active] .word-cloud text')].map(e => e.textContent).join() === 'fun'")
   await projector.evaluate("document.querySelector('deck-stage').goTo(4)")
   await until(projector, "!!document.querySelector('[data-deck-active] .poll-join-slide .poll-join')")
-  console.log('Browser checks passed: custom template rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, saved ink, drawing, drawing in the presenter view, touch, saving ink in dev, a second device through the stage room.')
+  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, saved ink, drawing, drawing in the presenter view, touch, saving ink in dev, a second device through the stage room.')
 } finally {
   await browser?.close()
   await tablet2?.close()

@@ -2,8 +2,24 @@ import yaml from 'js-yaml'
 import { sourceLines, fenceState, scanDirectives, diagnostic } from './source.js'
 export { sourceLines, fenceState } from './source.js'
 
-export const DECK_KEYS = new Set('design palette accent accent2 params meta width height institution authorDate pageNumbers sections lang labels callouts share components live'.split(' '))
-export const SLIDE_KEYS = new Set('layout id title section number part description label image alt overlay eyebrow attribution note notes props'.split(' '))
+export const DECK_KEYS = new Set('theme palette accent accent2 params meta width height show lang labels callouts reader components server session'.split(' '))
+export const SLIDE_KEYS = new Set('layout id title section number part description label image alt overlay eyebrow attribution props'.split(' '))
+
+// Names from before 2.0. They are still recognised, so that an old deck gets a
+// message naming the new setting (see validateDeck) instead of being read as
+// a slide, but nothing uses them.
+export const RENAMED_DECK_KEYS = {
+  design: 'theme',
+  institution: 'show.organization',
+  authorDate: 'show.author',
+  pageNumbers: 'show.numbers',
+  sections: 'show.sections',
+  share: 'reader',
+  live: 'server and session',
+}
+export const REMOVED_SLIDE_KEYS = ['note', 'notes']
+const ANY_DECK_KEYS = new Set([...DECK_KEYS, ...Object.keys(RENAMED_DECK_KEYS)])
+const ANY_SLIDE_KEYS = new Set([...SLIDE_KEYS, ...REMOVED_SLIDE_KEYS])
 
 export function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -95,7 +111,7 @@ export function parseSlides(source) {
   let deckConfig = {}
   let configSource = null
   let i = 0
-  if (segments[0] && /^\s*---[ \t]*\r?\n/.test(source) && looksLikeMeta(text(segments[0]), DECK_KEYS) && !looksLikeMeta(text(segments[0]), SLIDE_KEYS)) {
+  if (segments[0] && /^\s*---[ \t]*\r?\n/.test(source) && looksLikeMeta(text(segments[0]), ANY_DECK_KEYS) && !looksLikeMeta(text(segments[0]), ANY_SLIDE_KEYS)) {
     deckConfig = readMeta(segments[0])
     configSource = { start: segments[0].start, end: segments[0].end }
     i++
@@ -111,17 +127,19 @@ export function parseSlides(source) {
       metaSource = { start: segment.start + explicit.bodyStart, end: segment.start + explicit.bodyEnd }
       meta = readMeta(metaSource)
       body = { start: segment.start + explicit.end, end: segment.end }
-    } else if (looksLikeMeta(text(segment), SLIDE_KEYS)) {
+    } else if (looksLikeMeta(text(segment), ANY_SLIDE_KEYS)) {
       meta = readMeta(segment)
       metaSource = { start: segment.start, end: segment.end }
       body = segments[i]
-      if (body && !looksLikeMeta(text(body), SLIDE_KEYS) && !/^:::meta\b/.test(text(body))) i++
+      if (body && !looksLikeMeta(text(body), ANY_SLIDE_KEYS) && !/^:::meta\b/.test(text(body))) i++
       else body = null
     }
     const { content, notes, regions, blocks } = extractBody(source, body, diagnostics)
-    if (notes && meta.notes == null && meta.note == null) meta.notes = notes
+    // Slide settings that were removed (note:, notes:), before block notes fill meta.notes.
+    const removedKeys = REMOVED_SLIDE_KEYS.filter(key => meta[key] != null)
+    if (notes && meta.notes == null) meta.notes = notes
     const authoredMeta = { ...meta }
-    slides.push({ id: meta.id ?? `slide-${slides.length + 1}`, meta, authoredMeta, content, regions, blocks,
+    slides.push({ id: meta.id ?? `slide-${slides.length + 1}`, meta, authoredMeta, removedKeys, content, regions, blocks,
       source: { start: segment.start, end: body?.end ?? segment.end },
       metaSource, bodySource: body ? { start: body.start, end: body.end } : null })
   }

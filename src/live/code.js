@@ -9,9 +9,9 @@ export const slug = text => String(text ?? '').normalize('NFKD').replace(/[̀-ͯ
 export const CODE_RE = /^\d{4,8}$/
 
 export function sessionCode(deckConfig = {}) {
-  const live = deckConfig.live ?? {}
-  if (live.code != null && CODE_RE.test(String(live.code))) return String(live.code)
-  const name = slug(live.id ?? deckConfig.meta?.title) || 'deck'
+  const session = deckConfig.session ?? {}
+  if (session.code != null && CODE_RE.test(String(session.code))) return String(session.code)
+  const name = slug(session.id ?? deckConfig.meta?.title) || 'deck'
   // FNV-1a, then six digits that never start with 0.
   let hash = 0x811c9dc5
   for (const char of name) hash = Math.imul(hash ^ char.codePointAt(0), 0x01000193) >>> 0

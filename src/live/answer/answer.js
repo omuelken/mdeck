@@ -18,7 +18,7 @@
   const me = (() => {
     try {
       let id = localStorage.getItem('mdeck-live-client')
-      // randomUUID only exists on https or localhost, not at `mdeck dev --host`'s http://192.168…
+      // randomUUID only exists on https or localhost, not at `mdeck run --host`'s http://192.168…
       if (!id) localStorage.setItem('mdeck-live-client', id = crypto.randomUUID?.() ?? Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''))
       return id
     } catch { return String(Math.random()).slice(2) }

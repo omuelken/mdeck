@@ -18,8 +18,9 @@ src/
   runtime/           Browser app: deck stage, presenter, reader and editor preview
   editor/            Browser editor for decks, palettes, themes and templates
   components/        Built-in interactive content, including the poll
-  live/              Audience rooms: server, `mdeck/live` client, answer-page lookup
-  home/              Launch page that `mdeck dev` opens
+  live/              Audience rooms: server, `mdeck/live` client, answer-page lookup, and the
+                     room server's relay for `--share` (tunnel.js; its other end is build/tunnelClient.js)
+  home/              Launch page that `mdeck run` opens
   templates/         Shared rendering API, slide frame, typed properties
   extensions/        Manifest contract, discovery registry, appearance rules
   build/             Vite configuration, component discovery, editing and launch
@@ -44,6 +45,7 @@ skills/              Distributable slide-authoring instructions
 ```sh
 npm test                 # unit and integration tests
 npm run test:browser     # real-Chrome check, also run in CI (set MDECK_CHROME if needed)
+npm run test:share       # `mdeck run --share` through a local room server, with Chrome as the iPad
 npm run playground       # scratch deck with hot reload
 npm run docs:build       # build the documentation site into docs/site/dist
 node bin/mdeck.js ...    # run the CLI from the checkout

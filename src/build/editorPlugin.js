@@ -69,7 +69,13 @@ const isLoopbackName = name => LOOPBACK.has(name) || name.endsWith('.localhost')
 // Browsers send Origin on cross-site requests; a page served by this server
 // has the same host. Everything else is refused, and only loopback hosts are
 // served at all.
+export const TUNNEL_MARK = 'x-mdeck-tunnel'
+
 export function isAllowedRequest(request) {
+  // Through `mdeck run --share` every request arrives from this computer; the
+  // tunnel marks them (src/build/tunnelClient.js), and they must show a paired
+  // device's token instead.
+  if (request.headers[TUNNEL_MARK] != null) return false
   const host = request.headers.host ?? ''
   if (!isLoopbackName(hostname(host))) return false
   const origin = request.headers.origin

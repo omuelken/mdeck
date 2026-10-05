@@ -95,7 +95,7 @@ palette so code colours and the logo are adjusted for a dark background.
 
 ```toml
 schema = 1
-kind = "template"
+kind = "layout"
 id = "comparison"
 title = "Side-by-side comparison"
 description = "Two options next to each other."
@@ -139,7 +139,7 @@ type = "number"
 minimum = 0.01
 ```
 
-The layout file is Preact JSX that imports from `mdeck/template-api`. See
+The layout file is Preact JSX that imports from `mdeck/layout`. See
 [templates](templates.md) for the renderer contract. Layout code runs as part
 of the deck: it is trusted code, not sandboxed data.
 

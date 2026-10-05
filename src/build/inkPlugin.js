@@ -1,4 +1,4 @@
-// Saving ink while `mdeck dev` runs: the file beside the deck is the source of
+// Saving ink while `mdeck run` runs: the file beside the deck is the source of
 // truth, and devices send changes as operations (see applyOp in core/ink.js),
 // so strokes drawn on two devices at once never overwrite each other.
 //

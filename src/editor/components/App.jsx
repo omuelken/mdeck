@@ -9,7 +9,7 @@ import { Outline } from './Outline.jsx'
 import { Preview } from './Preview.jsx'
 import { Inspector } from './Inspector.jsx'
 import { DeckSettings } from './DeckSettings.jsx'
-import { TemplatePicker } from './TemplatePicker.jsx'
+import { LayoutPicker } from './LayoutPicker.jsx'
 import { ConflictBanner } from './ConflictBanner.jsx'
 import { ExtensionsMode } from './ExtensionsMode.jsx'
 import { Resizer, readInspectorWidth, storeInspectorWidth } from './Resizer.jsx'
@@ -80,7 +80,7 @@ export function App() {
     remove: () => { const s = stateRef.current; const slide = s.deck?.slides[s.selectedIndex]; if (slide) edit(d => removeSlide(d, d.slides[s.selectedIndex].id)) },
     duplicate: () => { const s = stateRef.current; if (s.deck?.slides[s.selectedIndex]) edit(d => insertSlide(d, s.selectedIndex + 1, slideSourceText(d, d.slides[s.selectedIndex].id))) },
     move: delta => { const s = stateRef.current; if (s.deck?.slides[s.selectedIndex]) edit(d => moveSlide(d, d.slides[s.selectedIndex].id, s.selectedIndex + delta)) },
-    pick: template => { const s = stateRef.current; edit(d => insertSlide(d, s.deck.slides.length ? s.selectedIndex + 1 : 0, template.starter)); setPicker(false) },
+    pick: layout => { const s = stateRef.current; edit(d => insertSlide(d, s.deck.slides.length ? s.selectedIndex + 1 : 0, layout.starter)); setPicker(false) },
     resolve: choice => {
       const conflict = stateRef.current.conflict
       dispatch({ type: 'resolveConflict', choice })
@@ -106,7 +106,7 @@ export function App() {
       <span class="spacer" />
       <div class="tabs" style={{ padding: 0, border: 0, position: 'static' }}>
         <button class={mode === 'slides' ? 'is-active' : ''} onClick={() => setMode('slides')}>Slides</button>
-        <button class={mode === 'extensions' ? 'is-active' : ''} onClick={() => setMode('extensions')}>Palettes, themes & templates</button>
+        <button class={mode === 'extensions' ? 'is-active' : ''} onClick={() => setMode('extensions')}>Palettes, themes & layouts</button>
       </div>
       <span class="spacer" />
       <button class="btn is-small" onClick={actions.undo} disabled={!state.history.past.length} title="Undo (⌘Z)">Undo</button>
@@ -132,6 +132,6 @@ export function App() {
       </aside>
       </>}
     </div>
-    {picker && <TemplatePicker templates={state.manifests.templates} onPick={actions.pick} onClose={() => setPicker(false)} />}
+    {picker && <LayoutPicker layouts={state.manifests.layouts} onPick={actions.pick} onClose={() => setPicker(false)} />}
   </div>
 }

@@ -24,7 +24,7 @@ test('stripNotes removes note blocks and metadata keys but nothing else', () => 
     assert.equal(after.slides.length, before.slides.length, name)
     assert.deepEqual(after.slides.map(s => s.content), before.slides.map(s => s.content), name)
     assert.ok(after.slides.every(slide => !slide.meta.notes), name)
-    assert.deepEqual(validateDeck(after, { templates: templateManifests(`examples/${name}/slides.md`) }).filter(d => d.severity === 'error'), [], name)
+    assert.deepEqual(validateDeck(after, { layouts: templateManifests(`examples/${name}/slides.md`) }).filter(d => d.severity === 'error'), [], name)
   }
 })
 

@@ -24,7 +24,7 @@ export function attachInk(stage, { storageKey, save = null, keys = true, transpo
   stage.inkRenderer = strokePath
   const bus = createInkBus(stage, [broadcastTransport(channelName(storageKey)), ...transports])
   const controller = createInkController({ storageKey, save, publish: op => bus.op(op) })
-  // Saving through `mdeck dev` when it lets this page; otherwise in this browser.
+  // Saving through `mdeck run` when it lets this page; otherwise in this browser.
   if (!save) connectInkServer(controller)
   stage.addEventListener('inkstroke', event => { controller.addStroke(event.detail); bus.strokeDone(event.detail) })
   stage.addEventListener('inkmarker', event => bus.markerDone(event.detail))

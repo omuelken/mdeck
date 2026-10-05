@@ -26,10 +26,10 @@ Older files may use `note:` or `notes:` inside slide settings. Those still work.
 ## Open the presenter view
 
 ```sh
-mdeck present my-talk.md
+mdeck run my-talk.md
 ```
 
-The launch page that `mdeck dev my-talk.md` opens has a **Presenter view** button that does the same.
+The launch page it opens has a **Presenter view** button.
 
 Use its audience-window button to open a separate view of the slides. If you have a projector or second screen, move that audience window onto it. Keep the presenter window on your own screen.
 

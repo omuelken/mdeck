@@ -10,7 +10,7 @@ Set `design:` in the deck frontmatter:
 
 ```yaml
 ---
-design: neue
+theme: neue
 ---
 ```
 

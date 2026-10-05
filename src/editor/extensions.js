@@ -23,7 +23,7 @@ export function toModel(raw) {
   const model = { kind, id: id ?? '', title: title ?? '', description: description ?? '', extra, files: files ?? {} }
   if (kind === 'palette') return { ...model, dark: Boolean(dark), tokens: entries(tokens) }
   if (kind === 'theme') return { ...model, dark: Boolean(dark), accent2: Boolean(accent2), accent2Preview: accent2Preview ?? '', fonts: fonts ?? [], tokens: entries(tokens), params: entries(params) }
-  if (kind === 'template') return { ...model, frame: frame ?? 'standard', regions: entries(regions), properties: entries(properties).map(property => ({ ...property, enum: property.enum ?? [], items: property.items ?? null })) }
+  if (kind === 'layout') return { ...model, frame: frame ?? 'standard', regions: entries(regions), properties: entries(properties).map(property => ({ ...property, enum: property.enum ?? [], items: property.items ?? null })) }
   return model
 }
 
@@ -37,7 +37,7 @@ export function toToml(model) {
     files: { styles: 'styles.css', ...(model.files ?? {}) }, tokens,
     params: table(model.params ?? [], param => clean({ token: param.token, title: param.title, description: param.description })),
   }
-  else if (model.kind === 'template') raw = {
+  else if (model.kind === 'layout') raw = {
     ...base, ...(model.frame && model.frame !== 'standard' ? { frame: model.frame } : {}), ...model.extra, ...(Object.keys(model.files ?? {}).length ? { files: model.files } : {}),
     regions: table(model.regions ?? [], region => clean({ description: region.description, required: region.required || undefined })),
     properties: table(model.properties ?? [], property => propertySchema(property)),
@@ -89,7 +89,7 @@ export function starterFiles(kind, id, title, from = null, fromFiles = {}) {
 }
 
 export const DEFAULT_LAYOUT = `import { h } from 'preact'
-import { MarkdownRegion } from 'mdeck/template-api'
+import { MarkdownRegion } from 'mdeck/layout'
 
 // Receives regions, props (typed settings), meta, deckConfig, index and total.
 export default function Layout({ regions, props }) {

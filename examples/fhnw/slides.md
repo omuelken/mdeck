@@ -1,5 +1,5 @@
 ---
-design: fhnw
+theme: fhnw
 meta:
   title: "FHNW — Design Theme"
   author: "Tilman Schieber"

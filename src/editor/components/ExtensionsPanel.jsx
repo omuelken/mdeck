@@ -2,7 +2,7 @@ import { h } from 'preact'
 import { useState } from 'preact/hooks'
 import { ID_RE } from '../extensions.js'
 
-const KINDS = [['palette', 'Palettes'], ['theme', 'Themes'], ['template', 'Templates']]
+const KINDS = [['palette', 'Palettes'], ['theme', 'Themes'], ['layout', 'Layouts']]
 
 export function ExtensionsPanel({ registry, selected, onSelect, onCreate }) {
   return <aside class="editor-panel">
@@ -22,7 +22,7 @@ export function ExtensionsPanel({ registry, selected, onSelect, onCreate }) {
 // A theme is its typography and layout, so the list shows the deck's first
 // slide rendered with it rather than its default colors.
 function ThemeThumbnail({ id }) {
-  return <div class="thumb"><iframe src={`/?embedded=1&design=${encodeURIComponent(id)}&palette=&accent=&accent2=`} title="" tabIndex={-1} loading="lazy" scrolling="no" /></div>
+  return <div class="thumb"><iframe src={`/?embedded=1&theme=${encodeURIComponent(id)}&palette=&accent=&accent2=`} title="" tabIndex={-1} loading="lazy" scrolling="no" /></div>
 }
 
 export function NewExtensionDialog({ kind, registry, existing, onCreate, onClose, initial = null }) {

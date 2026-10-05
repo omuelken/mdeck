@@ -5,7 +5,7 @@ import { PaletteForm, ThemeForm, TemplateForm } from './ExtensionForms.jsx'
 import { Diagnostics } from './Diagnostics.jsx'
 import { Field, TextArea } from './Field.jsx'
 
-const KIND_LABEL = { palette: 'Palette', theme: 'Theme', template: 'Template' }
+const KIND_LABEL = { palette: 'Palette', theme: 'Theme', layout: 'Layout' }
 
 // Edits one extension. `files` is the source of truth; the form derives its
 // model from extension.toml and writes TOML back.

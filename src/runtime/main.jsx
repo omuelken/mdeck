@@ -9,7 +9,7 @@ import { effectiveToken } from '../extensions/appearance.js'
 import { S, PaletteSwatches } from './chrome.jsx'
 import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
 import { createEditorBridge } from './editorBridge.js'
-import { ShareView } from './ShareView.jsx'
+import { ReaderView } from './ReaderView.jsx'
 import { configureLive, announce, setLookSource, actAsPresenter, useSteering } from '../live/client.js'
 import { registry } from './registry'
 import { followActiveRooms } from '../live/follow.js'
@@ -19,19 +19,26 @@ import { claimPairing } from '../live/pairing.js'
 import { strokePath } from '../core/ink.js'
 import { inkFileName } from 'virtual:deck-ink'
 import { roomsIn, roomsOnSlide, findRoomTag, slideTitleFor } from '../live/roomTag.js'
-import './share.css'
-import { SlideRenderer, manifests } from '../templates/renderSlide'
+import './reader.css'
+import { SlideRenderer, manifests } from '../layouts/renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import { setDeckLanguage, deckLanguage, stageLabels, t } from '../core/labels.js'
 import './deck-stage.js'
 
-// One address parameter selects the view. `?view=share` and the shortcut
-// `?v=s` mean the same; the letters are d, s, p and a.
-const VIEW_ALIASES = { d: 'deck', s: 'share', p: 'presenter', a: 'audience' }
+// Line icons for the presenter's buttons, drawn on one 24px grid so they match.
+const PRESENTER_ICONS = {
+  // A tablet with the slide filling it: the slide-only layout for an iPad.
+  tablet: 'M5 5h14a2.5 2.5 0 012.5 2.5v9A2.5 2.5 0 0119 19H5a2.5 2.5 0 01-2.5-2.5v-9A2.5 2.5 0 015 5zM18.5 11v2',
+  // A window split into the slide and a column of notes and next slide.
+  speaker: 'M5.5 4h13A2.5 2.5 0 0121 6.5v11a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 17.5v-11A2.5 2.5 0 015.5 4zM14.5 4v16M14.5 12H21',
+  fullscreen: 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5',
+  pen: 'M4 20l4-1 11-11-3-3L5 16zM14 6l3 3',
+}
+const PresenterIcon = ({ name }) => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style={{ display: 'block' }}><path d={PRESENTER_ICONS[name]} /></svg>
+
+// One address parameter selects the view: ?view=deck, reader, presenter or audience.
 export function requestedView(url, fallback = 'deck') {
-  const raw = url.searchParams.get('view') ?? url.searchParams.get('v')
-  if (raw == null) return fallback
-  return VIEW_ALIASES[raw] ?? raw
+  return url.searchParams.get('view') ?? fallback
 }
 
 // Scope controls to this file and presenter session, including separate tabs.
@@ -45,14 +52,14 @@ const DECK_CHANNEL = `deck-control:${controlUrl.pathname}:${controlUrl.searchPar
 
 function withConfigOverrides(deckConfig) {
   const url = new URL(window.location.href)
-  const design = url.searchParams.get('design')
+  const theme = url.searchParams.get('theme')
   const palette = url.searchParams.get('palette')
   const accent  = url.searchParams.get('accent')
   const accent2 = url.searchParams.get('accent2')
   return {
     ...deckConfig,
     // Use !== null so an explicit ?palette= / ?accent= (empty string) overrides the frontmatter value
-    ...(design  !== null ? { design }  : {}),
+    ...(theme  !== null ? { theme }  : {}),
     ...(palette !== null ? { palette } : {}),
     ...(accent  !== null ? { accent }  : {}),
     ...(accent2 !== null ? { accent2 } : {}),
@@ -82,7 +89,7 @@ function announceSlide(deck, index, { initial = false } = {}) {
 // Whether this presenter screen moves the phones along, shown only for decks
 // with activities: a failure used to be silent.
 const STEERING = {
-  'no-code': 'Phones do not follow: this browser has no presenter code. Open the presenter view once with ?livekey=… (the launch page has a link).',
+  'no-code': 'Phones do not follow: this browser has no server key. Open the presenter view once with ?serverkey=… (the launch page has a link).',
   'wrong-code': "Phones do not follow: the room server does not accept this browser's presenter code.",
   unreachable: 'Phones do not follow: the room server does not answer.',
   'other-screen': 'Phones follow another screen, where this presentation was moved on more recently. Change the slide here to take them back.',
@@ -103,18 +110,18 @@ function injectSpeakerNotes(slides) {
     tag.type = 'application/json'
     document.body.appendChild(tag)
   }
-  tag.textContent = JSON.stringify(slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''))
+  tag.textContent = JSON.stringify(slides.map(s => s.meta?.notes ?? ''))
 }
 
 // URL for the presenter's own iframe and preview pane (uses postMessage)
-function buildChildUrl(design, palette, accent, accent2, slideIndex = null, { draw = false } = {}) {
+function buildChildUrl(theme, palette, accent, accent2, slideIndex = null, { draw = false } = {}) {
   const url = new URL(window.location.href)
   url.searchParams.delete('v')
   url.searchParams.set('view', 'deck')
   url.searchParams.set('embedded', '1')
   if (draw) url.searchParams.set('draw', '1')
-  if (design) url.searchParams.set('design', design)
-  else url.searchParams.delete('design')
+  if (theme) url.searchParams.set('theme', theme)
+  else url.searchParams.delete('theme')
   // Always set these params so an explicit "none" selection overrides the deck's frontmatter
   url.searchParams.set('palette', palette ?? '')
   url.searchParams.set('accent', accent ?? '')
@@ -124,13 +131,13 @@ function buildChildUrl(design, palette, accent, accent2, slideIndex = null, { dr
 }
 
 // URL for the audience window — view=audience makes it listen on BroadcastChannel
-function buildAudienceUrl(design, palette, accent, accent2, slideIndex = null) {
+function buildAudienceUrl(theme, palette, accent, accent2, slideIndex = null) {
   const url = new URL(window.location.href)
   url.searchParams.delete('embedded')
   url.searchParams.delete('v')
   url.searchParams.set('view', 'audience')
-  if (design) url.searchParams.set('design', design)
-  else url.searchParams.delete('design')
+  if (theme) url.searchParams.set('theme', theme)
+  else url.searchParams.delete('theme')
   url.searchParams.set('palette', palette ?? '')
   url.searchParams.set('accent', accent ?? '')
   url.searchParams.set('accent2', accent2 ?? '')
@@ -145,7 +152,7 @@ function sendTo(win, command, value) {
 
 function PresenterView({ deckConfig, slides }) {
   const [index, setIndex] = useState(0)
-  const [design, setDesign] = useState(deckConfig.design ?? 'neue')
+  const [theme, setTheme] = useState(deckConfig.theme ?? 'neue')
   const [palette, setPalette] = useState(PALETTE_NAMES.includes(deckConfig.palette) ? deckConfig.palette : '')
   const [accent, setAccent] = useState(deckConfig.accent ?? '')
   const [accent2, setAccent2] = useState(deckConfig.accent2 ?? '')
@@ -168,7 +175,7 @@ function PresenterView({ deckConfig, slides }) {
   const canFullscreen = !!fullscreen?.available()
 
   const [paletteOpen, setPaletteOpen] = useState(false)
-  const [designOpen, setDesignOpen] = useState(false)
+  const [themeOpen, setThemeOpen] = useState(false)
   const [themeModalOpen, setThemeModalOpen] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [timerRunning, setTimerRunning] = useState(false)
@@ -190,18 +197,18 @@ function PresenterView({ deckConfig, slides }) {
     announcedOnce.current = true
   }, [index])
 
-  const themeMeta = THEME_METAS[design]
+  const themeMeta = THEME_METAS[theme]
   const usesAccent2 = themeMeta?.accent2 ?? false
   const appearance = { theme: themeMeta, palette: PALETTES[palette], params: deckConfig.params, accent, accent2 }
   const effectiveAccent  = effectiveToken('--accent', appearance) || '#888888'
   const effectiveAccent2 = effectiveToken('--accent-2', appearance) || '#888888'
-  const notes = useMemo(() => slides.map(s => s.meta?.notes ?? s.meta?.note ?? ''), [slides])
-  // Preserve current slide when design/palette causes an iframe reload
-  const iframeSrc = useMemo(() => buildChildUrl(design, palette, accent, accent2, indexRef.current, { draw: true }), [design, palette, accent, accent2])
-  // previewSrc only recomputes on design/palette/accent change; slide changes use postMessage
+  const notes = useMemo(() => slides.map(s => s.meta?.notes ?? ''), [slides])
+  // Preserve current slide when theme/palette causes an iframe reload
+  const iframeSrc = useMemo(() => buildChildUrl(theme, palette, accent, accent2, indexRef.current, { draw: true }), [theme, palette, accent, accent2])
+  // previewSrc only recomputes on theme/palette/accent change; slide changes use postMessage
   const previewSrc = useMemo(
-    () => buildChildUrl(design, palette, accent, accent2, indexRef.current + 1),
-    [design, palette, accent, accent2]
+    () => buildChildUrl(theme, palette, accent, accent2, indexRef.current + 1),
+    [theme, palette, accent, accent2]
   )
 
   // BroadcastChannel for audience sync — more reliable than cross-window postMessage
@@ -289,11 +296,11 @@ function PresenterView({ deckConfig, slides }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [paletteOpen])
 
-  // When design/palette changes, tell the audience to hot-swap its theme without
+  // When theme/palette changes, tell the audience to hot-swap its theme without
   // a reload. Phones pick it up with the next announcement.
   useEffect(() => {
-    bcRef.current?.postMessage({ deckControl: { command: 'setTheme', design, palette, accent, accent2 } })
-  }, [design, palette, accent, accent2])
+    bcRef.current?.postMessage({ deckControl: { command: 'setTheme', theme, palette, accent, accent2 } })
+  }, [theme, palette, accent, accent2])
 
   // Nav buttons drive the presenter iframe; audience follows via slideIndexChanged
   function navCommand(cmd) {
@@ -302,7 +309,7 @@ function PresenterView({ deckConfig, slides }) {
 
   function openAudienceWindow() {
     const aw = window.open(
-      buildAudienceUrl(design, palette, accent, accent2, indexRef.current),
+      buildAudienceUrl(theme, palette, accent, accent2, indexRef.current),
       'deck-audience-view'
     )
     if (!aw) return
@@ -330,10 +337,10 @@ function PresenterView({ deckConfig, slides }) {
           <button style={{ ...pill, color: timerRunning ? '#f0f0f0' : '#777' }} title="Start or pause the timer" onClick={() => setTimerRunning(r => !r)}>{clock}</button>
           <button style={pill} title="Previous" onClick={() => navCommand('prev')}>←</button>
           <button style={pill} title="Next" onClick={() => navCommand('next')}>→</button>
-          <button class="presenter-draw" title="Draw on the slide (D)" aria-pressed={inking} style={{ ...pill, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }} onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}>✎</button>
+          <button class="presenter-draw" title="Draw on the slide (D)" aria-pressed={inking} style={{ ...pill, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }} onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}><PresenterIcon name="pen" /></button>
           <button class="presenter-notes" title="Notes (N)" aria-pressed={drawerOpen} style={{ ...pill, ...(drawerOpen ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={() => setDrawerOpen(open => !open)}>Notes</button>
-          {canFullscreen && <button style={pill} title="Full screen (F)" onClick={() => fullscreen.toggle()}>⛶</button>}
-          <button style={pill} title="Speaker layout: slide, notes and next slide side by side" onClick={() => chooseLayout('speaker')}>▥</button>
+          {canFullscreen && <button style={pill} title="Full screen (F)" onClick={() => fullscreen.toggle()}><PresenterIcon name="fullscreen" /></button>}
+          <button style={pill} title="Speaker layout: slide, notes and next slide side by side" onClick={() => chooseLayout('speaker')}><PresenterIcon name="speaker" /></button>
         </div>
       )}
       <aside class="presenter-aside" style={{
@@ -353,8 +360,8 @@ function PresenterView({ deckConfig, slides }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontWeight: 600, color: '#f0f0f0', fontSize: '14px' }}>Speaker View</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {!slideLayout && canFullscreen && <button style={{ ...S.btn, padding: '3px 8px' }} title="Full screen (F)" onClick={() => fullscreen.toggle()}>⛶</button>}
-            {!slideLayout && <button class="presenter-layout" style={{ ...S.btn, padding: '3px 8px' }} title="Slide only, notes in a drawer (for an iPad)" onClick={() => chooseLayout('slide')}>▢</button>}
+            {!slideLayout && canFullscreen && <button style={{ ...S.btn, padding: '3px 8px' }} title="Full screen (F)" onClick={() => fullscreen.toggle()}><PresenterIcon name="fullscreen" /></button>}
+            {!slideLayout && <button class="presenter-layout" style={{ ...S.btn, padding: '3px 8px' }} title="Slide only, notes in a drawer (for an iPad)" onClick={() => chooseLayout('slide')}><PresenterIcon name="tablet" /></button>}
             <span style={{ color: '#666', fontVariantNumeric: 'tabular-nums' }}>
               {String(index + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
             </span>
@@ -422,13 +429,13 @@ function PresenterView({ deckConfig, slides }) {
 
         <div style={{ flexShrink: 0 }}>
           <button
-            onClick={() => setDesignOpen(o => !o)}
+            onClick={() => setThemeOpen(o => !o)}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', padding: '2px 0 6px', cursor: 'pointer', color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', width: '100%' }}
           >
-            <span style={{ fontSize: '8px', opacity: 0.7 }}>{designOpen ? '▼' : '▶'}</span>
+            <span style={{ fontSize: '8px', opacity: 0.7 }}>{themeOpen ? '▼' : '▶'}</span>
             Theme & Palette
           </button>
-          {designOpen && (
+          {themeOpen && (
             <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
               <label style={{ flex: 1 }}>
                 <span style={S.label}>Theme</span>
@@ -436,7 +443,7 @@ function PresenterView({ deckConfig, slides }) {
                   onClick={() => setThemeModalOpen(true)}
                   style={{ ...S.select, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', cursor: 'pointer' }}
                 >
-                  <span>{design}</span>
+                  <span>{theme}</span>
                   <span style={{ opacity: 0.35, fontSize: '8px', flexShrink: 0 }}>▤</span>
                 </button>
               </label>
@@ -551,8 +558,8 @@ function PresenterView({ deckConfig, slides }) {
               {THEME_NAMES.map(n => (
                 <div
                   key={n}
-                  onClick={() => { setDesign(n); setAccent2(''); setThemeModalOpen(false) }}
-                  style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: `2px solid ${n === design ? '#60a5fa' : '#2a2a2a'}`, background: '#111' }}
+                  onClick={() => { setTheme(n); setAccent2(''); setThemeModalOpen(false) }}
+                  style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: `2px solid ${n === theme ? '#60a5fa' : '#2a2a2a'}`, background: '#111' }}
                 >
                   <div style={{ aspectRatio: '16/9', overflow: 'hidden' }}>
                     <iframe
@@ -561,7 +568,7 @@ function PresenterView({ deckConfig, slides }) {
                       style={{ width: '100%', height: '100%', border: 0, pointerEvents: 'none', display: 'block' }}
                     />
                   </div>
-                  <div style={{ padding: '8px 10px', fontSize: '14px', fontFamily: 'inherit', color: n === design ? '#f0f0f0' : '#aaa', background: n === design ? '#1c2a3a' : 'transparent' }}>
+                  <div style={{ padding: '8px 10px', fontSize: '14px', fontFamily: 'inherit', color: n === theme ? '#f0f0f0' : '#aaa', background: n === theme ? '#1c2a3a' : 'transparent' }}>
                     {n}
                   </div>
                 </div>
@@ -613,10 +620,10 @@ async function init() {
   const parsed = parseSlides(slidesContent)
   const url = new URL(window.location.href)
   const editorMode = url.searchParams.get('editor') === '1'
-  // One switch selects the view: deck, share, presenter or audience.
+  // One switch selects the view: deck, reader, presenter or audience.
   const defaultView = typeof __MDECK_DEFAULT_VIEW__ !== 'undefined' ? __MDECK_DEFAULT_VIEW__ : 'deck'
   const view = requestedView(url, defaultView)
-  const errors = validateDeck(parsed, { templates: manifests }).filter(d => d.severity === 'error')
+  const errors = validateDeck(parsed, { layouts: manifests }).filter(d => d.severity === 'error')
   if (errors.length && !editorMode) {
     document.body.textContent = errors.map(d => `Line ${d.line}: ${d.message}`).join('\n')
     document.body.style.whiteSpace = 'pre-wrap'
@@ -631,7 +638,7 @@ async function init() {
   const presenterMode = view === 'presenter'
   const audienceMode  = view === 'audience'
   const embedded = url.searchParams.get('embedded') === '1'
-  const shareMode = view === 'share' && !editorMode && !embedded
+  const readerMode = view === 'reader' && !editorMode && !embedded
   // The deck window and the presenter's main frame draw; the audience window
   // and the next-slide preview show what is drawn.
   const drawHere = !audienceMode && (!embedded || url.searchParams.get('draw') === '1')
@@ -675,7 +682,7 @@ async function init() {
   if (editorMode) {
     const post = message => window.parent.postMessage(message, window.location.origin)
     const bridge = createEditorBridge({
-      parse: parseSlides, validate: deck => validateDeck(deck, { templates: manifests }), loadTheme, setExtensionOverrides,
+      parse: parseSlides, validate: deck => validateDeck(deck, { layouts: manifests }), loadTheme, setExtensionOverrides,
       setCalloutLabels: config => { setCalloutLabels(config); setDeckLanguage(config); document.documentElement.lang = deckLanguage() },
       applyOverrides: withConfigOverrides, mount: context => mountDeck({ ...context, editor: true }), post,
     })
@@ -688,10 +695,10 @@ async function init() {
     return
   }
 
-  if (shareMode) {
+  if (readerMode) {
     document.body.style.margin = '0'
     await loadTheme(deckConfig)
-    render(<ShareView deck={parsed} deckConfig={deckConfig} />, document.body)
+    render(<ReaderView deck={parsed} deckConfig={deckConfig} />, document.body)
     return
   }
 
@@ -700,8 +707,8 @@ async function init() {
   if (!embedded && !audienceMode) {
     // A quiet way into the reader view for anyone who opened the file directly.
     const entry = document.createElement('a')
-    entry.className = 'share-entry'
-    entry.href = '?view=share'
+    entry.className = 'reader-entry'
+    entry.href = '?view=reader'
     entry.textContent = t('deck.overview')
     document.body.appendChild(entry)
   }
@@ -742,7 +749,7 @@ async function init() {
       const ctrl = data?.deckControl
       if (!ctrl) return
       if (ctrl.command === 'setTheme') {
-        loadTheme({ design: ctrl.design, palette: ctrl.palette, accent: ctrl.accent, accent2: ctrl.accent2 })
+        loadTheme({ theme: ctrl.theme, palette: ctrl.palette, accent: ctrl.accent, accent2: ctrl.accent2 })
       } else {
         handleDeckControl(ctrl)
       }

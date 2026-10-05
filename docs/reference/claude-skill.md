@@ -43,7 +43,7 @@ you the commands to preview, present and share it. Review the notes and the
 pictures it asks for, then:
 
 ```sh
-mdeck dev <deck>.md
+mdeck run <deck>.md
 mdeck build <deck>.md --share --self-contained -o <deck>.html
 ```
 

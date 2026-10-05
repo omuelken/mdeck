@@ -84,13 +84,13 @@ test('notes live in a block, a metadata key or get appended', () => {
 })
 
 test('deck settings are patched in place or inserted', () => {
-  assert.equal(setDeckConfig(clean(crlf), { palette: 'sage' }), crlf.replace('design: neue\r\n', 'design: neue\r\npalette: sage\r\n'))
-  assert.equal(setDeckConfig(clean(plain), { design: 'neue' }), '---\ndesign: neue\n---\n\n# First\nHello\n---\nNote: body text')
-  assert.equal(setDeckConfig(clean(shared), { design: undefined }), '# First\n\n---\n# Second\n')
-  assert.equal(setDeckConfig(clean(legacy), { design: undefined }), legacy.replace('---\ndesign: neue\n---\n', ''))
+  assert.equal(setDeckConfig(clean(crlf), { palette: 'sage' }), crlf.replace('theme: neue\r\n', 'theme: neue\r\npalette: sage\r\n'))
+  assert.equal(setDeckConfig(clean(plain), { theme: 'neue' }), '---\ndesign: neue\n---\n\n# First\nHello\n---\nNote: body text')
+  assert.equal(setDeckConfig(clean(shared), { theme: undefined }), '# First\n\n---\n# Second\n')
+  assert.equal(setDeckConfig(clean(legacy), { theme: undefined }), legacy.replace('---\ndesign: neue\n---\n', ''))
   assert.equal(setDeckConfig(clean(plain), {}), plain)
-  const inserted = parse(setDeckConfig(clean(legacy.replace('---\ndesign: neue\n---\n', '')), { design: 'duet', meta: { title: 'T' } }))
-  assert.deepEqual(inserted.deckConfig, { design: 'duet', meta: { title: 'T' } })
+  const inserted = parse(setDeckConfig(clean(legacy.replace('---\ndesign: neue\n---\n', '')), { theme: 'duet', meta: { title: 'T' } }))
+  assert.deepEqual(inserted.deckConfig, { theme: 'duet', meta: { title: 'T' } })
   assert.equal(inserted.slides.length, 3)
 })
 
@@ -121,7 +121,7 @@ test('slides can be inserted, removed and moved without disturbing neighbours', 
 })
 
 test('inserting and removing a slide at any position restores the original bytes', () => {
-  for (const name of ['custom-templates', 'showcase', 'python', 'fhnw']) {
+  for (const name of ['custom-layouts', 'showcase', 'python', 'fhnw']) {
     const source = readFileSync(new URL(`../examples/${name}/slides.md`, import.meta.url), 'utf8')
     const deck = clean(source, name)
     for (let index = 0; index <= deck.slides.length; index++) {
@@ -135,17 +135,17 @@ test('inserting and removing a slide at any position restores the original bytes
 })
 
 test('every helper keeps the example decks valid', () => {
-  const path = 'examples/custom-templates/slides.md'
-  const templates = templateManifests(path)
+  const path = 'examples/custom-layouts/slides.md'
+  const layouts = templateManifests(path)
   let deck = clean(readFileSync(path, 'utf8'))
-  const check = source => { deck = parse(source); assert.deepEqual(validateDeck(deck, { templates }), []) }
+  const check = source => { deck = parse(source); assert.deepEqual(validateDeck(deck, { layouts }), []) }
   check(setRegion(deck, 'deployment-options', 'left', '## Left\n\nChanged'))
   check(setSlideMeta(deck, 'deployment-options', { props: { ratio: [1, 1], emphasis: 'left' }, section: 'Intro' }))
   check(setSlideNotes(deck, 'built-in-regions', 'Remember to pause.'))
   check(setDeckConfig(deck, { palette: 'sage', accent: '#123456' }))
-  check(insertSlide(deck, 1, templates.split.starter).source)
+  check(insertSlide(deck, 1, layouts.split.starter).source)
   check(moveSlide(deck, 'built-in-regions', 0).source)
   assert.equal(deck.slides.length, 3)
   assert.equal(deck.slides[1].regions.left.content, '## Left\n\nChanged')
-  assert.deepEqual(deck.deckConfig, { design: 'neue', palette: 'sage', meta: { title: 'Deck-local templates' }, accent: '#123456' })
+  assert.deepEqual(deck.deckConfig, { theme: 'neue', palette: 'sage', meta: { title: 'Deck-local layouts' }, accent: '#123456' })
 })

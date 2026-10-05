@@ -68,14 +68,14 @@ Hover over the results to see **Reset**, which clears the answers, for example b
 
 The phones never load your slides. A small **room server** connects your screen and the phones: your screen tells it which poll is showing and what the phones should display, and the room server shows that on its own answer page, at an address like `example.org/live/482113`. The six digits are the presentation's session code; they stay the same for the whole talk.
 
-So you present from your own computer with `mdeck dev` or `mdeck present`, always with the slides as they are right now, and nothing needs to be uploaded. Only the room server has to be reachable by the phones.
+So you present from your own computer with `mdeck run`, always with the slides as they are right now, and nothing needs to be uploaded. Only the room server has to be reachable by the phones.
 
 ## Try it on your computer
 
-`mdeck dev` has a room server built in:
+`mdeck run` has a room server built in:
 
 ```sh
-mdeck dev my-talk.md --host
+mdeck run my-talk.md --host
 ```
 
 `--host` makes it reachable from phones and tablets in the same network, and the QR code then points at your computer. Without `--host`, the slide says so and offers a link to try the answer page in another browser tab on your computer. The launch page shows the join link and the session code too.
@@ -104,6 +104,25 @@ location /live/ {
 ```
 
 The slides and phones keep a connection open to receive answers live, which is why buffering is off and the timeout long. `X-Forwarded-For` lets the room server limit each phone, not the web server as a whole.
+
+To present from an iPad through the room server with `mdeck run --share` (see [Draw on your slides](drawing.html#present-from-an-ipad)), your web server must also pass WebSocket connections on. Give the room server its own host name, or a whole `server` block, and use these lines in place of the ones above:
+
+```nginx
+# in the http block
+map $http_upgrade $connection_upgrade { default upgrade; '' ''; }
+
+location / {
+  proxy_pass http://127.0.0.1:8787;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection $connection_upgrade;
+  proxy_set_header X-Forwarded-For $remote_addr;
+  proxy_buffering off;
+  proxy_read_timeout 1h;
+}
+```
+
+Sharing needs `MDECK_LIVE_KEY`: a room server without a key does not offer it, and a laptop that does not know the key cannot open a tunnel. The room server only relays: it keeps nothing of the slides, and a shared presentation disappears when the laptop disconnects or the room server restarts.
 
 To keep the room server running and start it with the machine, a systemd service works well. Put the presenter code in a file only root can read, for example `/etc/mdeck-live.env` with the line `MDECK_LIVE_KEY=choose-a-secret`, and create `/etc/systemd/system/mdeck-live.service`:
 
@@ -136,7 +155,7 @@ live:
 ---
 ```
 
-`MDECK_LIVE_KEY` is the presenter code: only a browser that has it can move the phones along and reset polls, so nobody in the audience can. Start `mdeck dev` with the same code (`MDECK_LIVE_KEY=choose-a-secret mdeck dev my-talk.md`), and the launch page checks the room server, shows the join link and opens the presenter view with the code. The browser remembers it; it never appears in the address bar or in the slide file. Without it, phones wait. The presenter view says whether the phones follow it, and if not, why.
+`MDECK_LIVE_KEY` is the presenter code: only a browser that has it can move the phones along and reset polls, so nobody in the audience can. Start `mdeck run` with the same code (`MDECK_LIVE_KEY=choose-a-secret mdeck run my-talk.md`), and the launch page checks the room server, shows the join link and opens the presenter view with the code. The browser remembers it; it never appears in the address bar or in the slide file. Without it, phones wait. The presenter view says whether the phones follow it, and if not, why.
 
 The presenter's screen repeats the current poll every few seconds, so phones that join late, or a room server that restarted, catch up. While a presenter view is open, other windows of the presentation in the same browser leave the phones alone. If the presentation is open on several screens, even in other browsers, the phones follow the one where the slides were changed last; just opening it elsewhere does not take them away. A presenter view that has lost the phones says so, and changing the slide there takes them back.
 

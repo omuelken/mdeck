@@ -101,7 +101,7 @@ mdeck writes the tokens into the page ahead of your stylesheet, so `styles.css` 
 Each `[params.name]` entry names a token authors may change under `params:` in their deck:
 
 ```yaml
-design: calm
+theme: calm
 params:
   primaryColor: "#e63946"
 ```

@@ -6,14 +6,14 @@ import { resolve } from 'node:path'
 import { parseManifestText, validateManifest, ManifestError } from '../src/extensions/manifest.js'
 import { loadRegistry, discoverExtensions, extensionRoots, manifestsOf, serializeRegistry, templateManifests } from '../src/extensions/discover.js'
 import { buildAppearance, effectiveToken, DARK_TOKENS } from '../src/extensions/appearance.js'
-import { resolveTemplateProps } from '../src/templates/templateProps.js'
+import { resolveLayoutProps } from '../src/layouts/layoutProps.js'
 import { parseSlides } from '../src/core/parseSlides.js'
 import { validateDeck } from '../src/core/validateDeck.js'
 import { generateExtensionsModule } from '../src/build/slidesPlugin.js'
 
-const path = 'examples/custom-templates/slides.md'
+const path = 'examples/custom-layouts/slides.md'
 const registry = loadRegistry(path)
-const templates = manifestsOf(registry, 'template')
+const layouts = manifestsOf(registry, 'layout')
 const exists = () => true
 
 function fixture(files) {
@@ -28,8 +28,8 @@ function fixture(files) {
 
 const PALETTE = 'schema = 1\nkind = "palette"\nid = "ocean"\ntitle = "Ocean"\ndark = true\n[tokens]\n"--bg" = "#102030"\n"--accent" = "#ffbd69"\n'
 const THEME = 'schema = 1\nkind = "theme"\nid = "plain"\ntitle = "Plain"\nfonts = ["https://example.test/font.css"]\n[tokens]\n"--bg" = "#fff"\n"--accent" = "#123456"\n[params.primaryColor]\ntoken = "--accent"\ntitle = "Primary"\n'
-const TEMPLATE = 'schema = 1\nkind = "template"\nid = "box"\ntitle = "Box"\n[regions.body]\n[properties.size]\ntype = "integer"\nminimum = 1\ndefault = 2\n'
-const LAYOUT = "import { h } from 'preact'\nimport { MarkdownRegion } from 'mdeck/template-api'\nexport default ({ regions }) => <MarkdownRegion class=\"slide-body\" region={regions.body} />\n"
+const LAYOUT_TOML = 'schema = 1\nkind = "layout"\nid = "box"\ntitle = "Box"\n[regions.body]\n[properties.size]\ntype = "integer"\nminimum = 1\ndefault = 2\n'
+const LAYOUT = "import { h } from 'preact'\nimport { MarkdownRegion } from 'mdeck/layout'\nexport default ({ regions }) => <MarkdownRegion class=\"slide-body\" region={regions.body} />\n"
 
 test('manifests of every kind normalize to shared records', () => {
   const palette = validateManifest(parseManifestText(PALETTE, 'p.toml'), { file: 'p.toml', dir: '/x/ocean', folderName: 'ocean', fileExists: exists })
@@ -37,7 +37,7 @@ test('manifests of every kind normalize to shared records', () => {
   const theme = validateManifest(parseManifestText(THEME, 't.toml'), { file: 't.toml', dir: '/x/plain', folderName: 'plain', fileExists: exists })
   assert.equal(theme.manifest.params.primaryColor.default, '#123456', 'param defaults derive from tokens')
   assert.deepEqual(theme.files.styles, ['/x/plain/styles.css'])
-  const template = validateManifest(parseManifestText(TEMPLATE, 'e.toml'), { file: 'e.toml', dir: '/x/box', folderName: 'box', fileExists: exists })
+  const template = validateManifest(parseManifestText(LAYOUT_TOML, 'e.toml'), { file: 'e.toml', dir: '/x/box', folderName: 'box', fileExists: exists })
   assert.equal(template.manifest.frame, 'standard')
   assert.equal(template.files.layout, '/x/box/layout.jsx')
   assert.deepEqual(template.manifest.properties.size, { type: 'integer', minimum: 1, default: 2 })
@@ -68,7 +68,7 @@ test('common manifest mistakes fail with the file, setting path and reason', () 
   check(TEMPLATE.replace('default = 2', 'default = "two"'), /properties.size: default must be integer/)
   check(TEMPLATE.replace('default = 2', 'default = 0'), /default must be at least 1/)
   check(TEMPLATE.replace('title = "Box"', 'title = "Box"\nframe = "poster"'), /frame must be one of/)
-  check(TEMPLATE, /files.layout: layout.jsx is missing/, { fileExists: () => false })
+  check(LAYOUT_TOML, /files.layout: layout.jsx is missing/, { fileExists: () => false })
   const parseError = caught(() => parseManifestText('id = \n', 'broken.toml'))
   assert.ok(parseError instanceof ManifestError)
   assert.match(parseError.message, /^broken\.toml:1:\d+: /)
@@ -77,21 +77,21 @@ test('common manifest mistakes fail with the file, setting path and reason', () 
 test('built-in and deck-local extensions load through one registry', () => {
   assert.deepEqual(Object.keys(registry.themes), ['aurora', 'duet', 'editorial', 'fhnw', 'neue', 'terminal'])
   assert.equal(Object.keys(registry.palettes).length, 8)
-  assert.equal(registry.templates.comparison.source, 'local')
-  assert.equal(registry.templates.title.source, 'built-in')
+  assert.equal(registry.layouts.comparison.source, 'local')
+  assert.equal(registry.layouts.title.source, 'built-in')
   assert.deepEqual(registry.warnings, [])
-  assert.ok(registry.templates.comparison.files.styles[0].endsWith('styles.css'))
-  for (const manifest of Object.values(templates)) {
-    assert.deepEqual(validateDeck(parseSlides(manifest.starter), { templates }), [], manifest.id)
+  assert.ok(registry.layouts.comparison.files.styles[0].endsWith('styles.css'))
+  for (const manifest of Object.values(layouts)) {
+    assert.deepEqual(validateDeck(parseSlides(manifest.starter), { layouts }), [], manifest.id)
   }
   assert.equal(registry.themes.neue.manifest.tokens['--accent'], '#0d9488', 'theme tokens reflect the rendered CSS, not stale metadata')
   assert.equal(registry.themes.neue.manifest.params.primaryColor.default, '#0d9488')
   assert.equal(registry.themes.terminal.manifest.dark, true)
   assert.equal(registry.themes.aurora.manifest.accent2, true)
   const listing = serializeRegistry(registry, { relativeTo: process.cwd() })
-  assert.equal(listing.templates.find(t => t.id === 'comparison').file, 'examples/custom-templates/extensions/comparison/extension.toml')
+  assert.equal(listing.layouts.find(t => t.id === 'comparison').file, 'examples/custom-layouts/extensions/comparison/extension.toml')
   assert.ok(listing.themes.every(t => t.kind === 'theme' && t.tokens && t.params))
-  assert.deepEqual(Object.keys(templateManifests(path)), Object.keys(templates))
+  assert.deepEqual(Object.keys(templateManifests(path)), Object.keys(layouts))
 })
 
 test('the generated runtime module imports every layout and lazily loads theme styles', () => {
@@ -104,13 +104,13 @@ test('the generated runtime module imports every layout and lazily loads theme s
 
 test('template validation rejects missing regions, unknown props and incorrect values', () => {
   const source = ':::meta\nlayout: comparison\nprops:\n  ratio: [1, 0]\n  emphasis: purple\n  typo: true\n:::\n:::slot wrong\nContent\n:::'
-  const diagnostics = validateDeck(parseSlides(source), { templates })
+  const diagnostics = validateDeck(parseSlides(source), { layouts })
   for (const code of ['missing-region', 'unknown-region', 'invalid-property', 'unknown-property']) assert.ok(diagnostics.some(d => d.code === code), code)
   assert.ok(diagnostics.some(d => d.message.includes('props.ratio[1]')))
 })
 
 test('deck checks agree with the registry about themes, palettes and parameters', () => {
-  const options = { templates, themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette') }
+  const options = { layouts, themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette') }
   const codes = validateDeck(parseSlides('---\ndesign: nope\npalette: nada\nparams:\n  primaryColor: "#000"\n---\n# Hi'), options).map(d => d.code)
   assert.deepEqual(codes, ['unknown-theme', 'unknown-palette'])
   const warnings = validateDeck(parseSlides('---\ndesign: terminal\nparams:\n  fontBody: serif\n---\n# Hi'), options)
@@ -119,24 +119,24 @@ test('deck checks agree with the registry about themes, palettes and parameters'
 })
 
 test('defaults are typed, isolated per slide and support legacy image fields', () => {
-  const one = resolveTemplateProps(templates.comparison)
+  const one = resolveLayoutProps(layouts.comparison)
   one.ratio[0] = 100
-  assert.deepEqual(resolveTemplateProps(templates.comparison).ratio, [1, 1])
-  assert.equal(resolveTemplateProps(templates['image-text'], { image: 'legacy.jpg' }).image, 'legacy.jpg')
-  assert.equal(resolveTemplateProps(templates['image-text'], { image: 'legacy.jpg', props: { image: 'new.jpg' } }).image, 'new.jpg')
+  assert.deepEqual(resolveLayoutProps(layouts.comparison).ratio, [1, 1])
+  assert.equal(resolveLayoutProps(layouts['image-text'], { image: 'legacy.jpg' }).image, 'legacy.jpg')
+  assert.equal(resolveLayoutProps(layouts['image-text'], { image: 'legacy.jpg', props: { image: 'new.jpg' } }).image, 'new.jpg')
 })
 
 test('deck-local extensions may be grouped in folders and add themes and palettes', () => {
   const fx = fixture({
     'extensions/colors/ocean/extension.toml': PALETTE,
     'extensions/plain/extension.toml': THEME, 'extensions/plain/styles.css': '.slide { color: red }',
-    'extensions/box/extension.toml': TEMPLATE, 'extensions/box/layout.jsx': LAYOUT,
+    'extensions/box/extension.toml': LAYOUT_TOML, 'extensions/box/layout.jsx': LAYOUT,
   })
   try {
     const local = loadRegistry(fx.slides)
     assert.equal(local.palettes.ocean.source, 'local')
     assert.equal(local.themes.plain.files.styles.length, 1)
-    assert.equal(local.templates.box.manifest.starter, ':::meta\nlayout: box\n:::\n')
+    assert.equal(local.layouts.box.manifest.starter, ':::meta\nlayout: box\n:::\n')
     assert.deepEqual(local.warnings, [])
   } finally { fx.remove() }
 })

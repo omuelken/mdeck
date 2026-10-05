@@ -1,5 +1,5 @@
 ---
-design: neue
+theme: neue
 palette: sage
 meta:
   title: "Ask the room"

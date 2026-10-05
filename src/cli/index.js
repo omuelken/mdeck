@@ -22,6 +22,9 @@ import { installSkill, readSkill, TARGETS } from './skill.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
 
 import { frameworkRoot } from '../paths.js'
+import { parseSlides } from '../core/parseSlides.js'
+import { componentFolders } from '../build/components.js'
+import { startTunnel, newTunnelId } from '../build/tunnelClient.js'
 import { baseConfig } from '../build/config.js'
 
 // ── ANSI helpers ──────────────────────────────────────────────────────────────
@@ -44,6 +47,35 @@ const ASPECT_RATIOS = [
 
 function hasFlag(name, short = null) {
   return argv.includes(name) || (short ? argv.includes(short) : false)
+}
+
+// Options that take a value: the value is not a slides file.
+const VALUE_OPTIONS = new Set(['--port', '--output', '-o'])
+
+/** The arguments that are neither options nor option values. */
+function positionals() {
+  const found = []
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]
+    if (VALUE_OPTIONS.has(arg)) { i++; continue }
+    if (arg === '--server') { if (/^https?:\/\//.test(argv[i + 1] ?? '')) i++; continue }
+    if (arg.startsWith('-')) continue
+    found.push(arg)
+  }
+  return found
+}
+
+/** The value of `-o`/`--output`, or null. */
+function outputOption() {
+  const index = argv.findIndex(arg => arg === '--output' || arg === '-o')
+  return index >= 0 && argv[index + 1] && !argv[index + 1].startsWith('-') ? argv[index + 1] : null
+}
+
+/** `--server [address]`: undefined without the flag, null without an address. */
+function serverOption() {
+  const index = argv.indexOf('--server')
+  if (index < 0) return undefined
+  return /^https?:\/\//.test(argv[index + 1] ?? '') ? argv[index + 1] : null
 }
 
 function portOption() {
@@ -140,7 +172,7 @@ async function runNewWizard() {
 
     const lines = [
       '---',
-      `design: ${theme}`,
+      `theme: ${theme}`,
       ...(palette ? [`palette: ${palette}`] : []),
       'meta:',
       `  title: "${title.replace(/"/g, '\\"')}"`,
@@ -169,7 +201,7 @@ async function runNewWizard() {
     console.log()
     ok(`Created ${c.cyan}${outPath}${c.reset}`)
     tip(`Added assets folder: ${assetDir}`)
-    tip(`Next: mdeck dev ${basename(outPath)}\n`)
+    tip(`Next: mdeck run ${basename(outPath)}\n`)
   } finally {
     rl.close()
   }
@@ -298,43 +330,49 @@ async function writePresenterLaunchers(outDir, htmlFilename) {
 const HELP = `
   ${c.bold}mdeck${c.reset} — markdown slide deck
 
-  ${c.dim}Usage:${c.reset}
-    ${c.green}mdeck dev${c.reset} <slides.md>                  Open the launch page: present, edit, share and check
-      --host      share the slides with phones in the same network
+  ${c.dim}Make and present${c.reset}
+    ${c.green}mdeck new${c.reset}                                 Make a presentation with guided questions
+    ${c.green}mdeck run${c.reset} [slides.md]                     Launch page: present, edit, check and send
+      --network              reach the slides from phones and tablets on the same network
+      --server [address]     present from an iPad on any network, through your server
+                             (the address, or the deck's server setting, or MDECK_SERVER;
+                              the key in MDECK_SERVER_KEY)
       --no-open   --port <number>
-    ${c.green}mdeck present${c.reset} <slides.md>              Open speaker/presenter view (same options)
-    ${c.green}mdeck edit${c.reset} <slides.md>                 Edit slides in the browser (experimental); saves to the file
-      --no-open   --port <number>
-    ${c.green}mdeck live${c.reset} [--port 8787] [--host [addr]]   Room server for polls on hosted decks (MDECK_LIVE_KEY)
-    ${c.green}mdeck new${c.reset}                              Interactive deck scaffolding wizard
-    ${c.green}mdeck build${c.reset} <slides.md> [-o out.html]
-                                              Build HTML + copied local assets
-    ${c.green}mdeck build${c.reset} <slides.md> [-o out.html] [--self-contained]
-                                              Inline local images/media into one HTML file
-    ${c.green}mdeck build${c.reset} <slides.md> [--presenter-launchers]
-                                              Add macOS/Linux and Windows launchers
-    ${c.green}mdeck build${c.reset} <slides.md> --share [--with-notes] [--no-pdf]
-                                              Open in the reader view, strip speaker notes, add a PDF
-    ${c.green}mdeck build${c.reset} <slides.md> --pdf         Also render deck.pdf with a local Chrome
-    ${c.green}mdeck pdf${c.reset} <slides.md> [-o talk.pdf]    Render the slides to PDF
-      --no-ink    leave out the drawings of <slides>.ink.json (also for build)
+    ${c.green}mdeck edit${c.reset} [slides.md]                    Edit slides in the browser (experimental); saves to the file
+
+  ${c.dim}Make something to hand out${c.reset}
+    ${c.green}mdeck build${c.reset} [slides.md] [-o dir/index.html]   A folder to host
+      --single-file          everything inlined into one file instead
+      --launchers            add macOS/Linux and Windows launchers (folders only)
+    ${c.green}mdeck send${c.reset} [slides.md] [-o talk.html]     One file to send: the reader view, speaker notes removed,
+                                              with a PDF inside
+      --notes                keep the speaker notes in the file
+      --no-pdf               do not render the PDF inside
+    ${c.green}mdeck pdf${c.reset} [slides.md] [-o talk.pdf]       A PDF, one page per slide
+      --no-drawings          for build, send and pdf: leave out <slides>.drawings.json
+    ${c.green}mdeck preview${c.reset} [folder]                    Preview a built folder (default: dist)
+
+  ${c.dim}Check and look things up${c.reset}
+    ${c.green}mdeck check${c.reset} [slides.md] [--strict]        Validate source and local assets
+    ${c.green}mdeck list${c.reset} [layouts|themes|palettes] [slides.md] [--json]
+                                              List built-in and deck-local layouts, themes and palettes
+    ${c.green}mdeck starter${c.reset} <layout> [slides.md]        Print starter Markdown for a layout
+    ${c.green}mdeck docs${c.reset} [guide]                        Open the local documentation
+      --no-open   --port <number>   --build    Serve without opening, choose port, or build site
     ${c.green}mdeck skill${c.reset} [--print] [--install <assistant>...] [--project]
                                               Slide-writing skill for AI assistants (claude, codex, cursor, copilot, gemini)
-    ${c.green}mdeck preview${c.reset}                          Preview the last build
-    ${c.green}mdeck docs${c.reset} [guide]                      Open the local documentation
-      --no-open   --port <number>   --build    Serve without opening, choose port, or build site
-    ${c.green}mdeck check${c.reset} <slides.md> [--strict]       Validate source and local assets
-    ${c.green}mdeck templates${c.reset} <slides.md> [--json]      List built-in and deck-local templates
-    ${c.green}mdeck templates${c.reset} <slides.md> --starter <name>
-                                              Print starter Markdown for a template
-    ${c.green}mdeck extensions${c.reset} <slides.md> [--json]     List templates, themes and palettes
+
+  ${c.dim}Serve${c.reset}
+    ${c.green}mdeck server${c.reset} [--port 8787] [--host [addr]]   The server for polls and for presenting from an iPad
+                                              through it (MDECK_SERVER_KEY); put a web server in front
+
+  Commands that take ${c.bold}slides.md${c.reset} use the one in the current folder when you leave it out.
 
   ${c.dim}Install the${c.reset} ${c.bold}mdeck${c.reset} ${c.dim}command globally:${c.reset}
     npm link
 
   ${c.dim}Or run without installing:${c.reset}
-    npm run dev -- slides.md
-    npm run build -- slides.md
+    npm start -- slides.md
 `
 
 // ── Argument parsing ──────────────────────────────────────────────────────────
@@ -345,12 +383,48 @@ if (!command || command === '--help' || command === '-h') {
   process.exit(0)
 }
 
+// Names from before 2.0. They stop with the new name instead of being ignored.
+const RENAMED_COMMANDS = { dev: 'mdeck run', present: 'mdeck run', live: 'mdeck server', templates: 'mdeck list layouts', extensions: 'mdeck list' }
+const RENAMED_OPTIONS = [
+  ['run', '--host', '--network'],
+  ['run', '--share', '--server'],
+  ['build', '--share', 'mdeck send'],
+  ['build', '--self-contained', '--single-file'],
+  ['build', '-S', '--single-file'],
+  ['build', '--inline-images', '--single-file'],
+  ['build', '-I', '--single-file'],
+  ['build', '--presenter-launchers', '--launchers'],
+  ['build', '--with-notes', 'mdeck send --notes'],
+  ['build', '--pdf', 'mdeck pdf'],
+  ['build', '--no-pdf', 'mdeck send --no-pdf'],
+  ['build', '--no-ink', '--no-drawings'],
+  ['pdf', '--no-ink', '--no-drawings'],
+]
+for (const [name, was, now] of RENAMED_OPTIONS) {
+  if (command === name && argv.includes(was)) { err(`${was} is now ${now}.`); process.exit(1) }
+}
+
+// With --server the dev server serves under /t/<id>/, but its own addresses are
+// mounted at /__mdeck/…: map the first onto the second before anything else.
+function stripRelayBase(base) {
+  return {
+    name: 'mdeck-relay-base',
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (request.url.startsWith(`${base}__mdeck/`)) request.url = `/${request.url.slice(base.length)}`
+        next()
+      })
+    },
+  }
+}
+
+// The slides file: the first argument that is not an option, or slides.md in
+// the current folder.
 function requireInput(cmd) {
-  const input = argv[0]
+  const input = positionals()[0] ?? (existsSync('slides.md') ? 'slides.md' : null)
   if (!input) {
-    err(`No slides file specified.`)
-    tip(`Usage: mdeck ${cmd} <slides.md>`)
-    tip(`       npm run ${cmd} -- slides.md`)
+    err('No slides file specified.')
+    tip(`Usage: mdeck ${cmd} <slides.md>   (or run it in a folder that has a slides.md)`)
     process.exit(1)
   }
   if (!existsSync(input)) {
@@ -360,7 +434,7 @@ function requireInput(cmd) {
   return input
 }
 
-// ── dev ───────────────────────────────────────────────────────────────────────
+// ── new ───────────────────────────────────────────────────────────────────────
 if (command === 'new') {
   await runNewWizard()
 
@@ -405,35 +479,54 @@ if (command === 'new') {
   if (diagnostics.some(d => d.severity === 'error') || (warned && hasFlag('--strict'))) process.exitCode = 1
   else ok(`Checked ${input}${warned ? ' (with warnings)' : ''}`)
 
-} else if (command === 'templates') {
-  const input = requireInput('templates')
-  const registry = registryFor(input)
-  const templates = manifestsOf(registry, 'template')
-  const starterIndex = argv.indexOf('--starter')
-  if (starterIndex >= 0) {
-    const name = argv[starterIndex + 1]
-    if (!Object.hasOwn(templates, name)) { err(`Unknown template: ${name}`); process.exitCode = 1 }
-    else process.stdout.write(templates[name].starter)
-  } else if (hasFlag('--json')) console.log(JSON.stringify(templates, null, 2))
-  else for (const record of Object.values(registry.templates)) console.log(`  ${record.id} — ${record.title} (${record.source})`)
-
-} else if (command === 'extensions') {
-  const input = requireInput('extensions')
-  const registry = registryFor(input)
-  if (hasFlag('--json')) console.log(JSON.stringify(serializeRegistry(registry, { relativeTo: process.cwd() }), null, 2))
-  else for (const kind of KINDS) {
+} else if (command === 'list') {
+  const KIND_WORDS = { layouts: 'layout', themes: 'theme', palettes: 'palette' }
+  const [first, ...others] = positionals()
+  const word = Object.hasOwn(KIND_WORDS, first) ? first : null
+  if (first && !word && !/\.md$/i.test(first)) { err(`Unknown kind: ${first}`); tip('Use layouts, themes or palettes.'); process.exit(1) }
+  const file = (word ? others[0] : first) ?? 'slides.md'
+  const registry = registryFor(file)
+  if (hasFlag('--json')) {
+    console.log(JSON.stringify(word ? manifestsOf(registry, KIND_WORDS[word]) : serializeRegistry(registry, { relativeTo: process.cwd() }), null, 2))
+  } else for (const kind of KINDS) {
+    if (word && KIND_WORDS[word] !== kind) continue
     console.log(`\n  ${c.bold}${kind}s${c.reset}`)
     for (const record of Object.values(registry[`${kind}s`])) console.log(`    ${c.cyan}${record.id}${c.reset} — ${record.title} ${c.dim}(${record.source})${record.description ? ' ' + record.description : ''}${c.reset}`)
   }
 
-// ── dev / present ─────────────────────────────────────────────────────────────
-} else if (command === 'dev' || command === 'present') {
+} else if (command === 'starter') {
+  const [name, file = 'slides.md'] = positionals()
+  if (!name) { err('Name a layout.'); tip('Usage: mdeck starter <layout> [slides.md]; mdeck list layouts shows the names.'); process.exit(1) }
+  const layouts = manifestsOf(registryFor(file), 'layout')
+  if (!Object.hasOwn(layouts, name)) { err(`Unknown layout: ${name}`); process.exitCode = 1 }
+  else process.stdout.write(layouts[name].starter)
+
+// ── run ───────────────────────────────────────────────────────────────────────
+} else if (command === 'run') {
   const input = requireInput(command)
   const abs = resolve(input)
-  const base = baseConfig(abs)
   const port = portOption()
-  const exposed = hasFlag('--host')
+  const exposed = hasFlag('--network')
   const pairing = createPairing()
+
+  // --server: the server relays an iPad's requests to this computer
+  // (src/build/tunnelClient.js). The dev server then serves under /t/<id>/, the
+  // address the iPad uses on the server, and its own addresses follow it. The
+  // address is the flag's value, else the deck's server setting, else MDECK_SERVER.
+  let relay = null
+  const serverFlag = serverOption()
+  if (serverFlag !== undefined) {
+    const inDeck = parseSlides(readFileSync(abs, 'utf8')).deckConfig?.server
+    const address = serverFlag ?? (typeof inDeck === 'string' ? inDeck : null) ?? process.env.MDECK_SERVER ?? null
+    const key = process.env.MDECK_SERVER_KEY
+    if (!address) { err('--server needs the address of your server.'); tip('Give it as  --server https://…, add  server: https://…  to the deck, or set MDECK_SERVER.'); process.exit(1) }
+    if (!/^https?:\/\//.test(address)) { err(`The server address must start with http:// or https://, not "${address}".`); process.exit(1) }
+    if (!key) { err('--server needs the key of the server.'); tip('Start it as  MDECK_SERVER_KEY=<key> mdeck run <slides.md> --server'); process.exit(1) }
+    const id = newTunnelId()
+    relay = { server: address, key, id, base: `/t/${id}/`, url: `${address.replace(/\/+$/, '')}/t/${id}/`, state: 'connecting', reason: null }
+  }
+  const base = baseConfig(abs, { server: relay?.server ?? null })
+  const mountBase = relay?.base ?? '/'
   // The launch page starts these on first use, inside this process.
   const services = {
     async editor() {
@@ -449,39 +542,62 @@ if (command === 'new') {
   const server = await createServer({
     ...base,
     // A paired iPad may save ink and steer the rooms, like this computer.
-    plugins: [...base.plugins, homePlugin(abs, { services, pairing }), pairingPlugin(pairing), livePlugin({ pairing }), inkPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) })],
+    ...(relay ? { base: relay.base } : {}),
+    plugins: [...(relay ? [stripRelayBase(relay.base)] : []), ...base.plugins, homePlugin(abs, { services, pairing, relay, server: relay?.server ?? null }), pairingPlugin(pairing), livePlugin({ pairing }), inkPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) })],
     publicDir: dirname(abs),
     server: {
       ...base.server,
       ...(port ? { port, strictPort: true } : {}),
       host: exposed ? true : base.server.host,
-      open: hasFlag('--no-open') ? false : command === 'present' ? '/?view=presenter' : '/home.html',
+      open: hasFlag('--no-open') ? false : `${mountBase}home.html`,
     },
   })
   await server.listen()
   const local = server.resolvedUrls.local[0]
+  let tunnel = null
+  if (relay) {
+    tunnel = startTunnel({
+      server: relay.server, key: relay.key, id: relay.id, target: local, base: relay.base,
+      roots: [frameworkRoot, dirname(abs), ...componentFolders(abs).map(folder => folder.dir)],
+      tokens: () => pairing.tokens(),
+      log: message => tip(message),
+      onState(state, reason) {
+        const before = relay.state
+        relay.state = state
+        relay.reason = reason ?? null
+        if (state === 'up') ok(`Connected to ${c.cyan}${relay.server}${c.reset}`)
+        else if (state === 'refused') err(`Connecting to the server failed: ${reason}`)
+        else if (state === 'down' && before === 'up') tip('Lost the connection to the server; reconnecting…')
+      },
+    })
+    pairing.onChange(() => tunnel.push())
+    const stop = () => { tunnel.stop(); process.exit(0) }
+    process.once('SIGINT', stop)
+    process.once('SIGTERM', stop)
+  }
   console.log()
   ok(`Launch page: ${c.cyan}${new URL('home.html', local).href}${c.reset}`)
   tip(`Presenter:   ${new URL('?view=presenter', local).href}`)
   tip(`Deck:        ${new URL('?view=deck', local).href}`)
-  if (exposed) for (const url of server.resolvedUrls.network) tip(`On a phone:  ${new URL('?view=share', url).href}`)
+  if (exposed) for (const url of server.resolvedUrls.network) tip(`On a phone:  ${new URL('?view=reader', url).href}`)
   console.log()
+  if (relay) tip(`iPad:        choose "Show pairing code" on the launch page; it opens ${relay.url}`)
   ok(`Watching ${c.cyan}${abs}${c.reset}`)
   tip('Edit and save to reload.\n')
 
-// ── live ──────────────────────────────────────────────────────────────────────
-} else if (command === 'live') {
+// ── server ────────────────────────────────────────────────────────────────────
+} else if (command === 'server') {
   const port = portOption() ?? 8787
   const hostIndex = argv.indexOf('--host')
   const host = hostIndex >= 0 && argv[hostIndex + 1] && !argv[hostIndex + 1].startsWith('-') ? argv[hostIndex + 1] : hostIndex >= 0 ? '0.0.0.0' : '127.0.0.1'
-  const key = process.env.MDECK_LIVE_KEY || null
+  const key = process.env.MDECK_SERVER_KEY || null
   try {
-    const live = await startLiveServer({ port, host, key })
-    ok(`Room server: ${c.cyan}${live.url}${c.reset}`)
-    tip('Point decks at it with  live: { server: https://your.host/live }  behind a web server.')
-    tip(key ? 'Presenters reset rooms after opening the deck once with ?livekey=<MDECK_LIVE_KEY>.' : 'Set MDECK_LIVE_KEY to let presenters reset rooms.')
+    const server = await startLiveServer({ port, host, key })
+    ok(`Server: ${c.cyan}${server.url}${c.reset}`)
+    tip('Point decks at it with  server: https://your.host  behind a web server that passes WebSocket connections on.')
+    tip(key ? 'Presenters reset rooms after opening the deck once with ?serverkey=<MDECK_SERVER_KEY>, and mdeck run --server can present through it.' : 'Set MDECK_SERVER_KEY to let presenters reset rooms and to allow mdeck run --server.')
     tip('Rooms live in memory only. Press Ctrl+C to stop.\n')
-    const stop = async () => { await live.close(); process.exit(0) }
+    const stop = async () => { await server.close(); process.exit(0) }
     process.once('SIGINT', stop)
     process.once('SIGTERM', stop)
   } catch (error) { err(error.message); process.exitCode = 1 }
@@ -609,6 +725,7 @@ if (command === 'new') {
 
 } else {
   err(`Unknown command: "${command}"`)
+  if (Object.hasOwn(RENAMED_COMMANDS, command)) tip(`mdeck ${command} is now ${RENAMED_COMMANDS[command]}.`)
   tip('Run mdeck --help for usage.\n')
   process.exit(1)
 }

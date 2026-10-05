@@ -1,4 +1,4 @@
-/* Launch page for `mdeck dev`. It is a tool page like the presenter view, the
+/* Launch page for `mdeck run`. It is a tool page like the presenter view, the
    editor and the reader's bar, and shares their dark chrome: neutral greys,
    small uppercase labels, grey buttons and the editor's blue for the main
    action. The teal of the mdeck mark stays in the mark. */
@@ -90,6 +90,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--home-focus); ou
 .home-output-body details { margin-top: 6px; font-size: 12px; }
 .home-output-body pre { max-height: 220px; overflow: auto; padding: 8px; border-radius: 4px; background: var(--home-bg); white-space: pre-wrap; }
 .home-note { color: var(--home-warn) !important; }
+.home-relay--up { color: var(--home-ok) !important; }
+.home-relay--refused { color: var(--home-bad) !important; }
 .home-output-actions { flex: none; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .home-status { font-size: 12px; color: var(--home-faint); min-width: 90px; text-align: right; }
 .home-status--done { color: var(--home-ok); }

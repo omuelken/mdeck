@@ -3,7 +3,7 @@
 // parses, reloads the theme only when deck settings changed, mounts, and
 // reports diagnostics back. Nothing here throws on a broken deck.
 
-export function createEditorBridge({ parse, validate = () => [], loadTheme, setExtensionOverrides = () => {}, setCalloutLabels = () => {}, applyOverrides = config => config, mount, post = () => {}, fallbackDesign = 'neue' }) {
+export function createEditorBridge({ parse, validate = () => [], loadTheme, setExtensionOverrides = () => {}, setCalloutLabels = () => {}, applyOverrides = config => config, mount, post = () => {}, fallbackTheme = 'neue' }) {
   let appliedConfig = null
   let themeConfig = null
   let current = { deck: null, deckConfig: null }
@@ -25,7 +25,7 @@ export function createEditorBridge({ parse, validate = () => [], loadTheme, setE
         await loadTheme(config)
       } catch (error) {
         runtime.push({ severity: 'error', code: 'theme-load', message: error.message, line: 1, column: 1 })
-        config = { ...requested, design: fallbackDesign }
+        config = { ...requested, theme: fallbackTheme }
         try { await loadTheme(config) } catch {}
       }
       appliedConfig = key

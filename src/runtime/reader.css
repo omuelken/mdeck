@@ -1,0 +1,63 @@
+.reader-view { position: fixed; inset: 0; display: grid; grid-template-rows: 48px 1fr; background: #101010; color: #e6e6e6; font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.reader-view * { box-sizing: border-box; }
+/* Theme stylesheets style the document; the chrome must not inherit them. */
+.reader-top, .reader-nav, .reader-bottom, .reader-menu-panel, .reader-toast, .reader-page-caption, .reader-page-notes,
+.reader-top *, .reader-nav *, .reader-bottom *, .reader-menu-panel *, .reader-toast *, .reader-page-caption * { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; font-weight: 400; line-height: 1.5; letter-spacing: normal; text-transform: none; color: #e6e6e6; margin: 0; padding: 0; background: none; border: 0; }
+.reader-top { display: flex; align-items: center; gap: 10px; padding: 0 14px !important; border-bottom: 1px solid #262626; background: #171717; min-width: 0; }
+.reader-top h1 { font-size: 15px; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+.reader-top .reader-meta { color: #a8a8a8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reader-top .reader-spacer { flex: 1; }
+.reader-top .reader-count { color: #b8b8b8; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.reader-btn { appearance: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px !important; border-radius: 6px; border: 1px solid #3a3a3a !important; background: #222 !important; color: #e6e6e6; cursor: pointer; font: inherit; text-decoration: none; white-space: nowrap; }
+.reader-btn:hover { border-color: #5a5a5a; color: #fff; }
+.reader-btn:disabled { opacity: 0.45; cursor: default; }
+.reader-btn:disabled:hover { border-color: #3a3a3a; color: #e6e6e6; }
+.reader-icon { flex: 0 0 auto; opacity: 0.85; }
+.reader-btn.is-active .reader-icon { opacity: 1; }
+.reader-btn.is-active { background: #2a2a2a !important; border-color: #6a6a6a !important; }
+.reader-select { padding: 6px 8px !important; border-radius: 6px; border: 1px solid #3a3a3a !important; background: #1b1b1b !important; color: #f0f0f0; }
+.reader-main { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 0; }
+.reader-nav { overflow: auto; border-right: 1px solid #262626 !important; padding: 8px !important; }
+.reader-nav ol { list-style: none; margin: 0; padding: 0; }
+.reader-nav li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 8px; padding: 7px 8px !important; border-radius: 6px; cursor: pointer; color: #d6d6d6; align-items: baseline; }
+.reader-nav li:hover { background: #1e1e1e; }
+.reader-nav li.is-current { background: #23384f; color: #fff; }
+.reader-nav li.is-chapter { margin-top: 8px; color: #fff; font-weight: 600; }
+.reader-nav li .reader-num { color: #8a8a8a; font-variant-numeric: tabular-nums; font-size: 12px; }
+.reader-nav li .reader-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reader-nav li .reader-part { display: block; font-size: 11px; font-weight: 400; color: #9a9a9a; text-transform: uppercase; letter-spacing: 0.06em; }
+.reader-content { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: #0b0b0b; }
+.reader-stage-wrap { flex: 1; position: relative; min-height: 0; }
+.reader-stage-wrap deck-stage { position: absolute !important; inset: 0 !important; width: 100%; height: 100%; }
+.reader-bottom { display: flex; align-items: center; gap: 8px; padding: 8px 14px !important; border-top: 1px solid #262626; background: #171717; }
+.reader-bottom .reader-spacer { flex: 1; }
+.reader-read { flex: 1; overflow: auto; padding: 24px; display: flex; flex-direction: column; gap: 28px; align-items: center; }
+.reader-page { width: min(100%, 1400px); }
+.reader-page-frame { position: relative; width: 100%; overflow: hidden; box-shadow: 0 6px 30px rgba(0,0,0,0.5); border-radius: 4px; background: #000; }
+.reader-page-scale { position: absolute; top: 0; left: 0; transform-origin: top left; }
+.reader-page-scale > section.slide { width: 100%; height: 100%; }
+.reader-read [data-step] { opacity: 1 !important; }
+.reader-page-notes { margin: 10px 4px 0 !important; padding: 12px 16px !important; border-left: 3px solid #3d6094 !important; background: #161a20 !important; color: #d0d8e4; border-radius: 0 6px 6px 0; }
+.reader-page-notes p { margin: 0 0 6px; }
+.reader-page-caption { margin: 6px 4px 0; color: #9a9a9a; font-size: 12px; display: flex; gap: 8px; }
+.reader-page-caption b { color: #d0d0d0; font-weight: 500; }
+.reader-toast { position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%); background: #27436a !important; color: #fff; padding: 8px 14px !important; border-radius: 6px; }
+.reader-menu { position: relative; }
+.reader-menu-panel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 5; width: 280px; background: #1b1b1b !important; border: 1px solid #3a3a3a !important; border-radius: 8px; padding: 12px !important; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); }
+.reader-menu-panel label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #b8b8b8; }
+.reader-nav-toggle { display: none; }
+@media (max-width: 820px) {
+  .reader-main { grid-template-columns: 1fr; }
+  .reader-nav { display: none; position: fixed; top: 48px; bottom: 0; left: 0; width: min(85vw, 320px); background: #141414; z-index: 4; box-shadow: 0 0 40px rgba(0,0,0,0.7); }
+  .reader-nav.is-open { display: block; }
+  .reader-nav-toggle { display: inline-flex; }
+  .reader-top .reader-meta, .reader-top .label-text { display: none; }
+  .reader-read { padding: 10px; }
+}
+@media print {
+  .reader-top, .reader-nav, .reader-bottom, .reader-toast { display: none !important; }
+  .reader-view, .reader-main, .reader-content, .reader-stage-wrap { position: static !important; display: block !important; background: none !important; }
+}
+.reader-entry { position: fixed; left: 14px; bottom: 14px; z-index: 50; padding: 6px 10px; border-radius: 6px; background: rgba(20,20,20,0.7); color: #fff; font: 13px system-ui, sans-serif; text-decoration: none; opacity: 0.25; transition: opacity 200ms; }
+.reader-entry:hover { opacity: 1; }
+@media print { .reader-entry { display: none !important; } }

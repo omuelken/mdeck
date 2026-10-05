@@ -86,7 +86,7 @@ A settings block at the very top of the file controls the whole presentation. It
 
 ```markdown
 ---
-design: neue
+theme: neue
 palette: paper
 meta:
   title: "Our next adventure"

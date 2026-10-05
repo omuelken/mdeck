@@ -49,4 +49,4 @@ The palettes, themes and templates that come with mdeck cannot be changed in pla
 
 - `mdeck edit` runs only on your computer. It is not a website other people can open.
 - The editor checks your slides the same way `mdeck check` does and shows problems next to the slide they belong to.
-- To present, use the **Present** button at the top right, or run `mdeck present my-talk.md`.
+- To present, use the **Present** button at the top right, or open the presenter view from the launch page of `mdeck run my-talk.md`.

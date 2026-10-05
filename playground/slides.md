@@ -1,5 +1,5 @@
 ---
-design: fhnw
+theme: fhnw
 meta:
   title: "Tadaa"
   author: "Tilman"

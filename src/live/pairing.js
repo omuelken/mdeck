@@ -1,6 +1,8 @@
-// The browser side of pairing with `mdeck dev` (src/build/pairing.js): a
+// The browser side of pairing with `mdeck run` (src/build/pairing.js): a
 // device that opened the launch page's QR code trades the one-time token in
 // the address for a token of its own, kept in this browser for this server.
+import { devPath } from '../core/devPath.js'
+
 const storageKey = () => `mdeck-pair:${location.origin}`
 
 export function pairToken() {
@@ -19,7 +21,7 @@ export async function claimPairing() {
   url.searchParams.delete('pair')
   try { history.replaceState(history.state, '', url) } catch {}
   try {
-    const response = await fetch('/__mdeck/pair/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: offer }) })
+    const response = await fetch(devPath('__mdeck/pair/claim'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: offer }) })
     const body = await response.json().catch(() => ({}))
     if (!response.ok) { console.warn('mdeck: pairing failed:', body.error ?? response.status); return false }
     localStorage.setItem(storageKey(), body.token)

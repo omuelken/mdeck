@@ -1,4 +1,4 @@
-// One discovery layer for templates, themes and palettes. The same registry
+// One discovery layer for layouts, themes and palettes. The same registry
 // backs `mdeck check`, CLI listings, the dev server and builds.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve, dirname, relative } from 'node:path'
@@ -32,7 +32,7 @@ function* walk(dir) {
   }
 }
 
-function readTemplate(record) {
+function readLayout(record) {
   const starter = record.files.starter ? readFileSync(record.files.starter, 'utf8') : `:::meta\nlayout: ${record.id}\n:::\n`
   return { ...record, manifest: { ...record.manifest, starter } }
 }
@@ -40,11 +40,11 @@ function readTemplate(record) {
 function loadManifest({ dir, file, folderName }) {
   const raw = parseManifestText(readFileSync(file, 'utf8'), file)
   const record = validateManifest(raw, { file, dir, folderName })
-  return record.kind === 'template' ? readTemplate(record) : record
+  return record.kind === 'layout' ? readLayout(record) : record
 }
 
 export function discoverExtensions(roots) {
-  const registry = { templates: {}, themes: {}, palettes: {}, records: [], warnings: [] }
+  const registry = { layouts: {}, themes: {}, palettes: {}, records: [], warnings: [] }
   const byKey = new Map()
   const add = (record, source) => {
     const key = `${record.kind}:${record.id}`
@@ -71,7 +71,7 @@ export function manifestsOf(registry, kind) {
 }
 
 export function templateManifests(slidesPath, options) {
-  return manifestsOf(loadRegistry(slidesPath, options), 'template')
+  return manifestsOf(loadRegistry(slidesPath, options), 'layout')
 }
 
 // Serializable listing for `mdeck extensions --json` and future editors.

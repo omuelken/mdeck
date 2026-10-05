@@ -1,5 +1,5 @@
 // The talk across devices, through the deck's stage room on the room server
-// (built into `mdeck dev`, or `mdeck live`): an iPad draws and steers, the
+// (built into `mdeck run`, or `mdeck live`): an iPad draws and steers, the
 // laptop's audience window on the projector follows.
 //
 // The presenter's windows only send: live ink in batches (the bus.js

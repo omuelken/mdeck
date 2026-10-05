@@ -4,7 +4,7 @@
 // A room also has one state value that only the presenter sets: the deck's
 // session room holds the activity on screen, which the answer page shows.
 // Everything lives in memory: nothing is written to disk, and idle rooms are
-// forgotten. The same handler runs inside `mdeck dev` and as `mdeck live`.
+// forgotten. The same handler runs inside `mdeck run` and as `mdeck live`.
 import { timingSafeEqual } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { CODE_RE } from './code.js'

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Breaking:** `mdeck dev` and `mdeck present` are now one command, `mdeck run`. It always opens the launch page; the presenter view is one click away there. The old names print a pointer to `mdeck run`. The `npm run dev` and `npm run present` scripts became `npm start`.
+- `mdeck run --share` presents from an iPad on any network without opening a port on your computer and without hosting the deck. The computer connects out to your room server (`mdeck live`), which passes the iPad's requests to it; the pairing code on the launch page then points at the room server. Drawings are still saved beside the deck, edits reload the iPad, and polls and the audience window use the same room server. Only what the presenter and audience pages need is passed on; the launch page, the editor and the rest of your folder are not reachable. The room server needs this version, the key in `MDECK_LIVE_KEY` and a web server that passes WebSocket connections (see the audience guide). New dependency: `ws`.
+- Drawing: the icons of the toolbar and the presenter view are redrawn as line icons (fingers, tablet and speaker layouts, full screen, pen); the colours are named instead of shown as hex codes; clearing a slide asks in a small popover over the button instead of the browser's confirm dialog.
+
 ## 1.4.0 — 2026-10-05
 
 Draw on your slides, also from an iPad, and ask the audience more than polls. A room server started with `mdeck live` needs 1.4 to pass live drawings to other devices; polls keep working with older ones.

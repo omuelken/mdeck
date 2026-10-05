@@ -1,4 +1,4 @@
-// Launch page API for `mdeck dev`: what the deck contains, what `mdeck check`
+// Launch page API for `mdeck run`: what the deck contains, what `mdeck check`
 // says about it, the state of its room server, and buttons that start the
 // editor and the guides or run a build. Like the editor API it answers loopback
 // requests from its own pages only, even when the server is shared on the
@@ -21,7 +21,7 @@ export function outputsFor(slidesPath) {
   const abs = resolve(slidesPath), dir = dirname(abs), name = basename(abs).replace(/\.md$/i, '')
   return {
     folder: { title: 'Folder to host', args: ['build', abs], file: resolve(dir, 'dist/index.html') },
-    share: { title: 'One file to send', args: ['build', abs, '--share', '--self-contained', '-o', `${name}.html`], file: resolve(dir, `${name}.html`), chrome: true },
+    send: { title: 'One file to send', args: ['send', abs, '-o', `${name}.html`], file: resolve(dir, `${name}.html`), chrome: true },
     pdf: { title: 'PDF', args: ['pdf', abs, '-o', `${name}.pdf`], file: resolve(dir, `${name}.pdf`), chrome: true },
   }
 }
@@ -44,8 +44,8 @@ function reveal(file) {
   spawn(command, args, { stdio: 'ignore', detached: true }).on('error', () => {}).unref()
 }
 
-// The room server named in `live.server`: whether it answers, and whether it
-// accepts the presenter code (MDECK_LIVE_KEY, as given to the room server).
+// The server named in the `server` setting: whether it answers, and whether it
+// accepts the key (MDECK_SERVER_KEY, as given to the server).
 export async function liveStatus(live, { key = null, fetch: get = fetch, timeoutMs = 2500 } = {}) {
   const started = Date.now()
   try {
@@ -61,7 +61,7 @@ export async function liveStatus(live, { key = null, fetch: get = fetch, timeout
 // `urls()` returns the server's addresses; `services` start the editor and the
 // guides; `fetch` reaches the room server. All are injected so tests can run
 // without a browser or network.
-export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network: [] }), services = {}, pairing = null, run = runCli, open = reveal, liveKey = process.env.MDECK_LIVE_KEY || null, fetch: get = fetch } = {}) {
+export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network: [] }), services = {}, pairing = null, relay = null, server: serverAddress = null, run = runCli, open = reveal, serverKey = process.env.MDECK_SERVER_KEY || null, fetch: get = fetch } = {}) {
   const abs = resolve(slidesPath)
   const outputs = outputsFor(abs)
   const jobs = {}
@@ -85,13 +85,14 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       slides: deck.slides.length,
       width: config.width ?? 1920,
       height: config.height ?? 1080,
-      notes: deck.slides.filter(slide => slide.meta.notes || slide.meta.note).length,
-      design: config.design ?? 'neue',
+      notes: deck.slides.filter(slide => slide.meta.notes).length,
+      theme: config.theme ?? 'neue',
       palette: config.palette ?? null,
       diagnostics: [...(registry?.warnings ?? []).map(message => ({ severity: 'warning', code: 'extension', message })), ...(registryError ? [{ severity: 'error', code: 'extension', message: registryError }] : []), ...diagnostics],
       live: await live(config, source, { local, network }),
       // Presenting from an iPad needs an address it can reach (`--host`).
-      pairing: pairing ? { available: !!network[0], devices: pairing.devices } : null,
+      pairing: pairing ? { available: !!relay || !!network[0], devices: pairing.devices } : null,
+      relay: relay ? { url: relay.url, state: relay.state, reason: relay.reason } : null,
       chrome: !!findChrome(),
       services: Object.fromEntries(Object.keys(services).map(key => [key, serviceUrls[key] ?? null])),
       outputs: Object.fromEntries(Object.entries(outputs).map(([key, output]) => [key, {
@@ -108,8 +109,9 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
   // section: the room server and its health, the join link phones open and,
   // for a room server of their own, the presenter code.
   async function live(config, source, { local, network }) {
-    const settings = config.live ?? {}
-    const own = typeof settings.server === 'string'
+    const address = serverAddress ?? config.server
+    const settings = { server: address }
+    const own = typeof address === 'string'
     if (!own && roomsIn(source).length === 0) return null
     const code = sessionCode(config)
     const builtIn = base => new URL(`__mdeck/live/${code}`, base).href
@@ -117,8 +119,8 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
     return {
       server: own ? settings.server : null,
       code,
-      ...(own ? await liveStatus(settings, { key: liveKey, fetch: get }) : { reachable: true }),
-      key: own ? liveKey : null,
+      ...(own ? await liveStatus(settings, { key: serverKey, fetch: get }) : { reachable: true }),
+      key: own ? serverKey : null,
       joinUrl,
       localJoinUrl: joinUrl ?? (local[0] ? builtIn(local[0]) : null),
     }
@@ -133,13 +135,13 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
   // The one-time address an iPad opens to present from: the presenter view,
   // with the presenter code of the deck's own room server if there is one.
   function pairUrl() {
-    const network = urls()?.network?.[0]
-    if (!pairing || !network) throw Object.assign(new Error('Start mdeck dev with --host so an iPad can reach it'), { status: 409 })
+    const network = relay?.url ?? urls()?.network?.[0]
+    if (!pairing || !network) throw Object.assign(new Error('Start mdeck run with --network or --server so an iPad can reach it'), { status: 409 })
     const url = new URL(network)
     url.searchParams.set('view', 'presenter')
     url.searchParams.set('pair', pairing.offer())
     const config = parseSlides(readFileSync(abs, 'utf8')).deckConfig ?? {}
-    if (typeof config.live?.server === 'string' && liveKey) url.searchParams.set('livekey', liveKey)
+    if (typeof (serverAddress ?? config.server) === 'string' && serverKey) url.searchParams.set('serverkey', serverKey)
     return url.href
   }
 
@@ -179,19 +181,20 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
   }
 }
 
-export function homePlugin(slidesPath, { services, pairing } = {}) {
+export function homePlugin(slidesPath, { services, pairing, relay = null, server: serverAddress = null } = {}) {
   return {
     name: 'vite-plugin-mdeck-home',
     configureServer(server) {
       // The bare address is the launch page; the slides are at ?view=deck.
       // Only a plain page visit is redirected: every view, preview and editor
       // frame carries a query.
+      const base = server.config.base
       server.middlewares.use((request, response, next) => {
-        if (request.method !== 'GET' || !['/', '/index.html'].includes(request.url) || !/text\/html/.test(request.headers.accept ?? '')) return next()
-        response.writeHead(302, { Location: '/home.html' })
+        if (request.method !== 'GET' || ![base, `${base}index.html`].includes(request.url) || !/text\/html/.test(request.headers.accept ?? '')) return next()
+        response.writeHead(302, { Location: `${base}home.html` })
         response.end()
       })
-      server.middlewares.use('/__mdeck/home', homeMiddleware(slidesPath, { urls: () => server.resolvedUrls, services, pairing }))
+      server.middlewares.use('/__mdeck/home', homeMiddleware(slidesPath, { urls: () => server.resolvedUrls, services, pairing, relay, server: serverAddress }))
     },
   }
 }
