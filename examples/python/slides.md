@@ -9,6 +9,7 @@ meta:
 
 ---
 layout: title
+id: python-for-life-sciences
 ---
 # Python for Life Sciences.
 ## A step-by-step introduction for Master's students.
@@ -24,6 +25,7 @@ Welcome to the Python module. This session assumes no prior programming experien
 ---
 layout: focus
 eyebrow: Why Python?
+id: the-tools-your-field-uses-are-written-in
 ---
 # The tools your field uses are *written in Python*.
 
@@ -40,6 +42,7 @@ layout: chapter
 number: 1
 part: Getting Started
 description: Variables, types, and your first lines of code.
+id: variables-and-data-types
 ---
 # Variables and data types.
 
@@ -51,6 +54,7 @@ Estimated time for this chapter: 20 minutes.
 ---
 layout: split
 section: Variables
+id: variables-store-data
 ---
 
 ```python live editable copy
@@ -74,6 +78,7 @@ Encourage students to change the values and re-run — that's the point of the l
 
 ---
 section: Data Types
+id: four-types-cover-most-biology-data
 ---
 # Four types cover most biology data.
 
