@@ -51,6 +51,7 @@ export function validateManifest(raw, { file, dir, folderName, fileExists = exis
   if (!isPlainObject(raw)) fail('The manifest must be a table of settings')
 
   if (raw.schema !== SCHEMA_VERSION) fail(`schema must be ${SCHEMA_VERSION}${raw.schema == null ? ' (add "schema = 1" at the top)' : ''}`, 'schema')
+  if (raw.kind === 'template') fail('kind = \"template\" is now kind = \"layout\". Run mdeck migrate to update local manifests.', 'kind')
   if (!KINDS.includes(raw.kind)) fail(`kind must be one of: ${KINDS.join(', ')}`, 'kind')
   const kind = raw.kind
   if (raw.name !== undefined) fail('name is not a setting; use id for the identifier and title for the display name', 'name')

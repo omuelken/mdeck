@@ -39,7 +39,7 @@ Unassigned Markdown is the `body` region. `split` accepts `left` and `right`
 regions with the shared body above them; without named regions it retains the
 legacy first-block-left behavior. An explicit `:::slot body` is also supported,
 but cannot be combined with unassigned content. Duplicate or unclosed regions
-are errors. Layout layouts declare the other regions they accept.
+are errors. Layouts declare the other regions they accept.
 
 Set `id:` for a durable link such as `#deployment-options`. Numeric links such
 as `#3` remain supported. Without an authored ID, the parser assigns positional
@@ -53,14 +53,15 @@ unknown layouts warn and retain the generic fallback for compatibility.
 
 `parseSlides(source)` returns the original `source`, `deckConfig`, `configSource`,
 `slides` and `diagnostics`. Each slide has its resolved `meta`, `authoredMeta`
-(before section inheritance), `id`, `content`, `regions`, directive `blocks`, and
+(the authored YAML fields before section inheritance), `id`, `content`, `regions`, directive `blocks`, and
 `source`, `metaSource`, `bodySource` ranges. Ranges are half-open UTF-16 offsets
 into the original string, including its whitespace and line endings.
 
 Regions contain Markdown `content`. Explicit regions also carry their original
 `raw` body and contiguous `source` range. The implicit body has `ranges` because
 notes and slots may interrupt it. This is a source-preserving document model,
-not a normalized Markdown serializer.
+not a normalized Markdown serializer. Speaker notes come from `:::notes` body
+blocks and are available as `slide.meta.notes`; they are not authored metadata.
 
 `serializeDeck(deck)` returns the original source unchanged. Use
 `replaceRegion(deck, slideId, regionName, markdown)` for targeted explicit-region
@@ -82,7 +83,7 @@ stay identical, including comments, blank lines and the file's line endings.
 | `setRegion(deck, slideId, name, markdown)` | Replaces an explicit `:::slot` body, the implicit body (discontiguous ranges collapse into the first one), or appends a new slot |
 | `removeRegion(deck, slideId, name)` | Removes a slot block |
 | `setSlideMeta(deck, slideId, patch)` | Patches top-level keys of the slide's YAML; `undefined` deletes a key; works for `:::meta` and the legacy `---` form, inserting or removing the block as needed |
-| `setSlideNotes(deck, slideId, markdown)` | Edits the `:::notes` block, the `notes:` key, or appends a block |
+| `setSlideNotes(deck, slideId, markdown)` | Edits or removes a `:::notes` block, or appends one when absent |
 | `setDeckConfig(deck, patch)` | Patches the frontmatter, inserting it when absent |
 | `insertSlide(deck, index, markdown)` | Inserts a slide, keeping delimiters and blank lines tidy |
 | `removeSlide(deck, slideId)` / `moveSlide(deck, slideId, toIndex)` | Structural changes that return the index to select next |

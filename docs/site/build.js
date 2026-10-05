@@ -39,7 +39,7 @@ const exampleFiles = { 'first-talk': resolve(docsRoot, 'examples/first-talk.md')
 
 // The theme picker lists every registered theme and starts on the example's own design.
 function themeOptions(exampleFile) {
-  const current = parseSlides(readFileSync(exampleFile, 'utf8')).deckConfig.design ?? 'neue'
+  const current = parseSlides(readFileSync(exampleFile, 'utf8')).deckConfig.theme ?? 'neue'
   const themes = loadRegistry(exampleFile).themes
   return Object.values(themes).map(theme => `<option value="${theme.id}"${theme.id === current ? ' selected' : ''}>${escape(theme.title)}</option>`).join('')
 }

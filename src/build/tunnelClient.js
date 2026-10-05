@@ -11,24 +11,31 @@
 // `isAllowedRequest` refuse it, so it must show a paired device's token.
 import http from 'node:http'
 import { randomBytes } from 'node:crypto'
-import { resolve, sep } from 'node:path'
 import WebSocket from 'ws'
 import { TUNNEL_MARK } from './editorPlugin.js'
 
 /** A name for the tunnel nobody can guess: it is the secret part of the address. */
 export const newTunnelId = () => randomBytes(18).toString('base64url')
 
-const SOURCE = new Set(['js', 'jsx', 'mjs', 'ts', 'tsx', 'css', 'toml'])
-const MEDIA = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'avif', 'ico', 'mp4', 'webm', 'mov', 'm4v', 'mp3', 'm4a', 'wav', 'ogg', 'woff', 'woff2', 'ttf', 'otf', 'pdf'])
 const READ = new Set(['GET', 'HEAD'])
 const CHUNK = 256 * 1024
 
 /**
  * Whether an address may be served through the tunnel. `base` is the dev
- * server's base path (/t/<id>/); `roots` are the folders it may serve files
- * from by absolute path (the framework and the deck's folders).
+ * server's base path (/t/<id>/); `resources` lists exact approved module
+ * and asset URLs, including semantic queries such as ?raw.
  */
-export function shareable(pathname, method, { base, roots = [] }) {
+export function resourceKey(address) {
+  const url = new URL(address, 'http://localhost')
+  for (const name of ['t', 'v', 'import']) url.searchParams.delete(name)
+  url.searchParams.sort()
+  return decodeURIComponent(url.pathname) + url.search
+}
+
+export function shareable(address, method, { base, resources = new Set(), session = null }) {
+  let url
+  try { url = new URL(address, 'http://localhost') } catch { return false }
+  const pathname = url.pathname
   if (!pathname.startsWith(base)) return false
   let rest
   try { rest = decodeURIComponent(pathname.slice(base.length)) } catch { return false }
@@ -38,16 +45,12 @@ export function shareable(pathname, method, { base, roots = [] }) {
   if (parts.some(part => part.startsWith('.') && part !== '.vite')) return false
   if (rest === '__mdeck/ink') return method === 'GET'
   if (rest === '__mdeck/ink/ops' || rest === '__mdeck/pair/claim') return method === 'POST'
+  if (rest === '__mdeck/live/info') return READ.has(method)
+  const room = rest.match(/^__mdeck\/live\/rooms\/([^/]+)(\/events|\/state|\/reset|\/ink)?$/)
+  if (room && session && (room[1] === session || room[1].startsWith(`${session}.`))) return room[2] === '/events' ? method === 'GET' : method === 'POST'
   if (rest.startsWith('__mdeck/')) return false
   if (!READ.has(method)) return false
-  if (rest.startsWith('@vite/') || rest.startsWith('@id/')) return true
-  const ext = (rest.match(/\.([A-Za-z0-9]+)$/)?.[1] ?? '').toLowerCase()
-  const known = SOURCE.has(ext) || MEDIA.has(ext)
-  if (rest.startsWith('@fs/')) {
-    const file = resolve('/', rest.slice(3))
-    return known && roots.some(root => file.startsWith(resolve(root) + sep))
-  }
-  return known
+  try { return resources.has(resourceKey(url.href)) } catch { return false }
 }
 
 /**
@@ -57,7 +60,7 @@ export function shareable(pathname, method, { base, roots = [] }) {
  * Returns { url, state(), push(), stop() }; `onState` hears 'connecting',
  * 'up', 'down' and 'refused' with a reason.
  */
-export function startTunnel({ server, key, id, target, base, roots = [], tokens = () => [], onState = () => {}, log = () => {} }) {
+export function startTunnel({ server, key, id, target, base, resources = new Set(), allow = (path, method) => shareable(path, method, { base, resources, session: session() }), session = () => null, tokens = () => [], onState = () => {}, log = () => {} }) {
   const root = server.replace(/\/+$/, '')
   const socketUrl = new URL(`${root}/tunnel/${id}`)
   socketUrl.protocol = socketUrl.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -67,7 +70,7 @@ export function startTunnel({ server, key, id, target, base, roots = [], tokens 
 
   const set = (next, reason) => { state = next; onState(next, reason) }
   const send = message => { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message)) }
-  const push = () => send({ t: 'tokens', tokens: tokens() })
+  const push = () => send({ t: 'tokens', tokens: tokens(), session: session() })
   const refuse = (id, status, message) => send({ t: 'err', id, status, message })
 
   function pace(res) {
@@ -76,10 +79,10 @@ export function startTunnel({ server, key, id, target, base, roots = [], tokens 
     const poll = setInterval(() => { if (!socket || socket.bufferedAmount < 1024 * 1024) { clearInterval(poll); res.resume() } }, 20)
   }
 
-  function onRequest({ id, method, path, headers = {}, body }) {
+  async function onRequest({ id, method, path, headers = {}, body }) {
     let url
     try { url = new URL(path, 'http://localhost') } catch { return refuse(id, 400, 'Bad address') }
-    if (typeof method !== 'string' || !shareable(url.pathname, method, { base, roots })) {
+    if (typeof method !== 'string' || !await allow(url.pathname + url.search, method)) {
       log(`not shared: ${method} ${url.pathname}`)
       return refuse(id, 403, 'This address is not shared')
     }
@@ -116,7 +119,7 @@ export function startTunnel({ server, key, id, target, base, roots = [], tokens 
     let message
     try { message = JSON.parse(raw.toString()) } catch { return }
     switch (message?.t) {
-      case 'req': return onRequest(message)
+      case 'req': return onRequest(message).catch(() => refuse(message.id, 502, 'Could not check the shared resource'))
       case 'abort': requests.get(message.id)?.destroy(); requests.delete(message.id); return
       case 'wsopen': return onSocketOpen(message)
       case 'wsmsg': {
@@ -143,7 +146,7 @@ export function startTunnel({ server, key, id, target, base, roots = [], tokens 
       refused = true
       response.resume()
       const status = response.statusCode
-      set('refused', status === 401 ? 'The server did not accept the key' : status === 404 ? 'The server does not offer sharing: update mdeck there and start it with MDECK_LIVE_KEY' : status === 503 ? 'The server has too many shared presentations' : `The server answered ${status}`)
+      set('refused', status === 401 ? 'The server did not accept the key' : status === 404 ? 'The server does not offer sharing: update mdeck there and start it with MDECK_SERVER_KEY' : status === 503 ? 'The server has too many shared presentations' : `The server answered ${status}`)
     })
     socket.on('error', error => { if (!refused) log(`tunnel: ${error.message}`) })
     socket.on('close', () => {

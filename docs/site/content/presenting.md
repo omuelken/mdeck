@@ -21,8 +21,6 @@ Welcome everyone. Ask who has visited the garden.
 
 The words between `:::notes` and `:::` appear in the presenter view, not on the audience slide.
 
-Older files may use `note:` or `notes:` inside slide settings. Those still work. The block above is often easier to read and edit.
-
 ## Open the presenter view
 
 ```sh
@@ -33,7 +31,9 @@ The launch page it opens has a **Presenter view** button.
 
 Use its audience-window button to open a separate view of the slides. If you have a projector or second screen, move that audience window onto it. Keep the presenter window on your own screen.
 
-The two windows follow the same slide and reveal position. This works between windows in the same browser on your computer. To present from an iPad while your laptop shows the slides, see [Draw on your slides](drawing.html#present-from-an-ipad).
+The two windows follow the same slide and reveal position: navigate in either window and the other follows. This works between windows in the same browser and between your laptop and a paired iPad. To connect the iPad, see [Draw on your slides](drawing.html#present-from-an-ipad).
+
+For a single screen, switch the presenter view to its slide-only layout. **F** or the fullscreen button fills the screen in either the presenter view or the audience window; fullscreen does not select another view.
 
 To let people answer a question on their phones, put a poll on a slide. See [Ask your audience](audience.html).
 

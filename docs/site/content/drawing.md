@@ -4,7 +4,7 @@ You can draw on a slide while you present, or ahead of time: circle a number, un
 
 ## Start drawing
 
-Press **D** in the full-screen deck or in the presenter view, or use the pencil button (**✎ Draw**). A toolbar appears on the slide:
+Press **D** in standalone slides or in the presenter view, or use the pencil button (**✎ Draw**). A toolbar appears on the slide:
 
 | Tool | What it does |
 |---|---|
@@ -39,13 +39,13 @@ mdeck pdf my-talk.md --no-drawings
 
 There are two ways.
 
-**The iPad on its own.** Connect it to the projector, which usually shows the same picture as the iPad, and open the full-screen deck. Tap the left or right edge to go back or forward, or use the toolbar's arrows while drawing. Use the deck, not the presenter view, so your notes are not on the wall.
+**The iPad on its own.** Connect it to the projector, which usually shows the same picture as the iPad, and open standalone slides with **Present** from the reader view. Tap the left or right edge to go back or forward, or use the toolbar's arrows while drawing. This keeps notes off the wall.
 
 **The iPad next to your laptop.** The laptop shows the slides on the projector; you draw and go through the slides on the iPad, with your notes on it.
 
 1. Start `mdeck run my-talk.md --network`, so the iPad in the same network can reach your laptop.
 2. On the launch page, under **Present from an iPad**, choose **Show pairing code** and scan it with the iPad's camera. The presenter view opens on the iPad, paired with your laptop, so it may save drawings and steer the phones of a poll.
-3. On the laptop, open the **audience window** from the same place and move it to the projector. It follows the iPad: slides, revealed points, and drawings as you draw them.
+3. On the laptop, open the **audience window** from the same place and move it to the projector. It follows the iPad: slides, revealed points, and drawings as you draw them. Navigation in the audience window also updates the iPad's slide, notes and next-slide preview.
 
 A pairing code works once, for ten minutes. **Unpair** on the launch page ends every pairing; so does stopping `mdeck run`. Scan a new code afterwards.
 

@@ -193,7 +193,7 @@ This is the central idea. Pause here.
 :::
 ```
 
-Notes support full Markdown. The `note:` and `notes:` frontmatter keys of earlier versions are gone; `mdeck check` reports them.
+Notes support full Markdown and are written only in `:::notes` blocks in the slide body.
 
 ---
 

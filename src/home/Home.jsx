@@ -21,7 +21,6 @@ async function api(path, body) {
 
 const ICONS = {
   presenter: 'M3 4h12v9H3zM9 13v3M6 16h6M17 7h4M17 11h4M17 15h4',
-  deck: 'M4 5h16v11H4zM12 16v4M8 20h8',
   projector: 'M3 7h18v8H3zM7 19l2-4M17 19l-2-4M15 11h2',
   reader: 'M4 4h6v16H4zM12 4h8v16h-8zM14 8h4M14 12h4M14 16h2',
   editor: 'M4 20h4L19 9l-4-4L4 16zM13 7l4 4',
@@ -90,7 +89,7 @@ function ServiceTile({ icon, title, text, action, url, onError, onStarted }) {
 
 // A small live copy of the deck. The embedded deck hides its controls, takes
 // next/previous commands from this page and reports its slide back; a click
-// opens the full-screen deck at that slide.
+// opens an audience window at that slide.
 function Preview({ info }) {
   const frame = useRef(null)
   const [index, setIndex] = useState(0)
@@ -102,19 +101,19 @@ function Preview({ info }) {
     return () => window.removeEventListener('message', follow)
   }, [])
   const control = command => frame.current?.contentWindow?.postMessage({ deckControl: { command } }, window.location.origin)
-  const deckUrl = `${BASE}?view=deck#${index + 1}`
+  const audienceUrl = `${BASE}?view=audience&session=${SESSION}#${index + 1}`
   return <section class="home-section">
     <h2>Preview</h2>
     <div class="home-preview" style={{ aspectRatio: `${info.width} / ${info.height}` }}>
       <iframe ref={frame} src={`${BASE}?view=deck&embedded=1`} title="Deck preview" tabIndex={-1} />
-      <a class="home-preview-open" href={deckUrl} target="_blank" rel="noopener" aria-label="Open the full-screen deck" />
+      <a class="home-preview-open" href={audienceUrl} target="_blank" rel="noopener" aria-label="Open the audience window" />
     </div>
     <div class="home-preview-bar">
       <button class="home-btn home-btn--small" onClick={() => control('prev')} aria-label="Previous"><Icon name="prev" size={14} /></button>
       <button class="home-btn home-btn--small" onClick={() => control('next')} aria-label="Next"><Icon name="next" size={14} /></button>
       <span class="home-preview-count">{index + 1} / {info.slides}</span>
       <span class="home-spacer" />
-      <a class="home-btn home-btn--small" href={deckUrl} target="_blank" rel="noopener">Open deck <Icon name="arrow" size={13} /></a>
+      <a class="home-btn home-btn--small" href={audienceUrl} target="_blank" rel="noopener">Open audience window <Icon name="arrow" size={13} /></a>
     </div>
   </section>
 }
@@ -217,7 +216,7 @@ function LivePolls({ live, onRecheck }) {
             ? <>
               <code class="home-code">{live.key}</code> <CopyButton text={live.key} />
               <span class={`home-pill ${keyState[0]}`}>{keyState[1]}</span>
-              <p>The presenter view, audience window and deck buttons above carry it. Or open <a href={presenterUrl} target="_blank" rel="noopener">the presenter view with the key</a>.</p>
+              <p>The presenter view and audience window buttons above carry it. Or open <a href={presenterUrl} target="_blank" rel="noopener">the presenter view with the key</a>.</p>
             </>
             : <p>Start <code>mdeck run</code> with <code>MDECK_SERVER_KEY</code> set to the server's key to see it here.</p>}
         </dd>
@@ -283,7 +282,7 @@ export function Home() {
   if (!info) return <main class="home home--empty">
     <img src={mark} alt="" width="48" height="48" />
     <p>{loadError ? `The launch page could not load: ${loadError}` : 'Loading…'}</p>
-    {loadError && <p><a href={`${BASE}?view=deck`}>Open the deck</a></p>}
+    {loadError && <p><a href={`${BASE}?view=audience`}>Open the audience window</a></p>}
   </main>
 
   const errors = info.diagnostics.filter(d => d.severity === 'error').length
@@ -315,9 +314,8 @@ export function Home() {
       <section class="home-section">
         <h2>Present</h2>
         <div class="home-tiles">
-          <ViewTile icon="presenter" title="Presenter view" text="Notes, timer and next slide, on your own screen." href={`${BASE}?view=presenter&session=${SESSION}${code}`} />
-          <ViewTile icon="projector" title="Audience window" text="The slides for the projector, following the presenter view opened here." href={`${BASE}?view=audience&session=${SESSION}${code}`} />
-          <ViewTile icon="deck" title="Full-screen deck" text="Just the slides, for rehearsing or a single screen." href={`${BASE}?view=deck${code}`} />
+          <ViewTile icon="presenter" title="Presenter view" text="Present and draw, with notes, timer and next slide. Switch to slides only or fullscreen." href={`${BASE}?view=presenter&session=${SESSION}${code}`} />
+          <ViewTile icon="projector" title="Audience window" text="Slides for the projector, without notes. Navigation stays in sync with the presenter." href={`${BASE}?view=audience&session=${SESSION}${code}`} />
           <ViewTile icon="reader" title="Reader view" text="Outline, reading mode and look picker, as people you send it to see it." href={`${BASE}?view=reader`} />
         </div>
       </section>

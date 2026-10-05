@@ -55,7 +55,9 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
     if (typeof slide.id !== 'string' || !/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(slide.id)) add('invalid-id', 'Slide IDs must start with a letter and contain letters, digits, hyphens or underscores', offset)
     if (ids.has(slide.id)) add('duplicate-id', `Duplicate slide ID "${slide.id}"`, offset)
     ids.add(slide.id)
-    for (const key of slide.removedKeys ?? []) add('removed-setting', `${key}: is gone: write speaker notes as a :::notes block in the slide`, offset)
+    for (const key of ['note', 'notes']) {
+      if (Object.hasOwn(slide.authoredMeta, key)) add('invalid-metadata', `${key} is not a slide setting; write speaker notes in a :::notes block`, offset)
+    }
     for (const key of ['layout', 'title', 'image', 'alt', 'section', 'part', 'eyebrow', 'attribution']) {
       if (slide.meta[key] != null && typeof slide.meta[key] !== 'string') add('invalid-metadata', `${key} must be a string`, offset)
     }

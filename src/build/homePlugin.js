@@ -20,7 +20,7 @@ import { frameworkRoot } from '../paths.js'
 export function outputsFor(slidesPath) {
   const abs = resolve(slidesPath), dir = dirname(abs), name = basename(abs).replace(/\.md$/i, '')
   return {
-    folder: { title: 'Folder to host', args: ['build', abs], file: resolve(dir, 'dist/index.html') },
+    folder: { title: 'Folder to host', args: ['build', abs, '--reader'], file: resolve(dir, 'dist/index.html') },
     send: { title: 'One file to send', args: ['send', abs, '-o', `${name}.html`], file: resolve(dir, `${name}.html`), chrome: true },
     pdf: { title: 'PDF', args: ['pdf', abs, '-o', `${name}.pdf`], file: resolve(dir, `${name}.pdf`), chrome: true },
   }
@@ -133,15 +133,13 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
   }
 
   // The one-time address an iPad opens to present from: the presenter view,
-  // with the presenter code of the deck's own server if there is one.
+  // with a one-time pairing offer; the server's master key stays here.
   function pairUrl() {
     const network = relay?.url ?? urls()?.network?.[0]
     if (!pairing || !network) throw Object.assign(new Error('Start mdeck run with --network or --server so an iPad can reach it'), { status: 409 })
     const url = new URL(network)
     url.searchParams.set('view', 'presenter')
     url.searchParams.set('pair', pairing.offer())
-    const config = parseSlides(readFileSync(abs, 'utf8')).deckConfig ?? {}
-    if (typeof (serverAddress ?? config.server) === 'string' && serverKey) url.searchParams.set('serverkey', serverKey)
     return url.href
   }
 

@@ -23,6 +23,20 @@ test('notes support nested directives without cutting the slide', () => {
   assert.equal(deck.slides.length, 1)
   assert.equal(deck.slides[0].content, '# Hello')
   assert.match(deck.slides[0].meta.notes, /More notes/)
+  assert.deepEqual(deck.slides[0].authoredMeta, {})
+})
+
+test('note and notes do not identify slide metadata or supply speaker notes', () => {
+  for (const key of ['note', 'notes']) {
+    const content = `${key}: ordinary colon text`
+    const deck = parseSlides(`---\n${content}\n---\n# Next\n`)
+    assert.equal(deck.slides.length, 2)
+    assert.equal(deck.slides[0].content, content)
+    assert.equal(deck.slides[0].metaSource, null)
+    assert.equal(deck.slides[0].meta.notes, undefined)
+    const metadata = parseSlides(`:::meta\nlayout: focus\n${key}: metadata value\n:::\n# A\n`)
+    assert.equal(metadata.slides[0].meta.notes, undefined)
+  }
 })
 
 test('invalid metadata produces source diagnostics', () => {

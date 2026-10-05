@@ -1,3 +1,4 @@
+import { validatePageUrl } from '../core/urls.js'
 import { h, render } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { marked } from 'marked'
@@ -216,6 +217,7 @@ function PresenterView({ deckConfig, slides }) {
     bcRef.current = new BroadcastChannel(DECK_CHANNEL)
     bcRef.current.onmessage = ({ data }) => {
       if (data?.audienceReady) bcRef.current?.postMessage({ deckControl: { command: 'setState', value: stateRef.current } })
+      if (data?.deckStateChanged) sendTo(iframeRef.current?.contentWindow, 'setState', data.deckStateChanged)
     }
     return () => bcRef.current?.close()
   }, [])
@@ -225,6 +227,10 @@ function PresenterView({ deckConfig, slides }) {
   // opened at the correct slide, and previewSrc encodes the right hash on reload.
   useEffect(() => {
     function onMessage({ data, source }) {
+      if (source === previewRef.current?.contentWindow) {
+        if (data?.deckStateChanged && data.reason === 'init') sendTo(source, 'goTo', indexRef.current + 1)
+        return
+      }
       if (source !== iframeRef.current?.contentWindow) return
       if (typeof data?.inkMode === 'boolean') { setInking(data.inkMode); return }
       if (!data?.deckStateChanged) return
@@ -239,8 +245,8 @@ function PresenterView({ deckConfig, slides }) {
       setIndex(i)
       if (data.reason !== 'sync') {
         bcRef.current?.postMessage({ deckControl: { command: 'setState', value: state } })
-        sendTo(previewRef.current?.contentWindow, 'goTo', i + 1)
       }
+      sendTo(previewRef.current?.contentWindow, 'goTo', i + 1)
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
@@ -422,7 +428,7 @@ function PresenterView({ deckConfig, slides }) {
             dangerouslySetInnerHTML={{
               __html: note
                 ? marked.parse(note)
-                : '<p>No notes — add <code>note:</code> in the slide frontmatter.</p>',
+                : '<p>No notes — add a <code>:::notes</code> block to the slide.</p>',
             }}
           />
         </div>
@@ -715,17 +721,19 @@ async function init() {
 
   // Drawing (D) in the full-screen deck and the presenter's main frame.
   const inkStage = document.querySelector('deck-stage')
-  // Across devices, through the stage room: the drawing windows send ink and
-  // their position, the audience window follows them (src/runtime/ink/room.js).
+  // Main slide frames and audience windows both send and follow navigation.
+  // Share their position connection with ink; previews stay on local channels.
+  if (inkStage && (drawHere || audienceMode)) {
+    followStageRoom(inkStage)
+    announceStagePosition(inkStage)
+  }
   if (inkStage && drawHere) {
     attachInk(inkStage, {
       storageKey: inkStorageKey,
-      transports: [roomTransport()],
+      transports: [roomTransport({ receive: true })],
       onMode: inking => { if (embedded) window.parent.postMessage({ inkMode: inking }, window.location.origin) },
     })
-    announceStagePosition(inkStage)
   } else if (inkStage && audienceMode) {
-    followStageRoom(inkStage)
     watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true })] })
   } else if (inkStage) watchInk(inkStage, { storageKey: inkStorageKey })
 
@@ -757,8 +765,26 @@ async function init() {
     document.querySelector('deck-stage')?.addEventListener('slidechange', event => {
       if (event.detail.reason === 'init') bc.postMessage({ audienceReady: true })
     })
+    document.querySelector('deck-stage')?.addEventListener('statechange', event => {
+      if (!['init', 'sync'].includes(event.detail.reason)) bc.postMessage({ deckStateChanged: event.detail })
+    })
     bc.postMessage({ audienceReady: true })
   }
 }
 
-init()
+const urlProblem = validatePageUrl(new URL(location.href))
+if (urlProblem) {
+  const message = document.createElement('p')
+  message.textContent = urlProblem.message
+  const panel = document.createElement('main')
+  panel.style.cssText = 'font:16px/1.5 system-ui;max-width:48rem;margin:3rem auto;padding:2rem'
+  panel.setAttribute('role', 'alert')
+  panel.append(message)
+  if (urlProblem.corrected) {
+    const link = document.createElement('a')
+    link.href = urlProblem.corrected
+    link.textContent = 'Open updated address'
+    panel.append(link)
+  }
+  document.body.replaceChildren(panel)
+} else init()

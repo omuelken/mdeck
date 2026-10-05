@@ -76,6 +76,8 @@ export function isAllowedRequest(request) {
   // tunnel marks them (src/build/tunnelClient.js), and they must show a paired
   // device's token instead.
   if (request.headers[TUNNEL_MARK] != null) return false
+  const peer = request.socket?.remoteAddress
+  if (peer && peer !== '::1' && !/^(?:::ffff:)?127\.\d+\.\d+\.\d+$/.test(peer)) return false
   const host = request.headers.host ?? ''
   if (!isLoopbackName(hostname(host))) return false
   const origin = request.headers.origin

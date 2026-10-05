@@ -26,11 +26,17 @@ const givenServer = typeof __MDECK_SERVER__ === 'string' ? __MDECK_SERVER__ : nu
 export function configureLive(deckConfig = {}) {
   const server = givenServer ?? deckConfig.server
   settings = { server: typeof server === 'string' ? server.replace(/\/+$/, '') : null, code: sessionCode(deckConfig) }
+  infoRequest = null
   takeKeyFromAddress()
 }
 
 /** The deck's session code, the last part of its join link. */
 export const liveCode = () => settings.code
+
+const proxyControls = typeof __MDECK_PROXY_CONTROLS__ !== 'undefined' && __MDECK_PROXY_CONTROLS__
+const controlBase = () => proxyControls ? new URL(devPath('__mdeck/live'), window.location.origin).href : serverBase()
+const controlRoomPath = room => `${controlBase()}/rooms/${encodeURIComponent(`${settings.code}.${room}`)}`
+const controlSessionPath = () => `${controlBase()}/rooms/${encodeURIComponent(settings.code)}`
 
 const page = () => new URL(window.location.href)
 // Without a `server` setting, the server built into `mdeck run`.
@@ -80,6 +86,9 @@ function ownServer() {
   try { return new URL(settings.server).origin === window.location.origin } catch { return false }
 }
 function presenterKey() {
+  // A relayed page always uses its own pairing, even if this origin once
+  // stored a master key for a different presentation.
+  if (/^\/t\/[^/]+\/$/.test(devPath('')) || proxyControls || (import.meta.env?.DEV && ownServer())) return pairToken()
   let key = givenKey
   try { key = localStorage.getItem(`mdeck-server-key:${serverBase()}`) ?? givenKey } catch {}
   return key ?? (ownServer() ? pairToken() : null)
@@ -90,7 +99,7 @@ const withKey = (headers = {}) => { const key = presenterKey(); return key ? { .
 // server that starts later is found. `reachable` is false when it did not answer.
 let infoRequest = null
 function serverInfo() {
-  infoRequest ??= fetch(`${serverBase()}/info`, { headers: withKey() })
+  infoRequest ??= fetch(`${controlBase()}/info?session=${encodeURIComponent(settings.code)}`, { headers: withKey() })
     .then(response => { if (!response.ok) throw new Error(String(response.status)); return response.json() })
     .then(info => ({ ...info, reachable: true }))
     .catch(() => { infoRequest = null; return { reachable: false } })
@@ -135,7 +144,7 @@ export function useRoom(room) {
   }, [room, live])
 
   const reset = useCallback(async () => {
-    const response = await fetch(`${roomPath(room)}/reset`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: '{}' })
+    const response = await fetch(`${controlRoomPath(room)}/reset`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: '{}' })
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error ?? 'Could not reset')
   }, [room])
 
@@ -223,7 +232,7 @@ async function sendCurrent() {
   if (look) lastLook = look
   const state = { ...current, look: lastLook, lang: deckLanguage(), labels: phoneWords() }
   try {
-    const response = await fetch(`${sessionPath()}/state`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state }) })
+    const response = await fetch(`${controlSessionPath()}/state`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state }) })
     const body = response.ok ? await response.json().catch(() => ({})) : {}
     report(!response.ok ? { ok: false, reason: response.status === 403 ? 'wrong-code' : 'unreachable' } : body.ignored ? { ok: false, reason: 'other-screen' } : { ok: true })
   } catch { report({ ok: false, reason: 'unreachable' }) }
@@ -248,7 +257,7 @@ export function announce({ room = null, activity = null, title = '', initial = f
  * to screens on other devices (src/runtime/ink/room.js).
  */
 export function stageRoom() {
-  return { url: `${sessionPath()}.stage`, headers: withKey, info: serverInfo, screen: SCREEN }
+  return { url: `${controlSessionPath()}.stage`, headers: withKey, info: serverInfo, screen: SCREEN }
 }
 
 /** For the presenter view: null before the first announcement, else { ok, reason }. */

@@ -199,7 +199,7 @@ then the `accent` and `accent2` shorthands.
 
 `mdeck edit my-talk.md` includes editors for all three kinds under
 *Palettes, themes & layouts*. Palettes and theme tokens are forms with live
-preview; theme stylesheets and layout layouts are text areas. Built-in
+preview; theme stylesheets and layouts are text areas. Built-in
 extensions are read-only there; copy one into the deck under a new id to
 change it. The editor writes the same files described above.
 

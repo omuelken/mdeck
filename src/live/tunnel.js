@@ -44,7 +44,7 @@ export function createTunnels({ key = null, bodyLimit = 2 * MB, maxTunnels = 50,
 
   function open(id, socket) {
     tunnels.get(id)?.socket.close(4000, 'Replaced by a newer connection')
-    const tunnel = { socket, pending: new Map(), peers: new Map(), tokens: new Set(), next: 1, alive: true }
+    const tunnel = { socket, pending: new Map(), peers: new Map(), tokens: new Set(), session: null, next: 1, alive: true }
     tunnels.set(id, tunnel)
     const send = message => { if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(message)) }
     tunnel.send = send
@@ -73,6 +73,7 @@ export function createTunnels({ key = null, bodyLimit = 2 * MB, maxTunnels = 50,
           if (pending) { text(pending, Number(message.status) || 502, String(message.message ?? 'The presenter\'s computer could not answer')); tunnel.pending.delete(message.id) }
           break
         case 'tokens':
+          tunnel.session = /^\d{4,8}$/.test(message.session ?? '') ? String(message.session) : null
           tunnel.tokens = new Set((Array.isArray(message.tokens) ? message.tokens : []).filter(token => typeof token === 'string' && token.length >= 16 && token.length <= 200).slice(0, 50))
           break
         case 'wsmsg': {
@@ -97,10 +98,13 @@ export function createTunnels({ key = null, bodyLimit = 2 * MB, maxTunnels = 50,
 
   return {
     /** Whether the request carries the token of a device paired through an open tunnel. */
-    allows(request) {
+    allows(request, room = null) {
       const given = (request.headers.authorization ?? '').replace(/^Bearer\s+/i, '')
       if (!given) return false
-      for (const tunnel of tunnels.values()) for (const token of tunnel.tokens) if (same(token, given)) return true
+      for (const tunnel of tunnels.values()) {
+        if (!tunnel.session || (room !== null && room !== tunnel.session && !room.startsWith(`${tunnel.session}.`))) continue
+        for (const token of tunnel.tokens) if (same(token, given)) return true
+      }
       return false
     },
 

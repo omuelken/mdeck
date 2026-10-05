@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { parseSlides } from '../src/core/parseSlides.js'
 import { patchYamlMapping, normalizeBlock, firstYamlKey } from '../src/core/source.js'
 import { validateDeck } from '../src/core/validateDeck.js'
-import { templateManifests } from '../src/extensions/discover.js'
+import { layoutManifests } from '../src/extensions/discover.js'
 import {
   setRegion, removeRegion, setSlideMeta, setSlideNotes, notesSource, setDeckConfig,
   insertSlide, removeSlide, moveSlide, replaceSlideSource, slideBounds, slideSourceText,
@@ -68,7 +68,7 @@ test('slide metadata: explicit, legacy, conversion and insertion', () => {
   assert.equal(setSlideMeta(metaOnly, 'slide-1', { layout: undefined }), '---\nlayout: focus\n---\n# F\n')
 })
 
-test('notes live in a block, a metadata key or get appended', () => {
+test('notes blocks are edited, removed or appended', () => {
   const l = clean(legacy)
   assert.equal(notesSource(l, 'slide-2'), 'block')
   assert.equal(notesSource(l, 'slide-1'), null)
@@ -76,10 +76,6 @@ test('notes live in a block, a metadata key or get appended', () => {
   assert.equal(setSlideNotes(l, 'slide-2', ''), legacy.replace('# F\n\n:::notes\nn\n:::\n', '# F\n'))
   assert.equal(setSlideNotes(l, 'slide-1', 'hi'), legacy.replace('# T\n\n---', '# T\n\n:::notes\nhi\n:::\n\n---'))
   assert.equal(setSlideNotes(l, 'slide-1', ''), legacy)
-  const keyed = clean(':::meta\nlayout: focus\nnotes: old\n:::\n# X\n')
-  assert.equal(notesSource(keyed, 'slide-1'), 'notes')
-  assert.equal(setSlideNotes(keyed, 'slide-1', 'new'), ':::meta\nlayout: focus\nnotes: new\n:::\n# X\n')
-  assert.equal(setSlideNotes(keyed, 'slide-1', ''), ':::meta\nlayout: focus\n:::\n# X\n')
   assert.equal(parse(setSlideNotes(l, 'slide-1', 'hi')).slides[0].meta.notes, 'hi')
 })
 
@@ -136,7 +132,7 @@ test('inserting and removing a slide at any position restores the original bytes
 
 test('every helper keeps the example decks valid', () => {
   const path = 'examples/custom-layouts/slides.md'
-  const layouts = templateManifests(path)
+  const layouts = layoutManifests(path)
   let deck = clean(readFileSync(path, 'utf8'))
   const check = source => { deck = parse(source); assert.deepEqual(validateDeck(deck, { layouts }), []) }
   check(setRegion(deck, 'deployment-options', 'left', '## Left\n\nChanged'))

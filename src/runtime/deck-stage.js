@@ -587,7 +587,7 @@
       }
     }
 
-    _applyIndex({ showOverlay = true, broadcast = true, reason = 'init' } = {}) {
+    _applyIndex({ showOverlay = true, broadcast = true, reason = 'init', step = -1 } = {}) {
       if (!this._slides.length) return;
       const prev = this._prevIndex == null ? -1 : this._prevIndex;
       const curr = this._index;
@@ -600,6 +600,7 @@
         else s.removeAttribute('data-deck-active');
       });
       this._stepMap.delete(curr);
+      if (step >= 0) this._stepMap.set(curr, step);
       this._applySteps(curr);
       if (this._countEl) this._countEl.textContent = String(curr + 1);
 
@@ -647,7 +648,7 @@
       const message = { deckStateChanged: this.state, reason };
       window.postMessage(message, '*');
       if (window.parent !== window) window.parent.postMessage(message, '*');
-      this.dispatchEvent(new CustomEvent('statechange', { detail: this.state }));
+      this.dispatchEvent(new CustomEvent('statechange', { detail: { ...this.state, reason } }));
     }
 
     setState(state) {
@@ -655,10 +656,17 @@
       const byId = state.slideId ? this._slides.findIndex(s => s.dataset.slideId === state.slideId) : -1;
       const index = byId >= 0 ? byId : state.index;
       if (index < 0 || index >= this._slides.length) return;
-      this._go(index, 'sync');
       const max = this._getSteps(this._slides[index]).length - 1;
-      this._stepMap.set(index, Math.max(-1, Math.min(max, state.step)));
-      this._applySteps(index);
+      const step = Math.max(-1, Math.min(max, state.step));
+      if (index === this._index) {
+        if (step === this.state.step) return;
+        this._stepMap.set(index, step);
+        this._applySteps(index);
+        this._broadcastState('sync');
+      } else {
+        this._index = index;
+        this._applyIndex({ reason: 'sync', step });
+      }
     }
 
     _flashOverlay() {

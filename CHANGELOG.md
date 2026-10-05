@@ -1,12 +1,14 @@
 # Changelog
 
-## Unreleased
+## 2.0.0 — Unreleased
 
 A cleaner interface, and presenting from an iPad on any network. This release renames commands, options, settings and files so that each word means one thing. Everything old stops with a message that names its replacement, so nothing changes silently. Decks, extensions and room servers need the changes in the tables below.
 
 ### Presenting from an iPad on any network
 
 `mdeck run --server` presents from an iPad on any network without opening a port on your computer and without hosting the deck. The computer connects out to your server (`mdeck server`), which passes the iPad's requests to it. The slides are never stored there. The pairing code on the launch page then points at your server; drawings are still saved beside the deck, edits reload the iPad, and polls and the audience window use the same server.
+
+Slide and reveal navigation works in both directions between the audience window and the iPad, including the presenter's notes and next-slide preview. Received positions do not echo back. The launch page offers Presenter, Audience and Reader; fullscreen is a control within a view, replacing the separate full-screen deck button.
 
 The address is the option's value, else the deck's `server` setting, else `MDECK_SERVER`; the key is `MDECK_SERVER_KEY`. Only what the presenter and audience pages need is passed on; the launch page, the editor and the rest of your folder are not reachable. The server needs this version, a key, and a web server that passes WebSocket connections on (see the audience guide). New dependency: `ws`. Check it with `npm run test:server`.
 
@@ -19,6 +21,7 @@ Commands:
 | `mdeck dev`, `mdeck present` | `mdeck run`, which always opens the launch page |
 | `mdeck live` | `mdeck server` |
 | `mdeck build --share --self-contained -o f.html` | `mdeck send` |
+| `mdeck build --share` | `mdeck build --reader` |
 | `mdeck build --with-notes`, `--no-pdf` | `mdeck send --notes`, `--no-pdf` |
 | `mdeck build --self-contained`, `-S` | `mdeck build --single-file` |
 | `mdeck build --presenter-launchers` | `mdeck build --launchers` |
@@ -44,16 +47,22 @@ Names in files, addresses and code:
 
 | Before | Now |
 |---|---|
-| `<deck>.ink.json` | `<deck>.drawings.json` (rename the file; `mdeck check` reports a leftover) |
+| `<deck>.ink.json` | `<deck>.drawings.json` (use `mdeck migrate`; run and exports report a leftover) |
 | `?view=share`, `?v=d`, `?v=s`, `?v=p`, `?v=a` | `?view=reader`; the short forms are gone |
 | `MDECK_LIVE_KEY`, `?livekey=` | `MDECK_SERVER_KEY`, `?serverkey=` |
 | `kind = "template"` in `extension.toml` | `kind = "layout"` |
 | `import … from 'mdeck/template-api'` | `'mdeck/layout'` |
 | `examples/custom-templates` | `examples/custom-layouts` |
 
-`mdeck check` reports every old deck setting, with the new name, so a deck can be updated by following its messages.
+`mdeck migrate [slides.md] --dry-run` previews updates to deck settings, local extension manifests and imports, and drawings filenames. Applying it preserves unrelated text and creates backups. Conflicts stop it before writing. Metadata notes have been removed and are not migrated. `mdeck check` also reports old settings with their replacements.
+
+The package is version 2.0.0; the serialized registry envelope is schema 2. Extension TOML manifests and drawings remain schema/version 1. Old URL parameters produce an explicit correction, and `MDECK_LIVE_KEY` stops startup with its replacement.
 
 ### Also new
+
+- `mdeck build --reader` makes a hosted reader folder with separate media and speaker notes removed; `--notes` keeps them. The launch page’s folder-to-host button uses this mode.
+- CLI commands reject unknown flags, missing values and surplus filenames before starting a server or changing outputs.
+- Relay access follows the deck’s module graph and referenced assets. Pairing URLs keep the master server key on the laptop; tokens are scoped to a tunnel and its session, and unpairing revokes them.
 
 - Drawing: the icons of the toolbar and the presenter view are redrawn as line icons; the colours have names instead of hex codes; clearing a slide asks in a small popover over the button instead of the browser's confirm dialog.
 - The launch page and the guides call the server a server, drawings drawings and layouts layouts.

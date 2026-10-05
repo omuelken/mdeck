@@ -3,7 +3,8 @@
 // the address for a token of its own, kept in this browser for this server.
 import { devPath } from '../core/devPath.js'
 
-const storageKey = () => `mdeck-pair:${location.origin}`
+export const pairStorageKey = (origin, base) => `mdeck-pair:${origin}${base}`
+const storageKey = () => pairStorageKey(location.origin, devPath(''))
 
 export function pairToken() {
   try { return localStorage.getItem(storageKey()) } catch { return null }

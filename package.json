@@ -1,6 +1,6 @@
 {
   "name": "@tilman.schieber/mdeck",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "type": "module",
   "description": "Write slides as a plain text file, present them in the browser, share them as one HTML file or PDF.",
   "license": "MIT",
@@ -46,6 +46,7 @@
     "test": "node --test",
     "test:browser": "node tools/browser-check.mjs",
     "test:server": "node tools/server-check.mjs",
+    "test:docs": "node tools/docs-check.mjs",
     "docs": "node bin/mdeck.js docs",
     "docs:build": "node docs/site/build.js",
     "start": "node bin/mdeck.js run",

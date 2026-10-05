@@ -8,6 +8,7 @@ import { componentFolders, componentFiles } from './components.js'
 import { inkFileFor, normalizeInk, emptyInk } from '../core/ink.js'
 import { isOwnWrite } from './ownWrites.js'
 import { fileURLToPath } from 'node:url'
+import { assertDrawings } from './drawings.js'
 import { marked } from 'marked'
 
 const VIRTUAL_ID = 'virtual:slides'
@@ -200,6 +201,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       for (const event of ['add', 'unlink', 'addDir', 'unlinkDir']) server.watcher.on(event, refresh)
     },
     resolveId(id) {
+      if (id === 'mdeck/template-api') throw new Error('mdeck/template-api is now mdeck/layout. Run mdeck migrate to update local imports.')
       if (id === 'mdeck/layout') return fileURLToPath(new URL('../layouts/layoutApi.jsx', import.meta.url))
       if (id === 'mdeck/live') return fileURLToPath(new URL('../live/client.js', import.meta.url))
       if (id === VIRTUAL_ID) return RESOLVED_ID
@@ -225,6 +227,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       // The deck's saved ink (<deck>.drawings.json), scaled to its design size.
       // Builds bundle it, so the reader view and PDFs show it too.
       if (id === RESOLVED_INK_ID) {
+        if (ink) assertDrawings(abs)
         // Only an existing file: Vite treats a missing watch file as a missing
         // import. The dev server's watcher notices the file once it appears.
         if (existsSync(inkPath)) this.addWatchFile(inkPath)

@@ -70,13 +70,13 @@ export function manifestsOf(registry, kind) {
   return Object.fromEntries(Object.entries(registry[`${kind}s`]).map(([id, record]) => [id, record.manifest]))
 }
 
-export function templateManifests(slidesPath, options) {
+export function layoutManifests(slidesPath, options) {
   return manifestsOf(loadRegistry(slidesPath, options), 'layout')
 }
 
 // Serializable listing for `mdeck list --json` and future editors.
 export function serializeRegistry(registry, { relativeTo } = {}) {
-  const out = { schema: 1, warnings: registry.warnings }
+  const out = { schema: 2, warnings: registry.warnings }
   for (const kind of KINDS) {
     out[`${kind}s`] = Object.values(registry[`${kind}s`]).map(record => ({
       ...record.manifest, kind, source: record.source,

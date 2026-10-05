@@ -1,10 +1,11 @@
 // The talk across devices, through the deck's stage room on the server
 // (built into `mdeck run`, or `mdeck server`): an iPad draws and steers, the
-// laptop's audience window on the projector follows.
+// laptop's audience window on the projector follows, and navigation on the
+// laptop reaches the iPad too.
 //
-// The presenter's windows only send: live ink in batches (the bus.js
-// messages) and their position as the room's state. Only audience windows
-// hold a connection to listen, since browsers allow few per server.
+// Main slide frames and audience windows share one connection for ink and
+// position. Next-slide previews do not connect, since browsers allow few
+// connections per server.
 import { stageRoom } from '../../live/client.js'
 
 const BATCH_MS = 80
@@ -54,7 +55,7 @@ export function roomTransport({ receive = false } = {}) {
 // Position followers, attached before the transport listens.
 const stateListeners = new Set()
 
-/** The audience window: goes where the presenter on another device goes. */
+/** Follow navigation from another device in either kind of main slide window. */
 export function followStageRoom(stage) {
   stateListeners.add(state => {
     if (!state || state.screen === stageRoom().screen || !Number.isInteger(state.index)) return
@@ -64,17 +65,17 @@ export function followStageRoom(stage) {
   })
 }
 
-/** The presenter's windows: tell the stage room where the talk is. */
+/** Publish navigation made here; received positions never echo back. */
 export function announceStagePosition(stage) {
   const room = stageRoom()
-  let allowed = null, last = null, first = true
-  async function post() {
+  let allowed = null, last = null
+  async function post(event) {
     const { index, step, slideId } = stage.state
-    const key = `${index}:${step}`
+    const key = `${slideId}:${index}:${step}`
+    if (event?.detail.reason === 'sync') { last = key; return }
     if (key === last || allowed === false) return
     // Opening a window must not move the projector; only changes count.
-    const at = first ? 0 : Date.now()
-    first = false
+    const at = !event || event.detail.reason === 'init' ? 0 : Date.now()
     last = key
     if (allowed === null) {
       const info = await room.info()

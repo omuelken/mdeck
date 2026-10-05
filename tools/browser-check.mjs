@@ -26,6 +26,32 @@ try {
     if (!await page.waitFor(expression, { attempts: 150, interval: 50 })) throw new Error(`Condition did not become true: ${expression}`)
   }
 
+  // A hosted reader keeps media separate and removes the notes themselves.
+  const hostedDeck = resolve(temp, 'hosted.md')
+  writeFileSync(hostedDeck, '---\ntheme: neue\n---\n\n---\nid: first\n---\n# Hosted\n\n![Photo](./reader-photo.svg)\n\n:::notes\nPRIVATE_READER_NOTES\n![Private](./private-notes.svg)\n:::\n')
+  writeFileSync(resolve(temp, 'reader-photo.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>')
+  writeFileSync(resolve(temp, 'private-notes.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>')
+  writeFileSync(resolve(temp, 'hosted.ink.json'), '{}')
+  const hosted = resolve(temp, 'hosted/index.html')
+  execFileSync(process.execPath, ['bin/mdeck.js', 'build', hostedDeck, '--reader', '--no-drawings', '-o', hosted], { cwd: root, stdio: 'pipe' })
+  assert.ok(!readFileSync(hosted, 'utf8').includes('PRIVATE_READER_NOTES'))
+  assert.ok(existsSync(resolve(temp, 'hosted/reader-photo.svg')))
+  assert.equal(existsSync(resolve(temp, 'hosted/private-notes.svg')), false, 'notes-only media is not copied into public output')
+  const reader = await open('hosted/index.html')
+  await until(reader, "!!document.querySelector('.reader-view')")
+  await reader.evaluate("Object.defineProperty(navigator.clipboard, 'writeText', { value: async text => { window.__copied = text } }); [...document.querySelectorAll('.reader-bottom button')].find(b => b.textContent.includes('Copy')).click()")
+  await until(reader, '!!window.__copied')
+  const copied = await reader.evaluate('window.__copied')
+  assert.equal(new URL(copied).searchParams.get('view'), 'reader')
+  assert.equal(new URL(copied).hash, '#first')
+  const reopened = await open(copied)
+  await until(reopened, "!!document.querySelector('.reader-view')")
+  const oldAddress = await open('hosted/index.html?v=s&design=neue')
+  await until(oldAddress, "!!document.querySelector('[role=alert] a')")
+  assert.equal(await oldAddress.evaluate("new URL(document.querySelector('[role=alert] a').href).searchParams.get('view')"), 'reader')
+  execFileSync(process.execPath, ['bin/mdeck.js', 'build', hostedDeck, '--reader', '--notes', '--no-drawings', '-o', resolve(temp, 'with-notes.html')], { cwd: root, stdio: 'pipe' })
+  assert.ok(readFileSync(resolve(temp, 'with-notes.html'), 'utf8').includes('PRIVATE_READER_NOTES'))
+
   // Saved ink from <deck>.drawings.json is bundled and drawn in the deck and in Read mode.
   const inkDeck = resolve(temp, 'ink.md')
   writeFileSync(inkDeck, '---\ntheme: neue\n---\n\n---\nid: marked\n---\n# Marked up\n')
@@ -111,6 +137,13 @@ try {
   await until(audience, `${audienceStage}.state.step === -1`)
   await presenter.evaluate(`${stage}.reset()`)
   await until(audience, `${audienceStage}.state.index === 0`)
+  await audience.evaluate(`${audienceStage}.goTo(1); ${audienceStage}.next()`)
+  await until(presenter, `${stage}.state.index === 1 && ${stage}.state.step === 0`)
+  await audience.evaluate(`${audienceStage}.prev()`)
+  await until(presenter, `${stage}.state.step === -1`)
+  await presenter.evaluate(`${stage}.next()`)
+  await until(audience, `${audienceStage}.state.step === 0`)
+  assert.equal(await other.evaluate(`${audienceStage}.state.index`), 0, 'audience navigation stays in its presenter session')
 
   // Saving in dev: the first stroke gives the slide an id from its heading and
   // writes <deck>.drawings.json, without reloading the open windows.
@@ -164,7 +197,9 @@ try {
   dev = await createServer({ ...config, plugins: [...config.plugins, homePlugin(slides, { services: {} })], server: { ...config.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await dev.listen()
   const home = await open(new URL('home.html', dev.resolvedUrls.local[0]).href)
-  await until(home, "document.querySelectorAll('.home-tile').length === 6 && !!document.querySelector('.home-header h1')?.textContent")
+  await until(home, "document.querySelectorAll('.home-tile').length === 5 && !!document.querySelector('.home-header h1')?.textContent")
+  assert.deepEqual(await home.evaluate("[...document.querySelectorAll('.home-tile strong')].slice(0, 3).map(e => e.textContent)"), ['Presenter view', 'Audience window', 'Reader view'])
+  assert.equal(await home.evaluate("new URL(document.querySelector('.home-preview-open').href).searchParams.get('view')"), 'audience')
   assert.equal(await home.evaluate("document.querySelectorAll('.home-output').length"), 3)
   assert.equal(await home.evaluate("!!document.querySelector('.home-preview iframe') && !document.querySelector('.home-live')"), true, 'preview, and no polls section without a server setting')
 
@@ -195,7 +230,7 @@ try {
   await phone.evaluate("document.querySelector('.answer-text textarea').value = 'Does it work offline?'; document.querySelector('.answer-text button').click()")
   await until(projector, "document.querySelector('[data-deck-active] .question-cards li')?.textContent === 'Does it work offline?' && !document.querySelector('[data-deck-active] .poll-join')")
   await projector.evaluate("document.querySelector('deck-stage').goTo(3)")
-  await until(phone, "!!document.querySelector('.answer-text textarea')")
+  await until(phone, "!!document.querySelector('.answer-text textarea') && document.querySelector('.answer h1')?.textContent === 'One word?'")
   await phone.evaluate("document.querySelector('.answer-text textarea').value = 'fun'; document.querySelector('.answer-text button').click()")
   await until(projector, "[...document.querySelectorAll('[data-deck-active] .word-cloud text')].map(e => e.textContent).join() === 'fun'")
   await projector.evaluate("document.querySelector('deck-stage').goTo(4)")

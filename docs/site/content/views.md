@@ -8,17 +8,18 @@ Every build and every preview contains all views. The address picks one with `?v
 
 | Address | View | For |
 |---|---|---|
-| `?view=deck` | The slides alone, full screen | Rehearsing, or a single screen |
+| `?view=deck` | Standalone slides with drawing controls | Slides opened from the reader view or a built file |
 | `?view=presenter` | Current and next slide, notes and timer, and a button that opens the audience window | You, while presenting |
-| `?view=audience` | The slides, following the presenter view | The projector |
+| `?view=audience` | Slides without notes, with navigation synced to the presenter view | The projector |
 | `?view=reader` | The reader view: an outline, **Slides** and **Read** modes, a **Look** menu and a PDF | People you send the talk to |
 
 Ways to switch between them:
 
 - The **Overview** link in the corner of the deck opens the reader view. Its outline is the overview of all slides.
-- **Present** in the reader view opens the full-screen deck at the current slide.
-- The presenter view's audience-window button opens the audience view in a new window. The two stay in step, in the same browser on the same computer. An audience window also follows a presenter view on a paired iPad: see [Draw on your slides](drawing.html#present-from-an-ipad).
-- The launch page of `mdeck run`, at the preview's plain address, has a button for each view. Its presenter and audience buttons belong together, so the audience window follows that presenter view.
+- **Present** in the reader view opens standalone slides at the current slide.
+- The presenter view's audience-window button opens the audience view in a new window. Navigation in either window updates the other, in the same browser or on a paired iPad: see [Draw on your slides](drawing.html#present-from-an-ipad).
+- The launch page of `mdeck run`, at the preview's plain address, offers Presenter, Audience and Reader. Its presenter and audience buttons belong together.
+- Fullscreen is a control inside a view (**F** or its fullscreen button). For a single screen, use the presenter view's slide-only layout.
 - A poll's QR code opens the server's answer page, not the slides: see [Ask your audience](audience.html).
 
 ## Commands

@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { parseManifestText, validateManifest, ManifestError } from '../src/extensions/manifest.js'
-import { loadRegistry, discoverExtensions, extensionRoots, manifestsOf, serializeRegistry, templateManifests } from '../src/extensions/discover.js'
+import { loadRegistry, discoverExtensions, extensionRoots, manifestsOf, serializeRegistry, layoutManifests } from '../src/extensions/discover.js'
 import { buildAppearance, effectiveToken, DARK_TOKENS } from '../src/extensions/appearance.js'
 import { resolveLayoutProps } from '../src/layouts/layoutProps.js'
 import { parseSlides } from '../src/core/parseSlides.js'
@@ -91,7 +91,7 @@ test('built-in and deck-local extensions load through one registry', () => {
   const listing = serializeRegistry(registry, { relativeTo: process.cwd() })
   assert.equal(listing.layouts.find(t => t.id === 'comparison').file, 'examples/custom-layouts/extensions/comparison/extension.toml')
   assert.ok(listing.themes.every(t => t.kind === 'theme' && t.tokens && t.params))
-  assert.deepEqual(Object.keys(templateManifests(path)), Object.keys(layouts))
+  assert.deepEqual(Object.keys(layoutManifests(path)), Object.keys(layouts))
 })
 
 test('the generated runtime module imports every layout and lazily loads theme styles', () => {

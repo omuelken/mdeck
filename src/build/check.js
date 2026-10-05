@@ -1,13 +1,14 @@
 // Deck validation shared by `mdeck check` and the launch page: source
 // diagnostics plus local files the deck refers to but that are missing.
 import { existsSync, readFileSync } from 'node:fs'
-import { resolve, dirname, basename } from 'node:path'
+import { resolve, dirname } from 'node:path'
+import { drawingsDiagnostic } from './drawings.js'
 import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck } from '../core/validateDeck.js'
 import { manifestsOf } from '../extensions/discover.js'
 import { collectLocalAssetRefs } from './slidesPlugin.js'
 import { componentFolders, isFolder } from './components.js'
-import { inkFileFor, oldInkFileFor, validateInk, normalizeInk, orphanIds } from '../core/ink.js'
+import { inkFileFor, validateInk, normalizeInk, orphanIds } from '../core/ink.js'
 
 export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath, 'utf8')) {
   const deck = parseSlides(source)
@@ -20,8 +21,8 @@ export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath
   }
   // The deck's drawings file: readable, and only for slides that still exist.
   const inkPath = inkFileFor(resolve(slidesPath))
-  const oldInkPath = oldInkFileFor(resolve(slidesPath))
-  if (!existsSync(inkPath) && existsSync(oldInkPath)) diagnostics.push({ severity: 'error', code: 'renamed-file', message: `${basename(oldInkPath)} is now ${basename(inkPath)}: rename the file to keep your drawings`, line: 1, column: 1 })
+  const renamed = drawingsDiagnostic(slidesPath)
+  if (renamed) diagnostics.push(renamed)
   if (existsSync(inkPath)) {
     let raw = null
     try { raw = JSON.parse(readFileSync(inkPath, 'utf8')) } catch (error) { diagnostics.push({ severity: 'error', code: 'invalid-ink', message: `The drawings file is not valid JSON: ${error.message}`, line: 1, column: 1 }) }

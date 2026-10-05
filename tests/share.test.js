@@ -5,32 +5,35 @@ import { parseSlides } from '../src/core/parseSlides.js'
 import { stripNotes } from '../src/core/editDeck.js'
 import { deckOutline } from '../src/core/outline.js'
 import { validateDeck } from '../src/core/validateDeck.js'
-import { templateManifests } from '../src/extensions/discover.js'
+import { layoutManifests } from '../src/extensions/discover.js'
 import { attachPdf } from '../src/build/pdf.js'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
-test('stripNotes removes note blocks and metadata keys but nothing else', () => {
-  const source = '---\ntheme: neue\n---\n---\nlayout: title\n---\n# T\n\n:::notes\nsecret\n:::\n\n---\n:::meta\nlayout: focus\nnotes: also secret\n:::\n# F\n\n:::notes\nmore\n:::\n\n:::notes\nagain\n:::\n\n---\n# Plain\n'
+test('stripNotes removes notes blocks but nothing else', () => {
+  const source = '---\ntheme: neue\n---\n---\nlayout: title\n---\n# T\n\n:::notes\nsecret\n:::\n\n---\n:::meta\nlayout: focus\n:::\n# F\n\n:::notes\nmore\n:::\n\n:::notes\nagain\n:::\n\n---\n# Plain\n'
   const stripped = stripNotes(source)
   assert.equal(stripped, '---\ntheme: neue\n---\n---\nlayout: title\n---\n# T\n\n---\n:::meta\nlayout: focus\n:::\n# F\n\n---\n# Plain\n')
   const deck = parseSlides(stripped)
-  assert.ok(deck.slides.every(slide => !slide.meta.notes && !slide.meta.note))
+  assert.ok(deck.slides.every(slide => !slide.meta.notes))
   assert.equal(stripNotes('# No notes\n'), '# No notes\n')
+  assert.equal(stripNotes('# Many notes\n' + ':::notes\nsecret\n:::\n'.repeat(12)), '# Many notes\n')
+  assert.equal(stripNotes(':::notes\nsecret\n:::\n'), '')
+  assert.equal(stripNotes(':::notes\nsecret\n:::\n---\n# Next\n\n:::notes\nmore\n:::\n'), '---\n# Next\n')
   for (const name of ['showcase', 'python', 'fhnw']) {
     const example = readFileSync(new URL(`../examples/${name}/slides.md`, import.meta.url), 'utf8')
     const before = parseSlides(example), after = parseSlides(stripNotes(example))
     assert.equal(after.slides.length, before.slides.length, name)
     assert.deepEqual(after.slides.map(s => s.content), before.slides.map(s => s.content), name)
     assert.ok(after.slides.every(slide => !slide.meta.notes), name)
-    assert.deepEqual(validateDeck(after, { layouts: templateManifests(`examples/${name}/slides.md`) }).filter(d => d.severity === 'error'), [], name)
+    assert.deepEqual(validateDeck(after, { layouts: layoutManifests(`examples/${name}/slides.md`) }).filter(d => d.severity === 'error'), [], name)
   }
 })
 
 test('the outline names slides and marks chapters', () => {
   const deck = parseSlides('---\ntheme: neue\n---\n---\nlayout: title\n---\n# Welcome\n\n---\nlayout: chapter\npart: Part One\n---\n# Basics\n\n---\n# *Emphasis* stays plain\n\n---\n:::meta\nlayout: focus\n:::\n')
-  const outline = deckOutline(deck, templateManifests('examples/showcase/slides.md'))
+  const outline = deckOutline(deck, layoutManifests('examples/showcase/slides.md'))
   assert.deepEqual(outline.map(item => [item.title, item.chapter, item.part]), [['Welcome', false, null], ['Basics', true, 'Part One'], ['Emphasis stays plain', false, null], ['Big statement', false, null]])
   const noisy = parseSlides('```js\ncode\n```\n\nAfter the code\n---\n| a | b |\n|---|---|\n---\n<qrcode value="x" />\n')
   assert.deepEqual(deckOutline(noisy).map(item => item.title), ['After the code', 'Slide 2', 'Slide 3'])
@@ -54,9 +57,12 @@ test('footer settings are validated, and the old names say what replaces them', 
   assert.deepEqual(codes('---\ninstitution: none\npageNumbers: all\n---\n# A'), [['renamed-setting', 'error'], ['renamed-setting', 'error']])
 })
 
-test('slide settings that were removed say how to write notes now', () => {
-  const deck = parseSlides('---\nlayout: focus\nnotes: old way\n---\n# A\n\n---\n# B\n\n:::notes\nnew way\n:::\n')
-  assert.deepEqual(validateDeck(deck).map(d => [d.code, d.severity]), [['removed-setting', 'error']])
+test('speaker notes belong in body blocks rather than slide settings', () => {
+  for (const key of ['note', 'notes']) {
+    const deck = parseSlides(`:::meta\nlayout: focus\n${key}: metadata value\n:::\n# A\n\n:::notes\nBlock notes\n:::\n`)
+    assert.deepEqual(validateDeck(deck).map(d => [d.code, d.severity]), [['invalid-metadata', 'error']])
+    assert.equal(deck.slides[0].meta.notes, 'Block notes')
+  }
 })
 
 test('a PDF link is attached to built HTML as a file link or embedded data', () => {

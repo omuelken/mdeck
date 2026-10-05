@@ -1,3 +1,4 @@
+import { readerLink } from '../core/urls.js'
 import { h } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { marked } from 'marked'
@@ -141,10 +142,7 @@ export function ReaderView({ deck, deckConfig }) {
   }
 
   const copyLink = async () => {
-    const url = new URL(location.href)
-    url.searchParams.delete('view')
-    url.searchParams.set('v', 's')
-    url.hash = encodeURIComponent(slides[index]?.id ?? String(index + 1))
+    const url = readerLink(location.href, slides[index]?.id ?? String(index + 1))
     try { await navigator.clipboard.writeText(url.toString()); setToast(t('reader.linkCopied')) } catch { setToast(url.toString()) }
     setTimeout(() => setToast(''), 1800)
   }

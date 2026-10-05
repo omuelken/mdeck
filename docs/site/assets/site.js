@@ -86,7 +86,7 @@ for (const example of document.querySelectorAll('[data-preview]')) {
   }
   example.querySelector('select').addEventListener('change', event => {
     const url = new URL(frame.src)
-    url.searchParams.set('design', event.target.value)
+    url.searchParams.set('theme', event.target.value)
     url.hash = String(index + 1)
     frame.src = url.toString()
   })

@@ -98,14 +98,18 @@ export function removeRegion(deck, slideId, name) {
   return removeBlock(deck, block)
 }
 
-function removeBlock(deck, block) {
+function blockRemoval(deck, block) {
   let { start } = block.source
   const { end } = block.source
   // Take one preceding blank line with the block.
   const before = deck.source.slice(0, start)
   const blank = before.match(/\r?\n(\r?\n)$/)
   if (blank) start -= blank[1].length
-  return edit(deck, [{ start, end, text: '', expected: deck.source.slice(start, end) }])
+  return { start, end, text: '', expected: deck.source.slice(start, end) }
+}
+
+function removeBlock(deck, block) {
+  return edit(deck, [blockRemoval(deck, block)])
 }
 
 function metaForm(deck, slide) {
@@ -141,25 +145,18 @@ export function setSlideMeta(deck, slideId, patch) {
 
 export function notesSource(deck, slideId) {
   const slide = findSlide(deck, slideId)
-  if (slide.blocks.some(block => block.type === 'notes')) return 'block'
-  if (slide.metaSource) {
-    const text = expectedText(deck, slide.metaSource)
-    for (const key of ['notes', 'note']) if (new RegExp(`^${key}:(\\s|$)`, 'm').test(text)) return key
-  }
-  return null
+  return slide.blocks.some(block => block.type === 'notes') ? 'block' : null
 }
 
 export function setSlideNotes(deck, slideId, markdown) {
   const slide = findSlide(deck, slideId)
   const nl = detectNewline(deck.source)
   const content = normalizeBlock(markdown, nl)
-  const from = notesSource(deck, slideId)
-  if (from === 'block') {
-    const block = slide.blocks.find(block => block.type === 'notes')
+  const block = slide.blocks.find(block => block.type === 'notes')
+  if (block) {
     if (!content) return removeBlock(deck, block)
     return edit(deck, [{ ...block.bodySource, text: content, expected: expectedText(deck, block.bodySource) }])
   }
-  if (from) return setSlideMeta(deck, slideId, { [from]: content ? content.replace(/\r?\n$/, '') : undefined })
   if (!content) return deck.source
   return appendBlock(deck, slide, `:::notes${nl}${content}:::${nl}`)
 }
@@ -223,11 +220,11 @@ export function replaceSlideSource(deck, slideId, text) {
   return edit(deck, [{ ...slide.source, text: body + (body ? trailing : ''), expected: current }])
 }
 
-// Removes every speaker note (blocks and metadata keys) for shared builds.
+// Removes every speaker notes block for shared builds.
 export function stripNotes(source) {
-  let deck = parseSlides(source)
-  for (let i = 0; i < deck.slides.length; i++) {
-    for (let guard = 0; guard < 8 && notesSource(deck, deck.slides[i].id); guard++) deck = parseSlides(setSlideNotes(deck, deck.slides[i].id, ''))
-  }
-  return deck.source
+  const deck = parseSlides(source)
+  const edits = deck.slides.flatMap(slide => slide.blocks
+    .filter(block => block.type === 'notes')
+    .map(block => blockRemoval(deck, block)))
+  return edit(deck, edits)
 }

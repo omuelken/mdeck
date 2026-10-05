@@ -38,6 +38,7 @@ test('info describes the deck, its check results and addresses', async () => {
   assert.deepEqual(info.diagnostics.filter(d => d.severity === 'error'), [])
   assert.equal(info.live, null, 'no polls section without a server setting')
   assert.deepEqual(Object.keys(info.outputs), ['folder', 'send', 'pdf'])
+  assert.ok(outputsFor(deck).folder.args.includes('--reader'), 'hosted output strips notes by default')
   assert.equal(info.services.editor, null)
 })
 

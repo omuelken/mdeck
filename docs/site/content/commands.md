@@ -11,6 +11,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck new` | Make a presentation with guided questions |
 | `mdeck run my-talk.md` | Open the launch page: present, edit, check and send from one place; slides reload when you save |
 | `mdeck edit my-talk.md` | Edit slides, colors and themes in the browser; saves to the file |
+| `mdeck migrate my-talk.md --dry-run` | Preview the changes needed for API 2.0 |
 | `mdeck check my-talk.md` | Check settings and look for missing local files |
 | `mdeck send my-talk.md` | Make one file to send to readers, with a PDF inside |
 | `mdeck build my-talk.md` | Make a folder to host in `dist` |
@@ -25,14 +26,14 @@ For how the commands, the views and the servers fit together, see [Views, comman
 
 `mdeck run my-talk.md` opens a page on your own computer with everything for this talk. It is what the preview's plain address, such as `http://localhost:5173/`, shows; the slides themselves are at `?view=deck`.
 
-- **Preview:** a small live copy of the deck to flip through; click it to open the full-screen deck at that slide.
-- **Present:** the presenter view and an audience window that follows it, the full-screen deck and the reader view, each in a new tab.
+- **Preview:** a small live copy of the deck to flip through; click it to open the audience window at that slide.
+- **Present:** the presenter view, audience window and reader view, each in a new tab. The presenter view has notes, drawing controls, a timer and next-slide preview; switch to its slide-only layout for a single screen. The audience window shows slides without notes. Fullscreen is a control inside either view, not a separate view.
 - **Write and learn:** the visual editor and these guides. Each starts the first time you click it.
 - **Send:** buttons that make the `dist` folder, one file to send, or a PDF, next to your slide file, and show them in your file manager.
 - **Polls:** for a deck with polls: the server (built in, or the `server` setting and whether it answers), the join link and session code for phones, and for a server of your own the key that lets your browser move the phones along and reset polls (see below).
 - **Check:** the same problems `mdeck check` reports, such as missing pictures.
 
-The key is the one the server was started with. Start `mdeck run` with the same key, for example `MDECK_SERVER_KEY=choose-a-secret mdeck run my-talk.md`, and the launch page shows it, and its presenter, audience and deck buttons open those views with it, so they move the phones along. The key is removed from the address as soon as a page has it. It never goes into the slide file, because that file reaches everyone who opens the slides.
+The key is the one the server was started with. Start `mdeck run` with the same key, for example `MDECK_SERVER_KEY=choose-a-secret mdeck run my-talk.md`, and the launch page shows it, and its presenter and audience buttons open those views with it, so they move the phones along. Local views control this deck through the laptop; paired devices receive only a revocable token. Pairing codes never contain the master key. A hosted presenter can unlock the server separately with `?serverkey=…`; that key is removed from the address as soon as the page has it. It never goes into the slide file, because that file reaches everyone who opens the slides.
 
 Two options make the slides reachable from other devices:
 
@@ -71,6 +72,7 @@ The editor opens in your browser and writes every change into the slide file. `-
 | Command | Result |
 |---|---|
 | `mdeck build my-talk.md` | A folder in `dist` with every view, to host or copy |
+| `mdeck build my-talk.md --reader` | A hosted reader folder with speaker notes removed; add `--notes` to retain them |
 | `mdeck build my-talk.md -o talk.html` | Choose the output filename; local media stays alongside it |
 | `mdeck build my-talk.md --single-file -o talk.html` | Embed local images and media in one HTML file of the presentation |
 | `mdeck build my-talk.md --launchers` | Include presenter launchers in the folder build |
@@ -80,7 +82,18 @@ The editor opens in your browser and writes every change into the slide file. `-
 | `mdeck pdf my-talk.md -o talk.pdf` | Render the slides to a PDF file |
 | `--no-drawings` | Leave out the drawings from `my-talk.drawings.json`, for `build`, `send` and `pdf` |
 
-See [Send, host or print your slides](sharing.html) for help choosing between them.
+See [Send, host or print your slides](sharing.html) for help choosing between them. Unknown options, missing option values and extra filenames stop the command before it changes any output. `--output=path` and `-o path` are both accepted. `mdeck preview --no-open --port 4200` previews without opening a browser and chooses a port.
+
+## Update a deck to API 2.0
+
+```sh
+mdeck migrate my-talk.md --dry-run
+mdeck migrate my-talk.md
+```
+
+The dry run lists changes without writing files. Applying them renames deck settings, changes local extension manifests from `template` to `layout`, updates `mdeck/template-api` imports in local extensions and components, and renames `<deck>.ink.json` to `<deck>.drawings.json`. Unrelated source text and comments stay unchanged. Speaker notes use `:::notes` blocks; there is no migration for metadata notes.
+
+Conflicting old and new values, or two drawings files, stop the whole migration before any writes. Originals are copied into `.mdeck-backups/migration-…` beside the deck. Running it again makes no changes. Shared component folders outside the deck are not rewritten; update those imports separately.
 
 ## Check more strictly
 
@@ -106,7 +119,7 @@ mdeck list my-talk.md
 mdeck list themes my-talk.md
 ```
 
-The first lists every layout, theme and color palette your talk can use, including any kept in an `extensions` folder beside it. The second lists only themes; `palettes` works the same way. `--json` prints the same information for other tools.
+The first lists every layout, theme and color palette your talk can use, including any kept in an `extensions` folder beside it. The second lists only themes; `palettes` works the same way. `--json` prints the same information for other tools. The complete registry has `schema: 2` and `layouts`, `themes`, `palettes` and `warnings` fields. A filtered listing such as `list layouts --json` is a map keyed by layout ID. Extension TOML manifests still use `schema = 1`.
 
 ## Slides from an AI assistant
 

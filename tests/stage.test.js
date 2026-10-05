@@ -57,6 +57,24 @@ test('state resolves stable IDs and clamps invalid reveal positions', () => {
   assert.equal(stage.index, 1)
 })
 
+test('received positions broadcast the final reveal state once with a sync reason', () => {
+  const { stage, messages, events } = stageFixture()
+  stage.setState({ index: 1, step: 1 })
+  const states = messages.filter(message => message.deckStateChanged)
+  assert.equal(states.length, 1)
+  assert.equal(states[0].deckStateChanged.index, 1)
+  assert.equal(states[0].deckStateChanged.step, 1)
+  assert.equal(states[0].reason, 'sync')
+  assert.equal(events.at(-1).detail.reason, 'sync')
+  assert.equal(events.at(-1).detail.step, 1)
+  stage.setState({ index: 1, step: 0 })
+  assert.equal(messages.at(-1).deckStateChanged.step, 0, 'same-slide reveals reach the presenter sidebar')
+  assert.equal(events.at(-1).detail.reason, 'sync')
+  const count = messages.length
+  stage.setState({ index: 1, step: 0 })
+  assert.equal(messages.length, count, 'an unchanged position does not broadcast again')
+})
+
 test('print mode reveals every step and restores the positions afterwards', () => {
   const { stage, events } = stageFixture()
   stage.next()

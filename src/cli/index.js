@@ -23,7 +23,12 @@ import { ManifestError, KINDS } from '../extensions/manifest.js'
 
 import { frameworkRoot } from '../paths.js'
 import { parseSlides } from '../core/parseSlides.js'
-import { componentFolders } from '../build/components.js'
+import { stripNotes as stripNotesFrom } from '../core/editDeck.js'
+import { parseArgs, validateServerOrigin } from './args.js'
+import { assertDrawings } from '../build/drawings.js'
+import { createRelayAccess } from '../build/relayAccess.js'
+import { sessionCode } from '../live/code.js'
+import { migrateDeck } from './migrate.js'
 import { startTunnel, newTunnelId } from '../build/tunnelClient.js'
 import { baseConfig } from '../build/config.js'
 
@@ -45,46 +50,11 @@ const ASPECT_RATIOS = [
 
 
 
-function hasFlag(name, short = null) {
-  return argv.includes(name) || (short ? argv.includes(short) : false)
-}
-
-// Options that take a value: the value is not a slides file.
-const VALUE_OPTIONS = new Set(['--port', '--output', '-o'])
-
-/** The arguments that are neither options nor option values. */
-function positionals() {
-  const found = []
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i]
-    if (VALUE_OPTIONS.has(arg)) { i++; continue }
-    if (arg === '--server') { if (/^https?:\/\//.test(argv[i + 1] ?? '')) i++; continue }
-    if (arg.startsWith('-')) continue
-    found.push(arg)
-  }
-  return found
-}
-
-/** The value of `-o`/`--output`, or null. */
-function outputOption() {
-  const index = argv.findIndex(arg => arg === '--output' || arg === '-o')
-  return index >= 0 && argv[index + 1] && !argv[index + 1].startsWith('-') ? argv[index + 1] : null
-}
-
-/** `--server [address]`: undefined without the flag, null without an address. */
-function serverOption() {
-  const index = argv.indexOf('--server')
-  if (index < 0) return undefined
-  return /^https?:\/\//.test(argv[index + 1] ?? '') ? argv[index + 1] : null
-}
-
-function portOption() {
-  const index = argv.indexOf('--port')
-  if (index < 0) return null
-  const port = Number(argv[index + 1])
-  if (!Number.isInteger(port) || port < 1 || port > 65535) { err('Choose a port number between 1 and 65535.'); process.exit(1) }
-  return port
-}
+function hasFlag(name, short = null) { return !!(parsed.options[name] ?? parsed.options[short]) }
+const positionals = () => parsed.positionals
+const outputOption = () => parsed.options['--output'] ?? null
+const serverOption = () => parsed.options['--server']
+const portOption = () => parsed.options['--port'] ?? null
 
 // Layouts, themes and palettes all come from one registry: built-ins plus the
 // extensions/ folder beside the deck. Manifest problems are reported and stop
@@ -207,11 +177,12 @@ async function runNewWizard() {
   }
 }
 
-async function copyLocalAssets(slidesPath, outDir) {
+async function copyLocalAssets(slidesPath, outDir, { stripNotes = false } = {}) {
   const absSlides = resolve(slidesPath)
   const deckDir = dirname(absSlides)
   const absOutDir = resolve(outDir)
-  const markdown = readFileSync(absSlides, 'utf-8')
+  const raw = readFileSync(absSlides, 'utf-8')
+  const markdown = stripNotes ? stripNotesFrom(raw) : raw
 
   for (const ref of collectLocalAssetRefs(markdown)) {
     const source = resolve(deckDir, ref)
@@ -342,6 +313,7 @@ const HELP = `
 
   ${c.dim}Make something to hand out${c.reset}
     ${c.green}mdeck build${c.reset} [slides.md] [-o dir/index.html]   A folder to host
+      --reader               reader view, notes removed unless --notes
       --single-file          everything inlined into one file instead
       --launchers            add macOS/Linux and Windows launchers (folders only)
     ${c.green}mdeck send${c.reset} [slides.md] [-o talk.html]     One file to send: the reader view, speaker notes removed,
@@ -353,6 +325,7 @@ const HELP = `
     ${c.green}mdeck preview${c.reset} [folder]                    Preview a built folder (default: dist)
 
   ${c.dim}Check and look things up${c.reset}
+    ${c.green}mdeck migrate${c.reset} [slides.md] [--dry-run]   Update settings, local layouts and drawings to API 2.0
     ${c.green}mdeck check${c.reset} [slides.md] [--strict]        Validate source and local assets
     ${c.green}mdeck list${c.reset} [layouts|themes|palettes] [slides.md] [--json]
                                               List built-in and deck-local layouts, themes and palettes
@@ -388,7 +361,7 @@ const RENAMED_COMMANDS = { dev: 'mdeck run', present: 'mdeck run', live: 'mdeck 
 const RENAMED_OPTIONS = [
   ['run', '--host', '--network'],
   ['run', '--share', '--server'],
-  ['build', '--share', 'mdeck send'],
+  ['build', '--share', 'mdeck build --reader (a folder) or mdeck send (one file)'],
   ['build', '--self-contained', '--single-file'],
   ['build', '-S', '--single-file'],
   ['build', '--inline-images', '--single-file'],
@@ -399,9 +372,21 @@ const RENAMED_OPTIONS = [
   ['build', '--no-pdf', 'mdeck send --no-pdf'],
   ['build', '--no-ink', '--no-drawings'],
   ['pdf', '--no-ink', '--no-drawings'],
+  ['send', '--no-ink', '--no-drawings'],
 ]
 for (const [name, was, now] of RENAMED_OPTIONS) {
-  if (command === name && argv.includes(was)) { err(`${was} is now ${now}.`); process.exit(1) }
+  if (command === name && argv.some(arg => arg === was || arg.startsWith(was + '='))) { err(`${was} is now ${now}.`); process.exit(1) }
+}
+
+if (argv.includes('--help') || argv.includes('-h')) { console.log(HELP); process.exit(0) }
+let parsed
+try {
+  parsed = parseArgs(command, argv)
+  if (['run', 'server'].includes(command) && Object.hasOwn(process.env, 'MDECK_LIVE_KEY')) throw new Error('MDECK_LIVE_KEY is now MDECK_SERVER_KEY. Rename the environment variable before starting mdeck.')
+} catch (error) {
+  err(error.message)
+  if (Object.hasOwn(RENAMED_COMMANDS, command)) tip(`mdeck ${command} is now ${RENAMED_COMMANDS[command]}.`)
+  process.exit(1)
 }
 
 // With --server the dev server serves under /t/<id>/, but its own addresses are
@@ -440,19 +425,8 @@ if (command === 'new') {
 
 } else if (command === 'docs') {
   try {
-    const options = { page: 'index', open: true, port: 4174 }
-    let buildOnly = false
-    for (let i = 0; i < argv.length; i++) {
-      const arg = argv[i]
-      if (arg === '--no-open') options.open = false
-      else if (arg === '--build') buildOnly = true
-      else if (arg === '--port') {
-        options.port = Number(argv[++i])
-        if (!Number.isInteger(options.port) || options.port < 1 || options.port > 65535) throw new Error('Choose a port number between 1 and 65535.')
-      } else if (arg.startsWith('-')) throw new Error(`Unknown documentation option: ${arg}`)
-      else if (options.page !== 'index') throw new Error('Choose one guide to open.')
-      else options.page = arg.replace(/\.html$/, '')
-    }
+    const options = { page: (positionals()[0] ?? 'index').replace(/\.html$/, ''), open: !hasFlag('--no-open'), port: portOption() ?? 4174 }
+    const buildOnly = hasFlag('--build')
     const { pageFor } = await import('../../docs/site/pages.js')
     if (!pageFor(options.page)) throw new Error(`No guide named "${options.page}". Try mdeck docs getting-started.`)
     if (buildOnly) {
@@ -468,6 +442,14 @@ if (command === 'new') {
       process.once('SIGINT', stop)
       process.once('SIGTERM', stop)
     }
+  } catch (error) { err(error.message); process.exitCode = 1 }
+
+} else if (command === 'migrate') {
+  try {
+    const changes = migrateDeck(requireInput('migrate'), { dryRun: hasFlag('--dry-run') })
+    for (const change of changes) ok(`${hasFlag('--dry-run') ? 'Would update' : 'Updated'} ${relative(process.cwd(), change.file)}${change.to ? ` → ${basename(change.to)}` : ''}`)
+    if (!changes.length) ok('Already uses API 2.0.')
+    else if (hasFlag('--dry-run')) tip('No files changed. Run without --dry-run to apply these changes.')
   } catch (error) { err(error.message); process.exitCode = 1 }
 
 } else if (command === 'check') {
@@ -505,6 +487,7 @@ if (command === 'new') {
 } else if (command === 'run') {
   const input = requireInput(command)
   const abs = resolve(input)
+  try { assertDrawings(abs) } catch (error) { err(error.message); process.exit(1) }
   const port = portOption()
   const exposed = hasFlag('--network')
   const pairing = createPairing()
@@ -520,12 +503,16 @@ if (command === 'new') {
     const address = serverFlag ?? (typeof inDeck === 'string' ? inDeck : null) ?? process.env.MDECK_SERVER ?? null
     const key = process.env.MDECK_SERVER_KEY
     if (!address) { err('--server needs the address of your server.'); tip('Give it as  --server https://…, add  server: https://…  to the deck, or set MDECK_SERVER.'); process.exit(1) }
-    if (!/^https?:\/\//.test(address)) { err(`The server address must start with http:// or https://, not "${address}".`); process.exit(1) }
+    try { validateServerOrigin(address) } catch (error) { err(error.message); process.exit(1) }
     if (!key) { err('--server needs the key of the server.'); tip('Start it as  MDECK_SERVER_KEY=<key> mdeck run <slides.md> --server'); process.exit(1) }
     const id = newTunnelId()
     relay = { server: address, key, id, base: `/t/${id}/`, url: `${address.replace(/\/+$/, '')}/t/${id}/`, state: 'connecting', reason: null }
   }
-  const base = baseConfig(abs, { server: relay?.server ?? null })
+  const upstream = relay?.server ?? (() => {
+    const address = parseSlides(readFileSync(abs, 'utf8')).deckConfig.server
+    return typeof address === 'string' ? address : null
+  })
+  const base = baseConfig(abs, { server: relay?.server ?? null, proxyControls: !!process.env.MDECK_SERVER_KEY })
   const mountBase = relay?.base ?? '/'
   // The launch page starts these on first use, inside this process.
   const services = {
@@ -543,7 +530,7 @@ if (command === 'new') {
     ...base,
     // A paired iPad may save ink and steer the rooms, like this computer.
     ...(relay ? { base: relay.base } : {}),
-    plugins: [...(relay ? [stripRelayBase(relay.base)] : []), ...base.plugins, homePlugin(abs, { services, pairing, relay, server: relay?.server ?? null }), pairingPlugin(pairing), livePlugin({ pairing }), inkPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) })],
+    plugins: [...(relay ? [stripRelayBase(relay.base)] : []), ...base.plugins, homePlugin(abs, { services, pairing, relay, server: relay?.server ?? null }), pairingPlugin(pairing), livePlugin({ pairing, upstream, key: process.env.MDECK_SERVER_KEY, session: () => sessionCode(parseSlides(readFileSync(abs, 'utf8')).deckConfig) }), inkPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) })],
     publicDir: dirname(abs),
     server: {
       ...base.server,
@@ -559,7 +546,8 @@ if (command === 'new') {
     let warned = false
     tunnel = startTunnel({
       server: relay.server, key: relay.key, id: relay.id, target: local, base: relay.base,
-      roots: [frameworkRoot, dirname(abs), ...componentFolders(abs).map(folder => folder.dir)],
+      allow: createRelayAccess(server, abs),
+      session: () => sessionCode(parseSlides(readFileSync(abs, 'utf8')).deckConfig),
       tokens: () => pairing.tokens(),
       log: message => { if (!message.startsWith('tunnel:')) tip(message) },
       onState(state, reason) {
@@ -572,6 +560,7 @@ if (command === 'new') {
       },
     })
     pairing.onChange(() => tunnel.push())
+    server.watcher.on('change', file => { if (resolve(file) === abs) tunnel.push() })
     const stop = () => { tunnel.stop(); process.exit(0) }
     process.once('SIGINT', stop)
     process.once('SIGTERM', stop)
@@ -579,7 +568,7 @@ if (command === 'new') {
   console.log()
   ok(`Launch page: ${c.cyan}${new URL('home.html', local).href}${c.reset}`)
   tip(`Presenter:   ${new URL('?view=presenter', local).href}`)
-  tip(`Deck:        ${new URL('?view=deck', local).href}`)
+  tip(`Audience:    ${new URL('?view=audience', local).href}`)
   if (exposed) for (const url of server.resolvedUrls.network) tip(`On a phone:  ${new URL('?view=reader', url).href}`)
   console.log()
   if (relay) tip(`iPad:        choose "Show pairing code" on the launch page; it opens ${relay.url}`)
@@ -589,8 +578,7 @@ if (command === 'new') {
 // ── server ────────────────────────────────────────────────────────────────────
 } else if (command === 'server') {
   const port = portOption() ?? 8787
-  const hostIndex = argv.indexOf('--host')
-  const host = hostIndex >= 0 && argv[hostIndex + 1] && !argv[hostIndex + 1].startsWith('-') ? argv[hostIndex + 1] : hostIndex >= 0 ? '0.0.0.0' : '127.0.0.1'
+  const host = parsed.options['--host'] === null ? '0.0.0.0' : parsed.options['--host'] ?? '127.0.0.1'
   const key = process.env.MDECK_SERVER_KEY || null
   try {
     const server = await startLiveServer({ port, host, key })
@@ -624,14 +612,11 @@ if (command === 'new') {
   // readers, in the reader view, without speaker notes unless asked, with a PDF.
   const selfContained = sending || hasFlag('--single-file')
   const launchers = !sending && hasFlag('--launchers')
-  const stripNotes = sending && !hasFlag('--notes')
+  const reader = sending || hasFlag('--reader')
+  const stripNotes = reader && !hasFlag('--notes')
   const wantPdf = sending && !hasFlag('--no-pdf')
 
-  if (selfContained && launchers) {
-    err('--launchers is only available for folders, not with --single-file.')
-    process.exit(1)
-  }
-
+  if (!hasFlag('--no-drawings')) { try { assertDrawings(input) } catch (error) { err(error.message); process.exit(1) } }
   const given = outputOption()
   const outputPath = given ? resolve(process.cwd(), given) : sending ? resolve(process.cwd(), basename(input).replace(/\.md$/i, '') + '.html') : null
 
@@ -642,7 +627,7 @@ if (command === 'new') {
 
   try {
     await build({
-      ...baseConfig(input, { selfContained, defaultView: sending ? 'reader' : 'deck' }),
+      ...baseConfig(input, { selfContained, defaultView: reader ? 'reader' : 'deck' }),
       plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: selfContained, inlineMedia: selfContained, stripNotes, ink: !hasFlag('--no-drawings') }), viteSingleFile()],
       build: {
         outDir,
@@ -661,7 +646,7 @@ if (command === 'new') {
   await mkdir(finalOutDir, { recursive: true })
 
   if (!selfContained) {
-    await copyLocalAssets(input, finalOutDir)
+    await copyLocalAssets(input, finalOutDir, { stripNotes })
     if (launchers) await writePresenterLaunchers(finalOutDir, htmlFilename)
   }
 
@@ -672,7 +657,8 @@ if (command === 'new') {
     htmlFile = outputPath
   }
   if (wantPdf) {
-    const pdfFile = outputPath.replace(/\.html?$/i, '') + '.pdf'
+    const pdfDir = mkdtempSync(resolve(tmpdir(), 'mdeck-send-pdf-'))
+    const pdfFile = resolve(pdfDir, 'slides.pdf')
     try {
       await renderPdf({ htmlFile, output: pdfFile })
       attachPdf(htmlFile, pdfFile, { embed: true })
@@ -681,14 +667,14 @@ if (command === 'new') {
     } catch (error) {
       console.warn(`  ${c.yellow}!${c.reset}  PDF not rendered: ${error.message}`)
       tip('The reader view will offer the browser\'s "Save as PDF" dialog instead.')
-    }
+    } finally { await rm(pdfDir, { recursive: true, force: true }) }
   }
   if (stripNotes) tip('Speaker notes were removed from this file (use --notes to keep them).')
-  ok(`${sending ? 'Made' : 'Built'}: ${c.cyan}${htmlFile}${c.reset}${sending ? ' — opens in the reader view' : selfContained ? ' (single file)' : ' + local assets'}\n`)
+  ok(`${sending ? 'Made' : 'Built'}: ${c.cyan}${htmlFile}${c.reset}${reader ? ' — opens in the reader view' : ''}${selfContained ? ' (single file)' : ' + local assets'}\n`)
 
 // ── skill ─────────────────────────────────────────────────────────────────────
 } else if (command === 'skill') {
-  const installIndex = argv.indexOf('--install')
+  const installIndex = parsed.options['--install'] ? 0 : -1
   if (hasFlag('--print') || installIndex < 0) {
     if (installIndex < 0 && !hasFlag('--print')) {
       console.log(`\n  The write-slides skill drafts a complete deck for an AI coding assistant.\n`)
@@ -696,7 +682,7 @@ if (command === 'new') {
       console.log(`\n  ${c.dim}mdeck skill --install claude codex     install for one or more assistants\n  mdeck skill --print                     print the skill for any other tool${c.reset}\n`)
     } else process.stdout.write(readSkill().text)
   } else {
-    const targets = argv.slice(installIndex + 1).filter(arg => !arg.startsWith('-'))
+    const targets = parsed.options['--install']
     if (!targets.length) { err(`Name at least one assistant: ${Object.keys(TARGETS).join(', ')}`); process.exit(1) }
     for (const target of targets) {
       try { const result = installSkill(target, { project: hasFlag('--project') }); ok(`${result.title}: ${c.cyan}${result.file}${c.reset}`) } catch (error) { err(error.message); process.exitCode = 1 }
@@ -707,6 +693,7 @@ if (command === 'new') {
 } else if (command === 'pdf') {
   const input = requireInput('pdf')
   const pdfFile = resolve(process.cwd(), outputOption() ?? basename(input).replace(/\.md$/i, '') + '.pdf')
+  if (!hasFlag('--no-drawings')) { try { assertDrawings(input) } catch (error) { err(error.message); process.exit(1) } }
   if (!findChrome()) { err('No Chrome or Chromium found. Set MDECK_CHROME to its executable path.'); process.exit(1) }
   const tempDir = mkdtempSync(resolve(tmpdir(), 'mdeck-pdf-'))
   try {
@@ -729,7 +716,7 @@ if (command === 'new') {
     configFile: false,
     root: frameworkRoot,
     build: { outDir: folder },
-    preview: { open: true },
+    preview: { open: !hasFlag('--no-open'), ...(portOption() ? { port: portOption(), strictPort: true } : {}) },
   })
   server.printUrls()
 

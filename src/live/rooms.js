@@ -164,13 +164,13 @@ function reply(response, status, body) {
 // Answers carry no cookies and no personal data, so any page may use them.
 export function liveHandler({ rooms = createRooms(), canReset = () => false, info = () => ({}), limit = createLimiter(), inkLimit = createLimiter({ burst: 60, perMs: 3000 }), heartbeatMs = 20000 } = {}) {
   return async (request, response, next = () => reply(response, 404, { error: 'Not found' })) => {
-    const { pathname } = new URL(request.url, 'http://localhost')
+    const { pathname, searchParams } = new URL(request.url, 'http://localhost')
     response.setHeader('Access-Control-Allow-Origin', '*')
     response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     if (request.method === 'OPTIONS') { response.writeHead(204); response.end(); return }
     try {
-      if (pathname === '/info' && request.method === 'GET') return reply(response, 200, { canReset: !!canReset(request), ...info(request) })
+      if (pathname === '/info' && request.method === 'GET') return reply(response, 200, { canReset: !!canReset(request, searchParams.get('session')), ...info(request) })
       const page = pathname.slice(1)
       if (request.method === 'GET' && (CODE_RE.test(page) || Object.hasOwn(ANSWER_FILES, page))) {
         const name = CODE_RE.test(page) ? 'answer.html' : page
@@ -193,14 +193,14 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
       }
       if (request.method !== 'POST') return reply(response, 405, { error: 'Method not allowed' })
       if (match[2] === '/ink') {
-        if (!canReset(request)) return reply(response, 403, { error: 'Only the presenter can draw' })
+        if (!canReset(request, id)) return reply(response, 403, { error: 'Only the presenter can draw' })
         if (!inkLimit(clientAddress(request))) return reply(response, 429, { error: 'Too much ink at once' })
         const { messages } = await readBody(request, MAX_INK)
         if (!Array.isArray(messages) || messages.length > 100) return reply(response, 400, { error: 'Send { messages: [...] }' })
         return reply(response, 200, { ok: true, listeners: rooms.relayInk(id, messages) })
       }
       if (match[2] === '/reset' || match[2] === '/state') {
-        if (!canReset(request)) return reply(response, 403, { error: 'Only the presenter can change a room' })
+        if (!canReset(request, id)) return reply(response, 403, { error: 'Only the presenter can change a room' })
         if (match[2] === '/reset') rooms.reset(id)
         else if (!rooms.setState(id, (await readBody(request, MAX_STATE)).state)) return reply(response, 200, { ok: true, ignored: true })
         return reply(response, 200, { ok: true })

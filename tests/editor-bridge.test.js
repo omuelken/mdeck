@@ -3,9 +3,9 @@ import assert from 'node:assert/strict'
 import { createEditorBridge } from '../src/runtime/editorBridge.js'
 import { parseSlides } from '../src/core/parseSlides.js'
 import { validateDeck } from '../src/core/validateDeck.js'
-import { templateManifests } from '../src/extensions/discover.js'
+import { layoutManifests } from '../src/extensions/discover.js'
 
-const layouts = templateManifests('examples/showcase/slides.md')
+const layouts = layoutManifests('examples/showcase/slides.md')
 
 function harness() {
   const calls = { themes: [], mounts: [], posts: [], overrides: [] }

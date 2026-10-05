@@ -17,9 +17,7 @@ export const RENAMED_DECK_KEYS = {
   share: 'reader',
   live: 'server and session',
 }
-export const REMOVED_SLIDE_KEYS = ['note', 'notes']
 const ANY_DECK_KEYS = new Set([...DECK_KEYS, ...Object.keys(RENAMED_DECK_KEYS)])
-const ANY_SLIDE_KEYS = new Set([...SLIDE_KEYS, ...REMOVED_SLIDE_KEYS])
 
 export function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -45,10 +43,10 @@ function segmentsOf(source) {
   return segments.filter(s => source.slice(s.start, s.end).trim())
 }
 
-export function looksLikeMeta(text, keys) {
+export function looksLikeMeta(text, keys, { frontmatter = false } = {}) {
   const first = sourceLines(text).find(line => line.text.trim() && !/^\s*#/.test(line.text))
   const key = first?.text.match(/^([\w-]+):/)
-  return !!key && keys.has(key[1]) && !/^\s*#{1,6}\s/.test(text)
+  return !!key && keys.has(key[1]) && (frontmatter || !/^\s*#{1,6}\s/.test(text))
 }
 
 function extractBody(source, body, diagnostics) {
@@ -111,7 +109,7 @@ export function parseSlides(source) {
   let deckConfig = {}
   let configSource = null
   let i = 0
-  if (segments[0] && /^\s*---[ \t]*\r?\n/.test(source) && looksLikeMeta(text(segments[0]), ANY_DECK_KEYS) && !looksLikeMeta(text(segments[0]), ANY_SLIDE_KEYS)) {
+  if (segments[0] && /^\s*---[ \t]*\r?\n/.test(source) && looksLikeMeta(text(segments[0]), ANY_DECK_KEYS, { frontmatter: true }) && !looksLikeMeta(text(segments[0]), SLIDE_KEYS)) {
     deckConfig = readMeta(segments[0])
     configSource = { start: segments[0].start, end: segments[0].end }
     i++
@@ -127,19 +125,20 @@ export function parseSlides(source) {
       metaSource = { start: segment.start + explicit.bodyStart, end: segment.start + explicit.bodyEnd }
       meta = readMeta(metaSource)
       body = { start: segment.start + explicit.end, end: segment.end }
-    } else if (looksLikeMeta(text(segment), ANY_SLIDE_KEYS)) {
+    } else if (looksLikeMeta(text(segment), SLIDE_KEYS)) {
       meta = readMeta(segment)
       metaSource = { start: segment.start, end: segment.end }
       body = segments[i]
-      if (body && !looksLikeMeta(text(body), ANY_SLIDE_KEYS) && !/^:::meta\b/.test(text(body))) i++
+      if (body && !looksLikeMeta(text(body), SLIDE_KEYS) && !/^:::meta\b/.test(text(body))) i++
       else body = null
     }
     const { content, notes, regions, blocks } = extractBody(source, body, diagnostics)
-    // Slide settings that were removed (note:, notes:), before block notes fill meta.notes.
-    const removedKeys = REMOVED_SLIDE_KEYS.filter(key => meta[key] != null)
-    if (notes && meta.notes == null) meta.notes = notes
     const authoredMeta = { ...meta }
-    slides.push({ id: meta.id ?? `slide-${slides.length + 1}`, meta, authoredMeta, removedKeys, content, regions, blocks,
+    // Speaker notes come only from body blocks. Keep the YAML snapshot for
+    // source editing and validation, separate from the resolved block notes.
+    delete meta.notes
+    if (notes) meta.notes = notes
+    slides.push({ id: meta.id ?? `slide-${slides.length + 1}`, meta, authoredMeta, content, regions, blocks,
       source: { start: segment.start, end: body?.end ?? segment.end },
       metaSource, bodySource: body ? { start: body.start, end: body.end } : null })
   }

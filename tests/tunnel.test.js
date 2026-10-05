@@ -9,7 +9,7 @@ import { isAllowedRequest } from '../src/build/editorPlugin.js'
 
 const KEY = 'room-server-key'
 const base = id => `/t/${id}/`
-const rules = id => ({ base: base(id), roots: ['/opt/mdeck', '/home/me/talk'] })
+const rules = id => ({ base: base(id), resources: new Set(['main.jsx', '@vite/client', '@id/__x00__virtual:slides', 'node_modules/.vite/deps/preact.js', '@fs/opt/mdeck/src/runtime/deck-stage.js', '@fs/home/me/talk/img/photo.png', 'img/photo.png'].map(path => base(id) + path)) })
 
 test('only what the presenter and audience pages need is shareable', () => {
   const id = newTunnelId()
@@ -52,6 +52,8 @@ test('only what the presenter and audience pages need is shareable', () => {
 test('a request that came through the tunnel is never taken for this computer', () => {
   assert.equal(isAllowedRequest({ headers: { host: 'localhost:5173' } }), true)
   assert.equal(isAllowedRequest({ headers: { host: 'localhost:5173', 'x-mdeck-tunnel': '1' } }), false)
+  assert.equal(isAllowedRequest({ headers: { host: 'localhost:5173' }, socket: { remoteAddress: '192.168.1.50' } }), false, 'a remote peer cannot spoof the loopback Host header')
+  assert.equal(isAllowedRequest({ headers: { host: 'localhost:5173' }, socket: { remoteAddress: '::ffff:127.0.0.1' } }), true)
 })
 
 // A server, a fake dev server and the tunnel between them.
@@ -74,7 +76,7 @@ async function setup(t, { base: pathBase, key = KEY, tokens = [] } = {}) {
   await new Promise(done => local.listen(0, '127.0.0.1', done))
   const target = `http://127.0.0.1:${local.address().port}${base(id)}`
   const states = []
-  const tunnel = startTunnel({ server: live.url, key, id, target, base: pathBase ?? base(id), roots: [], tokens: () => tokens, onState: (state, reason) => states.push([state, reason]) })
+  const tunnel = startTunnel({ server: live.url, key, id, target, base: pathBase ?? base(id), resources: new Set(['main.jsx', 'big.png'].map(path => base(id) + path)), session: () => '123456', tokens: () => tokens, onState: (state, reason) => states.push([state, reason]) })
   t.after(async () => { tunnel.stop(); sockets.close(); local.closeAllConnections(); local.close(); await live.close() })
   const upTo = async () => { for (let i = 0; i < 100 && !states.some(([state]) => state === 'up' || state === 'refused'); i++) await delay(20) }
   await upTo()
@@ -113,7 +115,7 @@ test('a request body is passed on', async t => {
 test('addresses that are not shared never reach the computer', async t => {
   const { url, seen } = await setup(t)
   const before = seen.length
-  for (const path of ['home.html', '__mdeck/home/info', '__mdeck/deck', 'slides.md', '.env']) {
+  for (const path of ['home.html', '__mdeck/home/info', '__mdeck/deck', 'slides.md', '.env', 'private.toml', 'private.js?raw', 'confidential.pdf', '@id/__x00__private', 'main.jsx?raw']) {
     const response = await fetch(`${url}${path}`)
     assert.equal(response.status, 403, path)
   }
@@ -157,8 +159,10 @@ test('a paired device may steer rooms while its tunnel is open, and no longer af
   assert.equal(await canReset(device), true)
   assert.equal(await canReset('someone-else-0123456789abcdef'), false)
   assert.equal(await canReset(KEY), true)
-  const room = await fetch(`${live.url}/rooms/s.abc/state`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${device}` }, body: JSON.stringify({ state: { at: 1, screen: 'ipad' } }) })
+  const room = await fetch(`${live.url}/rooms/123456.abc/state`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${device}` }, body: JSON.stringify({ state: { at: 1, screen: 'ipad' } }) })
   assert.equal(room.status, 200)
+  const other = await fetch(`${live.url}/rooms/654321.abc/state`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${device}` }, body: JSON.stringify({ state: {} }) })
+  assert.equal(other.status, 403, 'a device cannot control another session')
   tunnel.stop()
   for (let i = 0; i < 100 && await canReset(device); i++) await delay(20)
   assert.equal(await canReset(device), false)
