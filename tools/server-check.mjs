@@ -56,12 +56,14 @@ try {
   devLog = dev.out
   const base = new URL(url).pathname
 
-  // The launch page, on this computer, under the base path.
-  const home = `http://localhost:${DEV_PORT}${base}`
-  // "Connected" can come before the dev server answers, as while Vite
-  // optimizes dependencies on a fresh install (CI): ask until it does.
+  // The launch page, on this computer, under the base path. "Connected" can
+  // come before the dev server answers, and in a container `localhost` may
+  // lead fetch to the other loopback address than the one Vite listens on.
   let last = null
-  const info = await until(() => fetch(`${home}__mdeck/home/info`).then(response => { last = response.status; return response.ok && response.json() }).catch(error => { last = `${error.message} ${error.cause?.code ?? error.cause ?? ''}` }), () => `launch page answers (last: ${last})`)
+  const ask = host => fetch(`http://${host}:${DEV_PORT}${base}__mdeck/home/info`).then(response => { last = response.status; return response.ok && response.json().then(info => ({ host, info })) }).catch(error => { last = `${error.message} ${error.cause?.code ?? ''}` })
+  const reached = await until(async () => await ask('localhost') || await ask('127.0.0.1') || await ask('[::1]'), () => `launch page answers (last: ${last})`)
+  const home = `http://${reached.host}:${DEV_PORT}${base}`
+  const { info } = reached
   assert.equal(info.relay.state, 'up'); assert.equal(info.pairing.available, true)
   const offered = await (await fetch(`${home}__mdeck/home/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pair' }) })).json()
   assert.equal(new URL(offered.url).searchParams.has('serverkey'), false)
