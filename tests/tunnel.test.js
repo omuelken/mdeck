@@ -4,7 +4,7 @@ import http from 'node:http'
 import { setTimeout as delay } from 'node:timers/promises'
 import WebSocket, { WebSocketServer } from 'ws'
 import { startLiveServer } from '../src/live/server.js'
-import { startTunnel, shareable, newTunnelId } from '../src/build/tunnelClient.js'
+import { startTunnel, shareable, newTunnelId, loopbackUrl } from '../src/build/tunnelClient.js'
 import { isAllowedRequest } from '../src/build/editorPlugin.js'
 
 const KEY = 'room-server-key'
@@ -184,4 +184,11 @@ test('the reload channel of the dev server is passed through, and only that', as
   const closed = new Promise(done => { other.once('close', code => done(code)); other.once('error', () => {}) })
   other.once('open', () => other.send('x'))
   assert.notEqual(await closed, 1000)
+})
+
+test('the relay reaches the dev server on the loopback address it listens on', () => {
+  assert.equal(loopbackUrl('http://localhost:5173/t/abc/', { address: '127.0.0.1', family: 'IPv4', port: 5173 }), 'http://127.0.0.1:5173/t/abc/')
+  assert.equal(loopbackUrl('http://localhost:5173/t/abc/', { address: '::1', family: 'IPv6', port: 5173 }), 'http://[::1]:5173/t/abc/')
+  assert.equal(loopbackUrl('http://localhost:5173/', { address: '::', family: 'IPv6', port: 5173 }), 'http://localhost:5173/', 'listening on every address: localhost works')
+  assert.equal(loopbackUrl('http://localhost:5173/', null), 'http://localhost:5173/')
 })

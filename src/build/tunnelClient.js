@@ -17,6 +17,18 @@ import { TUNNEL_MARK } from './editorPlugin.js'
 /** A name for the tunnel nobody can guess: it is the secret part of the address. */
 export const newTunnelId = () => randomBytes(18).toString('base64url')
 
+/**
+ * The dev server's address with the loopback address it listens on, when it
+ * listens on one: `localhost` may resolve to the other (IPv4 or IPv6).
+ */
+export function loopbackUrl(url, bound) {
+  const address = typeof bound === 'object' ? bound?.address : null
+  if (!address || !(address === '::1' || /^127\./.test(address))) return url
+  const local = new URL(url)
+  local.hostname = address.includes(':') ? `[${address}]` : address
+  return local.href
+}
+
 const READ = new Set(['GET', 'HEAD'])
 const CHUNK = 256 * 1024
 
@@ -87,7 +99,7 @@ export function startTunnel({ server, key, id, target, base, resources = new Set
       return refuse(id, 403, 'This address is not shared')
     }
     const outgoing = { ...headers, host: local.host, [TUNNEL_MARK]: '1' }
-    const request = http.request({ hostname: local.hostname, port: local.port, method, path: url.pathname + url.search, headers: outgoing }, res => {
+    const request = http.request({ hostname: local.hostname.replace(/^\[|\]$/g, ''), port: local.port, method, path: url.pathname + url.search, headers: outgoing }, res => {
       send({ t: 'head', id, status: res.statusCode, headers: res.headers })
       res.on('data', chunk => {
         for (let at = 0; at < chunk.length; at += CHUNK) send({ t: 'data', id, b: chunk.subarray(at, at + CHUNK).toString('base64') })

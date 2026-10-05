@@ -29,7 +29,7 @@ import { assertDrawings } from '../build/drawings.js'
 import { createRelayAccess } from '../build/relayAccess.js'
 import { sessionCode } from '../live/code.js'
 import { migrateDeck } from './migrate.js'
-import { startTunnel, newTunnelId } from '../build/tunnelClient.js'
+import { startTunnel, newTunnelId, loopbackUrl } from '../build/tunnelClient.js'
 import { baseConfig } from '../build/config.js'
 
 // ── ANSI helpers ──────────────────────────────────────────────────────────────
@@ -545,7 +545,9 @@ if (command === 'new') {
   if (relay) {
     let warned = false
     tunnel = startTunnel({
-      server: relay.server, key: relay.key, id: relay.id, target: local, base: relay.base,
+      // On the loopback address the dev server listens on: `localhost` may
+      // resolve to the other one (IPv4 or IPv6), as in containers.
+      server: relay.server, key: relay.key, id: relay.id, target: loopbackUrl(local, server.httpServer?.address()), base: relay.base,
       allow: createRelayAccess(server, abs),
       session: () => sessionCode(parseSlides(readFileSync(abs, 'utf8')).deckConfig),
       tokens: () => pairing.tokens(),
