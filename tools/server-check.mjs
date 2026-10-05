@@ -24,7 +24,7 @@ const run = (name, args, env = {}) => {
   kids.push(child)
   return { child, out: () => out }
 }
-const until = async (fn, what, ms = 20000) => { const t = Date.now(); while (Date.now() - t < ms) { const v = await fn(); if (v) return v; await delay(100) } throw new Error('timeout: ' + what) }
+const until = async (fn, what, ms = 20000) => { const t = Date.now(); while (Date.now() - t < ms) { const v = await fn(); if (v) return v; await delay(100) } throw new Error('timeout: ' + (typeof what === 'function' ? what() : what)) }
 const stageState = async () => {
   const response = await fetch(`${ROOM}/rooms/123456.stage/events`)
   const reader = response.body.getReader()
@@ -60,7 +60,8 @@ try {
   const home = `http://localhost:${DEV_PORT}${base}`
   // "Connected" can come before the dev server answers, as while Vite
   // optimizes dependencies on a fresh install (CI): ask until it does.
-  const info = await until(() => fetch(`${home}__mdeck/home/info`).then(response => response.ok && response.json()).catch(() => null), 'launch page answers')
+  let last = null
+  const info = await until(() => fetch(`${home}__mdeck/home/info`).then(response => { last = response.status; return response.ok && response.json() }).catch(error => { last = `${error.message} ${error.cause?.code ?? error.cause ?? ''}` }), () => `launch page answers (last: ${last})`)
   assert.equal(info.relay.state, 'up'); assert.equal(info.pairing.available, true)
   const offered = await (await fetch(`${home}__mdeck/home/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pair' }) })).json()
   assert.equal(new URL(offered.url).searchParams.has('serverkey'), false)
