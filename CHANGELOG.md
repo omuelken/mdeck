@@ -129,6 +129,7 @@ Polls work without hosting the slides. This changes how phones join; see *Remove
 - A slide's `title:` setting names it in the outline for slides without a heading.
 - Code blocks stay left-aligned in centred layouts. Step lists have the same spacing as ordinary lists.
 - New guide "Views, commands and servers".
+- One icon set everywhere: the launch page, presenter, reader, deck controls, drawing toolbar, code blocks and editor use the same line icons ([Lucide](https://lucide.dev), ISC license) instead of a mix of drawings and text symbols.
 
 ### Fixes and maintenance
 

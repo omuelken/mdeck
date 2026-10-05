@@ -11,6 +11,7 @@ import 'prismjs/components/prism-markup'
 import 'prismjs/components/prism-json'
 import 'prismjs/components/prism-yaml'
 import 'prismjs/components/prism-sql'
+import { Icon } from './Icon.jsx'
 import './code-block.css'
 
 // ─── Syntax highlighting ───────────────────────────────────────────────────
@@ -68,27 +69,6 @@ async function execPython(code) {
     return { error: e.message }
   }
 }
-
-// ─── Icons ─────────────────────────────────────────────────────────────────
-
-const CopyIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="9" y="9" width="13" height="13" rx="2"/>
-    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-  </svg>
-)
-
-const CheckIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>
-)
-
-const PlayIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-    <polygon points="5,3 19,12 5,21"/>
-  </svg>
-)
 
 // ─── Component ─────────────────────────────────────────────────────────────
 
@@ -158,12 +138,12 @@ export default function CodeBlock({ lang = 'text', children = '', live, copy, ed
         <div class="code-block-actions">
           {isCopy && (
             <button class="code-btn" onClick={handleCopy} title={copied ? 'Copied!' : 'Copy'}>
-              {copied ? <CheckIcon /> : <CopyIcon />}
+              <Icon name={copied ? 'check' : 'copy'} size={18} />
             </button>
           )}
           {isLive && (
             <button class="code-btn code-btn--run" onClick={handleRun} disabled={running} title="Run">
-              {running ? '…' : <PlayIcon />}
+              {running ? <Icon name="loading" size={18} class="icon code-btn-spin" /> : <Icon name="play" size={18} />}
             </button>
           )}
         </div>

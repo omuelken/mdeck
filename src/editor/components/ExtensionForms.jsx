@@ -1,4 +1,5 @@
 import { h } from 'preact'
+import { Icon } from '../../components/Icon.jsx'
 import { CORE_TOKENS, PROPERTY_TYPES, FRAMES } from '../extensions.js'
 import { Field, TextArea } from './Field.jsx'
 
@@ -25,7 +26,7 @@ export function TokenList({ tokens, onChange, suggestions = CORE_TOKENS }) {
         <input type="text" value={token.name} placeholder="--name" style={{ flex: '0 0 140px', fontFamily: 'ui-monospace, monospace' }} onInput={e => onChange(update(tokens, index, { name: e.currentTarget.value }))} />
         {isColor(token.value) && <input type="color" value={token.value.length === 4 ? '#' + [...token.value.slice(1)].map(c => c + c).join('') : token.value.slice(0, 7)} style={{ flex: '0 0 auto' }} onInput={e => onChange(update(tokens, index, { value: e.currentTarget.value }))} />}
         <input type="text" value={token.value ?? ''} style={{ fontFamily: 'ui-monospace, monospace' }} onInput={e => onChange(update(tokens, index, { value: e.currentTarget.value }))} />
-        <button class="btn is-small" title="Remove token" onClick={() => onChange(without(tokens, index))}>×</button>
+        <button class="btn is-small is-icon" title="Remove token" aria-label="Remove token" onClick={() => onChange(without(tokens, index))}><Icon name="close" size={14} /></button>
       </div>
     </div>)}
     <div class="row" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -60,7 +61,7 @@ export function ThemeForm({ model, files, onChange, onFile }) {
         <input type="text" value={param.name} placeholder="primaryColor" onInput={e => onChange({ params: update(model.params, index, { name: e.currentTarget.value }) })} />
         <select value={param.token ?? ''} onChange={e => onChange({ params: update(model.params, index, { token: e.currentTarget.value }) })}><option value="">token…</option>{tokenNames.map(name => <option key={name} value={name}>{name}</option>)}</select>
         <input type="text" value={param.title ?? ''} placeholder="Title" onInput={e => onChange({ params: update(model.params, index, { title: e.currentTarget.value }) })} />
-        <button class="btn is-small" onClick={() => onChange({ params: without(model.params, index) })}>×</button>
+        <button class="btn is-small is-icon" title="Remove setting" aria-label="Remove setting" onClick={() => onChange({ params: without(model.params, index) })}><Icon name="close" size={14} /></button>
       </div>
     </div>)}
     <div><button class="btn is-small" onClick={() => onChange({ params: [...model.params, { name: '', token: tokenNames[0] ?? '', title: '' }] })}>+ setting</button></div>
@@ -75,7 +76,7 @@ function PropertyRow({ property, onChange, onRemove }) {
     <div class="row">
       <input type="text" value={property.name} placeholder="name" style={{ fontFamily: 'ui-monospace, monospace' }} onInput={e => set({ name: e.currentTarget.value })} />
       <select value={property.type ?? 'string'} onChange={e => set({ type: e.currentTarget.value, items: e.currentTarget.value === 'array' ? property.items ?? { type: 'string' } : null })}>{PROPERTY_TYPES.map(type => <option key={type} value={type}>{type}</option>)}</select>
-      <button class="btn is-small" onClick={onRemove}>×</button>
+      <button class="btn is-small is-icon" title="Remove property" aria-label="Remove property" onClick={onRemove}><Icon name="close" size={14} /></button>
     </div>
     <div class="row">
       <input type="text" value={property.title ?? ''} placeholder="Title" onInput={e => set({ title: e.currentTarget.value })} />
@@ -106,7 +107,7 @@ export function TemplateForm({ model, files, onChange, onFile }) {
         <input type="text" value={region.name} placeholder="name" disabled={region.name === 'body'} style={{ flex: '0 0 120px', fontFamily: 'ui-monospace, monospace' }} onInput={e => onChange({ regions: update(model.regions, index, { name: e.currentTarget.value }) })} />
         <input type="text" value={region.description ?? ''} placeholder="What goes here" onInput={e => onChange({ regions: update(model.regions, index, { description: e.currentTarget.value }) })} />
         <label class="row" style={{ flex: '0 0 auto', color: '#d0d0d0' }}><input type="checkbox" checked={Boolean(region.required)} onChange={e => onChange({ regions: update(model.regions, index, { required: e.currentTarget.checked }) })} /> required</label>
-        {region.name !== 'body' && <button class="btn is-small" onClick={() => onChange({ regions: without(model.regions, index) })}>×</button>}
+        {region.name !== 'body' && <button class="btn is-small is-icon" title="Remove region" aria-label="Remove region" onClick={() => onChange({ regions: without(model.regions, index) })}><Icon name="close" size={14} /></button>}
       </div>
     </div>)}
     <div><button class="btn is-small" onClick={() => onChange({ regions: [...model.regions, { name: '', description: '', required: false }] })}>+ area</button></div>

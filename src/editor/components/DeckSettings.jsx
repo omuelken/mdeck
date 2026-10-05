@@ -1,4 +1,5 @@
 import { h } from 'preact'
+import { Icon } from '../../components/Icon.jsx'
 import { setDeckConfig } from '../../core/editDeck.js'
 import { effectiveToken } from '../../extensions/appearance.js'
 import { deckDiagnostics } from '../model.js'
@@ -48,10 +49,10 @@ export function DeckSettings({ state, edit }) {
     </Field>
     <div class="grid-2">
       <Field label="Accent">
-        <div class="row"><input type="color" value={effectiveToken('--accent', appearance) ?? '#888888'} onInput={e => text('accent', e.currentTarget.value)} style={{ flex: '0 0 auto' }} /><span style={{ color: '#b0b0b0' }}>{config.accent ?? 'from theme'}</span>{config.accent && <button class="btn is-small" onClick={() => text('accent', '')}>×</button>}</div>
+        <div class="row"><input type="color" value={effectiveToken('--accent', appearance) ?? '#888888'} onInput={e => text('accent', e.currentTarget.value)} style={{ flex: '0 0 auto' }} /><span style={{ color: '#b0b0b0' }}>{config.accent ?? 'from theme'}</span>{config.accent && <button class="btn is-small is-icon" title="Back to the theme's accent" aria-label="Clear accent" onClick={() => text('accent', '')}><Icon name="close" size={14} /></button>}</div>
       </Field>
       {theme?.accent2 && <Field label="Accent 2">
-        <div class="row"><input type="color" value={effectiveToken('--accent-2', appearance) ?? '#888888'} onInput={e => text('accent2', e.currentTarget.value)} style={{ flex: '0 0 auto' }} /><span style={{ color: '#b0b0b0' }}>{config.accent2 ?? 'from theme'}</span>{config.accent2 && <button class="btn is-small" onClick={() => text('accent2', '')}>×</button>}</div>
+        <div class="row"><input type="color" value={effectiveToken('--accent-2', appearance) ?? '#888888'} onInput={e => text('accent2', e.currentTarget.value)} style={{ flex: '0 0 auto' }} /><span style={{ color: '#b0b0b0' }}>{config.accent2 ?? 'from theme'}</span>{config.accent2 && <button class="btn is-small is-icon" title="Back to the theme's second accent" aria-label="Clear second accent" onClick={() => text('accent2', '')}><Icon name="close" size={14} /></button>}</div>
       </Field>}
     </div>
     {theme && Object.keys(theme.params).length > 0 && <>
@@ -63,7 +64,7 @@ export function DeckSettings({ state, edit }) {
           <div class="row">
             {color ? <input type="color" value={isColor(value) ? value : def.default} onInput={e => param(key, e.currentTarget.value)} style={{ flex: '0 0 auto' }} /> : null}
             <input type="text" value={value ?? ''} placeholder={def.default} onInput={e => param(key, e.currentTarget.value)} />
-            {value != null && <button class="btn is-small" onClick={() => param(key, '')}>×</button>}
+            {value != null && <button class="btn is-small is-icon" title="Back to the default" aria-label="Back to the default" onClick={() => param(key, '')}><Icon name="close" size={14} /></button>}
           </div>
         </Field>
       })}

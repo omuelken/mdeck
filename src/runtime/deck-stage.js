@@ -63,6 +63,8 @@
  *   - data-om-validate="no_overflowing_text,no_overlapping_text,slide_sized_text"
  */
 
+import { iconSvg } from '../core/icons.js'
+
 (() => {
   const DESIGN_W_DEFAULT = 1920;
   const DESIGN_H_DEFAULT = 1080;
@@ -227,7 +229,7 @@
     .btn:focus { outline: none; }
     .btn:focus-visible { outline: none; }
     .btn::-moz-focus-inner { border: 0; }
-    .btn svg { width: 14px; height: 14px; display: block; }
+    .btn svg { width: 16px; height: 16px; display: block; }
     .btn.reset {
       font-size: 11px;
       font-weight: 500;
@@ -461,19 +463,19 @@
       overlay.setAttribute('data-noncommentable', '');
       overlay.innerHTML = `
         <button class="btn prev" type="button" aria-label="Previous slide" title="Previous (←)">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>
+          ${iconSvg('prev')}
         </button>
         <span class="count" aria-live="polite"><span class="current">1</span><span class="step-progress" hidden> · <span class="step-cur">0</span>/<span class="step-total">1</span></span><span class="sep">/</span><span class="total">1</span></span>
         <button class="btn next" type="button" aria-label="Next slide" title="Next (→)">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
+          ${iconSvg('next')}
         </button>
         <span class="divider"></span>
         <button class="btn reset" type="button" aria-label="Reset to first slide" title="Reset (R)">Reset<span class="kbd">R</span></button>
         <button class="btn draw" type="button" aria-label="Draw on the slide" title="Draw (D)">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13l1-3.5L10.5 3a1.4 1.4 0 012 2L6 11.5z"/></svg>
+          ${iconSvg('pen')}
         </button>
         <button class="btn fullscreen" type="button" aria-label="Full screen" title="Full screen (F)">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6V3h3M10 3h3v3M13 10v3h-3M6 13H3v-3"/></svg>
+          ${iconSvg('fullscreen')}
         </button>
       `;
 

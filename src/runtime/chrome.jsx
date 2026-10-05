@@ -6,6 +6,10 @@ export const S = {
   btn: {
     appearance: 'none',
     WebkitAppearance: 'none',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '5px',
     padding: '5px 12px',
     borderRadius: '5px',
     border: '1px solid #3a3a3a',

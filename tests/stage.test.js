@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import vm from 'node:vm'
 import { readFileSync } from 'node:fs'
+import { iconSvg } from '../src/core/icons.js'
 
 // Exercise the real stage state machine without a browser layout engine.
 function stageFixture() {
@@ -10,7 +11,10 @@ function stageFixture() {
   const events = []
   const window = { postMessage: message => messages.push(message) }
   window.parent = window
-  vm.runInNewContext(readFileSync(new URL('../src/runtime/deck-stage.js', import.meta.url), 'utf8'), {
+  // The stage is a module only for its icon import; the script context supplies it.
+  const source = readFileSync(new URL('../src/runtime/deck-stage.js', import.meta.url), 'utf8').replace(/^import .*$/m, '')
+  vm.runInNewContext(source, {
+    iconSvg,
     HTMLElement: class { attachShadow() { return {} } dispatchEvent(event) { events.push(event) } toggleAttribute(name, on) { this[name] = on } },
     customElements: { get() {}, define(name, value) { Stage = value } },
     location: { search: '', hash: '' }, history: { replaceState() {} },

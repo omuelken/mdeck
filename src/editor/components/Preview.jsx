@@ -1,4 +1,5 @@
 import { h } from 'preact'
+import { Icon } from '../../components/Icon.jsx'
 import { useEffect, useRef, useState } from 'preact/hooks'
 
 const PREVIEW_URL = '/?editor=1&embedded=1'
@@ -51,8 +52,8 @@ export function Preview({ source, selection, config = null, overrides = null, re
       <iframe ref={frame} title="Slide preview" src={PREVIEW_URL} onLoad={() => setReady(true)} style={{ aspectRatio: `${width} / ${height}` }} />
     </div>
     <div class="preview-tools">
-      <button class="btn is-small" onClick={() => control('prev')}>← Previous</button>
-      <button class="btn is-small" onClick={() => control('next')}>Next →</button>
+      <button class="btn is-small" onClick={() => control('prev')}><Icon name="prev" size={14} />Previous</button>
+      <button class="btn is-small" onClick={() => control('next')}>Next<Icon name="next" size={14} /></button>
       <button class="btn is-small" onClick={() => control('reset')}>Reset</button>
       <span class="spacer" />
       <span>Slide {selection.index + 1}</span>

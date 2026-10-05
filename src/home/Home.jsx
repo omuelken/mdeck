@@ -2,6 +2,7 @@ import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import mark from '../../assets/logo/mark.svg'
 import QrCode from '../components/QrCode.jsx'
+import { Icon } from '../components/Icon.jsx'
 import { devPath } from '../core/devPath.js'
 
 // Where the dev server serves from: / normally, /t/<id>/ with `mdeck run --server`.
@@ -19,26 +20,7 @@ async function api(path, body) {
   return data
 }
 
-const ICONS = {
-  presenter: 'M3 4h12v9H3zM9 13v3M6 16h6M17 7h4M17 11h4M17 15h4',
-  projector: 'M3 7h18v8H3zM7 19l2-4M17 19l-2-4M15 11h2',
-  reader: 'M4 4h6v16H4zM12 4h8v16h-8zM14 8h4M14 12h4M14 16h2',
-  editor: 'M4 20h4L19 9l-4-4L4 16zM13 7l4 4',
-  docs: 'M5 4h10l4 4v12H5zM15 4v4h4M8 12h8M8 16h6',
-  folder: 'M3 6h6l2 2h10v11H3z',
-  file: 'M6 3h8l4 4v14H6zM14 3v4h4',
-  pdf: 'M6 3h8l4 4v14H6zM9 13h6M9 17h4',
-  check: 'M5 12l5 5 9-10',
-  alert: 'M12 4l9 16H3zM12 10v4M12 17v.5',
-  copy: 'M9 9h10v11H9zM5 15V4h10',
-  reveal: 'M4 7h6l2 2h8v9H4zM12 12v4M10 14h4',
-  arrow: 'M7 17L17 7M9 7h8v8',
-  prev: 'M15 5l-7 7 7 7',
-  next: 'M9 5l7 7-7 7',
-}
-function Icon({ name, size = 18 }) {
-  return <svg class="home-icon" viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ICONS[name]} /></svg>
-}
+const HomeIcon = ({ name, size = 18 }) => <Icon name={name} size={size} class="home-icon" />
 
 function ago(iso) {
   if (!iso) return ''
@@ -53,9 +35,9 @@ function ago(iso) {
 
 function ViewTile({ icon, title, text, href }) {
   return <a class="home-tile" href={href} target="_blank" rel="noopener">
-    <span class="home-tile-icon"><Icon name={icon} size={22} /></span>
+    <span class="home-tile-icon"><HomeIcon name={icon} size={22} /></span>
     <span class="home-tile-body"><strong>{title}</strong><span>{text}</span></span>
-    <Icon name="arrow" size={16} />
+    <HomeIcon name="external" size={16} />
   </a>
 }
 
@@ -81,9 +63,9 @@ function ServiceTile({ icon, title, text, action, url, onError, onStarted }) {
     try { await openService(action); onStarted() } catch (error) { onError(error.message) } finally { setStarting(false) }
   }
   return <button class="home-tile" onClick={launch} disabled={starting}>
-    <span class="home-tile-icon"><Icon name={icon} size={22} /></span>
+    <span class="home-tile-icon"><HomeIcon name={icon} size={22} /></span>
     <span class="home-tile-body"><strong>{title}</strong><span>{starting ? 'Starting…' : url ? url.replace(/^https?:\/\//, '') : text}</span></span>
-    <Icon name="arrow" size={16} />
+    <HomeIcon name="external" size={16} />
   </button>
 }
 
@@ -109,19 +91,19 @@ function Preview({ info }) {
       <a class="home-preview-open" href={audienceUrl} target="_blank" rel="noopener" aria-label="Open the audience window" />
     </div>
     <div class="home-preview-bar">
-      <button class="home-btn home-btn--small" onClick={() => control('prev')} aria-label="Previous"><Icon name="prev" size={14} /></button>
-      <button class="home-btn home-btn--small" onClick={() => control('next')} aria-label="Next"><Icon name="next" size={14} /></button>
+      <button class="home-btn home-btn--small" onClick={() => control('prev')} aria-label="Previous"><HomeIcon name="prev" size={14} /></button>
+      <button class="home-btn home-btn--small" onClick={() => control('next')} aria-label="Next"><HomeIcon name="next" size={14} /></button>
       <span class="home-preview-count">{index + 1} / {info.slides}</span>
       <span class="home-spacer" />
-      <a class="home-btn home-btn--small" href={audienceUrl} target="_blank" rel="noopener">Open audience window <Icon name="arrow" size={13} /></a>
+      <a class="home-btn home-btn--small" href={audienceUrl} target="_blank" rel="noopener">Open audience window <HomeIcon name="external" size={13} /></a>
     </div>
   </section>
 }
 
 const OUTPUT_TEXT = {
   folder: { icon: 'folder', text: 'dist/ with the page, pictures and videos, for a web server or a USB stick.' },
-  send: { icon: 'file', text: 'A single HTML file without speaker notes that opens in the reader, with the PDF inside.' },
-  pdf: { icon: 'pdf', text: 'One page per slide, with interactive slides shown finished.' },
+  send: { icon: 'file-code', text: 'A single HTML file without speaker notes that opens in the reader, with the PDF inside.' },
+  pdf: { icon: 'file-text', text: 'One page per slide, with interactive slides shown finished.' },
 }
 
 function OutputRow({ id, output, chrome, onChange, onError }) {
@@ -138,7 +120,7 @@ function OutputRow({ id, output, chrome, onChange, onError }) {
     : output.status === 'done' ? `Built ${ago(output.finishedAt)}`
     : output.exists ? 'Built earlier' : 'Not built yet'
   return <li class="home-output">
-    <span class="home-tile-icon"><Icon name={OUTPUT_TEXT[id].icon} size={20} /></span>
+    <span class="home-tile-icon"><HomeIcon name={OUTPUT_TEXT[id].icon} size={20} /></span>
     <div class="home-output-body">
       <strong>{output.title}</strong>
       <span>{OUTPUT_TEXT[id].text}</span>
@@ -149,13 +131,13 @@ function OutputRow({ id, output, chrome, onChange, onError }) {
     <div class="home-output-actions">
       <span class={`home-status home-status--${running ? 'running' : output.status === 'failed' ? 'failed' : output.exists ? 'done' : 'idle'}`}>{status}</span>
       <button class="home-btn home-btn--primary" onClick={build} disabled={running || blocked}>{output.exists ? 'Build again' : 'Build'}</button>
-      <button class="home-btn" onClick={reveal} disabled={!output.exists || running} title="Show in your file manager"><Icon name="reveal" size={15} />Show</button>
+      <button class="home-btn" onClick={reveal} disabled={!output.exists || running} title="Show in your file manager"><HomeIcon name="folder-open" size={15} />Show</button>
     </div>
   </li>
 }
 
 function Diagnostics({ diagnostics, name }) {
-  if (!diagnostics.length) return <p class="home-ok"><Icon name="check" /> No problems found in {name}.</p>
+  if (!diagnostics.length) return <p class="home-ok"><HomeIcon name="check" /> No problems found in {name}.</p>
   return <ul class="home-diagnostics">
     {diagnostics.map((d, i) => <li key={i} class={`home-diagnostic home-diagnostic--${d.severity}`}>
       <span class="home-badge">{d.severity}</span>
@@ -170,7 +152,7 @@ function CopyButton({ text, label = 'Copy' }) {
   const copy = async () => {
     try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1400) } catch {}
   }
-  return <button class="home-btn home-btn--small" onClick={copy}><Icon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copied' : label}</button>
+  return <button class="home-btn home-btn--small" onClick={copy}><HomeIcon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copied' : label}</button>
 }
 
 // One session pairs the presenter view with the audience window, so both
@@ -301,7 +283,7 @@ export function Home() {
         <p class="home-file"><code>{info.file}</code> <button class="home-link" onClick={() => api('/action', { action: 'reveal', output: 'deck' }).catch(e => setError(e.message))}>Show</button></p>
       </div>
       <a class={`home-health${errors ? ' is-bad' : warnings ? ' is-warn' : ''}`} href="#check">
-        <Icon name={errors || warnings ? 'alert' : 'check'} />
+        <HomeIcon name={errors || warnings ? 'alert' : 'check'} />
         {errors ? `${errors} error${errors === 1 ? '' : 's'}` : warnings ? `${warnings} warning${warnings === 1 ? '' : 's'}` : 'All good'}
       </a>
     </header>
@@ -324,7 +306,7 @@ export function Home() {
         <h2>Write and learn</h2>
         <div class="home-tiles">
           <ServiceTile icon="editor" title="Visual editor" text="Forms and a live preview; saves into the file and keeps a backup." action="editor" url={info.services.editor} onError={setError} onStarted={load} />
-          <ServiceTile icon="docs" title="Guides" text="How to write slides, layouts, presenting, sharing and more." action="docs" url={info.services.docs} onError={setError} onStarted={load} />
+          <ServiceTile icon="guides" title="Guides" text="How to write slides, layouts, presenting, sharing and more." action="docs" url={info.services.docs} onError={setError} onStarted={load} />
         </div>
       </section>
 

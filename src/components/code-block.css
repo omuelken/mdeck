@@ -51,6 +51,9 @@ code[class*="language-"] { color: var(--token-default); }
 }
 .code-btn:hover { background: var(--rule, #e5e5e5); }
 .code-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.code-btn-spin { animation: code-btn-spin 0.9s linear infinite; }
+@keyframes code-btn-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .code-btn-spin { animation: none; } }
 
 
 /* ── Editable: highlighted pre + transparent textarea overlay ───────────── */

@@ -1,10 +1,11 @@
 import { h } from 'preact'
+import { Icon } from '../../components/Icon.jsx'
 import { slideTitle, slideDiagnostics } from '../model.js'
 
 export function Outline({ deck, manifests, diagnostics, selectedIndex, onSelect, onAdd, onDuplicate, onRemove, onMove }) {
   const count = deck.slides.length
   return <aside class="editor-panel">
-    <div class="editor-panel-head"><span>Slides</span><button class="btn is-small is-primary" onClick={onAdd} title="Add a slide after the selected one (⌘↩)">+ Add</button></div>
+    <div class="editor-panel-head"><span>Slides</span><button class="btn is-small is-primary" onClick={onAdd} title="Add a slide after the selected one (⌘↩)"><Icon name="add" size={14} />Add</button></div>
     {count === 0 && <p class="empty">No slides yet. Add one to get started.</p>}
     <ol class="outline-list">
       {deck.slides.map((slide, index) => {
@@ -18,8 +19,8 @@ export function Outline({ deck, manifests, diagnostics, selectedIndex, onSelect,
       })}
     </ol>
     {count > 0 && <div class="outline-tools">
-      <button class="btn is-small" onClick={() => onMove(-1)} disabled={selectedIndex <= 0} title="Move up">↑</button>
-      <button class="btn is-small" onClick={() => onMove(1)} disabled={selectedIndex >= count - 1} title="Move down">↓</button>
+      <button class="btn is-small is-icon" onClick={() => onMove(-1)} disabled={selectedIndex <= 0} title="Move up" aria-label="Move up"><Icon name="up" size={14} /></button>
+      <button class="btn is-small is-icon" onClick={() => onMove(1)} disabled={selectedIndex >= count - 1} title="Move down" aria-label="Move down"><Icon name="down" size={14} /></button>
       <button class="btn is-small" onClick={onDuplicate} title="Duplicate">Duplicate</button>
       <button class="btn is-small" onClick={onRemove} title="Remove (⌘⌫). Undo with ⌘Z">Remove</button>
     </div>}

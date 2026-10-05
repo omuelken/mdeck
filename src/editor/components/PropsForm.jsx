@@ -1,4 +1,5 @@
 import { h } from 'preact'
+import { Icon } from '../../components/Icon.jsx'
 import { useState } from 'preact/hooks'
 import { resolveLayoutProps, propertyErrors } from '../../layouts/layoutProps.js'
 import { setSlideMeta } from '../../core/editDeck.js'
@@ -23,7 +24,7 @@ function PropControl({ name, schema, value, authored, onChange }) {
   else if (kind === 'yaml') control = <TextArea rows={2} value={formatFieldValue(kind, value)} onInput={commit} />
   else control = <input type="text" value={value ?? ''} onInput={e => commit(e.currentTarget.value)} />
   return <Field label={schema.title ?? name} required={schema.required} hint={schema.description} error={shown}>
-    <div class="row">{control}{authored && <button class="btn is-small" title="Back to the default" onClick={() => onChange(undefined)}>×</button>}</div>
+    <div class="row">{control}{authored && <button class="btn is-small is-icon" title="Back to the default" aria-label="Back to the default" onClick={() => onChange(undefined)}><Icon name="close" size={14} /></button>}</div>
   </Field>
 }
 

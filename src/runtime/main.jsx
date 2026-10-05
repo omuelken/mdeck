@@ -24,18 +24,10 @@ import './reader.css'
 import { SlideRenderer, manifests } from '../layouts/renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import { setDeckLanguage, deckLanguage, stageLabels, t } from '../core/labels.js'
+import { Icon } from '../components/Icon.jsx'
 import './deck-stage.js'
 
-// Line icons for the presenter's buttons, drawn on one 24px grid so they match.
-const PRESENTER_ICONS = {
-  // A tablet with the slide filling it: the slide-only layout for an iPad.
-  tablet: 'M5 5h14a2.5 2.5 0 012.5 2.5v9A2.5 2.5 0 0119 19H5a2.5 2.5 0 01-2.5-2.5v-9A2.5 2.5 0 015 5zM18.5 11v2',
-  // A window split into the slide and a column of notes and next slide.
-  speaker: 'M5.5 4h13A2.5 2.5 0 0121 6.5v11a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 17.5v-11A2.5 2.5 0 015.5 4zM14.5 4v16M14.5 12H21',
-  fullscreen: 'M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5',
-  pen: 'M4 20l4-1 11-11-3-3L5 16zM14 6l3 3',
-}
-const PresenterIcon = ({ name }) => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style={{ display: 'block' }}><path d={PRESENTER_ICONS[name]} /></svg>
+const PresenterIcon = ({ name, size = 18 }) => <Icon name={name} size={size} style={{ display: 'block' }} />
 
 // One address parameter selects the view: ?view=deck, reader, presenter or audience.
 export function requestedView(url, fallback = 'deck') {
@@ -341,8 +333,8 @@ function PresenterView({ deckConfig, slides }) {
         <div class="presenter-pill" role="toolbar" aria-label="Presenter" style={{ position: 'fixed', top: 'max(10px, env(safe-area-inset-top))', right: 'max(10px, env(safe-area-inset-right))', zIndex: 20, display: 'flex', gap: '4px', alignItems: 'center', padding: '4px', borderRadius: '12px', background: 'rgba(17,17,17,0.88)', border: '1px solid #2a2a2a', color: '#ccc', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
           <span style={{ padding: '0 8px', color: '#888' }}>{index + 1}/{slides.length}</span>
           <button style={{ ...pill, color: timerRunning ? '#f0f0f0' : '#777' }} title="Start or pause the timer" onClick={() => setTimerRunning(r => !r)}>{clock}</button>
-          <button style={pill} title="Previous" onClick={() => navCommand('prev')}>←</button>
-          <button style={pill} title="Next" onClick={() => navCommand('next')}>→</button>
+          <button style={pill} title="Previous" aria-label="Previous" onClick={() => navCommand('prev')}><PresenterIcon name="prev" /></button>
+          <button style={pill} title="Next" aria-label="Next" onClick={() => navCommand('next')}><PresenterIcon name="next" /></button>
           <button class="presenter-draw" title="Draw on the slide (D)" aria-pressed={inking} style={{ ...pill, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }} onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}><PresenterIcon name="pen" /></button>
           <button class="presenter-notes" title="Notes (N)" aria-pressed={drawerOpen} style={{ ...pill, ...(drawerOpen ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={() => setDrawerOpen(open => !open)}>Notes</button>
           {canFullscreen && <button style={pill} title="Full screen (F)" onClick={() => fullscreen.toggle()}><PresenterIcon name="fullscreen" /></button>}
@@ -381,10 +373,10 @@ function PresenterView({ deckConfig, slides }) {
             {String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
           </span>
           <div style={{ display: 'flex', gap: '4px' }}>
-            <button style={S.btn} onClick={() => setTimerRunning(r => !r)}>
-              {timerRunning ? '⏸' : '▶'}
+            <button style={S.btn} title={timerRunning ? 'Pause the timer' : 'Start the timer'} aria-label={timerRunning ? 'Pause the timer' : 'Start the timer'} onClick={() => setTimerRunning(r => !r)}>
+              <PresenterIcon name={timerRunning ? 'pause' : 'play'} size={16} />
             </button>
-            <button style={S.btn} onClick={() => { setTimerRunning(false); setElapsed(0) }}>↺</button>
+            <button style={S.btn} title="Reset the timer" aria-label="Reset the timer" onClick={() => { setTimerRunning(false); setElapsed(0) }}><PresenterIcon name="reset" size={16} /></button>
           </div>
         </div>
 
@@ -438,7 +430,7 @@ function PresenterView({ deckConfig, slides }) {
             onClick={() => setThemeOpen(o => !o)}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', padding: '2px 0 6px', cursor: 'pointer', color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', width: '100%' }}
           >
-            <span style={{ fontSize: '8px', opacity: 0.7 }}>{themeOpen ? '▼' : '▶'}</span>
+            <span style={{ opacity: 0.7 }}><PresenterIcon name={themeOpen ? 'collapse' : 'expand'} size={12} /></span>
             Theme & Palette
           </button>
           {themeOpen && (
@@ -450,7 +442,7 @@ function PresenterView({ deckConfig, slides }) {
                   style={{ ...S.select, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', cursor: 'pointer' }}
                 >
                   <span>{theme}</span>
-                  <span style={{ opacity: 0.35, fontSize: '8px', flexShrink: 0 }}>▤</span>
+                  <span style={{ opacity: 0.5, flexShrink: 0 }}><PresenterIcon name="grid" size={13} /></span>
                 </button>
               </label>
               <label style={{ flex: 1 }}>
@@ -462,7 +454,7 @@ function PresenterView({ deckConfig, slides }) {
                   >
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{palette || 'none'}</span>
                     {palette && <PaletteSwatches tokens={PALETTES[palette]?.tokens ?? {}} />}
-                    <span style={{ opacity: 0.35, fontSize: '8px', flexShrink: 0 }}>▼</span>
+                    <span style={{ opacity: 0.5, flexShrink: 0 }}><PresenterIcon name="dropdown" size={13} /></span>
                   </button>
                   {paletteOpen && (
                     <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0, background: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '5px', zIndex: 100, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.6)' }}>
@@ -496,7 +488,7 @@ function PresenterView({ deckConfig, slides }) {
                     style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent ? 1 : 0.6 }}
                   />
                   {accent && (
-                    <button onClick={() => setAccent('')} style={{ ...S.btn, padding: '3px 7px', fontSize: '14px', lineHeight: 1 }}>×</button>
+                    <button onClick={() => setAccent('')} title="Back to the default accent" aria-label="Clear accent" style={{ ...S.btn, padding: '4px 6px' }}><PresenterIcon name="close" size={14} /></button>
                   )}
                 </div>
               </label>
@@ -511,7 +503,7 @@ function PresenterView({ deckConfig, slides }) {
                       style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent2 ? 1 : 0.6 }}
                     />
                     {accent2 && (
-                      <button onClick={() => setAccent2('')} style={{ ...S.btn, padding: '3px 7px', fontSize: '14px', lineHeight: 1 }}>×</button>
+                      <button onClick={() => setAccent2('')} title="Back to the default second accent" aria-label="Clear second accent" style={{ ...S.btn, padding: '4px 6px' }}><PresenterIcon name="close" size={14} /></button>
                     )}
                   </div>
                 </label>
@@ -522,8 +514,8 @@ function PresenterView({ deckConfig, slides }) {
 
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <button style={S.btn} onClick={() => navCommand('prev')}>← Prev</button>
-            <button style={S.btn} onClick={() => navCommand('next')}>Next →</button>
+            <button style={S.btn} onClick={() => navCommand('prev')}><PresenterIcon name="prev" size={15} />Prev</button>
+            <button style={S.btn} onClick={() => navCommand('next')}>Next<PresenterIcon name="next" size={15} /></button>
             <button style={S.btn} onClick={() => navCommand('reset')}>Reset</button>
             <button
               class="presenter-draw"
@@ -531,7 +523,7 @@ function PresenterView({ deckConfig, slides }) {
               aria-pressed={inking}
               style={{ ...S.btn, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }}
               onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}
-            >✎ Draw</button>
+            ><PresenterIcon name="pen" size={15} />Draw</button>
             <button
               style={{
                 ...S.btn,
