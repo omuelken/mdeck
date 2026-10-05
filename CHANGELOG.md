@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 — Unreleased
+## 2.0.0 — 2026-10-05
 
 A cleaner interface, and presenting from an iPad on any network. This release renames commands, options, settings and files so that each word means one thing. Everything old stops with a message that names its replacement, so nothing changes silently. Decks, extensions and room servers need the changes in the tables below.
 
