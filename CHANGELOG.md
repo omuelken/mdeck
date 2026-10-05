@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 — 2026-10-05
+
+Draw on your slides, also from an iPad, and ask the audience more than polls. A room server started with `mdeck live` needs 1.4 to pass live drawings to other devices; polls keep working with older ones.
 
 - Slides can carry drawings (ink) from `<deck>.ink.json` beside the deck: pen strokes with pressure and highlighter, drawn above the slide in the deck, the reader view, builds and PDFs. `I` hides them; `mdeck build` and `mdeck pdf` leave them out with `--no-ink`; `mdeck check` reports a broken ink file and drawings for slides that no longer exist.
 - Drawing in the full-screen deck: `D` starts it. Pen (with pressure) and highlighter are kept, a marker fades after a few seconds, the eraser removes whole strokes; undo/redo (also Cmd/Ctrl+Z), clear slide, colours and sizes are on a floating toolbar. Once a pen is used, fingers no longer draw unless switched on; tap zones are off while drawing. Until a server saves the ink, it is kept in the browser and can be downloaded as the ink file.
