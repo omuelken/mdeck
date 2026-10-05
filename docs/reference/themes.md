@@ -6,7 +6,7 @@ kind of [extension](extensions.md).
 
 ## Using a theme
 
-Set `design:` in the deck frontmatter:
+Set `theme:` in the deck frontmatter:
 
 ```yaml
 ---
@@ -23,7 +23,7 @@ theme: neue
 | `fhnw` | The FHNW corporate design |
 | `terminal` | Dark by default, monospace throughout |
 
-`mdeck extensions my-talk.md` lists them with their descriptions.
+`mdeck list my-talk.md` lists them with their descriptions.
 
 ## Theme structure
 
@@ -102,13 +102,13 @@ and spacing value and contains no `:root` defaults of its own. It must style:
 
 ## Custom layouts
 
-Define reusable slide structures with [deck-local templates](templates.md).
+Define reusable slide structures with [deck-local layouts](layouts.md).
 They provide named regions, typed properties, and shared slide chrome without
 editing the framework. Theme CSS continues to style those structures.
 
 For compatibility, an unrecognised `layout:` value warns and falls through to the
 generic renderer. It renders the full Markdown body with standard slide chrome
-and emits a `.slide--<layout-name>` class. Prefer a declared template for new layouts.
+and emits a `.slide--<layout-name>` class. Prefer a declared layout for new layouts.
 
 To style a custom layout, target `.slide--<layout-name>` in a CSS file loaded alongside your deck, or use inline styles in your markdown HTML.
 

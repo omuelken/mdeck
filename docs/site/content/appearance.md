@@ -4,7 +4,7 @@ A **theme** chooses the fonts and overall style. A **palette** chooses a set of 
 
 ## Choose a theme
 
-Put the theme name under `design` in the settings at the very top of your file:
+Put the theme name under `theme` in the settings at the very top of your file:
 
 ```yaml
 ---
@@ -80,14 +80,20 @@ You can also add `logo: ./img/logo.png` inside the `meta` group.
 
 ## Control headers and page numbers
 
-These settings go at the top level of the deck settings, alongside `design`:
+These settings go together under `show`, in the deck settings:
+
+```yaml
+show:
+  organization: none
+  numbers: all
+```
 
 | Setting | Choices | Usual behavior |
 |---|---|---|
-| `institution` | `title`, `all`, `none` | Organization appears on the title slide |
-| `authorDate` | `title`, `all`, `none` | Author and date appear on the title slide |
-| `pageNumbers` | `slides`, `all`, `none` | Numbers appear after the title slide |
-| `sections` | `all`, `none` | Section labels appear when provided |
+| `show.organization` | `title`, `all`, `none` | Organization appears on the title slide |
+| `show.author` | `title`, `all`, `none` | Author and date appear on the title slide |
+| `show.numbers` | `slides`, `all`, `none` | Numbers appear after the title slide |
+| `show.sections` | `all`, `none` | Section labels appear when provided |
 
 ## Change the slide shape
 

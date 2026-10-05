@@ -251,7 +251,7 @@ function Tablet({ pairing, relay, onChange, onError }) {
           </div>
         </div>
         : <>
-          <p>Draw and steer from an iPad while this computer drives the projector. Drawings are saved in the ink file beside the deck.</p>
+          <p>Draw and steer from an iPad while this computer drives the projector. Drawings are saved in the drawings file beside the deck.</p>
           <button class="home-btn" onClick={offer}>Show pairing code</button>
           {pairing.devices > 0 && <p class="home-note">{pairing.devices} paired.</p>}
         </>}

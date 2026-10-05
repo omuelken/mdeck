@@ -40,7 +40,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 
 | Field | Default | Description |
 |---|---|---|
-| `design` | `neue` | Theme name |
+| `theme` | `neue` | Theme name |
 | `palette` | _(theme default)_ | Color palette override |
 | `accent` | _(theme/palette default)_ | Primary accent color override |
 | `accent2` | _(theme/palette default)_ | Secondary accent color (themes with a second accent, such as Aurora and Duet) |
@@ -50,20 +50,20 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `meta.date` | — | Date string (shown in footer) |
 | `meta.logo` | — | Path to logo image |
 | `width` / `height` | `1920` / `1080` | Slide canvas dimensions in px |
-| `institution` | `title` | When to show the organization name: `title`, `all`, or `none` |
-| `authorDate` | `title` | When to show the author/date footer: `title`, `all`, or `none` |
-| `pageNumbers` | `slides` | Slide numbers: `slides` (all except title), `all`, or `none` |
-| `sections` | `all` | Whether to show section labels in the header: `all` or `none` |
+| `show.organization` | `title` | When to show the organization name: `title`, `all`, or `none` |
+| `show.author` | `title` | When to show the author and date line: `title`, `all`, or `none` |
+| `show.numbers` | `slides` | Slide numbers: `slides` (all except title), `all`, or `none` |
+| `show.sections` | `all` | Whether to show section labels in the header: `all` or `none` |
 | `lang` | `en` | Language of the deck, such as `en`, `de` or `de-CH`: sets the page language and the words the audience sees (see below) |
 | `labels` | — | Replace single words the audience sees (see below) |
 | `callouts` | — | Override individual callout titles (see below) |
-| `live.server` | the dev server | Room server for polls and other audience activities, e.g. `https://example.org/live` |
-| `live.id` | from the title | Name the session code is derived from |
-| `live.code` | from `live.id` | The session code itself, 4 to 8 digits; phones join at `<server>/<code>` |
+| `server` | the dev server | Your own server for polls, other audience activities and presenting from an iPad, e.g. `https://rooms.example.org` |
+| `session.id` | from the title | Name the session code is derived from |
+| `session.code` | from `session.id` | The session code itself, 4 to 8 digits; phones join at `<server>/<code>` |
 | `components` | — | Extra folders of Preact components shared between decks, relative to the deck or starting with `~/` |
 | `params` | — | Theme-specific color/font overrides (see below) |
-| `share.themes` | `true` | Whether the reader view of a shared build offers other themes and palettes (see below) |
-| `share.notes` | `false` | Whether the reader view shows speaker notes under each slide in Read mode |
+| `reader.themes` | `true` | Whether the reader view offers other themes and palettes (see below) |
+| `reader.notes` | `false` | Whether the reader view shows speaker notes under each slide in Read mode |
 
 ### Theme params
 
@@ -79,22 +79,22 @@ Available params depend on the theme — check the presenter sidebar for a list.
 
 ---
 
-### Share settings
+### Reader settings
 
 ```yaml
-share:
+reader:
   themes: false   # hide the theme and color picker in the reader view
   notes: true     # show speaker notes under each slide in Read mode
 ```
 
-Views are chosen with one address parameter: `?view=deck`, `?view=share`,
-`?view=presenter`, `?view=audience`, or the short forms `?v=d`, `?v=s`, `?v=p`, `?v=a`. `mdeck build --share` produces a file that opens in the reader view (outline,
-Read mode, look picker, PDF download). `share.themes: false` keeps the
-sender's look fixed. Speaker notes are removed from share builds unless the
-build uses `--with-notes`, and even then the reader shows them only when
-`share.notes` is `true`, so a file can carry notes for the presenter view
-without showing them to readers. The same view is reachable in any build
-through `?view=share`.
+Views are chosen with one address parameter: `?view=deck`, `?view=reader`,
+`?view=presenter` or `?view=audience`. `mdeck send` produces a file that opens
+in the reader view (outline, Read mode, look picker, PDF download).
+`reader.themes: false` keeps the sender's look fixed. Speaker notes are
+removed from `mdeck send` files unless the command uses `--notes`, and even
+then the reader shows them only when `reader.notes` is `true`, so a file can
+carry notes for the presenter view without showing them to readers. The same
+view is reachable in any build through `?view=reader`.
 
 ## Available themes
 
@@ -107,7 +107,7 @@ through `?view=share`.
 | `fhnw` | The FHNW corporate design: Inter, black on white, yellow accent areas |
 | `terminal` | Dark by default, JetBrains Mono throughout, terminal green accent |
 
-`mdeck extensions <deck>.md` lists these together with any themes kept beside
+`mdeck list <deck>.md` lists these together with any themes kept beside
 the deck.
 
 ---
@@ -193,7 +193,7 @@ This is the central idea. Pause here.
 :::
 ```
 
-Notes support full Markdown. They replace the older `note:` frontmatter key, which still works but is less readable for multiline content.
+Notes support full Markdown. The `note:` and `notes:` frontmatter keys of earlier versions are gone; `mdeck check` reports them.
 
 ---
 
@@ -327,7 +327,6 @@ Add frontmatter only when you need slide-level metadata:
 ```markdown
 ---
 section: Content
-note: Speaker notes go here.
 ---
 # Three key principles
 
@@ -508,7 +507,7 @@ labels:
 | `poll.answers` | {n} answers | {n} Antworten |
 | `poll.reset` | Reset | Zurücksetzen |
 | `poll.live` | Live | Live |
-| `poll.offline` | Not connected to the room server | Keine Verbindung zum Raum-Server |
+| `poll.offline` | Not connected to the server | Keine Verbindung zum Server |
 | `poll.unreachable` | Phones cannot reach this computer. Start with {command}, or set {setting}. | Handys erreichen diesen Computer nicht. Mit {command} starten oder {setting} setzen. |
 | `poll.tryHere` | Try the answer page here | Antwortseite hier ausprobieren |
 | `poll.pick` | Tap one answer. | Eine Antwort antippen. |
@@ -542,7 +541,7 @@ This is the central design decision. Pause here.
 :::
 ```
 
-The `:::notes` block can appear anywhere in the body, but placing it last keeps it visually separate from slide content. The older `note:` frontmatter key is also supported.
+The `:::notes` block can appear anywhere in the body, but placing it last keeps it visually separate from slide content.
 
 ---
 
@@ -578,14 +577,6 @@ Reference images with standard Markdown syntax or the `image:` frontmatter field
 ![Alt text](./img/diagram.png)
 ```
 
-For a fully self-contained output file, build with inline images:
-
-```bash
-mdeck build slides.md --inline-images
-```
-
-This inlines local Markdown images, `<img src="...">`, and frontmatter `image:` / `logo:` values as data URLs.
-
 A normal build copies referenced local images, video, and audio next to the HTML
 while preserving their deck-relative paths. This is the recommended distribution
 format for decks containing substantial video.
@@ -593,7 +584,7 @@ format for decks containing substantial video.
 To embed all local images and media in a single offline-ready HTML file, use:
 
 ```bash
-mdeck build slides.md --self-contained -o slides.html
+mdeck build slides.md --single-file -o slides.html
 ```
 
 Theme web fonts are replaced by their declared system-font fallbacks in this mode.
@@ -602,7 +593,7 @@ the source file; loading, memory use, and seeking can also be worse than with a
 separate media file.
 
 To add target-computer launchers to a directory bundle, build with
-`--presenter-launchers`. The generated `present.sh` (macOS/Linux),
+`--launchers`. The generated `present.sh` (macOS/Linux),
 `present.bat`, and `present.ps1` (Windows) require Python 3, start a local server
 bound to `127.0.0.1`, and open the presenter view in the default browser.
 
@@ -663,15 +654,15 @@ Three more activities take the same `room`, `question` and `qr`:
 
 `<qrcode join />` shows the deck's join code large with its link (`size`, default 420), for a slide that invites everyone once; activities after it can use `qr="false"`. QR codes (`<qrcode>`, activities) are SVG in the slide's `--ink` on a transparent background; `--qr-ink` and `--qr-bg` override the colours.
 
-The slide shows live bars, the number of answers, a QR code and a short link. Phones never load the deck: they open the room server's own answer page at `<server>/<code>`, where the six-digit session code is the same for every poll in the deck. The presenter's screen (the presenter view or a full deck window, never an embedded preview) announces the poll on the current slide with what the phones should show and the deck's look; the room server only accepts that from the presenter. Between polls the phones wait. Each device's latest vote counts. The presenter can reset the room (hover over the results).
+The slide shows live bars, the number of answers, a QR code and a short link. Phones never load the deck: they open the server's own answer page at `<server>/<code>`, where the six-digit session code is the same for every poll in the deck. The presenter's screen (the presenter view or a full deck window, never an embedded preview) announces the poll on the current slide with what the phones should show and the deck's look; the server only accepts that from the presenter. Between polls the phones wait. Each device's latest vote counts. The presenter can reset the room (hover over the results).
 
-Rooms run inside `mdeck run` (add `--host` so phones can reach it) or on a room server started with `mdeck live`, set in the deck:
+Rooms run inside `mdeck run` (add `--network` so phones can reach it) or on a server started with `mdeck server`, set in the deck:
 
 ```yaml
-live:
-  server: https://example.org/live   # room server; phones join at https://example.org/live/<code>
-  id: talk                           # optional: name the code is derived from, defaults to the title
-  code: 482113                       # optional: the code itself
+server: https://rooms.example.org   # your server; phones join at https://rooms.example.org/<code>
+session:
+  id: talk                          # optional: name the code is derived from, defaults to the title
+  code: 482113                      # optional: the code itself
 ```
 
 A deck's rooms are named `<code>.<room>` on the server, so decks sharing a server stay apart. See the [Ask your audience](../site/content/audience.md) guide for hosting, and [Create interactive content](../site/content/components.md) for writing other activities with `useRoom` and a `phone` description.
@@ -680,7 +671,7 @@ A deck's rooms are named `<code>.<room>` on the server, so decks sharing a serve
 
 ## Drawings (ink)
 
-Drawings on slides live in `<deck>.ink.json` beside `<deck>.md` and are part of every view, build and PDF (`--no-ink` leaves them out). `mdeck run` saves them as they are drawn; the guide [Draw on your slides](../site/content/drawing.md) covers drawing and presenting from an iPad.
+Drawings on slides live in `<deck>.drawings.json` beside `<deck>.md` and are part of every view, build and PDF (`--no-drawings` leaves them out). `mdeck run` saves them as they are drawn; the guide [Draw on your slides](../site/content/drawing.md) covers drawing and presenting from an iPad.
 
 ```json
 {
@@ -698,7 +689,7 @@ Drawings on slides live in `<deck>.ink.json` beside `<deck>.md` and are part of 
 - Keys under `slides` are slide ids. A slide without an `id:` gets one from its heading when it receives its first drawing, written into its settings.
 - `points` are `[x, y, pressure]` in the deck's design pixels (`width` × `height`); if the deck's size changes, strokes are scaled. `tool` is `pen` or `highlighter`.
 - Drawings belong to a slide, not to a step of it.
-- `mdeck check` reports a broken ink file and drawings for slide ids that are not in the deck.
+- `mdeck check` reports a broken drawings file and drawings for slide ids that are not in the deck.
 - Keys: `D` draw, `I` hide or show drawings, `F` full screen.
 
 ## Deck-local components

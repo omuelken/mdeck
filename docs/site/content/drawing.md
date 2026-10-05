@@ -21,18 +21,18 @@ The audience window, and any other deck window in the same browser, shows every 
 
 ## Where drawings are kept
 
-Drawings live in a file next to your slides: `my-talk.ink.json` for `my-talk.md`. Keep the two together, and send or check in both.
+Drawings live in a file next to your slides: `my-talk.drawings.json` for `my-talk.md`. Keep the two together, and send or check in both.
 
 - **With `mdeck run`**, each stroke is saved in that file as soon as you lift the pen. Nothing reloads, and the talk goes on.
 - A slide that gets its first drawing receives an `id:` in its settings, made from its heading, for example `id: the-important-part`. The drawing stays with that slide when you add or move slides. If you change the `id:` in the editor, the drawing moves with it.
 - If you delete a slide that has drawings, they stay in the file. `mdeck check` tells you about them; bring the slide back, or delete them from the file.
 - The first save of a session keeps a copy of the previous file in `.mdeck-backups`, next to your slides.
-- **Opened from a built folder or a single file**, the page has nowhere to save. Drawings are kept in that browser, and the toolbar's download button saves them as the ink file, to put next to your slides. Safari may clear such browser data after a week without use, so download it after drawing.
+- **Opened from a built folder or a single file**, the page has nowhere to save. Drawings are kept in that browser, and the toolbar's download button saves them as the drawings file, to put next to your slides. Safari may clear such browser data after a week without use, so download it after drawing.
 
-Builds and PDFs include the drawings. To leave them out, add `--no-ink`:
+Builds and PDFs include the drawings. To leave them out, add `--no-drawings`:
 
 ```sh
-mdeck pdf my-talk.md --no-ink
+mdeck pdf my-talk.md --no-drawings
 ```
 
 ## Present from an iPad
@@ -43,24 +43,24 @@ There are two ways.
 
 **The iPad next to your laptop.** The laptop shows the slides on the projector; you draw and go through the slides on the iPad, with your notes on it.
 
-1. Start `mdeck run my-talk.md --host`, so the iPad in the same network can reach your laptop.
+1. Start `mdeck run my-talk.md --network`, so the iPad in the same network can reach your laptop.
 2. On the launch page, under **Present from an iPad**, choose **Show pairing code** and scan it with the iPad's camera. The presenter view opens on the iPad, paired with your laptop, so it may save drawings and steer the phones of a poll.
 3. On the laptop, open the **audience window** from the same place and move it to the projector. It follows the iPad: slides, revealed points, and drawings as you draw them.
 
 A pairing code works once, for ten minutes. **Unpair** on the launch page ends every pairing; so does stopping `mdeck run`. Scan a new code afterwards.
 
-**The iPad on another network.** Some networks, often big Wi-Fi networks at universities, do not let devices reach each other, and a laptop's firewall may not let the iPad in. With a room server of your own (see [Ask your audience](audience.html#use-it-in-a-real-session)) the iPad does not need to reach your laptop at all: your laptop connects out to the room server, and the room server passes the iPad's requests to it. The slides are not uploaded or stored anywhere.
+**The iPad on another network.** Some networks, often big Wi-Fi networks at universities, do not let devices reach each other, and a laptop's firewall may not let the iPad in. With a server of your own (see [Ask your audience](audience.html#use-it-in-a-real-session)) the iPad does not need to reach your laptop at all: your laptop connects out to the server, and the server passes the iPad's requests to it. The slides are not uploaded or stored anywhere.
 
-1. Give the deck the address of your room server, with `live: server: https://example.org` in its settings.
-2. Start `MDECK_LIVE_KEY=your-key mdeck run my-talk.md --share`. The key is the presenter code the room server was started with.
-3. On the launch page, choose **Show pairing code** under **Present from an iPad** and scan it. The address in the code is on your room server and contains a long random name, so treat it like a private link.
-4. Open the **audience window** on the laptop as before. It follows the iPad through the room server.
+1. Tell mdeck where your server is: `server: https://rooms.example.org` in the deck's settings, or `MDECK_SERVER` in your shell, or the address after the option in the next step.
+2. Start `MDECK_SERVER_KEY=your-key mdeck run my-talk.md --server`. The key is the one the server was started with.
+3. On the launch page, choose **Show pairing code** under **Present from an iPad** and scan it. The address in the code is on your server and contains a long random name, so treat it like a private link.
+4. Open the **audience window** on the laptop as before. It follows the iPad through the server.
 
-Everything else works as with `--host`: drawings are saved in the ink file beside the deck, and the iPad may steer polls. Editing the slides on the laptop reloads the iPad too. The room server only passes on what the presenter and audience pages need; the launch page, the editor and the other files in your folder are not reachable through it. Stopping `mdeck run` ends the sharing, and a pairing code stops working when you unpair or stop.
+Everything else works as with `--network`: drawings are saved in the drawings file beside the deck, and the iPad may steer polls. Editing the slides on the laptop reloads the iPad too. The server only passes on what the presenter and audience pages need; the launch page, the editor and the other files in your folder are not reachable through it. Stopping `mdeck run` ends the connection, and a pairing code stops working when you unpair or stop.
 
 On a touch screen the presenter view shows only the slide, with a small bar at the top: timer, previous and next, draw, **Notes** (a drawer with your notes and the next slide, also **N**), full screen, and a button back to the layout with notes beside the slide. Your choice is remembered on that device.
 
-With a room server of your own (`live.server`, see [Ask your audience](audience.html)), the same works with a hosted deck: open the presenter view on the iPad with your presenter code (`?livekey=…`), and the audience window anywhere else follows it. Drawings are then kept on the iPad; download the ink file after the talk.
+With a server of your own (the `server` setting, see [Ask your audience](audience.html)), the same also works with a hosted deck: open the presenter view on the iPad with your key (`?serverkey=…`), and the audience window anywhere else follows it. Drawings are then kept on the iPad; download the drawings file after the talk.
 
 ## Tips for the iPad
 

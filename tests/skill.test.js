@@ -10,7 +10,7 @@ test('the skill follows the Agent Skills format and has no tool-specific placeho
   assert.match(skill.frontmatter, /^name: write-slides$/m)
   assert.match(skill.frontmatter, /^description: .+/m)
   assert.ok(!skill.body.includes('$ARGUMENTS'))
-  assert.ok(skill.body.includes('mdeck layouts'))
+  assert.ok(skill.body.includes('mdeck list layouts'))
   assert.ok(skill.body.includes('mdeck check'))
 })
 

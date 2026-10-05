@@ -1,7 +1,7 @@
-// A deck's session code: six digits that name its rooms on the room server
+// A deck's session code: six digits that name its rooms on the server
 // and end its join link (`<server>/482113`). It is derived from the deck, so
 // the presenter's screen, the QR code on the slides and the launch page agree
-// without asking the server. `live.code` sets it; otherwise `live.id` or the
+// without asking the server. `session.code` sets it; otherwise `session.id` or the
 // title picks it.
 
 export const slug = text => String(text ?? '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)

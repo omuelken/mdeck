@@ -45,7 +45,7 @@
   "scripts": {
     "test": "node --test",
     "test:browser": "node tools/browser-check.mjs",
-    "test:share": "node tools/share-check.mjs",
+    "test:server": "node tools/server-check.mjs",
     "docs": "node bin/mdeck.js docs",
     "docs:build": "node docs/site/build.js",
     "start": "node bin/mdeck.js run",

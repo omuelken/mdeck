@@ -26,15 +26,15 @@ The editor only ever rewrites the parts of the file you change. Your blank lines
 
 Before the first change of each editing session, mdeck copies the file as it was into a `.mdeck-backups` folder beside it, named after the deck and the time, for example `.mdeck-backups/my-talk-2026-09-29T10-15-00Z.md`. It keeps the ten newest copies of each deck. If you keep your slides in Git, add `.mdeck-backups/` to your `.gitignore`.
 
-## Palettes, themes and designs
+## Palettes, themes and layouts
 
-The second tab at the top, **Palettes, themes & templates**, lets you make your own looks and slide designs. They are saved in an `extensions` folder next to your slide file, so they travel with the talk.
+The second tab at the top, **Palettes, themes & layouts**, lets you make your own looks and slide layouts. They are saved in an `extensions` folder next to your slide file, so they travel with the talk.
 
 - A **palette** is a set of colors. Pick a color for each role and see the preview repaint at once.
 - A **theme** is a whole look: fonts, sizes, spacing and the rules that arrange each slide. The color and size values are a form; the arrangement rules are CSS in a text area.
-- A **template** is a slide design: which content areas it has, which settings it accepts, and how it is drawn. The areas and settings are a form; the drawing code is a small Preact component in a text area.
+- A **layout** is a slide arrangement: which content areas it has, which settings it accepts, and how it is drawn. The areas and settings are a form; the drawing code is a small Preact component in a text area.
 
-The palettes, themes and templates that come with mdeck cannot be changed in place. Choose one and press **Copy into this deck to edit** to start from it under a new name.
+The palettes, themes and layouts that come with mdeck cannot be changed in place. Choose one and press **Copy into this deck to edit** to start from it under a new name.
 
 ## Keyboard shortcuts
 

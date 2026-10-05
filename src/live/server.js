@@ -1,5 +1,5 @@
-// The room server for audience interaction, two ways: inside `mdeck run`
-// at /__mdeck/live, or on its own with `mdeck live` for hosted decks.
+// The server for audience interaction, two ways: inside `mdeck run`
+// at /__mdeck/live, or on its own with `mdeck server` for hosted decks.
 import { createServer } from 'node:http'
 import { liveHandler, createRooms, keyMatches } from './rooms.js'
 import { isAllowedRequest } from '../build/editorPlugin.js'
@@ -23,8 +23,8 @@ export function livePlugin({ pairing = null } = {}) {
 }
 
 // Standalone: put it behind a web server (proxy / to it) and give the deck
-// `live: { server: https://… }`. Resetting a room needs the key. With a key it
-// is also the relay for `mdeck run --share` (src/live/tunnel.js), which needs
+// `server: https://…`. Resetting a room needs the key. With a key it
+// is also the relay for `mdeck run --server` (src/live/tunnel.js), which needs
 // the web server to pass WebSocket upgrades on.
 export function startLiveServer({ port = 8787, host = '127.0.0.1', key = null } = {}) {
   const tunnels = createTunnels({ key })

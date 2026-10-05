@@ -44,12 +44,12 @@ pictures it asks for, then:
 
 ```sh
 mdeck run <deck>.md
-mdeck build <deck>.md --share --self-contained -o <deck>.html
+mdeck send <deck>.md
 ```
 
 ## What the skill knows
 
 It carries a short quick reference of the file format so it can work even
 without the docs, finds the full reference docs in the repository or the
-installed package, and prefers the live answers from `mdeck templates --json`
-and `mdeck extensions` over its own memory.
+installed package, and prefers the live answers from `mdeck list layouts --json`
+and `mdeck list` over its own memory.

@@ -1,4 +1,4 @@
-// The room server as a relay for `mdeck run --share`. The presenter's computer
+// The server as a relay for `mdeck run --server`. The presenter's computer
 // opens one outbound WebSocket to /tunnel/<id>, authenticated with the room
 // server's key. A browser, such as an iPad, then opens /t/<id>/… on this
 // server; each request is passed down that connection to the computer, which
@@ -112,7 +112,7 @@ export function createTunnels({ key = null, bodyLimit = 2 * MB, maxTunnels = 50,
       if (!match) return false
       if (!key) { text(response, 404, 'Not found'); return true }
       const tunnel = tunnels.get(match[1])
-      if (!tunnel) { text(response, 404, 'This presentation is not shared right now. Start it again with mdeck run --share.'); return true }
+      if (!tunnel) { text(response, 404, 'This presentation is not shared right now. Start it again with mdeck run --server.'); return true }
       if (tunnel.pending.size >= maxPending) { text(response, 503, 'Too many requests at once'); return true }
       const id = tunnel.next++
       const chunks = []

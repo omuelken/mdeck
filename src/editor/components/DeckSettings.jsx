@@ -5,7 +5,8 @@ import { deckDiagnostics } from '../model.js'
 import { Field } from './Field.jsx'
 import { Diagnostics } from './Diagnostics.jsx'
 
-const ENUMS = { institution: ['title', 'all', 'none'], authorDate: ['title', 'all', 'none'], pageNumbers: ['slides', 'all', 'none'], sections: ['all', 'none'] }
+// What the `show` setting controls: the label for each choice and its values.
+const SHOW = { organization: ['Organization', ['title', 'all', 'none']], author: ['Author and date', ['title', 'all', 'none']], numbers: ['Slide numbers', ['slides', 'all', 'none']], sections: ['Section labels', ['all', 'none']] }
 const META = [['title', 'Title'], ['author', 'Author'], ['organization', 'Organization'], ['date', 'Date'], ['logo', 'Logo path']]
 const isColor = value => /^#[0-9a-f]{3,8}$/i.test(String(value ?? '').trim())
 
@@ -23,6 +24,7 @@ export function DeckSettings({ state, edit }) {
   const appearance = { theme, palette, params: config.params, accent: config.accent, accent2: config.accent2 }
   const text = (key, value) => patch({ [key]: value === '' ? undefined : value }, `deck:${key}`)
   const meta = (key, value) => { const next = { ...(config.meta ?? {}) }; if (value === '') delete next[key]; else next[key] = value; patch({ meta: Object.keys(next).length ? next : undefined }, `deck:meta:${key}`) }
+  const show = (key, value) => { const next = { ...(config.show ?? {}) }; if (value === '') delete next[key]; else next[key] = value; patch({ show: Object.keys(next).length ? next : undefined }, `deck:show:${key}`) }
   const param = (key, value) => { const next = { ...(config.params ?? {}) }; if (value === '') delete next[key]; else next[key] = value; patch({ params: Object.keys(next).length ? next : undefined }, `deck:params:${key}`) }
   const problems = deckDiagnostics(diagnostics, deck)
   return <div class="form">
@@ -72,8 +74,8 @@ export function DeckSettings({ state, edit }) {
     <div class="grid-2">
       <Field label="Width"><input type="number" value={config.width ?? 1920} onInput={e => patch({ width: Number(e.currentTarget.value) || undefined }, 'deck:width')} /></Field>
       <Field label="Height"><input type="number" value={config.height ?? 1080} onInput={e => patch({ height: Number(e.currentTarget.value) || undefined }, 'deck:height')} /></Field>
-      {Object.entries(ENUMS).map(([key, options]) => <Field key={key} label={key}>
-        <select value={config[key] ?? ''} onChange={e => text(key, e.currentTarget.value)}><option value="">default</option>{options.map(o => <option key={o} value={o}>{o}</option>)}</select>
+      {Object.entries(SHOW).map(([key, [label, options]]) => <Field key={key} label={label}>
+        <select value={config.show?.[key] ?? ''} onChange={e => show(key, e.currentTarget.value)}><option value="">default</option>{options.map(o => <option key={o} value={o}>{o}</option>)}</select>
       </Field>)}
       <Field label="Language" hint="of the deck, e.g. en, de or de-CH"><input type="text" value={config.lang ?? ''} placeholder="en" onInput={e => text('lang', e.currentTarget.value)} /></Field>
     </div>

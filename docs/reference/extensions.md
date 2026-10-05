@@ -1,12 +1,12 @@
-# Extensions: templates, themes and palettes
+# Extensions: layouts, themes and palettes
 
 mdeck can be extended in three ways, and all three follow the same rules.
 
-- A **template** is a slide layout: which content areas a slide has, which
-  settings it accepts, and how it is arranged. Built-in layouts such as `title`
-  and `split` are templates too.
+- A **layout** is an arrangement for a slide: which content areas it has, which
+  settings it accepts, and how it is arranged. The built-in layouts such as
+  `title` and `split` are extensions too.
 - A **theme** is the overall look: fonts, spacing, the slide frame and the
-  default colours. A deck picks one with `design:`.
+  default colours. A deck picks one with `theme:`.
 - A **palette** is a set of colours that repaints any theme. A deck picks one
   with `palette:`.
 
@@ -16,7 +16,7 @@ folder name is the identifier used in slide files.
 
 ```text
 extensions/
-  comparison/          a template
+  comparison/          a layout
     extension.toml
     layout.jsx
     styles.css
@@ -36,7 +36,7 @@ works just as well as `extensions/ocean/`. Identifiers must be unique within
 their kind across both places. A local extension cannot quietly replace a
 built-in one; a duplicate stops the command with a message naming both files.
 
-The same registry backs `mdeck check`, `mdeck extensions`, `mdeck templates`,
+The same registry backs `mdeck check`, `mdeck list`, `mdeck list layouts`,
 the `mdeck new` wizard, the dev server and builds, so what a check accepts is
 what a build can load.
 
@@ -44,7 +44,7 @@ what a build can load.
 
 ```toml
 schema = 1              # manifest format version; always 1 for now
-kind = "palette"        # template, theme or palette
+kind = "palette"        # layout, theme or palette
 id = "ocean"            # must equal the folder name
 title = "Ocean"         # readable name shown in lists and controls
 description = "Deep blue with a warm highlight."   # optional
@@ -91,7 +91,7 @@ tokens above are the shared vocabulary every theme uses; see
 [palettes](palettes.md) for what each one does. `dark = true` marks a dark
 palette so code colours and the logo are adjusted for a dark background.
 
-## Template
+## Layout
 
 ```toml
 schema = 1
@@ -140,7 +140,7 @@ minimum = 0.01
 ```
 
 The layout file is Preact JSX that imports from `mdeck/layout`. See
-[templates](templates.md) for the renderer contract. Layout code runs as part
+[layouts](layouts.md) for the renderer contract. Layout code runs as part
 of the deck: it is trusted code, not sandboxed data.
 
 ## Theme
@@ -198,16 +198,16 @@ then the `accent` and `accent2` shorthands.
 ## Editing in the browser
 
 `mdeck edit my-talk.md` includes editors for all three kinds under
-*Palettes, themes & templates*. Palettes and theme tokens are forms with live
-preview; theme stylesheets and template layouts are text areas. Built-in
+*Palettes, themes & layouts*. Palettes and theme tokens are forms with live
+preview; theme stylesheets and layout layouts are text areas. Built-in
 extensions are read-only there; copy one into the deck under a new id to
 change it. The editor writes the same files described above.
 
 ## Listing what is available
 
 ```sh
-mdeck extensions my-talk.md
-mdeck extensions my-talk.md --json
+mdeck list my-talk.md
+mdeck list my-talk.md --json
 ```
 
 The JSON form carries every manifest's title, description, tokens, parameters,

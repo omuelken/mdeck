@@ -62,8 +62,8 @@ Slides stay mounted while navigating. For media or ongoing work, listen to the `
 
 Components can collect answers from phones. An activity has two halves:
 
-- **On the slide**, the component itself shows the answers. `useRoom` from `mdeck/live` follows its room on the room server and receives every answer live.
-- **On the phones**, the room server's answer page shows a form. The component describes that form with a static `phone` function; mdeck calls it for the activity on the presenter's current slide and sends the result to the phones.
+- **On the slide**, the component itself shows the answers. `useRoom` from `mdeck/live` follows its room on the server and receives every answer live.
+- **On the phones**, the server's answer page shows a form. The component describes that form with a static `phone` function; mdeck calls it for the activity on the presenter's current slide and sends the result to the phones.
 
 The phones never load the deck, so the form is a description, not code. Three kinds are available:
 
@@ -98,13 +98,13 @@ Words.phone = ({ question }, { slideTitle }) => ({ type: 'text', question: quest
 | Value | Meaning |
 |---|---|
 | `messages` | Every answer so far, oldest first: `{ n, at, from, data: { value } }` |
-| `joinUrl` | The deck's join link for the QR code, or `null` when phones cannot reach the room server |
+| `joinUrl` | The deck's join link for the QR code, or `null` when phones cannot reach the server |
 | `localJoinUrl` | The answer page on this computer, for trying it out |
 | `code` | The deck's session code |
 | `canReset`, `reset()` | Whether this browser may clear the room, and doing it |
 | `connected` | Whether the live connection is open |
 
-`QrCode` draws the code. `latestByDevice(messages)`, also from `mdeck/live`, keeps each device's latest answer, for answers people may change. Where the room server runs is described in [Ask your audience](audience.html).
+`QrCode` draws the code. `latestByDevice(messages)`, also from `mdeck/live`, keeps each device's latest answer, for answers people may change. Where the server runs is described in [Ask your audience](audience.html).
 
 ## Print, PDF and Read mode
 
@@ -122,6 +122,6 @@ useEffect(() => {
 
 Transitions are turned off in print, so the finished state appears immediately. After printing, the stage puts each slide back to the step it was on.
 
-## When to use a template instead
+## When to use a layout instead
 
-A component is a piece of a slide, such as an activity or visualization. A [template](custom-templates.html) arranges an entire slide and declares the areas and settings authors can fill in.
+A component is a piece of a slide, such as an activity or visualization. A [layout](custom-layouts.html) arranges an entire slide and declares the areas and settings authors can fill in.

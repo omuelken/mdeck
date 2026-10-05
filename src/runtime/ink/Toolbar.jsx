@@ -122,7 +122,7 @@ export function InkToolbar({ stage, controller, onDone }) {
     <div class="ink-group">
       {button(hidden ? 'Show saved ink' : 'Hide saved ink', hidden ? ICON.eyeOff : ICON.eye, () => setHidden(!hidden), { active: hidden })}
       {button(finger ? 'Fingers draw (on)' : 'Fingers draw (off: only the pen draws once used)', ICON.finger, () => setFinger(!finger), { active: finger })}
-      {!history.saving && button(history.unsaved ? 'Download the ink file (changes are only in this browser)' : 'Download the ink file', ICON.download, () => controller.download(), { active: history.unsaved })}
+      {!history.saving && button(history.unsaved ? 'Download the drawings file (changes are only in this browser)' : 'Download the drawings file', ICON.download, () => controller.download(), { active: history.unsaved })}
     </div>
     <div class="ink-group">
       {button('Done drawing (D)', ICON.done, onDone)}

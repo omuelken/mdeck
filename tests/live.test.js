@@ -122,7 +122,7 @@ test('the answer page finds the component by its room', () => {
   assert.equal(findRoomTag(source, 'lun'), null)
   assert.equal(findRoomTag(source, 'a.b'), null)
   assert.deepEqual(roomsIn(source), [{ tag: 'poll', room: 'lunch' }, { tag: 'quiz', room: 'q1' }])
-  const deck = parseSlides('---\ndesign: neue\n---\n\n---\ntitle: Outline name\n---\n# On screen\n\n<poll room="a" options="x|y" />\n\n---\n# Plain\n')
+  const deck = parseSlides('---\ntheme: neue\n---\n\n---\ntitle: Outline name\n---\n# On screen\n\n<poll room="a" options="x|y" />\n\n---\n# Plain\n')
   assert.deepEqual(deck.slides.map(roomsOnSlide), [['a'], []])
   assert.equal(slideTitleFor(deck, 'a'), 'On screen', 'phones see the heading the audience saw')
   const shown = '# Syntax\n\n```markdown\n<poll room="a" options="x|y" />\n```\n\nOr inline: `<poll room="b" />`\n\n<poll room="a" options="real|one" />\n'
@@ -130,25 +130,25 @@ test('the answer page finds the component by its room', () => {
   assert.equal(findRoomTag(shown, 'a'), '<poll room="a" options="real|one" />')
 })
 
-test('live settings are validated', () => {
+test('server and session settings are validated', () => {
   const codes = config => validateDeck(parseSlides(`---\n${config}\n---\n\n---\n# A\n`)).map(d => d.code)
-  assert.deepEqual(codes('live:\n  server: https://example.org/live\n  id: talk\n  code: 482113'), [])
-  assert.deepEqual(codes('live:\n  server: example.org'), ['invalid-config'])
-  assert.deepEqual(codes('live:\n  code: 12'), ['invalid-config'])
-  assert.deepEqual(codes('live:\n  audience: https://example.org/slides/'), ['invalid-config'], 'the old hosted-deck setting says it is gone')
-  assert.deepEqual(codes('live: yes'), ['invalid-config'])
+  assert.deepEqual(codes('server: https://example.org\nsession:\n  id: talk\n  code: 482113'), [])
+  assert.deepEqual(codes('server: example.org'), ['invalid-config'])
+  assert.deepEqual(codes('session:\n  code: 12'), ['invalid-config'])
+  assert.deepEqual(codes('session: yes'), ['invalid-config'])
+  assert.deepEqual(codes('live:\n  server: https://example.org/live'), ['renamed-setting'], 'the old name says what replaces it')
 })
 
 test("a deck's session code is six stable digits, unless it sets one", () => {
   const a = sessionCode({ meta: { title: 'Ask the room' } })
   assert.match(a, /^[1-9]\d{5}$/)
   assert.equal(sessionCode({ meta: { title: 'Ask the room' } }), a)
-  assert.equal(sessionCode({ meta: { title: 'Ask the room' }, live: { id: 'ask-the-room' } }), a, 'live.id and the title give the same name')
+  assert.equal(sessionCode({ meta: { title: 'Ask the room' }, session: { id: 'ask-the-room' } }), a, 'session.id and the title give the same name')
   assert.notEqual(sessionCode({ meta: { title: 'Another talk' } }), a)
-  assert.equal(sessionCode({ live: { code: 4711 } }), '4711')
+  assert.equal(sessionCode({ session: { code: 4711 } }), '4711')
 })
 
-test("the room server serves the phones' answer page at /<code>", async () => {
+test("the server serves the phones' answer page at /<code>", async () => {
   const pageResponse = await fetch(`${live.url}/482113`)
   assert.equal(pageResponse.status, 200)
   assert.match(pageResponse.headers.get('content-type'), /text\/html/)

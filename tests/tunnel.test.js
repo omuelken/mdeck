@@ -35,7 +35,7 @@ test('only what the presenter and audience pages need is shareable', () => {
   assert.ok(!ok(at('__mdeck/deck')))
   assert.ok(!ok(at('__mdeck/source'), 'POST'))
   assert.ok(!ok(at('slides.md')))
-  assert.ok(!ok(at('slides.ink.json')))
+  assert.ok(!ok(at('slides.drawings.json')))
   assert.ok(!ok(at('.env')))
   assert.ok(!ok(at('notes/.git/config')))
   assert.ok(!ok(at('@fs/etc/passwd')))
@@ -54,7 +54,7 @@ test('a request that came through the tunnel is never taken for this computer', 
   assert.equal(isAllowedRequest({ headers: { host: 'localhost:5173', 'x-mdeck-tunnel': '1' } }), false)
 })
 
-// A room server, a fake dev server and the tunnel between them.
+// A server, a fake dev server and the tunnel between them.
 async function setup(t, { base: pathBase, key = KEY, tokens = [] } = {}) {
   const live = await startLiveServer({ port: 0, key })
   const id = newTunnelId()
@@ -81,7 +81,7 @@ async function setup(t, { base: pathBase, key = KEY, tokens = [] } = {}) {
   return { live, id, seen, tunnel, states, url: `${live.url}${base(id)}`, upTo }
 }
 
-test('a browser reaches the computer through the room server', async t => {
+test('a browser reaches the computer through the server', async t => {
   const { url, seen, id } = await setup(t)
   const response = await fetch(`${url}main.jsx?import`)
   assert.equal(response.status, 200)
@@ -128,17 +128,17 @@ test('an unknown or stopped tunnel answers 404', async t => {
   assert.equal((await fetch(`${url}main.jsx`)).status, 404)
 })
 
-test('the room server refuses a wrong key', async t => {
+test('the server refuses a wrong key', async t => {
   const live = await startLiveServer({ port: 0, key: KEY })
   t.after(() => live.close())
   const states = []
   const tunnel = startTunnel({ server: live.url, key: 'wrong', id: newTunnelId(), target: 'http://127.0.0.1:1/', base: '/t/x/', onState: (state, reason) => states.push([state, reason]) })
   t.after(() => tunnel.stop())
   for (let i = 0; i < 100 && !states.some(([state]) => state === 'refused'); i++) await delay(20)
-  assert.deepEqual(states.at(-1), ['refused', 'The room server did not accept the key'])
+  assert.deepEqual(states.at(-1), ['refused', 'The server did not accept the key'])
 })
 
-test('without a key the room server offers no tunnels', async t => {
+test('without a key the server offers no tunnels', async t => {
   const live = await startLiveServer({ port: 0 })
   t.after(() => live.close())
   assert.equal((await fetch(`${live.url}/t/${newTunnelId()}/`)).status, 404)

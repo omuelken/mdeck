@@ -1,6 +1,6 @@
 // Audience interaction for slide components: `import { useRoom } from 'mdeck/live'`.
 //
-// Relay mode: the room server connects the presenter's screen and the phones
+// Relay mode: the server connects the presenter's screen and the phones
 // and never needs the deck. Every activity in a deck shares one join link,
 // <server>/<code>. The presenter's screen announces the activity on the current
 // slide together with what the phone should show (a component's `phone`
@@ -33,7 +33,7 @@ export function configureLive(deckConfig = {}) {
 export const liveCode = () => settings.code
 
 const page = () => new URL(window.location.href)
-// Without a `server` setting, the room server built into `mdeck run`.
+// Without a `server` setting, the server built into `mdeck run`.
 const serverBase = () => settings.server ?? new URL(devPath('__mdeck/live'), window.location.origin).href
 const roomPath = room => `${serverBase()}/rooms/${encodeURIComponent(`${settings.code}.${room}`)}`
 const sessionPath = () => `${serverBase()}/rooms/${encodeURIComponent(settings.code)}`
@@ -72,8 +72,8 @@ function takeKeyFromAddress() {
   url.searchParams.delete('serverkey')
   try { history.replaceState(history.state, '', url) } catch {}
 }
-// The room server built into `mdeck run` also lets a paired iPad in, and so
-// does the room server that relays `mdeck run --share`: this page then comes
+// The server built into `mdeck run` also lets a paired iPad in, and so
+// does the server that relays `mdeck run --server`: this page then comes
 // from it, so it is the same origin. The token is never sent to another server.
 function ownServer() {
   if (!settings.server) return true
@@ -97,8 +97,8 @@ function serverInfo() {
   return infoRequest
 }
 
-// The join link phones can open: `live.server`, or `mdeck run --host`'s
-// network address. null when only this computer can reach the room server;
+// The join link phones can open: the `server` setting, or `mdeck run --network`'s
+// network address. null when only this computer can reach the server;
 // `localJoinUrl` then still opens the answer page here, for trying it out.
 function joinUrl(info) {
   if (settings.server) return `${settings.server}/${settings.code}`
@@ -110,7 +110,7 @@ const localJoinUrl = () => `${serverBase()}/${settings.code}`
  * Follow a room's answers on a slide.
  *   messages  every answer so far: { n, at, from, data: { value } }
  *   joinUrl   the deck's join link for the QR code, or null if phones cannot
- *             reach the room server; localJoinUrl works on this computer
+ *             reach the server; localJoinUrl works on this computer
  *   canReset / reset()  presenter only
  *   connected false until the live stream is open
  * Off the current slide the room keeps its last messages but disconnects.
@@ -185,11 +185,11 @@ export function captureLook(doc = lookSource()) {
 const phoneWords = () => ({ waiting: t('respond.waiting'), pick: t('poll.pick'), thanks: t('poll.thanks'), send: t('respond.send'), sent: t('respond.sent') })
 
 // The presenter's screen announces the activity on the current slide and
-// repeats it every few seconds, so phones that join late and a room server
+// repeats it every few seconds, so phones that join late and a server
 // that restarted catch up; the server passes on only changes. Only the
 // presenter may: `steering` says whether this screen reaches the phones.
 const REPEAT_MS = 4000
-// This window, so the room server can tell its repeats from new changes.
+// This window, so the server can tell its repeats from new changes.
 const SCREEN = Math.random().toString(36).slice(2, 10)
 let current = { room: null, activity: null, title: '', at: 0, screen: SCREEN }, repeat = null
 let steering = null
@@ -235,7 +235,7 @@ async function sendCurrent() {
  * or nothing between activities.
  */
 export function announce({ room = null, activity = null, title = '', initial = false } = {}) {
-  // `at` marks this change; the room server keeps the latest change of all
+  // `at` marks this change; the server keeps the latest change of all
   // screens. A screen that just opened says 0, so opening a tab to look at
   // the deck does not take the phones away from the presenter.
   current = { room, activity, title, at: initial ? 0 : Date.now(), screen: SCREEN }

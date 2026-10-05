@@ -68,7 +68,7 @@ function withConfigOverrides(deckConfig) {
 
 // The presenter's screen tells phones on the deck's answer link which
 // activity is on the current slide. Decks without activities never call the
-// room server.
+// server.
 const hasActivities = () => roomsIn(slidesContent).length > 0
 // What the phones show for the activity on a slide: its component's `phone`
 // description, from the tag's attributes and the slide's heading.
@@ -90,8 +90,8 @@ function announceSlide(deck, index, { initial = false } = {}) {
 // with activities: a failure used to be silent.
 const STEERING = {
   'no-code': 'Phones do not follow: this browser has no server key. Open the presenter view once with ?serverkey=… (the launch page has a link).',
-  'wrong-code': "Phones do not follow: the room server does not accept this browser's presenter code.",
-  unreachable: 'Phones do not follow: the room server does not answer.',
+  'wrong-code': "Phones do not follow: the server does not accept this browser's presenter code.",
+  unreachable: 'Phones do not follow: the server does not answer.',
   'other-screen': 'Phones follow another screen, where this presentation was moved on more recently. Change the slide here to take them back.',
 }
 function SteeringNote() {

@@ -18,7 +18,7 @@ write('shared/helpers/format.js', 'export const x = 1\n')
 write('more/Chart.jsx')
 write('more/Quiz.jsx')
 const deck = resolve(root, 'deck/talk.md')
-writeFileSync(deck, '---\ndesign: neue\ncomponents:\n  - ../shared\n  - ../more\n---\n\n---\n<poll />\n')
+writeFileSync(deck, '---\ntheme: neue\ncomponents:\n  - ../shared\n  - ../more\n---\n\n---\n<poll />\n')
 
 test('the deck folder comes first, then listed folders in order', () => {
   const files = componentFiles(deck)
@@ -36,7 +36,7 @@ test('home-relative folders are expanded', () => {
 })
 
 test('check reports listed folders that do not exist, and bad settings', () => {
-  const source = '---\ndesign: neue\ncomponents:\n  - ../shared\n  - ../gone\n---\n\n---\n# A\n'
+  const source = '---\ntheme: neue\ncomponents:\n  - ../shared\n  - ../gone\n---\n\n---\n# A\n'
   const { diagnostics } = checkDeck(deck, loadRegistry(deck), source)
   assert.deepEqual(diagnostics.map(d => d.code), ['missing-components'])
   assert.match(diagnostics[0].message, /\.\.\/gone/)

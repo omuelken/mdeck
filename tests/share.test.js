@@ -12,9 +12,9 @@ import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
 test('stripNotes removes note blocks and metadata keys but nothing else', () => {
-  const source = '---\ndesign: neue\n---\n---\nlayout: title\n---\n# T\n\n:::notes\nsecret\n:::\n\n---\n:::meta\nlayout: focus\nnotes: also secret\n:::\n# F\n\n:::notes\nmore\n:::\n\n:::notes\nagain\n:::\n\n---\n# Plain\n'
+  const source = '---\ntheme: neue\n---\n---\nlayout: title\n---\n# T\n\n:::notes\nsecret\n:::\n\n---\n:::meta\nlayout: focus\nnotes: also secret\n:::\n# F\n\n:::notes\nmore\n:::\n\n:::notes\nagain\n:::\n\n---\n# Plain\n'
   const stripped = stripNotes(source)
-  assert.equal(stripped, '---\ndesign: neue\n---\n---\nlayout: title\n---\n# T\n\n---\n:::meta\nlayout: focus\n:::\n# F\n\n---\n# Plain\n')
+  assert.equal(stripped, '---\ntheme: neue\n---\n---\nlayout: title\n---\n# T\n\n---\n:::meta\nlayout: focus\n:::\n# F\n\n---\n# Plain\n')
   const deck = parseSlides(stripped)
   assert.ok(deck.slides.every(slide => !slide.meta.notes && !slide.meta.note))
   assert.equal(stripNotes('# No notes\n'), '# No notes\n')
@@ -29,21 +29,34 @@ test('stripNotes removes note blocks and metadata keys but nothing else', () => 
 })
 
 test('the outline names slides and marks chapters', () => {
-  const deck = parseSlides('---\ndesign: neue\n---\n---\nlayout: title\n---\n# Welcome\n\n---\nlayout: chapter\npart: Part One\n---\n# Basics\n\n---\n# *Emphasis* stays plain\n\n---\n:::meta\nlayout: focus\n:::\n')
+  const deck = parseSlides('---\ntheme: neue\n---\n---\nlayout: title\n---\n# Welcome\n\n---\nlayout: chapter\npart: Part One\n---\n# Basics\n\n---\n# *Emphasis* stays plain\n\n---\n:::meta\nlayout: focus\n:::\n')
   const outline = deckOutline(deck, templateManifests('examples/showcase/slides.md'))
   assert.deepEqual(outline.map(item => [item.title, item.chapter, item.part]), [['Welcome', false, null], ['Basics', true, 'Part One'], ['Emphasis stays plain', false, null], ['Big statement', false, null]])
   const noisy = parseSlides('```js\ncode\n```\n\nAfter the code\n---\n| a | b |\n|---|---|\n---\n<qrcode value="x" />\n')
   assert.deepEqual(deckOutline(noisy).map(item => item.title), ['After the code', 'Slide 2', 'Slide 3'])
-  const named = parseSlides('---\ndesign: neue\n---\n---\ntitle: Network diagram\n---\n<netzwerk />\n')
+  const named = parseSlides('---\ntheme: neue\n---\n---\ntitle: Network diagram\n---\n<netzwerk />\n')
   assert.deepEqual(deckOutline(named).map(item => item.title), ['Network diagram'])
-  assert.deepEqual(validateDeck(parseSlides('---\ndesign: neue\n---\n---\ntitle: 3\n---\n# A')).map(d => d.code), ['invalid-metadata'])
+  assert.deepEqual(validateDeck(parseSlides('---\ntheme: neue\n---\n---\ntitle: 3\n---\n# A')).map(d => d.code), ['invalid-metadata'])
 })
 
-test('share settings are validated', () => {
+test('reader settings are validated', () => {
   const codes = source => validateDeck(parseSlides(source)).map(d => [d.code, d.severity])
-  assert.deepEqual(codes('---\nshare:\n  themes: false\n  notes: true\n---\n# A'), [])
-  assert.deepEqual(codes('---\nshare: yes\n---\n# A'), [['invalid-config', 'error']])
-  assert.deepEqual(codes('---\nshare:\n  themes: maybe\n  pdf: true\n---\n# A'), [['invalid-config', 'warning'], ['invalid-config', 'error']])
+  assert.deepEqual(codes('---\nreader:\n  themes: false\n  notes: true\n---\n# A'), [])
+  assert.deepEqual(codes('---\nreader: yes\n---\n# A'), [['invalid-config', 'error']])
+  assert.deepEqual(codes('---\nreader:\n  themes: maybe\n  pdf: true\n---\n# A'), [['invalid-config', 'warning'], ['invalid-config', 'error']])
+  assert.deepEqual(codes('---\nshare:\n  themes: false\n---\n# A'), [['renamed-setting', 'error']], 'the old name says what replaces it')
+})
+
+test('footer settings are validated, and the old names say what replaces them', () => {
+  const codes = source => validateDeck(parseSlides(source)).map(d => [d.code, d.severity])
+  assert.deepEqual(codes('---\nshow:\n  organization: all\n  author: none\n  numbers: slides\n  sections: none\n---\n# A'), [])
+  assert.deepEqual(codes('---\nshow:\n  numbers: sometimes\n  colour: red\n---\n# A'), [['invalid-config', 'warning'], ['invalid-config', 'error']])
+  assert.deepEqual(codes('---\ninstitution: none\npageNumbers: all\n---\n# A'), [['renamed-setting', 'error'], ['renamed-setting', 'error']])
+})
+
+test('slide settings that were removed say how to write notes now', () => {
+  const deck = parseSlides('---\nlayout: focus\nnotes: old way\n---\n# A\n\n---\n# B\n\n:::notes\nnew way\n:::\n')
+  assert.deepEqual(validateDeck(deck).map(d => [d.code, d.severity]), [['removed-setting', 'error']])
 })
 
 test('a PDF link is attached to built HTML as a file link or embedded data', () => {

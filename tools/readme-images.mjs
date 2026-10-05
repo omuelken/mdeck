@@ -15,7 +15,7 @@ const deck = resolve(root, 'examples/showcase/slides.md')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-readme-'))
 mkdirSync(out, { recursive: true })
 try {
-  execFileSync(process.execPath, [resolve(root, 'bin/mdeck.js'), 'build', deck, '--self-contained', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
+  execFileSync(process.execPath, [resolve(root, 'bin/mdeck.js'), 'build', deck, '--single-file', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   const browser = await launchChrome({ dir: temp })
   try {
     const shot = async (query, file, size) => {

@@ -2,9 +2,61 @@
 
 ## Unreleased
 
-- **Breaking:** `mdeck dev` and `mdeck present` are now one command, `mdeck run`. It always opens the launch page; the presenter view is one click away there. The old names print a pointer to `mdeck run`. The `npm run dev` and `npm run present` scripts became `npm start`.
-- `mdeck run --share` presents from an iPad on any network without opening a port on your computer and without hosting the deck. The computer connects out to your room server (`mdeck live`), which passes the iPad's requests to it; the pairing code on the launch page then points at the room server. Drawings are still saved beside the deck, edits reload the iPad, and polls and the audience window use the same room server. Only what the presenter and audience pages need is passed on; the launch page, the editor and the rest of your folder are not reachable. The room server needs this version, the key in `MDECK_LIVE_KEY` and a web server that passes WebSocket connections (see the audience guide). New dependency: `ws`.
-- Drawing: the icons of the toolbar and the presenter view are redrawn as line icons (fingers, tablet and speaker layouts, full screen, pen); the colours are named instead of shown as hex codes; clearing a slide asks in a small popover over the button instead of the browser's confirm dialog.
+A cleaner interface, and presenting from an iPad on any network. This release renames commands, options, settings and files so that each word means one thing. Everything old stops with a message that names its replacement, so nothing changes silently. Decks, extensions and room servers need the changes in the tables below.
+
+### Presenting from an iPad on any network
+
+`mdeck run --server` presents from an iPad on any network without opening a port on your computer and without hosting the deck. The computer connects out to your server (`mdeck server`), which passes the iPad's requests to it. The slides are never stored there. The pairing code on the launch page then points at your server; drawings are still saved beside the deck, edits reload the iPad, and polls and the audience window use the same server.
+
+The address is the option's value, else the deck's `server` setting, else `MDECK_SERVER`; the key is `MDECK_SERVER_KEY`. Only what the presenter and audience pages need is passed on; the launch page, the editor and the rest of your folder are not reachable. The server needs this version, a key, and a web server that passes WebSocket connections on (see the audience guide). New dependency: `ws`. Check it with `npm run test:server`.
+
+### Breaking changes
+
+Commands:
+
+| Before | Now |
+|---|---|
+| `mdeck dev`, `mdeck present` | `mdeck run`, which always opens the launch page |
+| `mdeck live` | `mdeck server` |
+| `mdeck build --share --self-contained -o f.html` | `mdeck send` |
+| `mdeck build --with-notes`, `--no-pdf` | `mdeck send --notes`, `--no-pdf` |
+| `mdeck build --self-contained`, `-S` | `mdeck build --single-file` |
+| `mdeck build --presenter-launchers` | `mdeck build --launchers` |
+| `mdeck build --pdf`, `--inline-images`, `-I` | removed; use `mdeck pdf` and `--single-file` |
+| `mdeck run --host` | `mdeck run --network` |
+| `mdeck templates`, `mdeck extensions` | `mdeck list [layouts\|themes\|palettes]` and `mdeck starter <layout>` |
+| `--no-ink` | `--no-drawings` |
+| `npm run dev`, `npm run present` | `npm start` |
+
+Commands that take `slides.md` use the one in the current folder when you leave it out, and `mdeck preview` takes a folder.
+
+Deck settings:
+
+| Before | Now |
+|---|---|
+| `design` | `theme` |
+| `institution`, `authorDate`, `pageNumbers`, `sections` | `show.organization`, `show.author`, `show.numbers`, `show.sections` |
+| `share.themes`, `share.notes` | `reader.themes`, `reader.notes` |
+| `live.server`, `live.id`, `live.code` | `server`, `session.id`, `session.code` |
+| slide `note:` and `notes:` | removed; write a `:::notes` block |
+
+Names in files, addresses and code:
+
+| Before | Now |
+|---|---|
+| `<deck>.ink.json` | `<deck>.drawings.json` (rename the file; `mdeck check` reports a leftover) |
+| `?view=share`, `?v=d`, `?v=s`, `?v=p`, `?v=a` | `?view=reader`; the short forms are gone |
+| `MDECK_LIVE_KEY`, `?livekey=` | `MDECK_SERVER_KEY`, `?serverkey=` |
+| `kind = "template"` in `extension.toml` | `kind = "layout"` |
+| `import … from 'mdeck/template-api'` | `'mdeck/layout'` |
+| `examples/custom-templates` | `examples/custom-layouts` |
+
+`mdeck check` reports every old deck setting, with the new name, so a deck can be updated by following its messages.
+
+### Also new
+
+- Drawing: the icons of the toolbar and the presenter view are redrawn as line icons; the colours have names instead of hex codes; clearing a slide asks in a small popover over the button instead of the browser's confirm dialog.
+- The launch page and the guides call the server a server, drawings drawings and layouts layouts.
 
 ## 1.4.0 — 2026-10-05
 

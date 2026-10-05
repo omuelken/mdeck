@@ -4,7 +4,7 @@ This guide is for people comfortable with CSS. For the existing choices, see [Ch
 
 If you would rather click than type, `mdeck edit my-talk.md` has form-based editors for palettes and theme tokens with a live preview; see [Edit slides in your browser](editing.html). The files it writes are the ones described here.
 
-Themes and palettes are **extensions**: each one is a folder with an `extension.toml` file that says what it is. Slide designs (templates) use the same idea. Put the folder in `extensions/` beside your slide file and mdeck finds it automatically; there is nothing to register. The [extensions reference](extensions.html) has the complete list of settings.
+Themes and palettes are **extensions**: each one is a folder with an `extension.toml` file that says what it is. Slide layouts use the same idea. Put the folder in `extensions/` beside your slide file and mdeck finds it automatically; there is nothing to register. The [extensions reference](extensions.html) has the complete list of settings.
 
 ```text
 my-talk/
@@ -112,4 +112,4 @@ Its default is simply the token's value, so the preview controls and the rendere
 
 Try title, chapter, focus, image-text, split, full-bleed-image, and ordinary content slides. Include long titles, lists, pictures, code, footnotes, and a dark palette. Check each aspect ratio you intend to support and the browser's print output.
 
-`mdeck check my-talk.md` reports manifest mistakes with the file and setting name. `mdeck extensions my-talk.md` confirms that your theme or palette has been found.
+`mdeck check my-talk.md` reports manifest mistakes with the file and setting name. `mdeck list my-talk.md` confirms that your theme or palette has been found.

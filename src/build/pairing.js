@@ -48,7 +48,7 @@ export function createPairing({ now = Date.now } = {}) {
       return false
     },
     revoke() { devices.clear(); offers.clear(); changed() },
-    /** The paired devices' tokens, for the room server of `mdeck run --share`. */
+    /** The paired devices' tokens, for the server of `mdeck run --server`. */
     tokens: () => [...devices],
     /** Calls back when a device pairs or all are unpaired; returns a function that stops it. */
     onChange(listener) { listeners.add(listener); return () => listeners.delete(listener) },

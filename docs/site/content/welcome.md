@@ -41,7 +41,7 @@ The `#` makes a heading. The line with `---` starts another slide. A dash before
 
 ## What mdeck does today
 
-mdeck gives you ready-made slide layouts, different visual themes, speaker notes, pictures, videos, a separate presenter view, drawing on slides (also from an iPad), polls and other questions your audience answers on their phones, and a reader view with a PDF for people you send the slides to. It can also use slide designs made by other people.
+mdeck gives you ready-made slide layouts, different visual themes, speaker notes, pictures, videos, a separate presenter view, drawing on slides (also from an iPad), polls and other questions your audience answers on their phones, and a reader view with a PDF for people you send the slides to. It can also use layouts made by other people.
 
 `mdeck run` opens a launch page for your talk with all of this in one place: the presenter view, the editor, these guides, buttons that make the files to share, and a check for missing pictures.
 

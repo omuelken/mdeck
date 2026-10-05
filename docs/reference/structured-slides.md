@@ -39,7 +39,7 @@ Unassigned Markdown is the `body` region. `split` accepts `left` and `right`
 regions with the shared body above them; without named regions it retains the
 legacy first-block-left behavior. An explicit `:::slot body` is also supported,
 but cannot be combined with unassigned content. Duplicate or unclosed regions
-are errors. Layout templates declare the other regions they accept.
+are errors. Layout layouts declare the other regions they accept.
 
 Set `id:` for a durable link such as `#deployment-options`. Numeric links such
 as `#3` remain supported. Without an authored ID, the parser assigns positional

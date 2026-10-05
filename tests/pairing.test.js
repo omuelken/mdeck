@@ -38,14 +38,14 @@ const call = (handler, request) => new Promise(done => {
 test('an iPad trades the code for its own token and may then save ink', async () => {
   const dir = mkdtempSync(resolve(tmpdir(), 'mdeck-pairing-'))
   const deck = resolve(dir, 'talk.md')
-  writeFileSync(deck, '---\ndesign: neue\nlive:\n  server: https://rooms.example\n---\n\n---\nid: s\n---\n# S\n')
+  writeFileSync(deck, '---\ntheme: neue\nserver: https://rooms.example\n---\n\n---\nid: s\n---\n# S\n')
   const pairing = createPairing()
-  const home = homeMiddleware(deck, { pairing, liveKey: 'room-key', urls: () => ({ local: ['http://localhost:5173/'], network: ['http://192.168.1.20:5173/'] }), fetch: async () => ({ ok: false, status: 500 }) })
+  const home = homeMiddleware(deck, { pairing, serverKey: 'room-key', urls: () => ({ local: ['http://localhost:5173/'], network: ['http://192.168.1.20:5173/'] }), fetch: async () => ({ ok: false, status: 500 }) })
   const offered = await call(home, { url: '/action', method: 'POST', headers: { host: 'localhost:5173' }, body: { action: 'pair' } })
   const url = new URL(offered.body.url)
   assert.equal(url.origin, 'http://192.168.1.20:5173')
   assert.equal(url.searchParams.get('view'), 'presenter')
-  assert.equal(url.searchParams.get('livekey'), 'room-key', "with the deck's own room server, its presenter code")
+  assert.equal(url.searchParams.get('serverkey'), 'room-key', "with the deck's own server, its key")
   assert.equal((await call(home, { url: '/action', method: 'POST', headers: { host: '192.168.1.20:5173' }, body: { action: 'pair' } })).status, 403, 'only this computer offers codes')
 
   const claim = pairingMiddleware(pairing)

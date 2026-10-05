@@ -16,19 +16,19 @@ src/
   cli/               Commands, scaffolding, and packaging
   core/              Slide parsing, source ranges, validation, editing helpers
   runtime/           Browser app: deck stage, presenter, reader and editor preview
-  editor/            Browser editor for decks, palettes, themes and templates
+  editor/            Browser editor for decks, palettes, themes and layouts
   components/        Built-in interactive content, including the poll
   live/              Audience rooms: server, `mdeck/live` client, answer-page lookup, and the
-                     room server's relay for `--share` (tunnel.js; its other end is build/tunnelClient.js)
+                     server's relay for `--server` (tunnel.js; its other end is build/tunnelClient.js)
   home/              Launch page that `mdeck run` opens
-  templates/         Shared rendering API, slide frame, typed properties
+  layouts/         Shared rendering API, slide frame, typed properties
   extensions/        Manifest contract, discovery registry, appearance rules
   build/             Vite configuration, component discovery, editing and launch
                      page APIs, deck check, PDF
   paths.js           Locations of installed framework resources
 assets/
   base.css           Shared slide CSS every theme builds on
-  extensions/        Built-in templates, themes, and palettes (extension.toml each)
+  extensions/        Built-in layouts, themes, and palettes (extension.toml each)
   logo/              Mark, wordmark and avatar
 docs/
   site/              Documentation website and beginner guides
@@ -45,7 +45,7 @@ skills/              Distributable slide-authoring instructions
 ```sh
 npm test                 # unit and integration tests
 npm run test:browser     # real-Chrome check, also run in CI (set MDECK_CHROME if needed)
-npm run test:share       # `mdeck run --share` through a local room server, with Chrome as the iPad
+npm run test:server       # `mdeck run --server` through a local server, with Chrome as the iPad
 npm run playground       # scratch deck with hot reload
 npm run docs:build       # build the documentation site into docs/site/dist
 node bin/mdeck.js ...    # run the CLI from the checkout
@@ -61,12 +61,12 @@ writes to `dist/` in the current working folder.
   patch example decks to work around framework bugs.
 - Deck files are the single source of truth. Anything that edits them goes
   through the byte-preserving helpers in `src/core/editDeck.js`.
-- Built-in templates, themes and palettes use the same `extension.toml` format
+- Built-in layouts, themes and palettes use the same `extension.toml` format
   as deck-local ones; there is no second registration path.
 - The browser editor is experimental: keep its features behind `mdeck edit`
   and do not make presenting or building depend on it.
 - Local-only APIs (the editor, the launch page) answer loopback requests from
-  their own pages only (`isAllowedRequest`). The room server is the exception:
+  their own pages only (`isAllowedRequest`). The server is the exception:
   phones must reach it, so it accepts any origin but keeps no personal data and
   lets only the presenter reset rooms.
 - Components show their finished state inside `[data-deck-static]` (PDF,

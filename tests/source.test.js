@@ -4,7 +4,7 @@ import { parseSlides } from '../src/core/parseSlides.js'
 import { serializeDeck, replaceRegion, applySourceEdits, scanDirectives } from '../src/core/source.js'
 import { validateDeck } from '../src/core/validateDeck.js'
 
-const source = '---\r\ndesign: neue\r\n---\r\n\r\n---\r\n:::meta\r\nlayout: split\r\nid: compare\r\n# preserve this comment\r\n:::\r\n# Compare\r\n\r\n:::slot left\r\n**Before**\r\n:::\r\n\r\n:::slot right\r\n:::tip\r\nAfter\r\n:::\r\n:::\r\n'
+const source = '---\r\ntheme: neue\r\n---\r\n\r\n---\r\n:::meta\r\nlayout: split\r\nid: compare\r\n# preserve this comment\r\n:::\r\n# Compare\r\n\r\n:::slot left\r\n**Before**\r\n:::\r\n\r\n:::slot right\r\n:::tip\r\nAfter\r\n:::\r\n:::\r\n'
 
 test('document model round trips unchanged and retains original region ranges', () => {
   const deck = parseSlides(source)

@@ -15,7 +15,7 @@ layout: title
 ## Live questions in a plain slide file.
 
 :::notes
-Start this deck with `mdeck dev slides.md --host` so phones in the same network can answer.
+Start this deck with `mdeck run slides.md --network` so phones in the same network can answer.
 
 The deck shows every kind of question mdeck has: a poll, a scale, a word cloud and open answers. The QR code appears once, on the next slide.
 :::
@@ -110,14 +110,14 @@ The QR code takes the slide's colours, so it fits every theme; phone cameras rea
 # Try it on your own computer.
 
 ```sh
-mdeck dev slides.md --host
+mdeck run slides.md --network
 ```
 
 - **Same network** — phones must be able to reach your computer.
-- **Lecture hall** — run `mdeck live` on a web server; the slides stay on your laptop.
+- **Lecture hall** — run `mdeck server` on a web server; the slides stay on your laptop.
 
 :::notes
-For a lecture hall, run `mdeck live` on a web server once and point `live.server` at it. The phones only talk to that room server; the slides never leave this laptop. The "Ask your audience" guide has the details.
+For a lecture hall, run `mdeck server` on a web server once and point the deck's `server` setting at it. The phones only talk to that server; the slides never leave this laptop. The "Ask your audience" guide has the details.
 
-Many university networks keep devices apart. If phones cannot open the page, use a phone hotspot or a room server on the internet.
+Many university networks keep devices apart. If phones cannot open the page, use a phone hotspot or a server on the internet.
 :::

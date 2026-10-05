@@ -81,4 +81,4 @@ Each press of the next key reveals one point. Once all points are visible, the n
 
 ## Are my notes private?
 
-Notes are hidden from the audience view, but a normal build includes them in the file, and someone with that file can inspect them. For a version to send around, build with `mdeck build my-talk.md --share`, which removes the notes (see [Share or print your slides](sharing.html)).
+Notes are hidden from the audience view, but a normal build includes them in the file, and someone with that file can inspect them. For a version to send around, use `mdeck send my-talk.md`, which removes the notes (see [Send, host or print your slides](sharing.html)).

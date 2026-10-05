@@ -70,25 +70,25 @@ Working from a clone instead? See [CONTRIBUTING.md](CONTRIBUTING.md).
 ## First steps
 
 ```sh
-mdeck new                 # answer a few questions, get a starter file
-mdeck run talk.md         # launch page: present, edit, share and check; reloads on save
-mdeck run talk.md --host  # also reachable from phones, e.g. for a poll
-mdeck run talk.md --share # present from an iPad on any network, through your room server
-mdeck build talk.md       # dist/ folder to hand out or host
-mdeck build talk.md --share --self-contained -o talk.html   # one file to email, with PDF
+mdeck new                    # answer a few questions, get a starter file
+mdeck run talk.md            # launch page: present, edit, send and check; reloads on save
+mdeck run talk.md --network  # also reachable from phones, e.g. for a poll
+mdeck run talk.md --server   # present from an iPad on any network, through your server
+mdeck build talk.md          # dist/ folder to host
+mdeck send talk.md           # one file to email, with a PDF inside
 ```
 
 ## What you get
 
 - **Layouts:** title, chapter, big statement, image and text, split, full-bleed image, and plain content slides, with points that appear one at a time.
 - **Looks:** six themes and eight colour palettes, changeable without touching the slides. Make your own as small `extension.toml` folders beside the deck.
-- **One launch page:** `mdeck run` opens a page with a live preview, the presenter and audience views, the deck and reader views, the editor, the guides, one-click builds and PDF, the deck's check results, and for decks with a room server its health and the presenter code.
+- **One launch page:** `mdeck run` opens a page with a live preview, the presenter and audience views, the deck and reader views, the editor, the guides, one-click builds and PDF, the deck's check results, and for decks with a server its health and the presenter code.
 - **Presenting:** a presenter view with notes and timer, and an audience window that stays in sync.
-- **Drawing on slides:** pen with pressure, highlighter and a fading marker, with a mouse, a finger or an iPad pencil (`D`). Drawings are saved in `<deck>.ink.json` beside the deck and appear in every view, build and PDF. An iPad can present on its own, or pair with the laptop through a QR code on the launch page while the laptop's audience window follows it.
-- **Audience questions:** `<poll room="lunch" options="A|B|C" />` shows live results and a QR code; people vote on their phones. `<scale>`, `<wordcloud>` and `<question>` ask for a rating, words or open answers, and `<qrcode join />` shows the join code once for all of them. Rooms run inside `mdeck run --host` or on a small room server (`mdeck live`).
+- **Drawing on slides:** pen with pressure, highlighter and a fading marker, with a mouse, a finger or an iPad pencil (`D`). Drawings are saved in `<deck>.drawings.json` beside the deck and appear in every view, build and PDF. An iPad can present on its own, or pair with the laptop through a QR code on the launch page while the laptop's audience window follows it.
+- **Audience questions:** `<poll room="lunch" options="A|B|C" />` shows live results and a QR code; people vote on their phones. `<scale>`, `<wordcloud>` and `<question>` ask for a rating, words or open answers, and `<qrcode join />` shows the join code once for all of them. Rooms run inside `mdeck run --host` or on a small server (`mdeck server`).
 - **Sharing:** a reader view with an outline, a phone-friendly Read mode and a PDF download; speaker notes are stripped from shared builds, and interactive slides appear in their finished state.
 - **Content:** pictures, video, tables, callouts, code with syntax highlighting and live execution, formulas, QR codes, and your own Preact components, kept with one deck or shared between decks.
-- **Editing in the browser** *(experimental)*: `mdeck edit talk.md` opens an editor with a live preview and forms for slides, settings, palettes, themes and templates. It writes back into your text file.
+- **Editing in the browser** *(experimental)*: `mdeck edit talk.md` opens an editor with a live preview and forms for slides, settings, palettes, themes and layouts. It writes back into your text file.
 
 ## Read the docs
 
@@ -97,7 +97,7 @@ The docs are written for people who have never used Markdown:
 - Online: <https://mdeck-996814.pages.fhnw.ch/>
 - Offline, from any folder once mdeck is installed: `mdeck docs`
 
-Technical references for template, theme and tool authors live in
+Technical references for layout, theme and tool authors live in
 [docs/reference](docs/reference/).
 
 ## Write slides with an AI assistant
@@ -118,8 +118,8 @@ complete folder.
 | [Showcase](examples/showcase/slides.md) | Layouts and rich slide content |
 | [FHNW](examples/fhnw/slides.md) | Slides using the FHNW theme |
 | [Python](examples/python/slides.md) | A short introductory programming talk |
-| [Custom templates](examples/custom-templates/slides.md) | A deck-local comparison design and named regions |
-| [Poll](examples/poll/slides.md) | A join slide, then a poll, a scale, a word cloud and open questions; start it with `mdeck run slides.md --host` |
+| [Custom layouts](examples/custom-layouts/slides.md) | A deck-local comparison design and named regions |
+| [Poll](examples/poll/slides.md) | A join slide, then a poll, a scale, a word cloud and open questions; start it with `mdeck run slides.md --network` |
 
 ## Made at FHNW
 

@@ -1,7 +1,7 @@
-// The computer's end of `mdeck run --share` (the room server's end is
-// src/live/tunnel.js). It keeps one outbound WebSocket to the room server and
+// The computer's end of `mdeck run --server` (the server's end is
+// src/live/tunnel.js). It keeps one outbound WebSocket to the server and
 // answers what comes down it from the local dev server, so an iPad can reach
-// the slides through the room server without any open port here.
+// the slides through the server without any open port here.
 //
 // This is the trust boundary. Requests that arrive through the tunnel look,
 // to the dev server, like requests from this computer, so two things stand
@@ -52,8 +52,8 @@ export function shareable(pathname, method, { base, roots = [] }) {
 
 /**
  * Opens the tunnel and keeps it open, reconnecting after a drop. `server` is
- * the room server's address, `target` the dev server's (a URL), `tokens` the
- * paired devices' tokens (sent to the room server so they may steer rooms).
+ * the server's address, `target` the dev server's (a URL), `tokens` the
+ * paired devices' tokens (sent to the server so they may steer rooms).
  * Returns { url, state(), push(), stop() }; `onState` hears 'connecting',
  * 'up', 'down' and 'refused' with a reason.
  */
@@ -143,7 +143,7 @@ export function startTunnel({ server, key, id, target, base, roots = [], tokens 
       refused = true
       response.resume()
       const status = response.statusCode
-      set('refused', status === 401 ? 'The room server did not accept the key' : status === 404 ? 'The room server does not offer sharing: update mdeck there and start it with MDECK_LIVE_KEY' : status === 503 ? 'The room server has too many shared presentations' : `The room server answered ${status}`)
+      set('refused', status === 401 ? 'The server did not accept the key' : status === 404 ? 'The server does not offer sharing: update mdeck there and start it with MDECK_LIVE_KEY' : status === 503 ? 'The server has too many shared presentations' : `The server answered ${status}`)
     })
     socket.on('error', error => { if (!refused) log(`tunnel: ${error.message}`) })
     socket.on('close', () => {

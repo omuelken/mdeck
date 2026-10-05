@@ -61,8 +61,8 @@ export function normalizeInk(raw, { width = 1920, height = 1080 } = {}) {
 /** Problems with a raw ink file, as { message } objects; empty when it is fine. */
 export function validateInk(raw) {
   const problems = []
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return [{ message: 'The ink file must hold a JSON object' }]
-  if (raw.version !== INK_VERSION) problems.push({ message: `Unknown ink file version ${raw.version}; expected ${INK_VERSION}` })
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return [{ message: 'The drawings file must hold a JSON object' }]
+  if (raw.version !== INK_VERSION) problems.push({ message: `Unknown drawings file version ${raw.version}; expected ${INK_VERSION}` })
   if (raw.slides != null && (typeof raw.slides !== 'object' || Array.isArray(raw.slides))) problems.push({ message: 'slides must map slide ids to lists of strokes' })
   for (const [slideId, strokes] of Object.entries(raw.slides ?? {})) {
     if (!Array.isArray(strokes)) { problems.push({ message: `Ink for slide "${slideId}" is not a list` }); continue }

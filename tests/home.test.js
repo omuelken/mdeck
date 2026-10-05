@@ -18,7 +18,7 @@ let editorStarts = 0
 const handler = homeMiddleware(deck, {
   urls: () => ({ local: ['http://localhost:5173/'], network: ['http://192.168.1.20:5173/'] }),
   services: { editor: async () => ({ url: `http://127.0.0.1:5183/editor.html#${++editorStarts}` }) },
-  run: async (args, cwd) => { runs.push({ args, cwd }); return args.includes('--share') ? { code: 1, output: 'boom' } : { code: 0, output: 'ok' } },
+  run: async (args, cwd) => { runs.push({ args, cwd }); return args[0] === 'send' ? { code: 1, output: 'boom' } : { code: 0, output: 'ok' } },
   open: file => revealed.push(file),
 })
 const http = createServer((request, response) => handler(request, response, () => { response.writeHead(404); response.end() }))
@@ -36,13 +36,13 @@ test('info describes the deck, its check results and addresses', async () => {
   assert.equal(info.name, 'talk.md')
   assert.ok(info.slides > 0)
   assert.deepEqual(info.diagnostics.filter(d => d.severity === 'error'), [])
-  assert.equal(info.live, null, 'no live section without live.server')
-  assert.deepEqual(Object.keys(info.outputs), ['folder', 'share', 'pdf'])
+  assert.equal(info.live, null, 'no polls section without a server setting')
+  assert.deepEqual(Object.keys(info.outputs), ['folder', 'send', 'pdf'])
   assert.equal(info.services.editor, null)
 })
 
 test('missing pictures show up as check errors', async () => {
-  writeFileSync(deck, '---\ndesign: neue\n---\n\n---\n# Hi\n\n![](./img/missing.png)\n')
+  writeFileSync(deck, '---\ntheme: neue\n---\n\n---\n# Hi\n\n![](./img/missing.png)\n')
   const info = await (await get('/info')).json()
   assert.deepEqual(info.diagnostics.map(d => d.code), ['missing-asset'])
   copyFileSync(new URL('../examples/custom-layouts/slides.md', import.meta.url), deck)
@@ -60,12 +60,12 @@ test('builds run the CLI beside the deck and keep their result', async () => {
   const done = await (await act({ action: 'build', output: 'pdf' })).json()
   assert.equal(done.status, 'done')
   assert.deepEqual(runs.at(-1), { args: outputsFor(deck).pdf.args, cwd: dir })
-  const failed = await (await act({ action: 'build', output: 'share' })).json()
+  const failed = await (await act({ action: 'build', output: 'send' })).json()
   assert.equal(failed.status, 'failed')
   assert.equal(failed.log, 'boom')
   const info = await (await get('/info')).json()
   assert.equal(info.outputs.pdf.status, 'done')
-  assert.equal(info.outputs.share.status, 'failed')
+  assert.equal(info.outputs.send.status, 'failed')
   assert.equal((await act({ action: 'build', output: 'nope' })).status, 400)
 })
 
@@ -88,12 +88,12 @@ test('requests from other hosts or pages are refused', async () => {
 // Calls the launch page API for a deck, as a browser at `host` would.
 const infoFor = (deck, options, host = 'localhost:5173') => new Promise(done => homeMiddleware(deck, options)({ url: '/info', method: 'GET', headers: { host } }, { setHeader() {}, writeHead() {}, end: body => done(JSON.parse(body)) }, () => {}))
 
-test('a deck with its own room server shows its health, the join link and the presenter code', async () => {
+test('a deck with its own server shows its health, the join link and the key', async () => {
   const liveDeck = resolve(dir, 'live.md')
-  writeFileSync(liveDeck, '---\ndesign: neue\nmeta:\n  title: Live talk\nlive:\n  server: https://example.org/live/\n---\n\n---\n# Q\n\n<poll room="q" options="a|b" />\n')
+  writeFileSync(liveDeck, '---\ntheme: neue\nmeta:\n  title: Live talk\nserver: https://example.org/live/\n---\n\n---\n# Q\n\n<poll room="q" options="a|b" />\n')
   const asked = []
   const roomServer = async (url, { headers }) => { asked.push([url, headers.Authorization]); return { ok: true, json: async () => ({ canReset: headers.Authorization === 'Bearer s3cret' }) } }
-  const { live } = await infoFor(liveDeck, { liveKey: 's3cret', fetch: roomServer, urls: () => ({ local: ['http://localhost:5173/'], network: [] }) })
+  const { live } = await infoFor(liveDeck, { serverKey: 's3cret', fetch: roomServer, urls: () => ({ local: ['http://localhost:5173/'], network: [] }) })
   assert.deepEqual(asked, [['https://example.org/live/info', 'Bearer s3cret']])
   assert.equal(live.server, 'https://example.org/live/')
   assert.equal(live.reachable, true)
@@ -103,9 +103,9 @@ test('a deck with its own room server shows its health, the join link and the pr
   assert.equal(live.joinUrl, `https://example.org/live/${live.code}`)
 })
 
-test("a deck with polls and no room server uses the dev server's, on the network or here", async () => {
+test("a deck with polls and no server setting uses the dev server's, on the network or here", async () => {
   const plain = resolve(dir, 'plain-live.md')
-  writeFileSync(plain, '---\ndesign: neue\nmeta:\n  title: Plain\n---\n\n---\n# Q\n\n<poll room="q" options="a|b" />\n')
+  writeFileSync(plain, '---\ntheme: neue\nmeta:\n  title: Plain\n---\n\n---\n# Q\n\n<poll room="q" options="a|b" />\n')
   const local = await infoFor(plain, { urls: () => ({ local: ['http://localhost:4104/'], network: [] }) }, 'deck.localhost:7777')
   assert.equal(local.live.server, null)
   assert.equal(local.live.joinUrl, null, 'phones cannot reach this computer')
@@ -114,11 +114,11 @@ test("a deck with polls and no room server uses the dev server's, on the network
   const shared = await infoFor(plain, { urls: () => ({ local: ['http://localhost:4104/'], network: ['http://192.168.1.20:4104/'] }) })
   assert.equal(shared.live.joinUrl, `http://192.168.1.20:4104/__mdeck/live/${shared.live.code}`)
   const none = resolve(dir, 'no-polls.md')
-  writeFileSync(none, '---\ndesign: neue\n---\n\n---\n# Nothing to ask\n')
+  writeFileSync(none, '---\ntheme: neue\n---\n\n---\n# Nothing to ask\n')
   assert.equal((await infoFor(none, {})).live, null)
 })
 
-test('room server problems are reported, not thrown', async () => {
+test('server problems are reported, not thrown', async () => {
   const down = async () => { throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } }) }
   assert.deepEqual(await liveStatus({ server: 'http://127.0.0.1:1' }, { fetch: down }), { reachable: false, error: 'ECONNREFUSED' })
   const wrong = async () => ({ ok: false, status: 404 })

@@ -66,74 +66,66 @@ Hover over the results to see **Reset**, which clears the answers, for example b
 
 ## How phones and slides meet
 
-The phones never load your slides. A small **room server** connects your screen and the phones: your screen tells it which poll is showing and what the phones should display, and the room server shows that on its own answer page, at an address like `example.org/live/482113`. The six digits are the presentation's session code; they stay the same for the whole talk.
+The phones never load your slides. A small **server** connects your screen and the phones: your screen tells it which poll is showing and what the phones should display, and the server shows that on its own answer page, at an address like `example.org/482113`. The six digits are the presentation's session code; they stay the same for the whole talk.
 
-So you present from your own computer with `mdeck run`, always with the slides as they are right now, and nothing needs to be uploaded. Only the room server has to be reachable by the phones.
+So you present from your own computer with `mdeck run`, always with the slides as they are right now, and nothing needs to be uploaded. Only the server has to be reachable by the phones.
 
 ## Try it on your computer
 
-`mdeck run` has a room server built in:
+`mdeck run` has a server built in:
 
 ```sh
-mdeck run my-talk.md --host
+mdeck run my-talk.md --network
 ```
 
-`--host` makes it reachable from phones and tablets in the same network, and the QR code then points at your computer. Without `--host`, the slide says so and offers a link to try the answer page in another browser tab on your computer. The launch page shows the join link and the session code too.
+`--network` makes it reachable from phones and tablets in the same network, and the QR code then points at your computer. Without `--network`, the slide says so and offers a link to try the answer page in another browser tab on your computer. The launch page shows the join link and the session code too.
 
-Some networks, often large Wi-Fi networks at universities, do not let devices reach each other. If phones cannot open the page, connect your laptop and the phones to a phone hotspot, or use a room server on the internet (below).
+Some networks, often large Wi-Fi networks at universities, do not let devices reach each other. If phones cannot open the page, connect your laptop and the phones to a phone hotspot, or use a server on the internet (below).
 
 ## Use it in a real session
 
-For a lecture hall, run the room server once on a web server; it can serve all your presentations. On that server, install mdeck and start it:
+For a lecture hall, run your own server once on a web server; it can serve all your presentations, and it also lets an iPad present from any network (see [Draw on your slides](drawing.html#present-from-an-ipad)). On that machine, install mdeck and start it:
 
 ```sh
-MDECK_LIVE_KEY=choose-a-secret mdeck live
+MDECK_SERVER_KEY=choose-a-secret mdeck server
 ```
 
-It listens on `127.0.0.1:8787`. Make your web server pass one address to it, for example with nginx:
-
-```nginx
-location /live/ {
-  proxy_pass http://127.0.0.1:8787/;
-  proxy_http_version 1.1;
-  proxy_set_header Connection "";
-  proxy_set_header X-Forwarded-For $remote_addr;
-  proxy_buffering off;
-  proxy_read_timeout 1h;
-}
-```
-
-The slides and phones keep a connection open to receive answers live, which is why buffering is off and the timeout long. `X-Forwarded-For` lets the room server limit each phone, not the web server as a whole.
-
-To present from an iPad through the room server with `mdeck run --share` (see [Draw on your slides](drawing.html#present-from-an-ipad)), your web server must also pass WebSocket connections on. Give the room server its own host name, or a whole `server` block, and use these lines in place of the ones above:
+It listens on `127.0.0.1:8787`. Give it a host name of its own, such as `rooms.example.org`, and make your web server pass everything on that name to it, for example with nginx:
 
 ```nginx
 # in the http block
 map $http_upgrade $connection_upgrade { default upgrade; '' ''; }
 
-location / {
-  proxy_pass http://127.0.0.1:8787;
-  proxy_http_version 1.1;
-  proxy_set_header Upgrade $http_upgrade;
-  proxy_set_header Connection $connection_upgrade;
-  proxy_set_header X-Forwarded-For $remote_addr;
-  proxy_buffering off;
-  proxy_read_timeout 1h;
+server {
+  server_name rooms.example.org;
+  # your usual listen and certificate lines here
+
+  location / {
+    proxy_pass http://127.0.0.1:8787;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_buffering off;
+    proxy_read_timeout 1h;
+  }
 }
 ```
 
-Sharing needs `MDECK_LIVE_KEY`: a room server without a key does not offer it, and a laptop that does not know the key cannot open a tunnel. The room server only relays: it keeps nothing of the slides, and a shared presentation disappears when the laptop disconnects or the room server restarts.
+The slides and phones keep a connection open to receive answers live, which is why buffering is off and the timeout long. The `Upgrade` lines let WebSocket connections through, which presenting from an iPad needs; polls alone work without them. `X-Forwarded-For` lets the server limit each phone, not the web server as a whole. A server on a path of a shared host name, such as `example.org/rooms/`, works for polls too, but presenting from an iPad needs a name of its own.
 
-To keep the room server running and start it with the machine, a systemd service works well. Put the presenter code in a file only root can read, for example `/etc/mdeck-live.env` with the line `MDECK_LIVE_KEY=choose-a-secret`, and create `/etc/systemd/system/mdeck-live.service`:
+`MDECK_SERVER_KEY` is required for presenting from an iPad: a server without a key does not offer it, and a laptop that does not know the key cannot connect. The server only passes requests along: it keeps nothing of your slides, and a presentation shared through it disappears when the laptop disconnects or the server restarts.
+
+To keep the server running and start it with the machine, a systemd service works well. Put the key in a file only root can read, for example `/etc/mdeck-server.env` with the line `MDECK_SERVER_KEY=choose-a-secret`, and create `/etc/systemd/system/mdeck-server.service`:
 
 ```ini
 [Unit]
-Description=mdeck room server
+Description=mdeck server
 After=network.target
 
 [Service]
-EnvironmentFile=/etc/mdeck-live.env
-ExecStart=/usr/local/bin/mdeck live --port 8787
+EnvironmentFile=/etc/mdeck-server.env
+ExecStart=/usr/local/bin/mdeck server --port 8787
 User=www-data
 Restart=on-failure
 NoNewPrivileges=true
@@ -144,26 +136,27 @@ ProtectHome=true
 WantedBy=multi-user.target
 ```
 
-Adjust `ExecStart` to where `which mdeck` points; if Node is installed in a home folder, for example with nvm, also remove `ProtectHome=true`. Then run `sudo systemctl enable --now mdeck-live`. `journalctl -u mdeck-live` shows its log. After updating mdeck, `sudo systemctl restart mdeck-live`; rooms start empty again.
+Adjust `ExecStart` to where `which mdeck` points; if Node is installed in a home folder, for example with nvm, also remove `ProtectHome=true`. Then run `sudo systemctl enable --now mdeck-server`. `journalctl -u mdeck-server` shows its log. After updating mdeck, `sudo systemctl restart mdeck-server`; rooms start empty again.
 
-Then tell the presentation where the room server is:
+Then tell the presentation where the server is:
 
 ```yaml
 ---
-live:
-  server: https://example.org/live
+server: https://rooms.example.org
 ---
 ```
 
-`MDECK_LIVE_KEY` is the presenter code: only a browser that has it can move the phones along and reset polls, so nobody in the audience can. Start `mdeck run` with the same code (`MDECK_LIVE_KEY=choose-a-secret mdeck run my-talk.md`), and the launch page checks the room server, shows the join link and opens the presenter view with the code. The browser remembers it; it never appears in the address bar or in the slide file. Without it, phones wait. The presenter view says whether the phones follow it, and if not, why.
+To keep the address out of the deck, leave the setting out and set `MDECK_SERVER=https://rooms.example.org` in your shell instead; `mdeck run --server` then finds it. A built or sent presentation reads the address from the deck only, because it has to carry it to wherever it is opened.
 
-The presenter's screen repeats the current poll every few seconds, so phones that join late, or a room server that restarted, catch up. While a presenter view is open, other windows of the presentation in the same browser leave the phones alone. If the presentation is open on several screens, even in other browsers, the phones follow the one where the slides were changed last; just opening it elsewhere does not take them away. A presenter view that has lost the phones says so, and changing the slide there takes them back.
+`MDECK_SERVER_KEY` is the key: only a browser that has it can move the phones along and reset polls, so nobody in the audience can. Start `mdeck run` with the same key (`MDECK_SERVER_KEY=choose-a-secret mdeck run my-talk.md`), and the launch page checks the server, shows the join link and opens the presenter view with the key. The browser remembers it; it never appears in the address bar or in the slide file. Without it, phones wait. The presenter view says whether the phones follow it, and if not, why.
 
-Two presentations with the same title share a session code. Give one of them `live.id`, or set the digits yourself with `live.code`.
+The presenter's screen repeats the current poll every few seconds, so phones that join late, or a server that restarted, catch up. While a presenter view is open, other windows of the presentation in the same browser leave the phones alone. If the presentation is open on several screens, even in other browsers, the phones follow the one where the slides were changed last; just opening it elsewhere does not take them away. A presenter view that has lost the phones says so, and changing the slide there takes them back.
+
+Two presentations with the same title share a session code. Give one of them `session: id:`, or set the digits yourself with `session: code:`.
 
 ## What is stored
 
-Answers are anonymous. Each phone gets a random number so it can change its vote; nothing else identifies it. The room server keeps answers in memory only. It forgets a room after twelve hours without visitors and everything when it restarts. Each phone can send a limited number of answers in a short time.
+Answers are anonymous. Each phone gets a random number so it can change its vote; nothing else identifies it. The server keeps answers in memory only. It forgets a room after twelve hours without visitors and everything when it restarts. Each phone can send a limited number of answers in a short time.
 
 ## Make your own activity
 

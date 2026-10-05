@@ -114,6 +114,6 @@ overlay: true
 # Small beginnings
 ```
 
-## More designs
+## More layouts
 
-Your presentation folder can contain extra designs made for your team or organization. Learn how to [use a reusable slide design](reusable-designs.html).
+Your presentation folder can contain extra layouts made for your team or organization. Learn how to [use a reusable layout](reusable-layouts.html).

@@ -4,12 +4,12 @@
 // A room also has one state value that only the presenter sets: the deck's
 // session room holds the activity on screen, which the answer page shows.
 // Everything lives in memory: nothing is written to disk, and idle rooms are
-// forgotten. The same handler runs inside `mdeck run` and as `mdeck live`.
+// forgotten. The same handler runs inside `mdeck run` and as `mdeck server`.
 import { timingSafeEqual } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { CODE_RE } from './code.js'
 
-// The phones' answer page, served by the room server itself at /<code>.
+// The phones' answer page, served by the server itself at /<code>.
 const ANSWER_FILES = Object.fromEntries(['answer.html', 'answer.js', 'answer.css'].map(name => [name, readFileSync(new URL(`./answer/${name}`, import.meta.url))]))
 const ANSWER_TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8' }
 

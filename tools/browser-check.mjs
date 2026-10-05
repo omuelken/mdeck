@@ -26,10 +26,10 @@ try {
     if (!await page.waitFor(expression, { attempts: 150, interval: 50 })) throw new Error(`Condition did not become true: ${expression}`)
   }
 
-  // Saved ink from <deck>.ink.json is bundled and drawn in the deck and in Read mode.
+  // Saved ink from <deck>.drawings.json is bundled and drawn in the deck and in Read mode.
   const inkDeck = resolve(temp, 'ink.md')
-  writeFileSync(inkDeck, '---\ndesign: neue\n---\n\n---\nid: marked\n---\n# Marked up\n')
-  writeFileSync(resolve(temp, 'ink.ink.json'), JSON.stringify({ version: 1, width: 1920, height: 1080, slides: { marked: [{ id: 'check:1', tool: 'pen', color: '#e11d48', size: 8, points: [[200, 300, 0.4], [600, 320, 0.8], [900, 280, 0.6]] }] } }))
+  writeFileSync(inkDeck, '---\ntheme: neue\n---\n\n---\nid: marked\n---\n# Marked up\n')
+  writeFileSync(resolve(temp, 'ink.drawings.json'), JSON.stringify({ version: 1, width: 1920, height: 1080, slides: { marked: [{ id: 'check:1', tool: 'pen', color: '#e11d48', size: 8, points: [[200, 300, 0.4], [600, 320, 0.8], [900, 280, 0.6]] }] } }))
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', inkDeck, '-o', resolve(temp, 'ink.html')], { cwd: root, stdio: 'pipe' })
   const inked = await open('ink.html?view=deck')
   await until(inked, "document.querySelectorAll('.slide-ink path').length === 1")
@@ -113,9 +113,9 @@ try {
   await until(audience, `${audienceStage}.state.index === 0`)
 
   // Saving in dev: the first stroke gives the slide an id from its heading and
-  // writes <deck>.ink.json, without reloading the open windows.
+  // writes <deck>.drawings.json, without reloading the open windows.
   const saveDeck = resolve(temp, 'save.md')
-  writeFileSync(saveDeck, '---\ndesign: neue\n---\n\n---\n# The important part\n\n---\n# Second\n')
+  writeFileSync(saveDeck, '---\ntheme: neue\n---\n\n---\n# The important part\n\n---\n# Second\n')
   const saveConfig = baseConfig(saveDeck)
   inkDev = await createServer({ ...saveConfig, plugins: [...saveConfig.plugins, livePlugin(), inkPlugin(saveDeck)], server: { ...saveConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await inkDev.listen()
@@ -131,7 +131,7 @@ try {
   await until(drawing, "document.querySelector('[data-deck-active]')?.dataset.slideId === 'the-important-part'")
   await delay(800)
   assert.match(readFileSync(saveDeck, 'utf8'), /id: the-important-part/)
-  assert.ok(existsSync(resolve(temp, 'save.ink.json')), 'the ink file is written')
+  assert.ok(existsSync(resolve(temp, 'save.drawings.json')), 'the ink file is written')
   assert.equal(await drawing.evaluate('window.__sameDocument === true'), true, 'saving does not reload the page')
   await drawing.evaluate('location.reload()')
   await until(drawing, "document.querySelectorAll('[data-deck-active] .slide-ink path').length === 1")
@@ -166,12 +166,12 @@ try {
   const home = await open(new URL('home.html', dev.resolvedUrls.local[0]).href)
   await until(home, "document.querySelectorAll('.home-tile').length === 6 && !!document.querySelector('.home-header h1')?.textContent")
   assert.equal(await home.evaluate("document.querySelectorAll('.home-output').length"), 3)
-  assert.equal(await home.evaluate("!!document.querySelector('.home-preview iframe') && !document.querySelector('.home-live')"), true, 'preview, and no live section without live.server')
+  assert.equal(await home.evaluate("!!document.querySelector('.home-preview iframe') && !document.querySelector('.home-live')"), true, 'preview, and no polls section without a server setting')
 
   // Relay mode: the projector announces the poll on screen, the phone opens the
-  // room server's own answer page at /<code>, and its vote reaches the slide.
+  // server's own answer page at /<code>, and its vote reaches the slide.
   const pollDeck = resolve(temp, 'poll.md')
-  writeFileSync(pollDeck, '---\ndesign: neue\nlang: de\nmeta:\n  title: Poll check\nlive:\n  code: 424242\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n\n---\n# Pace?\n\n<scale room="pace" min="1" max="5" qr="false" />\n\n---\n# Anything else?\n\n<question room="ask" qr="false" />\n\n---\n# One word?\n\n<wordcloud room="mood" qr="false" />\n\n---\n# Join\n\n<qrcode join />\n')
+  writeFileSync(pollDeck, '---\ntheme: neue\nlang: de\nmeta:\n  title: Poll check\nsession:\n  code: 424242\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n\n---\n# Pace?\n\n<scale room="pace" min="1" max="5" qr="false" />\n\n---\n# Anything else?\n\n<question room="ask" qr="false" />\n\n---\n# One word?\n\n<wordcloud room="mood" qr="false" />\n\n---\n# Join\n\n<qrcode join />\n')
   const pollConfig = baseConfig(pollDeck)
   pollDev = await createServer({ ...pollConfig, plugins: [...pollConfig.plugins, livePlugin()], server: { ...pollConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await pollDev.listen()

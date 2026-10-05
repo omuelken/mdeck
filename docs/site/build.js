@@ -35,7 +35,7 @@ function navigation(current) {
   }).join('')
 }
 
-const exampleFiles = { 'first-talk': resolve(docsRoot, 'examples/first-talk.md'), 'custom-templates': resolve(projectRoot, 'examples/custom-templates/slides.md') }
+const exampleFiles = { 'first-talk': resolve(docsRoot, 'examples/first-talk.md'), 'custom-layouts': resolve(projectRoot, 'examples/custom-layouts/slides.md') }
 
 // The theme picker lists every registered theme and starts on the example's own design.
 function themeOptions(exampleFile) {
@@ -46,7 +46,7 @@ function themeOptions(exampleFile) {
 
 function preview(page) {
   if (!page.preview) return ''
-  const custom = page.preview === 'custom-templates'
+  const custom = page.preview === 'custom-layouts'
   return `<figure class="slide-example" data-preview>
     <figcaption><span>${custom ? 'A reusable comparison design' : 'A presentation you can try'}</span><a href="examples/${page.preview}.html?palette=&amp;accent=&amp;accent2=" target="_blank" rel="noopener">Open slides</a></figcaption>
     <iframe title="${custom ? 'Comparison slide example' : 'Example presentation'}" src="examples/${page.preview}.html?embedded=1&amp;palette=&amp;accent=&amp;accent2=" loading="lazy"></iframe>
@@ -78,7 +78,7 @@ export function renderPage(page, markdown) {
     table(token) { return `<div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">${Renderer.prototype.table.call(this, token)}</div>` },
     link({ href, title: linkTitle, tokens }) {
       const text = this.parser.parseInline(tokens)
-      const aliases = { 'templates.md': 'custom-templates.html', 'extensions.md': 'extensions.html', 'themes.md': 'theme-authoring.html', 'palettes.md': 'theme-authoring.html', '../../examples/custom-templates/slides.md': 'downloads/comparison.md' }
+      const aliases = { 'layouts.md': 'custom-layouts.html', 'extensions.md': 'extensions.html', 'themes.md': 'theme-authoring.html', 'palettes.md': 'theme-authoring.html', '../../examples/custom-layouts/slides.md': 'downloads/comparison.md' }
       href = href.replace(/^extensions\.md#/, 'extensions.html#')
       href = aliases[href] ?? href
       return `<a href="${escape(href)}"${linkTitle ? ` title="${escape(linkTitle)}"` : ''}>${text}</a>`
@@ -114,11 +114,11 @@ export async function buildDocs({ outDir = resolve(docsRoot, 'dist'), examples =
   }
   for (const file of ['site.css', 'site.js', 'favicon.svg', 'gitlab-logo.svg']) await copyFile(resolve(docsRoot, 'assets', file), resolve(outDir, 'assets', file))
   await writeFile(resolve(outDir, 'search.json'), JSON.stringify(search))
-  await copyFile(resolve(projectRoot, 'examples/custom-templates/slides.md'), resolve(outDir, 'downloads/comparison.md'))
+  await copyFile(resolve(projectRoot, 'examples/custom-layouts/slides.md'), resolve(outDir, 'downloads/comparison.md'))
   await copyFile(resolve(docsRoot, 'examples/first-talk.md'), resolve(outDir, 'downloads/first-talk.md'))
   if (examples) {
     for (const [name, file] of Object.entries(exampleFiles)) {
-      await exec(process.execPath, [resolve(projectRoot, 'bin/mdeck.js'), 'build', file, '--self-contained', '-o', resolve(outDir, 'examples', `${name}.html`)], { cwd: projectRoot, maxBuffer: 4 * 1024 * 1024 })
+      await exec(process.execPath, [resolve(projectRoot, 'bin/mdeck.js'), 'build', file, '--single-file', '-o', resolve(outDir, 'examples', `${name}.html`)], { cwd: projectRoot, maxBuffer: 4 * 1024 * 1024 })
     }
   }
   return outDir

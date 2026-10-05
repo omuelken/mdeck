@@ -12,8 +12,8 @@ import { parseSlides } from '../src/core/parseSlides.js'
 const stroke = (id, points = [[10, 10, 0.5], [60, 40, 0.7], [120, 20, 0.6]], extra = {}) => ({ id, tool: 'pen', color: '#e11d48', size: 6, points, ...extra })
 
 test('the ink file sits beside the deck', () => {
-  assert.equal(inkFileFor('/talks/lunch.md'), '/talks/lunch.ink.json')
-  assert.equal(inkFileFor('slides.MD'), 'slides.ink.json')
+  assert.equal(inkFileFor('/talks/lunch.md'), '/talks/lunch.drawings.json')
+  assert.equal(inkFileFor('slides.MD'), 'slides.drawings.json')
 })
 
 test('normalizing drops broken strokes, rounds points and scales to the theme size', () => {
@@ -68,15 +68,15 @@ test('finished strokes are simplified, and the eraser finds them', () => {
 })
 
 test('orphaned ink is found after a slide was removed', () => {
-  const deck = parseSlides('---\ndesign: neue\n---\n\n---\nid: intro\n---\n# A\n')
+  const deck = parseSlides('---\ntheme: neue\n---\n\n---\nid: intro\n---\n# A\n')
   const ink = normalizeInk({ slides: { intro: [stroke('a')], gone: [stroke('b')] } })
   assert.deepEqual(orphanIds(ink, deck.slides), ['gone'])
 })
 
-test('the slides plugin bundles the ink file, scaled to the deck, or nothing with --no-ink', () => {
+test('the slides plugin bundles the ink file, scaled to the deck, or nothing with --no-drawings', () => {
   const dir = mkdtempSync(resolve(tmpdir(), 'mdeck-ink-'))
   const deck = resolve(dir, 'talk.md')
-  writeFileSync(deck, '---\ndesign: neue\nwidth: 960\nheight: 540\n---\n\n---\nid: intro\n---\n# A\n')
+  writeFileSync(deck, '---\ntheme: neue\nwidth: 960\nheight: 540\n---\n\n---\nid: intro\n---\n# A\n')
   const load = options => {
     const plugin = slidesPlugin(deck, options)
     const watched = []
@@ -90,14 +90,14 @@ test('the slides plugin bundles the ink file, scaled to the deck, or nothing wit
   const { data, watched } = load()
   assert.deepEqual(data.slides.intro[0].points, [[50, 50, 0.5]])
   assert.deepEqual(watched, [inkFileFor(deck)])
-  assert.equal(load().name, 'talk.ink.json', 'the name for downloading the file')
+  assert.equal(load().name, 'talk.drawings.json', 'the name for downloading the file')
   assert.deepEqual(load({ ink: false }).data.slides, {})
 })
 
 test('mdeck check reports broken ink files and ink for missing slides', () => {
   const dir = mkdtempSync(resolve(tmpdir(), 'mdeck-ink-check-'))
   const deck = resolve(dir, 'talk.md')
-  writeFileSync(deck, '---\ndesign: neue\n---\n\n---\nid: intro\n---\n# A\n')
+  writeFileSync(deck, '---\ntheme: neue\n---\n\n---\nid: intro\n---\n# A\n')
   const codes = () => checkDeck(deck, loadRegistry(deck)).diagnostics.map(d => [d.code, d.severity])
   assert.deepEqual(codes(), [])
   writeFileSync(inkFileFor(deck), '{ not json')

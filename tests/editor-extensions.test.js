@@ -37,7 +37,7 @@ test('starter files for new extensions validate', () => {
 })
 
 test('the preview source for a template starts with the deck settings', () => {
-  const deck = parseSlides('---\ndesign: neue\n---\n\n---\n# One\n')
-  assert.equal(deckHeader(deck), '---\ndesign: neue\n---\n')
+  const deck = parseSlides('---\ntheme: neue\n---\n\n---\n# One\n')
+  assert.equal(deckHeader(deck), '---\ntheme: neue\n---\n')
   assert.equal(deckHeader(parseSlides('# One\n')), '')
 })

@@ -8,7 +8,7 @@ import { setRegion, insertSlide, removeSlide } from '../src/core/editDeck.js'
 import { loadRegistry, serializeRegistry } from '../src/extensions/discover.js'
 
 const registry = serializeRegistry(loadRegistry('examples/custom-layouts/slides.md'))
-const source = '---\ndesign: neue\n---\n\n---\n:::meta\nlayout: split\nid: one\n:::\n# One\n\n---\n# Two\n'
+const source = '---\ntheme: neue\n---\n\n---\n:::meta\nlayout: split\nid: one\n:::\n# One\n\n---\n# Two\n'
 const loaded = reduce(initialState, { type: 'load', path: '/x/slides.md', name: 'slides.md', source, hash: 'h1', registry })
 
 test('loading derives the deck, manifests and diagnostics', () => {

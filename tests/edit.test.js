@@ -10,9 +10,9 @@ import {
   insertSlide, removeSlide, moveSlide, replaceSlideSource, slideBounds, slideSourceText,
 } from '../src/core/editDeck.js'
 
-const crlf = '---\r\ndesign: neue\r\n---\r\n\r\n---\r\n:::meta\r\nlayout: split\r\nid: compare\r\n# preserve this comment\r\n:::\r\n# Compare\r\n\r\n:::slot left\r\n**Before**\r\n:::\r\n\r\n:::slot right\r\n:::tip\r\nAfter\r\n:::\r\n:::\r\n'
-const legacy = '---\ndesign: neue\n---\n---\nlayout: title\nimage: ./a.jpg\n---\n# T\n\n---\nlayout: focus\neyebrow: e\n---\n# F\n\n:::notes\nn\n:::\n\n---\n# Plain\n'
-const shared = '---\ndesign: neue\n---\n# First\n\n---\n# Second\n'
+const crlf = '---\r\ntheme: neue\r\n---\r\n\r\n---\r\n:::meta\r\nlayout: split\r\nid: compare\r\n# preserve this comment\r\n:::\r\n# Compare\r\n\r\n:::slot left\r\n**Before**\r\n:::\r\n\r\n:::slot right\r\n:::tip\r\nAfter\r\n:::\r\n:::\r\n'
+const legacy = '---\ntheme: neue\n---\n---\nlayout: title\nimage: ./a.jpg\n---\n# T\n\n---\nlayout: focus\neyebrow: e\n---\n# F\n\n:::notes\nn\n:::\n\n---\n# Plain\n'
+const shared = '---\ntheme: neue\n---\n# First\n\n---\n# Second\n'
 const plain = '# First\nHello\n---\nNote: body text'
 const parse = parseSlides
 const clean = (source, name) => { const deck = parse(source); assert.deepEqual(deck.diagnostics, [], name); return deck }
@@ -85,38 +85,38 @@ test('notes live in a block, a metadata key or get appended', () => {
 
 test('deck settings are patched in place or inserted', () => {
   assert.equal(setDeckConfig(clean(crlf), { palette: 'sage' }), crlf.replace('theme: neue\r\n', 'theme: neue\r\npalette: sage\r\n'))
-  assert.equal(setDeckConfig(clean(plain), { theme: 'neue' }), '---\ndesign: neue\n---\n\n# First\nHello\n---\nNote: body text')
+  assert.equal(setDeckConfig(clean(plain), { theme: 'neue' }), '---\ntheme: neue\n---\n\n# First\nHello\n---\nNote: body text')
   assert.equal(setDeckConfig(clean(shared), { theme: undefined }), '# First\n\n---\n# Second\n')
-  assert.equal(setDeckConfig(clean(legacy), { theme: undefined }), legacy.replace('---\ndesign: neue\n---\n', ''))
+  assert.equal(setDeckConfig(clean(legacy), { theme: undefined }), legacy.replace('---\ntheme: neue\n---\n', ''))
   assert.equal(setDeckConfig(clean(plain), {}), plain)
-  const inserted = parse(setDeckConfig(clean(legacy.replace('---\ndesign: neue\n---\n', '')), { theme: 'duet', meta: { title: 'T' } }))
+  const inserted = parse(setDeckConfig(clean(legacy.replace('---\ntheme: neue\n---\n', '')), { theme: 'duet', meta: { title: 'T' } }))
   assert.deepEqual(inserted.deckConfig, { theme: 'duet', meta: { title: 'T' } })
   assert.equal(inserted.slides.length, 3)
 })
 
 test('slides can be inserted, removed and moved without disturbing neighbours', () => {
   const l = clean(legacy)
-  assert.deepEqual(slideBounds(l, 'slide-1'), { start: 25, end: 63, delimiterStart: 21 })
+  assert.deepEqual(slideBounds(l, 'slide-1'), { start: 24, end: 62, delimiterStart: 20 })
   assert.equal(slideBounds(clean(shared), 'slide-1').delimiterStart, null)
   assert.equal(slideSourceText(l, 'slide-3'), '# Plain\n')
   assert.deepEqual(removeSlide(l, 'slide-1'), { source: legacy.replace('layout: title\nimage: ./a.jpg\n---\n# T\n\n---\n', ''), index: 0 })
   assert.deepEqual(removeSlide(l, 'slide-3'), { source: legacy.replace('---\n# Plain\n', ''), index: 1 })
-  assert.deepEqual(removeSlide(clean(shared), 'slide-1'), { source: '---\ndesign: neue\n---\n# Second\n', index: 0 })
-  assert.deepEqual(removeSlide(clean(shared), 'slide-2'), { source: '---\ndesign: neue\n---\n# First\n\n', index: 0 })
+  assert.deepEqual(removeSlide(clean(shared), 'slide-1'), { source: '---\ntheme: neue\n---\n# Second\n', index: 0 })
+  assert.deepEqual(removeSlide(clean(shared), 'slide-2'), { source: '---\ntheme: neue\n---\n# First\n\n', index: 0 })
   assert.deepEqual(removeSlide(clean(plain), 'slide-1'), { source: 'Note: body text', index: 0 })
   assert.deepEqual(removeSlide(clean('# Only\n'), 'slide-1'), { source: '', index: -1 })
   assert.deepEqual(insertSlide(clean(plain), 2, '# Third'), { source: '# First\nHello\n---\nNote: body text\n---\n# Third\n', index: 2 })
   assert.deepEqual(insertSlide(clean(plain), 0, '# Zero'), { source: '# Zero\n\n---\n# First\nHello\n---\nNote: body text', index: 0 })
-  assert.deepEqual(insertSlide(clean(shared), 1, ':::meta\nlayout: focus\n:::\n# Mid\n'), { source: '---\ndesign: neue\n---\n# First\n\n---\n:::meta\nlayout: focus\n:::\n# Mid\n\n---\n# Second\n', index: 1 })
-  assert.deepEqual(insertSlide(clean('---\ndesign: neue\n---\n'), 5, '# A'), { source: '---\ndesign: neue\n---\n---\n# A\n', index: 0 })
+  assert.deepEqual(insertSlide(clean(shared), 1, ':::meta\nlayout: focus\n:::\n# Mid\n'), { source: '---\ntheme: neue\n---\n# First\n\n---\n:::meta\nlayout: focus\n:::\n# Mid\n\n---\n# Second\n', index: 1 })
+  assert.deepEqual(insertSlide(clean('---\ntheme: neue\n---\n'), 5, '# A'), { source: '---\ntheme: neue\n---\n---\n# A\n', index: 0 })
   assert.deepEqual(insertSlide(clean(''), 0, '# A'), { source: '---\n# A\n', index: 0 })
   assert.equal(parse(insertSlide(clean(''), 0, '# A').source).slides.length, 1)
   const moved = moveSlide(l, 'slide-3', 0)
   assert.equal(moved.index, 0)
-  assert.equal(moved.source, '---\ndesign: neue\n---\n---\n# Plain\n\n---\nlayout: title\nimage: ./a.jpg\n---\n# T\n\n---\nlayout: focus\neyebrow: e\n---\n# F\n\n:::notes\nn\n:::\n\n')
+  assert.equal(moved.source, '---\ntheme: neue\n---\n---\n# Plain\n\n---\nlayout: title\nimage: ./a.jpg\n---\n# T\n\n---\nlayout: focus\neyebrow: e\n---\n# F\n\n:::notes\nn\n:::\n\n')
   assert.deepEqual(parse(moved.source).slides.map(s => s.content), ['# Plain', '# T', '# F'])
   assert.deepEqual(parse(moveSlide(l, 'slide-1', 2).source).slides.map(s => s.content), ['# F', '# Plain', '# T'])
-  assert.equal(replaceSlideSource(clean(shared), 'slide-1', '# Uno\nmore'), '---\ndesign: neue\n---\n# Uno\nmore\n\n---\n# Second\n')
+  assert.equal(replaceSlideSource(clean(shared), 'slide-1', '# Uno\nmore'), '---\ntheme: neue\n---\n# Uno\nmore\n\n---\n# Second\n')
   assert.equal(replaceSlideSource(clean(plain), 'slide-2', 'X'), '# First\nHello\n---\nX')
 })
 

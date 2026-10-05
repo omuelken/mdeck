@@ -86,7 +86,7 @@ function portOption() {
   return port
 }
 
-// Templates, themes and palettes all come from one registry: built-ins plus the
+// Layouts, themes and palettes all come from one registry: built-ins plus the
 // extensions/ folder beside the deck. Manifest problems are reported and stop
 // the command instead of being skipped silently.
 function registryFor(slidesPath) {
@@ -140,11 +140,11 @@ async function runNewWizard() {
     const pIdx = parseInt(pRaw, 10)
     const palette = pIdx > 0 ? (palettes[pIdx - 1] || '') : ''
 
-    const LAYOUT_LIBRARY = Object.values(manifestsOf(registry, 'template')).map(manifest => ({ key: manifest.id, label: manifest.title, starter: manifest.starter }))
-    console.log('\n  Slide templates (comma-separated numbers):')
+    const LAYOUT_LIBRARY = Object.values(manifestsOf(registry, 'layout')).map(manifest => ({ key: manifest.id, label: manifest.title, starter: manifest.starter }))
+    console.log('\n  Slide layouts (comma-separated numbers):')
     LAYOUT_LIBRARY.forEach((opt, i) => console.log(`    ${i + 1}) ${opt.label}`))
     const defaultLayouts = '1,2,3,4'
-    const picks = parseSelection((await rl.question(`  Pick templates [${defaultLayouts}]: `)).trim() || defaultLayouts, LAYOUT_LIBRARY.length)
+    const picks = parseSelection((await rl.question(`  Pick layouts [${defaultLayouts}]: `)).trim() || defaultLayouts, LAYOUT_LIBRARY.length)
     const chosen = (picks.length ? picks : parseSelection(defaultLayouts, LAYOUT_LIBRARY.length))
       .map(i => LAYOUT_LIBRARY[i - 1])
 
@@ -556,18 +556,19 @@ if (command === 'new') {
   const local = server.resolvedUrls.local[0]
   let tunnel = null
   if (relay) {
+    let warned = false
     tunnel = startTunnel({
       server: relay.server, key: relay.key, id: relay.id, target: local, base: relay.base,
       roots: [frameworkRoot, dirname(abs), ...componentFolders(abs).map(folder => folder.dir)],
       tokens: () => pairing.tokens(),
-      log: message => tip(message),
+      log: message => { if (!message.startsWith('tunnel:')) tip(message) },
       onState(state, reason) {
         const before = relay.state
         relay.state = state
         relay.reason = reason ?? null
-        if (state === 'up') ok(`Connected to ${c.cyan}${relay.server}${c.reset}`)
+        if (state === 'up') { warned = false; ok(`Connected to ${c.cyan}${relay.server}${c.reset}`) }
         else if (state === 'refused') err(`Connecting to the server failed: ${reason}`)
-        else if (state === 'down' && before === 'up') tip('Lost the connection to the server; reconnecting…')
+        else if (state === 'down' && !warned) { warned = true; tip(before === 'up' ? 'Lost the connection to the server; reconnecting…' : `Cannot reach ${relay.server}; trying again until it answers.`) }
       },
     })
     pairing.onChange(() => tunnel.push())
@@ -615,45 +616,53 @@ if (command === 'new') {
   ok(`Editing ${c.cyan}${abs}${c.reset}`)
   tip(`Changes are saved to the file as you type. Before the first change, a copy goes to ${BACKUP_DIR}/ beside it.\n`)
 
-// ── build ─────────────────────────────────────────────────────────────────────
-} else if (command === 'build') {
-  const input = requireInput('build')
-  const selfContained = hasFlag('--self-contained', '-S')
-  const inlineImages = selfContained || hasFlag('--inline-images', '-I')
-  const presenterLaunchers = hasFlag('--presenter-launchers')
-  const share = hasFlag('--share')
-  const stripNotes = share && !hasFlag('--with-notes')
-  const wantPdf = (share || hasFlag('--pdf')) && !hasFlag('--no-pdf')
+// ── build and send ────────────────────────────────────────────────────────────
+} else if (command === 'build' || command === 'send') {
+  const input = requireInput(command)
+  const sending = command === 'send'
+  // build: a folder to host, or one file with --single-file. send: one file for
+  // readers, in the reader view, without speaker notes unless asked, with a PDF.
+  const selfContained = sending || hasFlag('--single-file')
+  const launchers = !sending && hasFlag('--launchers')
+  const stripNotes = sending && !hasFlag('--notes')
+  const wantPdf = sending && !hasFlag('--no-pdf')
 
-  if (selfContained && presenterLaunchers) {
-    err('--presenter-launchers is only available for directory bundles.')
+  if (selfContained && launchers) {
+    err('--launchers is only available for folders, not with --single-file.')
     process.exit(1)
   }
 
-  const outputFlagIdx = argv.findIndex(a => a === '--output' || a === '-o')
-  const outputPath = outputFlagIdx !== -1 ? resolve(process.cwd(), argv[outputFlagIdx + 1]) : null
+  const given = outputOption()
+  const outputPath = given ? resolve(process.cwd(), given) : sending ? resolve(process.cwd(), basename(input).replace(/\.md$/i, '') + '.html') : null
 
   const tempDir = outputPath ? mkdtempSync(resolve(tmpdir(), 'mdeck-')) : null
   const outDir = tempDir ?? resolve(process.cwd(), 'dist')
   const finalOutDir = outputPath ? dirname(outputPath) : outDir
   const htmlFilename = outputPath ? basename(outputPath) : 'index.html'
 
-  await build({
-    ...baseConfig(input, { selfContained, defaultView: share ? 'share' : 'deck' }),
-    plugins: [preact(), slidesPlugin(resolve(input), { inlineImages, inlineMedia: selfContained, stripNotes, ink: !hasFlag('--no-ink') }), viteSingleFile()],
-    build: {
-      outDir,
-      emptyOutDir: !tempDir,
-      target: 'esnext',
-      assetsInlineLimit: 100 * 1024 * 1024,
-    },
-  })
+  try {
+    await build({
+      ...baseConfig(input, { selfContained, defaultView: sending ? 'reader' : 'deck' }),
+      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: selfContained, inlineMedia: selfContained, stripNotes, ink: !hasFlag('--no-drawings') }), viteSingleFile()],
+      build: {
+        outDir,
+        emptyOutDir: !tempDir,
+        target: 'esnext',
+        assetsInlineLimit: 100 * 1024 * 1024,
+      },
+    })
+  } catch (error) {
+    if (tempDir) await rm(tempDir, { recursive: true, force: true })
+    // The deck's own problems arrive as one error whose text lists them.
+    err((error.errors?.[0]?.message ?? error.message).replace(/^\[[^\]]+\]\s*/, '').replace(/^Error: /, ''))
+    process.exit(1)
+  }
 
   await mkdir(finalOutDir, { recursive: true })
 
   if (!selfContained) {
     await copyLocalAssets(input, finalOutDir)
-    if (presenterLaunchers) await writePresenterLaunchers(finalOutDir, htmlFilename)
+    if (launchers) await writePresenterLaunchers(finalOutDir, htmlFilename)
   }
 
   let htmlFile = resolve(outDir, 'index.html')
@@ -663,19 +672,19 @@ if (command === 'new') {
     htmlFile = outputPath
   }
   if (wantPdf) {
-    const pdfFile = outputPath ? outputPath.replace(/\.html?$/i, '') + '.pdf' : resolve(finalOutDir, 'deck.pdf')
+    const pdfFile = outputPath.replace(/\.html?$/i, '') + '.pdf'
     try {
       await renderPdf({ htmlFile, output: pdfFile })
-      attachPdf(htmlFile, pdfFile, { embed: selfContained })
-      if (selfContained) await rm(pdfFile)
-      ok(`PDF: ${c.cyan}${selfContained ? 'embedded in ' + htmlFile : pdfFile}${c.reset}`)
+      attachPdf(htmlFile, pdfFile, { embed: true })
+      await rm(pdfFile)
+      ok(`PDF: ${c.cyan}embedded in ${htmlFile}${c.reset}`)
     } catch (error) {
       console.warn(`  ${c.yellow}!${c.reset}  PDF not rendered: ${error.message}`)
       tip('The reader view will offer the browser\'s "Save as PDF" dialog instead.')
     }
   }
-  if (stripNotes) tip('Speaker notes were removed from this build (use --with-notes to keep them).')
-  ok(`Built: ${c.cyan}${htmlFile}${c.reset}${selfContained ? ' (self-contained)' : inlineImages ? ' (images inlined + local assets)' : ' + local assets'}${share ? ' — opens in the reader view' : ''}\n`)
+  if (stripNotes) tip('Speaker notes were removed from this file (use --notes to keep them).')
+  ok(`${sending ? 'Made' : 'Built'}: ${c.cyan}${htmlFile}${c.reset}${sending ? ' — opens in the reader view' : selfContained ? ' (single file)' : ' + local assets'}\n`)
 
 // ── skill ─────────────────────────────────────────────────────────────────────
 } else if (command === 'skill') {
@@ -697,14 +706,13 @@ if (command === 'new') {
 // ── pdf ───────────────────────────────────────────────────────────────────────
 } else if (command === 'pdf') {
   const input = requireInput('pdf')
-  const outputFlagIdx = argv.findIndex(a => a === '--output' || a === '-o')
-  const pdfFile = outputFlagIdx !== -1 ? resolve(process.cwd(), argv[outputFlagIdx + 1]) : resolve(process.cwd(), basename(input).replace(/\.md$/i, '') + '.pdf')
+  const pdfFile = resolve(process.cwd(), outputOption() ?? basename(input).replace(/\.md$/i, '') + '.pdf')
   if (!findChrome()) { err('No Chrome or Chromium found. Set MDECK_CHROME to its executable path.'); process.exit(1) }
   const tempDir = mkdtempSync(resolve(tmpdir(), 'mdeck-pdf-'))
   try {
     await build({
       ...baseConfig(input, { selfContained: true }),
-      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true, ink: !hasFlag('--no-ink') }), viteSingleFile()],
+      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true, ink: !hasFlag('--no-drawings') }), viteSingleFile()],
       build: { outDir: tempDir, emptyOutDir: true, target: 'esnext', assetsInlineLimit: 100 * 1024 * 1024 },
       logLevel: 'warn',
     })
@@ -715,10 +723,12 @@ if (command === 'new') {
 
 // ── preview ───────────────────────────────────────────────────────────────────
 } else if (command === 'preview') {
+  const folder = resolve(process.cwd(), positionals()[0] ?? 'dist')
+  if (!existsSync(resolve(folder, 'index.html'))) { err(`No built presentation in ${folder}. Make one with mdeck build.`); process.exit(1) }
   const server = await preview({
     configFile: false,
     root: frameworkRoot,
-    build: { outDir: resolve(process.cwd(), 'dist') },
+    build: { outDir: folder },
     preview: { open: true },
   })
   server.printUrls()

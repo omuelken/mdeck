@@ -74,7 +74,7 @@ export function templateManifests(slidesPath, options) {
   return manifestsOf(loadRegistry(slidesPath, options), 'layout')
 }
 
-// Serializable listing for `mdeck extensions --json` and future editors.
+// Serializable listing for `mdeck list --json` and future editors.
 export function serializeRegistry(registry, { relativeTo } = {}) {
   const out = { schema: 1, warnings: registry.warnings }
   for (const kind of KINDS) {

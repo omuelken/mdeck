@@ -20,11 +20,11 @@ The mdeck docs are the source of truth for syntax, layouts and looks. Look for t
 
 Read `examples/showcase/slides.md` from the same place as a complete working deck.
 
-Then ask the installed mdeck what this deck can use, because a deck may ship its own designs in an `extensions/` folder:
+Then ask the installed mdeck what this deck can use, because a deck may ship its own layouts, themes and palettes in an `extensions/` folder:
 
 ```sh
-mdeck templates <deck>.md --json     # every layout with its regions, settings and starter text
-mdeck extensions <deck>.md           # themes and palettes, built-in and local
+mdeck list layouts <deck>.md --json  # every layout with its regions, settings and starter text
+mdeck list <deck>.md                 # layouts, themes and palettes, built-in and local
 ```
 
 If `mdeck` is not installed, rely on the quick reference below.
@@ -33,7 +33,7 @@ If `mdeck` is not installed, rely on the quick reference below.
 
 ```markdown
 ---
-theme: neue            # theme id from `mdeck extensions`
+theme: neue            # theme id from `mdeck list themes`
 palette: paper          # optional palette id
 meta:
   title: "Talk title"
@@ -88,17 +88,17 @@ Right column
 
 - Slides are separated by `---` on its own line. Settings go in a `:::meta` block at the top of a slide.
 - Built-in layouts: `title`, `chapter`, `focus` (one big statement), `image-text`, `split`, `full-bleed-image`, and plain content slides without a `layout:`.
-- Named areas use `:::slot name … :::`; the layout's regions and settings come from `mdeck templates --json`.
+- Named areas use `:::slot name … :::`; the layout's regions and settings come from `mdeck list layouts --json`.
 - `:::notes … :::` holds speaker notes. `:::steps … :::` reveals list items one at a time. `:::tip`, `:::warning`, `:::info` are callouts. `:::columns … +++ … :::` makes columns inside a slide.
 - Code fences get syntax highlighting; `$…$` and `$$…$$` render math.
-- `<poll room="lunch" options="Mensa|Thai|Pizza" />` lets the audience vote on their phones through a QR code on the slide; each poll needs its own `room`. `<scale room="pace" min="1" max="5" low="Too slow" high="Too fast" />`, `<wordcloud room="mood" />` and `<question room="ask" />` ask for a rating, short words or open answers the same way. With several of them, put `<qrcode join />` (the deck's join code) on an early slide to show the QR code once, and add `qr="false"` to the questions. It works when the deck is presented with `mdeck run <deck>.md --host` or with a room server set under `live:`.
+- `<poll room="lunch" options="Mensa|Thai|Pizza" />` lets the audience vote on their phones through a QR code on the slide; each poll needs its own `room`. `<scale room="pace" min="1" max="5" low="Too slow" high="Too fast" />`, `<wordcloud room="mood" />` and `<question room="ask" />` ask for a rating, short words or open answers the same way. With several of them, put `<qrcode join />` (the deck's join code) on an early slide to show the QR code once, and add `qr="false"` to the questions. It works when the deck is presented with `mdeck run <deck>.md --network` or with a server set as `server:` in the deck settings.
 
 ## 3. Write the deck
 
 The request is the message that invoked this skill: topic, audience, length and language. If any of those are missing and matter, ask once, then write a complete deck.
 
 **Structure**
-- Start with the deck settings: pick a `design` and, if it suits the subject, a `palette` from the lists you gathered; fill in `meta.title`, `meta.author`, `meta.organization`, `meta.date`. For a talk that is not in English, set `lang` (for example `lang: de`).
+- Start with the deck settings: pick a `theme` and, if it suits the subject, a `palette` from the lists you gathered; fill in `meta.title`, `meta.author`, `meta.organization`, `meta.date`. For a talk that is not in English, set `lang` (for example `lang: de`).
 - The first slide is `layout: title` with an `h1` headline and an `h2` subtitle.
 - Use `layout: chapter` slides to divide major sections. End with a closing focus or title slide.
 
@@ -122,4 +122,4 @@ Save the deck as a `.md` file named after the topic (for example `enzyme-kinetic
 mdeck check <deck>.md
 ```
 
-Fix anything it reports. Finish by telling the user the two commands they will want next: `mdeck run <deck>.md` for the launch page (preview, presenting, editor, builds and checks), and `mdeck build <deck>.md --share --self-contained -o <deck>.html` for a file to send around (a reader view with a PDF; notes are removed unless `--with-notes` is added).
+Fix anything it reports. Finish by telling the user the two commands they will want next: `mdeck run <deck>.md` for the launch page (preview, presenting, editor, builds and checks), and `mdeck send <deck>.md` for a file to send around (a reader view with a PDF; notes are removed unless `--notes` is added).

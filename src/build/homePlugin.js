@@ -1,5 +1,5 @@
 // Launch page API for `mdeck run`: what the deck contains, what `mdeck check`
-// says about it, the state of its room server, and buttons that start the
+// says about it, the state of its server, and buttons that start the
 // editor and the guides or run a build. Like the editor API it answers loopback
 // requests from its own pages only, even when the server is shared on the
 // network for phones.
@@ -59,7 +59,7 @@ export async function liveStatus(live, { key = null, fetch: get = fetch, timeout
 }
 
 // `urls()` returns the server's addresses; `services` start the editor and the
-// guides; `fetch` reaches the room server. All are injected so tests can run
+// guides; `fetch` reaches the server. All are injected so tests can run
 // without a browser or network.
 export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network: [] }), services = {}, pairing = null, relay = null, server: serverAddress = null, run = runCli, open = reveal, serverKey = process.env.MDECK_SERVER_KEY || null, fetch: get = fetch } = {}) {
   const abs = resolve(slidesPath)
@@ -105,9 +105,9 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
     }
   }
 
-  // Decks with activities, or with a room server of their own, get this
-  // section: the room server and its health, the join link phones open and,
-  // for a room server of their own, the presenter code.
+  // Decks with activities, or with a server of their own, get this
+  // section: the server and its health, the join link phones open and,
+  // for a server of their own, the presenter code.
   async function live(config, source, { local, network }) {
     const address = serverAddress ?? config.server
     const settings = { server: address }
@@ -133,7 +133,7 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
   }
 
   // The one-time address an iPad opens to present from: the presenter view,
-  // with the presenter code of the deck's own room server if there is one.
+  // with the presenter code of the deck's own server if there is one.
   function pairUrl() {
     const network = relay?.url ?? urls()?.network?.[0]
     if (!pairing || !network) throw Object.assign(new Error('Start mdeck run with --network or --server so an iPad can reach it'), { status: 409 })

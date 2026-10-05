@@ -19,7 +19,7 @@ browser:
     - apt-get update -qq && apt-get install -y -qq --no-install-recommends chromium fonts-dejavu-core > /dev/null
     - npm ci
     - MDECK_CHROME=/usr/bin/chromium npm run test:browser
-    - MDECK_CHROME=/usr/bin/chromium npm run test:share
+    - MDECK_CHROME=/usr/bin/chromium npm run test:server
 
 pages:
   stage: deploy

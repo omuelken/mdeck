@@ -1,8 +1,8 @@
-# User-created slide templates
+# User-created slide layouts
 
-Templates define slide structure; themes supply typography and colors. Every
-built-in layout and every deck-local template uses the same registry, manifest,
-property resolver, and slide frame. A local template requires no framework edit.
+Layouts define slide structure; themes supply typography and colors. Every
+built-in layout and every deck-local layout uses the same registry, manifest,
+property resolver, and slide frame. A local layout requires no framework edit.
 
 ```text
 my-talk/
@@ -15,10 +15,10 @@ my-talk/
       starter.md       optional
 ```
 
-A template is one kind of [extension](extensions.md); themes and palettes use
+A layout is one kind of [extension](extensions.md); themes and palettes use
 the same folder and manifest rules. The folder name is the `layout:` value.
 Names must be lowercase letters, digits and hyphens, beginning with a letter.
-A local template cannot use a built-in's name. Manifests are checked when
+A local layout cannot use a built-in's name. Manifests are checked when
 loading, building, listing or validating a deck. The dev server reloads when
 extension files are changed, added or removed.
 
@@ -84,7 +84,7 @@ export default function Comparison({ regions, props }) {
 
 The component receives `regions`, resolved typed `props`, slide `meta`, `id`,
 default-body `content`, `deckConfig`, `index`, `total`, and `manifest`.
-Use `preact/hooks` for interactive templates. `MarkdownRegion` renders Markdown
+Use `preact/hooks` for interactive layouts. `MarkdownRegion` renders Markdown
 and hydrates both built-in and deck-local components. It exposes a `data-region`
 attribute for integrations. Footnotes are numbered across all regions and placed
 in the shared frame.
@@ -106,7 +106,7 @@ Keep CSS scoped to `.slide--comparison` and use theme variables:
 ```
 
 JSX imports of assets and dependencies follow the same build rules as deck-local
-components. Template CSS is included in both bundle and self-contained builds.
+components. Layout CSS is included in both bundle and self-contained builds.
 Local paths in Markdown images, media `src`, and `image:`/`props.image` are handled
 by asset packaging. For other custom asset properties, import assets in JSX so
 Vite can track them; arbitrary string properties are not treated as file paths.
@@ -117,29 +117,29 @@ manifest and authored values, but cannot prove what arbitrary JSX renders.
 
 `starter.md` is an editable slide preset. It should contain explicit `:::meta`
 and placeholder region content, without a leading slide separator. `layout.jsx`,
-`styles.css` and `starter.md` are picked up automatically from the template
+`styles.css` and `starter.md` are picked up automatically from the layout
 folder; use a `[files]` table in the manifest to point at different names.
 `mdeck new` lists built-in and local starters found beside the requested output deck.
 
 ```sh
-mdeck templates slides.md
-mdeck templates slides.md --json
-mdeck templates slides.md --starter comparison
-mdeck extensions slides.md
+mdeck list layouts slides.md
+mdeck list layouts slides.md --json
+mdeck list layouts slides.md --starter comparison
+mdeck list slides.md
 mdeck check slides.md --strict
 ```
 
 The JSON listing is the serializable manifest registry, suitable for completion,
-template galleries, or future editor inspectors. Listing and validation do not
-execute template JSX. Packages and a visual editor are not implemented here.
+layout galleries, or future editor inspectors. Listing and validation do not
+execute layout JSX. Packages and a visual editor are not implemented here.
 
-Built-in layouts are ordinary templates under the framework's
-`assets/extensions/templates/` folder and use the same `mdeck/layout`
+Built-in layouts are ordinary layouts under the framework's
+`assets/extensions/layouts/` folder and use the same `mdeck/layout`
 import, so they double as worked examples.
 
-See the runnable [custom template example](../../examples/custom-templates/slides.md):
+See the runnable [custom layout example](../../examples/custom-layouts/slides.md):
 
 ```sh
-mdeck run examples/custom-templates/slides.md
-mdeck build examples/custom-templates/slides.md
+mdeck run examples/custom-layouts/slides.md
+mdeck build examples/custom-layouts/slides.md
 ```

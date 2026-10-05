@@ -39,7 +39,7 @@ test('lang and labels are validated', () => {
 })
 
 test('readers see a numbered name for slides without a heading', () => {
-  const deck = parseSlides('---\ndesign: neue\n---\n\n---\n<netzwerk />\n')
+  const deck = parseSlides('---\ntheme: neue\n---\n\n---\n<netzwerk />\n')
   assert.deepEqual(deckOutline(deck, {}, { slideName: n => `Folie ${n}` }).map(item => item.title), ['Folie 1'])
   assert.deepEqual(deckOutline(deck).map(item => item.title), ['Slide 1'])
 })

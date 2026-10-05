@@ -34,9 +34,9 @@ This is usually harmless. Another local preview is using that address, so mdeck 
 
 ## It mentions files in the public directory
 
-This warning can appear for deck-local template files in the current slide development server. It comes from how that server serves the presentation folder. If the slides render, you do not need to rewrite the paths suggested in the warning.
+This warning can appear for deck-local layout files in the current slide development server. It comes from how that server serves the presentation folder. If the slides render, you do not need to rewrite the paths suggested in the warning.
 
-It is a known slide-preview configuration issue; the documentation server is separate. If a template fails to render, check for a more specific error below the warning and run `mdeck check my-talk.md`.
+It is a known slide-preview configuration issue; the documentation server is separate. If a layout fails to render, check for a more specific error below the warning and run `mdeck check my-talk.md`.
 
 ## A picture is missing
 
@@ -68,9 +68,9 @@ Online videos and live Python need a network connection. A self-contained build 
 
 ## Phones cannot open the poll
 
-The QR code points at your computer when you present with `mdeck run my-talk.md --host`. The phones must be in the same network. Many large Wi-Fi networks, often at universities, do not let devices reach each other, even when both are connected.
+The QR code points at your computer when you present with `mdeck run my-talk.md --network`. The phones must be in the same network. Many large Wi-Fi networks, often at universities, do not let devices reach each other, even when both are connected.
 
-Try a phone hotspot that both your computer and the phones join, or use a room server on the internet as described in [Ask your audience](audience.html#use-it-in-a-real-session). If the slide says phones cannot reach it, you started without `--host`.
+Try a phone hotspot that both your computer and the phones join, or use a server on the internet as described in [Ask your audience](audience.html#use-it-in-a-real-session). If the slide says phones cannot reach it, you started without `--network`.
 
 ## I want an earlier version of my slide file
 

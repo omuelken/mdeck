@@ -63,11 +63,11 @@ test('common manifest mistakes fail with the file, setting path and reason', () 
   check(THEME.replace('token = "--accent"', 'token = "--missing"'), /params.primaryColor.token: token must name an entry of \[tokens\]/)
   check(THEME + '[files]\nstyles = "../other.css"\n', /files.styles: "\.\.\/other.css" leaves the extension folder/)
   check(THEME + '[files]\nstyles = "missing.css"\n', /files.styles: "missing.css" does not exist/, { fileExists: () => false })
-  check(TEMPLATE.replace('[regions.body]\n', ''), /regions must include a \[regions.body\]/)
-  check(TEMPLATE.replace('type = "integer"', 'type = "banana"'), /properties.size.type: type must be one of/)
-  check(TEMPLATE.replace('default = 2', 'default = "two"'), /properties.size: default must be integer/)
-  check(TEMPLATE.replace('default = 2', 'default = 0'), /default must be at least 1/)
-  check(TEMPLATE.replace('title = "Box"', 'title = "Box"\nframe = "poster"'), /frame must be one of/)
+  check(LAYOUT_TOML.replace('[regions.body]\n', ''), /regions must include a \[regions.body\]/)
+  check(LAYOUT_TOML.replace('type = "integer"', 'type = "banana"'), /properties.size.type: type must be one of/)
+  check(LAYOUT_TOML.replace('default = 2', 'default = "two"'), /properties.size: default must be integer/)
+  check(LAYOUT_TOML.replace('default = 2', 'default = 0'), /default must be at least 1/)
+  check(LAYOUT_TOML.replace('title = "Box"', 'title = "Box"\nframe = "poster"'), /frame must be one of/)
   check(LAYOUT_TOML, /files.layout: layout.jsx is missing/, { fileExists: () => false })
   const parseError = caught(() => parseManifestText('id = \n', 'broken.toml'))
   assert.ok(parseError instanceof ManifestError)
@@ -111,11 +111,11 @@ test('template validation rejects missing regions, unknown props and incorrect v
 
 test('deck checks agree with the registry about themes, palettes and parameters', () => {
   const options = { layouts, themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette') }
-  const codes = validateDeck(parseSlides('---\ndesign: nope\npalette: nada\nparams:\n  primaryColor: "#000"\n---\n# Hi'), options).map(d => d.code)
+  const codes = validateDeck(parseSlides('---\ntheme: nope\npalette: nada\nparams:\n  primaryColor: "#000"\n---\n# Hi'), options).map(d => d.code)
   assert.deepEqual(codes, ['unknown-theme', 'unknown-palette'])
-  const warnings = validateDeck(parseSlides('---\ndesign: terminal\nparams:\n  fontBody: serif\n---\n# Hi'), options)
+  const warnings = validateDeck(parseSlides('---\ntheme: terminal\nparams:\n  fontBody: serif\n---\n# Hi'), options)
   assert.deepEqual(warnings.map(d => [d.code, d.severity]), [['unknown-param', 'warning']])
-  assert.deepEqual(validateDeck(parseSlides('---\ndesign: duet\npalette: sage\n---\n# Hi'), options), [])
+  assert.deepEqual(validateDeck(parseSlides('---\ntheme: duet\npalette: sage\n---\n# Hi'), options), [])
 })
 
 test('defaults are typed, isolated per slide and support legacy image fields', () => {

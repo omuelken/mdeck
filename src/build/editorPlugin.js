@@ -72,7 +72,7 @@ const isLoopbackName = name => LOOPBACK.has(name) || name.endsWith('.localhost')
 export const TUNNEL_MARK = 'x-mdeck-tunnel'
 
 export function isAllowedRequest(request) {
-  // Through `mdeck run --share` every request arrives from this computer; the
+  // Through `mdeck run --server` every request arrives from this computer; the
   // tunnel marks them (src/build/tunnelClient.js), and they must show a paired
   // device's token instead.
   if (request.headers[TUNNEL_MARK] != null) return false

@@ -26,7 +26,7 @@ test('notes support nested directives without cutting the slide', () => {
 })
 
 test('invalid metadata produces source diagnostics', () => {
-  const deck = parseSlides('---\ndesign: neue\n---\n\n---\nlayout: [broken\n---\n# Hello')
+  const deck = parseSlides('---\ntheme: neue\n---\n\n---\nlayout: [broken\n---\n# Hello')
   assert.equal(deck.slides.length, 1)
   assert.equal(deck.slides[0].content, '# Hello')
   assert.equal(deck.diagnostics[0].code, 'invalid-yaml')

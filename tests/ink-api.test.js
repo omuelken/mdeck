@@ -15,7 +15,7 @@ function deckWith(source) {
   writeFileSync(deck, source)
   return { dir, deck, file: createInkFile(deck, { debounceMs: 5 }) }
 }
-const SOURCE = '---\ndesign: neue\n---\n\n---\n# The important part\n\n- one\n\n---\n# Second\n'
+const SOURCE = '---\ntheme: neue\n---\n\n---\n# The important part\n\n- one\n\n---\n# Second\n'
 
 test('the first stroke on a slide without an id gives it one from its heading', () => {
   const { deck, file } = deckWith(SOURCE)
@@ -44,7 +44,7 @@ test('an id by position is refused when the deck changed since the device saw it
 })
 
 test('two devices drawing at once keep both strokes, and clear keeps what it did not know', () => {
-  const { file } = deckWith('---\ndesign: neue\n---\n\n---\nid: s\n---\n# S\n')
+  const { file } = deckWith('---\ntheme: neue\n---\n\n---\nid: s\n---\n# S\n')
   const { deckHash } = file.read()
   file.apply([{ type: 'add', slideId: 's', stroke: stroke('ipad:1') }], deckHash)
   file.apply([{ type: 'add', slideId: 's', stroke: stroke('laptop:1') }], 'an older view of the deck')
@@ -63,25 +63,25 @@ test('a device with the view from before a rename still reaches the renamed slid
 })
 
 test('ink follows a slide whose id is changed by hand, and stays when the slide is removed', () => {
-  const { deck, file } = deckWith('---\ndesign: neue\n---\n\n---\nid: old\n---\n# A\n\n---\n# B\n')
+  const { deck, file } = deckWith('---\ntheme: neue\n---\n\n---\nid: old\n---\n# A\n\n---\n# B\n')
   file.apply([{ type: 'add', slideId: 'old', stroke: stroke('ipad:1') }], file.read().deckHash)
-  writeFileSync(deck, '---\ndesign: neue\n---\n\n---\nid: renamed\n---\n# A\n\n---\n# B\n')
+  writeFileSync(deck, '---\ntheme: neue\n---\n\n---\nid: renamed\n---\n# A\n\n---\n# B\n')
   assert.deepEqual(file.deckChanged(), [{ from: 'old', to: 'renamed' }])
   assert.deepEqual(Object.keys(JSON.parse(readFileSync(inkFileFor(deck), 'utf8')).slides), ['renamed'])
-  writeFileSync(deck, '---\ndesign: neue\n---\n\n---\n# B\n')
+  writeFileSync(deck, '---\ntheme: neue\n---\n\n---\n# B\n')
   assert.deepEqual(file.deckChanged(), [])
   assert.deepEqual(Object.keys(file.read().ink.slides), ['renamed'])
 })
 
 test('the ink file is backed up once per session, before the first write', () => {
-  const { dir, deck, file } = deckWith('---\ndesign: neue\n---\n\n---\nid: s\n---\n# S\n')
+  const { dir, deck, file } = deckWith('---\ntheme: neue\n---\n\n---\nid: s\n---\n# S\n')
   writeFileSync(inkFileFor(deck), JSON.stringify({ version: 1, width: 1920, height: 1080, slides: { s: [stroke('old:1')] } }))
   const { deckHash } = file.read()
   file.apply([{ type: 'add', slideId: 's', stroke: stroke('new:1') }], deckHash); file.flush()
   file.apply([{ type: 'add', slideId: 's', stroke: stroke('new:2') }], deckHash); file.flush()
   const backups = readdirSync(resolve(dir, '.mdeck-backups'))
   assert.equal(backups.length, 1)
-  assert.match(backups[0], /^talk\.ink-.*\.json$/)
+  assert.match(backups[0], /^talk\.drawings-.*\.json$/)
   assert.deepEqual(JSON.parse(readFileSync(resolve(dir, '.mdeck-backups', backups[0]), 'utf8')).slides.s.map(s => s.id), ['old:1'])
 })
 

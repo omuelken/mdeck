@@ -4,14 +4,14 @@ mdeck has a few commands that start a server or make files, and a few views of t
 
 ## Views
 
-Every build and every preview contains all views. The address picks one with `?view=`, or the short form `?v=`:
+Every build and every preview contains all views. The address picks one with `?view=`:
 
 | Address | View | For |
 |---|---|---|
-| `?view=deck` or `?v=d` | The slides alone, full screen | Rehearsing, or a single screen |
-| `?view=presenter` or `?v=p` | Current and next slide, notes and timer, and a button that opens the audience window | You, while presenting |
-| `?view=audience` or `?v=a` | The slides, following the presenter view | The projector |
-| `?view=share` or `?v=s` | The reader view: an outline, **Slides** and **Read** modes, a **Look** menu and a PDF | People you send the talk to |
+| `?view=deck` | The slides alone, full screen | Rehearsing, or a single screen |
+| `?view=presenter` | Current and next slide, notes and timer, and a button that opens the audience window | You, while presenting |
+| `?view=audience` | The slides, following the presenter view | The projector |
+| `?view=reader` | The reader view: an outline, **Slides** and **Read** modes, a **Look** menu and a PDF | People you send the talk to |
 
 Ways to switch between them:
 
@@ -19,37 +19,37 @@ Ways to switch between them:
 - **Present** in the reader view opens the full-screen deck at the current slide.
 - The presenter view's audience-window button opens the audience view in a new window. The two stay in step, in the same browser on the same computer. An audience window also follows a presenter view on a paired iPad: see [Draw on your slides](drawing.html#present-from-an-ipad).
 - The launch page of `mdeck run`, at the preview's plain address, has a button for each view. Its presenter and audience buttons belong together, so the audience window follows that presenter view.
-- A poll's QR code opens the room server's answer page, not the slides: see [Ask your audience](audience.html).
+- A poll's QR code opens the server's answer page, not the slides: see [Ask your audience](audience.html).
 
 ## Commands
 
 | Command | What it does | Where it runs |
 |---|---|---|
-| `mdeck run my-talk.md` | Preview that reloads when you save; launch page; room server for polls | Your computer. Add `--host` to reach it from phones in the same network, or `--share` to reach it from an iPad on any network through your room server |
+| `mdeck run my-talk.md` | Preview that reloads when you save; launch page; server for polls | Your computer. Add `--network` to reach it from phones in the same network, or `--server` to reach it from an iPad on any network through your own server |
 | `mdeck edit my-talk.md` | Visual editor that saves into the file and keeps a backup | Your computer only. The launch page can start it too |
 | `mdeck build my-talk.md` | A `dist` folder to host or copy | Anywhere afterwards; no mdeck needed |
-| `mdeck build my-talk.md --share --self-contained -o my-talk.html` | One file to send, without notes, with a PDF inside | Opens on its own |
+| `mdeck send my-talk.md` | One file to send, without notes, with a PDF inside | Opens on its own |
 | `mdeck pdf my-talk.md` | A PDF, one page per slide | Needs Chrome or Chromium while building |
-| `mdeck live` | A room server for polls in hosted presentations | A web server |
+| `mdeck server` | The server for polls in hosted presentations, and for presenting from an iPad through it | A web server |
 | `mdeck docs` | These guides | Your computer |
 
 The [command guide](commands.html) lists every option.
 
 ## What needs a server
 
-**Presenting.** While you work, use `mdeck run`. A built folder can be presented from any ordinary web server; `mdeck build my-talk.md --presenter-launchers` adds a small one that needs Python. A self-contained file for readers opens on its own.
+**Presenting.** While you work, use `mdeck run`. A built folder can be presented from any ordinary web server; `mdeck build my-talk.md --launchers` adds a small one that needs Python. A self-contained file for readers opens on its own.
 
 **Editing and the launch page.** These run only while `mdeck edit` or `mdeck run` is running, and only answer on your own computer.
 
-**Polls.** Only a room server must be reachable by the phones; they never load the slides. You present from your own computer, with the slides as they are right now.
+**Polls.** Only a server must be reachable by the phones; they never load the slides. You present from your own computer, with the slides as they are right now.
 
-| Situation | Room server | Settings |
+| Situation | Server | Settings |
 |---|---|---|
-| Rehearsing, small group | Built into `mdeck run my-talk.md --host` on your laptop | None. Phones must be in the same network |
-| Lecture hall | `mdeck live` on a web server, once for all your talks | `live.server`, and the presenter code `MDECK_LIVE_KEY` when you start `mdeck run` |
+| Rehearsing, small group | Built into `mdeck run my-talk.md --network` on your laptop | None. Phones must be in the same network |
+| Lecture hall | `mdeck server` on a web server, once for all your talks | `server`, and the key `MDECK_SERVER_KEY` when you start `mdeck run` |
 
-Many large Wi-Fi networks do not let devices reach each other. If phones cannot reach your laptop, use a phone hotspot or a room server on the internet. Details are in [Ask your audience](audience.html).
+Many large Wi-Fi networks do not let devices reach each other. If phones cannot reach your laptop, use a phone hotspot or a server on the internet. Details are in [Ask your audience](audience.html).
 
-**Drawings.** `mdeck run` saves them in `my-talk.ink.json` next to the slides. An iPad next to your laptop pairs with `mdeck run --host` through a QR code on the launch page; the audience window on the laptop then follows it through the room server. See [Draw on your slides](drawing.html).
+**Drawings.** `mdeck run` saves them in `my-talk.drawings.json` next to the slides. An iPad next to your laptop pairs with `mdeck run --network` through a QR code on the launch page, or from any network with `mdeck run --server`; the audience window on the laptop then follows it. See [Draw on your slides](drawing.html).
 
 **PDFs.** Only building one needs Chrome. The PDF shows interactive slides finished, and polls with the answers they had at that moment.

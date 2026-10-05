@@ -1,4 +1,4 @@
-// The phone page the room server serves at <server>/<code>. It needs no deck:
+// The phone page the server serves at <server>/<code>. It needs no deck:
 // the presenter's screen sends the activity on screen (what to ask and how to
 // answer), the deck's look and the words in the deck's language, and this page
 // shows them. Plain browser JavaScript, no build step.
@@ -18,7 +18,7 @@
   const me = (() => {
     try {
       let id = localStorage.getItem('mdeck-live-client')
-      // randomUUID only exists on https or localhost, not at `mdeck run --host`'s http://192.168…
+      // randomUUID only exists on https or localhost, not at `mdeck run --network`'s http://192.168…
       if (!id) localStorage.setItem('mdeck-live-client', id = crypto.randomUUID?.() ?? Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''))
       return id
     } catch { return String(Math.random()).slice(2) }
