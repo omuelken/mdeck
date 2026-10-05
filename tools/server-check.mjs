@@ -58,7 +58,9 @@ try {
 
   // The launch page, on this computer, under the base path.
   const home = `http://localhost:${DEV_PORT}${base}`
-  const info = await (await fetch(`${home}__mdeck/home/info`)).json()
+  // "Connected" can come before the dev server answers, as while Vite
+  // optimizes dependencies on a fresh install (CI): ask until it does.
+  const info = await until(() => fetch(`${home}__mdeck/home/info`).then(response => response.ok && response.json()).catch(() => null), 'launch page answers')
   assert.equal(info.relay.state, 'up'); assert.equal(info.pairing.available, true)
   const offered = await (await fetch(`${home}__mdeck/home/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pair' }) })).json()
   assert.equal(new URL(offered.url).searchParams.has('serverkey'), false)
