@@ -143,5 +143,5 @@ try {
   const refused = dev.out().split('\n').filter(line => /not shared/.test(line) && !/home\.html|__mdeck\/home\/info|__mdeck\/deck|private|confidential/.test(line))
   assert.deepEqual(refused, [])
   console.log('Server check passed: bidirectional slide/reveal sync and presenter previews without echoes, pairing through the server, refused addresses, scoped tokens, revocation, two concurrent decks, custom layouts and assets, live reload.')
-} catch (error) { console.error('Server check failed:', error.stack, devLog()); process.exitCode = 1 }
+} catch (error) { console.error('Server check failed:', error.stack, error.cause ?? '', devLog()); process.exitCode = 1 }
 finally { await browser?.close?.(); for (const k of kids) k.kill(); rmSync(temp, { recursive: true, force: true }) }
