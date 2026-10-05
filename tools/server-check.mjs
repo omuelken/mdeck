@@ -25,6 +25,14 @@ const run = (name, args, env = {}) => {
   return { child, out: () => out }
 }
 const until = async (fn, what, ms = 20000) => { const t = Date.now(); while (Date.now() - t < ms) { const v = await fn(); if (v) return v; await delay(100) } throw new Error('timeout: ' + (typeof what === 'function' ? what() : what)) }
+// The launch page of a dev server, at the address that answers: "Connected"
+// can come before the dev server does, and in a container `localhost` may
+// lead fetch to the other loopback address than the one Vite listens on.
+async function launchPage(port, base) {
+  let last = null
+  const ask = host => fetch(`http://${host}:${port}${base}__mdeck/home/info`).then(response => { last = response.status; return response.ok && response.json().then(info => ({ home: `http://${host}:${port}${base}`, info })) }).catch(error => { last = `${error.message} ${error.cause?.code ?? ''}` })
+  return until(async () => await ask('localhost') || await ask('127.0.0.1') || await ask('[::1]'), () => `launch page answers (last: ${last})`)
+}
 const stageState = async () => {
   const response = await fetch(`${ROOM}/rooms/123456.stage/events`)
   const reader = response.body.getReader()
@@ -56,14 +64,8 @@ try {
   devLog = dev.out
   const base = new URL(url).pathname
 
-  // The launch page, on this computer, under the base path. "Connected" can
-  // come before the dev server answers, and in a container `localhost` may
-  // lead fetch to the other loopback address than the one Vite listens on.
-  let last = null
-  const ask = host => fetch(`http://${host}:${DEV_PORT}${base}__mdeck/home/info`).then(response => { last = response.status; return response.ok && response.json().then(info => ({ host, info })) }).catch(error => { last = `${error.message} ${error.cause?.code ?? ''}` })
-  const reached = await until(async () => await ask('localhost') || await ask('127.0.0.1') || await ask('[::1]'), () => `launch page answers (last: ${last})`)
-  const home = `http://${reached.host}:${DEV_PORT}${base}`
-  const { info } = reached
+  // The launch page, on this computer, under the base path.
+  const { home, info } = await launchPage(DEV_PORT, base)
   assert.equal(info.relay.state, 'up'); assert.equal(info.pairing.available, true)
   const offered = await (await fetch(`${home}__mdeck/home/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pair' }) })).json()
   assert.equal(new URL(offered.url).searchParams.has('serverkey'), false)
@@ -126,7 +128,8 @@ try {
   writeFileSync(otherDeck, source(2).replace('123456', '654321'))
   const second = run('second', ['bin/mdeck.js', 'run', otherDeck, '--server', '--no-open', '--port', String(await freePort())], { MDECK_SERVER_KEY: KEY })
   await until(() => /Connected to/.test(second.out()), 'second tunnel')
-  const otherHome = second.out().match(/Launch page: (http\S+)/)[1].replace(/home.html$/, '')
+  const printed = new URL(second.out().match(/Launch page: (http\S+)/)[1])
+  const { home: otherHome } = await launchPage(printed.port, printed.pathname.replace(/home\.html$/, ''))
   const otherOffer = await (await fetch(`${otherHome}__mdeck/home/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pair' }) })).json()
   const other = await browser.open(otherOffer.url)
   await until(() => other.evaluate("(() => { try { return !!localStorage.getItem('mdeck-pair:' + location.origin + location.pathname) } catch { return false } })()"), 'second pairing')
