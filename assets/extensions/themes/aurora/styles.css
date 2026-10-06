@@ -24,15 +24,16 @@
   position: absolute;
   inset: -12% -16% 0;
   background:
-    radial-gradient(ellipse 4.5% 62% at 8% 6%, var(--aurora-a), transparent 74%),
-    radial-gradient(ellipse 7% 78% at 20% 0%, var(--aurora-c), transparent 74%),
-    radial-gradient(ellipse 3.5% 54% at 31% 10%, var(--aurora-a), transparent 74%),
-    radial-gradient(ellipse 8% 86% at 45% 0%, var(--aurora-b), transparent 74%),
-    radial-gradient(ellipse 4% 58% at 58% 8%, var(--aurora-c), transparent 74%),
-    radial-gradient(ellipse 6.5% 74% at 72% 2%, var(--aurora-a), transparent 74%),
-    radial-gradient(ellipse 5% 66% at 88% 4%, var(--aurora-b), transparent 74%),
+    radial-gradient(ellipse 4.5% 62% at 8% 6%, var(--aurora-a), transparent 100%),
+    radial-gradient(ellipse 7% 78% at 20% 0%, var(--aurora-c), transparent 100%),
+    radial-gradient(ellipse 3.5% 54% at 31% 10%, var(--aurora-a), transparent 100%),
+    radial-gradient(ellipse 8% 86% at 45% 0%, var(--aurora-b), transparent 100%),
+    radial-gradient(ellipse 4% 58% at 58% 8%, var(--aurora-c), transparent 100%),
+    radial-gradient(ellipse 6.5% 74% at 72% 2%, var(--aurora-a), transparent 100%),
+    radial-gradient(ellipse 5% 66% at 88% 4%, var(--aurora-b), transparent 100%),
     radial-gradient(ellipse 60% 22% at 50% 0%, color-mix(in oklab, var(--aurora-c) 60%, transparent), transparent 80%);
-  filter: blur(22px);
+  /* Soft by their gradients alone, not a blur filter: that stays vector in a
+     PDF (a blurred layer prints as a huge image) and draws faster. */
   transform: skewX(-18deg);
   opacity: var(--aurora-strength, 0);
   pointer-events: none;
@@ -54,7 +55,27 @@
   to { transform: skewX(-11deg) translateX(2.5%); }
 }
 deck-stage[data-deck-static] .slide::before { animation: none; }
-@media print { .slide::before { animation: none; } }
+/* In a PDF the curtains print as images (Chrome rasterizes see-through
+   gradients, about 800 KB a slide), so only the slides that carry the look
+   keep them; a mask would print as an image too. */
+@media print {
+  .slide::before { animation: none; -webkit-mask-image: none; mask-image: none; }
+  .slide:not(.slide--title):not(.slide--chapter):not(.slide--focus)::before { display: none; }
+}
+
+/* Print and PDF: gradient text prints with a hairline box around it, and
+   glows print as dark halos; solid colours instead. */
+@media print {
+  em, .slide-footer > span:last-child:not(:first-child), .chapter-num, .slide-body ol li::before {
+    background: none !important;
+    -webkit-text-fill-color: currentColor !important;
+    color: var(--aurora-a) !important;
+    filter: none !important;
+  }
+  .slide-body ul li::before, .focus-eyebrow::before, .slide-header > span:last-child:not(:empty)::after { box-shadow: none !important; }
+  /* Frosted glass blurs what lies behind it, which prints as an image. */
+  .slide *, .slide *::before { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
 
 /* Content slides: a shimmer along the upper edge only. */
 .slide { --aurora-strength: 0.2; --aurora-reach: 0%; }
