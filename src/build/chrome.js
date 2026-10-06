@@ -40,15 +40,21 @@ export async function launchChrome({ dir, chrome = findChrome(), timeout = 90000
   const server = serveDirectory(dir)
   await new Promise(done => server.listen(0, '127.0.0.1', done))
   const origin = `http://127.0.0.1:${server.address().port}`
-  const flags = ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--remote-debugging-port=0', `--user-data-dir=${resolve(temp, 'profile')}`]
+  const flags = ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--remote-debugging-port=0', `--user-data-dir=${resolve(temp, 'profile')}`,
+    // Every tab keeps rendering, like the separate windows of a talk: Chrome
+    // otherwise pauses tabs behind the front one, and an input event or an
+    // animation frame there waited for a frame that did not come.
+    '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows']
   // Chrome refuses to start as root with its sandbox on, as in CI containers.
   if (process.getuid?.() === 0) flags.push('--no-sandbox')
   const browser = spawn(chrome, [...flags, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] })
   const pending = new Map()
   let socket
-  const deadline = setTimeout(() => { for (const task of pending.values()) task.reject(new Error('Timed out while driving Chrome')) }, timeout)
+  // `timeout` limits each step (starting Chrome, each command), not the whole
+  // session: a long job with many quick steps must not fail at an arbitrary
+  // step once a total budget runs out.
   const close = async () => {
-    clearTimeout(deadline)
+    for (const task of pending.values()) clearTimeout(task.timer)
     socket?.close()
     server.close()
     if (browser.exitCode === null) { browser.kill(); await new Promise(done => browser.once('exit', done)) }
@@ -60,9 +66,10 @@ export async function launchChrome({ dir, chrome = findChrome(), timeout = 90000
   try {
     const endpoint = await new Promise((resolveEndpoint, reject) => {
       let log = ''
+      const startup = setTimeout(() => reject(new Error('Timed out while starting Chrome')), timeout)
       browser.on('error', reject)
       browser.on('exit', code => reject(new Error(`Chrome exited early (${code})`)))
-      browser.stderr.on('data', data => { log += data; const match = log.match(/DevTools listening on (ws:\/\/\S+)/); if (match) resolveEndpoint(match[1]) })
+      browser.stderr.on('data', data => { log += data; const match = log.match(/DevTools listening on (ws:\/\/\S+)/); if (match) { clearTimeout(startup); resolveEndpoint(match[1]) } })
     })
     socket = new WebSocket(endpoint)
     await new Promise((done, reject) => { socket.addEventListener('open', done, { once: true }); socket.addEventListener('error', reject, { once: true }) })
@@ -72,10 +79,18 @@ export async function launchChrome({ dir, chrome = findChrome(), timeout = 90000
       if (!message.id) return
       const task = pending.get(message.id)
       pending.delete(message.id)
+      clearTimeout(task?.timer)
       if (message.error) task?.reject(new Error(message.error.message))
       else task?.resolve(message.result)
     })
-    const send = (method, params = {}, sessionId) => new Promise((resolveTask, reject) => { const id = ++nextId; pending.set(id, { resolve: resolveTask, reject }); socket.send(JSON.stringify({ id, method, params, sessionId })) })
+    const send = (method, params = {}, sessionId) => new Promise((resolveTask, reject) => {
+      const id = ++nextId
+      // Where the command came from, so a timeout names the step that hung.
+      const caller = new Error().stack?.split('\n').slice(2).find(line => !line.includes('/src/build/chrome.js'))?.trim() ?? ''
+      const timer = setTimeout(() => { pending.delete(id); reject(new Error(`Timed out while driving Chrome: ${method} did not answer within ${timeout / 1000} s ${caller}`)) }, timeout)
+      pending.set(id, { resolve: resolveTask, reject, timer })
+      socket.send(JSON.stringify({ id, method, params, sessionId }))
+    })
     const open = async path => {
       const url = path.startsWith('http') ? path : origin + '/' + path.replace(/^\//, '')
       const { targetId } = await send('Target.createTarget', { url })
