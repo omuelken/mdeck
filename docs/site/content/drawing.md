@@ -13,7 +13,7 @@ Press **D** in standalone slides or in the presenter view, or use the pen button
 | Marker | Fades after a few seconds, for pointing at something. Never kept. |
 | Eraser | Removes whole strokes you touch. |
 
-The toolbar also has colours, three sizes, undo and redo (also Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z), **Clear this slide**, previous and next slide, and **Done**. Press **D** or **Escape** to stop drawing. While you draw, clicks and taps draw instead of changing slides.
+The toolbar also has colours, three sizes, undo and redo (also Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z), **Clear this slide**, and **×** to stop drawing; **D** and **Escape** do the same. One of the colours is **Accent**, the accent colour of the theme and palette: a drawing in it changes with them. Turn slides with the arrow keys or the presenter view's arrows, as always. While you draw, clicks and taps draw instead of changing slides.
 
 **I** hides and shows what was drawn before, for example when a slide should look clean again. The toolbar has the same switch.
 
@@ -39,7 +39,7 @@ mdeck pdf my-talk.md --no-drawings
 
 There are two ways.
 
-**The iPad on its own.** Connect it to the projector, which usually shows the same picture as the iPad, and open standalone slides with **Present** from the reader view. Tap the left or right edge to go back or forward, or use the toolbar's arrows while drawing. This keeps notes off the wall.
+**The iPad on its own.** Connect it to the projector, which usually shows the same picture as the iPad, and open standalone slides with **Present** from the reader view. Tap the left or right edge to go back or forward. While drawing, a tap draws: stop drawing with **×** to change the slide, or use a keyboard's arrow keys. This keeps notes off the wall.
 
 **The iPad next to your laptop.** The laptop shows the slides on the projector; you draw and go through the slides on the iPad, with your notes on it.
 

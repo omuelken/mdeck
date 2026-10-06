@@ -322,15 +322,27 @@ import { iconSvg } from '../core/icons.js'
   function fullscreenAvailable() {
     return !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
   }
+  // Older Safari (iPad) names the element and the exit differently; a miss
+  // here made the button enter full screen again instead of leaving it, and
+  // an iPad has no Escape key to get out.
   function fullscreenElement() {
-    return document.fullscreenElement || document.webkitFullscreenElement || null;
+    return document.fullscreenElement || document.webkitFullscreenElement || document.webkitCurrentFullScreenElement || null;
   }
   function toggleFullscreen(element = document.documentElement) {
-    if (fullscreenElement()) return (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    if (fullscreenElement()) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen || document.webkitCancelFullScreen;
+      return exit?.call(document);
+    }
     const request = element.requestFullscreen || element.webkitRequestFullscreen;
     return request?.call(element);
   }
-  window.mdeckFullscreen = { available: fullscreenAvailable, element: fullscreenElement, toggle: toggleFullscreen };
+  /** Calls back with true or false whenever the page enters or leaves full screen; returns a function that stops it. */
+  function onFullscreenChange(listener) {
+    const handler = () => listener(!!fullscreenElement());
+    for (const name of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(name, handler);
+    return () => { for (const name of ['fullscreenchange', 'webkitfullscreenchange']) document.removeEventListener(name, handler); };
+  }
+  window.mdeckFullscreen = { available: fullscreenAvailable, element: fullscreenElement, toggle: toggleFullscreen, onChange: onFullscreenChange };
 
   class DeckStage extends HTMLElement {
     static get observedAttributes() { return ['width', 'height', 'noscale']; }
@@ -483,7 +495,14 @@ import { iconSvg } from '../core/icons.js'
       overlay.querySelector('.next').addEventListener('click', () => this.next('click'));
       overlay.querySelector('.reset').addEventListener('click', () => this.reset());
       overlay.querySelector('.draw').addEventListener('click', () => { this.inking = !this.inking; });
-      overlay.querySelector('.fullscreen').addEventListener('click', () => toggleFullscreen());
+      const fullscreenButton = overlay.querySelector('.fullscreen');
+      fullscreenButton.addEventListener('click', () => toggleFullscreen());
+      // The same button leaves full screen, and says so.
+      onFullscreenChange(on => {
+        fullscreenButton.innerHTML = iconSvg(on ? 'fullscreen-exit' : 'fullscreen');
+        fullscreenButton.title = on ? 'Exit full screen (F)' : 'Full screen (F)';
+        fullscreenButton.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+      });
       // Only a top-level window can go full screen (an iPhone cannot at all).
       if (window.top === window && fullscreenAvailable()) this.setAttribute('data-fullscreen-available', '');
 
@@ -881,7 +900,8 @@ import { iconSvg } from '../core/icons.js'
 
     _styleLive(path, { tool, color, size }) {
       const renderer = !!this.inkRenderer;
-      path.setAttribute(renderer ? 'fill' : 'stroke', color);
+      // "accent" is the theme's accent colour (inkPaint in core/ink.js).
+      path.style[renderer ? 'fill' : 'stroke'] = color === 'accent' ? 'var(--accent, #e11d48)' : color;
       if (!renderer) { path.setAttribute('fill', 'none'); path.setAttribute('stroke-width', size); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round'); }
       path.setAttribute(renderer ? 'fill-opacity' : 'stroke-opacity', tool === 'highlighter' ? '0.35' : '1');
     }

@@ -1,6 +1,6 @@
 import { h } from 'preact'
 import { useMemo } from 'preact/hooks'
-import { strokePath, toolOpacity } from '../../core/ink.js'
+import { strokePath, toolOpacity, inkPaint } from '../../core/ink.js'
 import { useSlideInk, currentInk } from './store.js'
 
 // The saved ink of one slide, drawn above its content. It sits inside the
@@ -12,6 +12,6 @@ export function InkLayer({ slideId }) {
   if (!paths.length) return null
   const { width, height } = currentInk()
   return <svg class="slide-ink" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-    {paths.map(path => <path key={path.id} d={path.d} fill={path.color} fill-opacity={path.opacity} />)}
+    {paths.map(path => <path key={path.id} d={path.d} style={{ fill: inkPaint(path.color) }} fill-opacity={path.opacity} />)}
   </svg>
 }

@@ -164,5 +164,8 @@ export function serializeInk(ink) {
   return `{\n  "version": ${INK_VERSION},\n  "width": ${ink.width},\n  "height": ${ink.height},\n  "slides": {${body ? '\n' + body + '\n  ' : ''}}\n}\n`
 }
 
+/** The CSS colour a stroke is drawn with: "accent" is the theme's accent. */
+export const inkPaint = color => color === 'accent' ? 'var(--accent, #e11d48)' : color
+
 /** Opacity the SVG layer draws a tool with. */
 export const toolOpacity = tool => tool === 'highlighter' ? 0.35 : 1

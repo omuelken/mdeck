@@ -6,6 +6,11 @@
 - A numbered list right after a bullet list (or the other way round) gets the usual space between them.
 - The examples follow the current way of writing: `:::meta` settings and named `:::slot` sides. The showcase is now a tour that shows each feature's Markdown beside its result, from headings to live code, notes, drawing, a poll and sharing. The Python lesson asks a poll to check understanding and invites drawing on the loop; the FHNW deck sets `lang: de`, describes its pictures and no longer uses a removed layout.
 - The drawing guide names the buttons as they now look.
+- The drawing toolbar fits on one line: its previous/next arrows and the white colour are gone (the deck and the presenter view turn slides as before), amber is replaced by **Accent**, the theme's accent colour, which a drawing keeps following when the palette changes, and the button that stops drawing is an ×.
+- The full-screen button shows whether it will enter or leave full screen, and leaves it reliably on older iPad Safari too.
+- Polls, scales and the other questions have room above the line with the number of answers; themes' paragraph spacing no longer removes it.
+- A presenter or audience window could be pulled back to an earlier slide when both were used quickly one after the other: a reset was reported twice, and the late copy won. Positions between the windows are now ordered.
+- Chrome, used for `mdeck pdf` and the checks, gets a time limit per step instead of one for the whole run, so a long deck or check no longer fails at an arbitrary step once the total ran out; a step that hangs names itself.
 
 ## 2.0.0 — 2026-10-05
 

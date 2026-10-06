@@ -1,14 +1,14 @@
 /* ── Poll on the slide ─────────────────────────────────────────────────── */
 .poll { display: flex; gap: 72px; align-items: center; width: 100%; font-size: var(--fs-body, 36px); color: var(--ink, #111); }
 .poll-main { flex: 1; min-width: 0; }
-.poll-question { margin: 0 0 32px; font-weight: 600; }
+.poll .poll-question { margin: 0 0 32px; font-weight: 600; }
 .poll-bars { display: grid; gap: 20px; }
 .poll-row { display: grid; grid-template-columns: minmax(120px, 28%) 1fr 3ch; gap: 24px; align-items: center; }
 .poll-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .poll-track { height: 1.1em; background: color-mix(in srgb, var(--ink, #111) 8%, transparent); border-radius: 6px; overflow: hidden; }
 .poll-fill { display: block; height: 100%; background: var(--accent, #0d9488); border-radius: 6px; transition: width .6s cubic-bezier(.2, .8, .2, 1); }
 .poll-count { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-.poll-total { display: flex; align-items: center; gap: 14px; margin: 28px 0 0; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
+.poll .poll-total { display: flex; align-items: center; gap: 14px; margin: 36px 0 0; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
 .poll-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted, #999); opacity: .5; }
 .poll-dot.is-live { background: #16a34a; opacity: 1; }
 .poll-reset { margin-left: auto; padding: 4px 14px; border: 1px solid var(--rule, #ccc); border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; opacity: 0; transition: opacity .2s; }
@@ -49,8 +49,8 @@
 .scale-fill { display: block; width: 100%; background: var(--accent, #0d9488); border-radius: 6px 6px 0 0; transition: height .6s cubic-bezier(.2, .8, .2, 1); }
 .scale-count { font-variant-numeric: tabular-nums; font-weight: 600; font-size: var(--fs-small, 24px); }
 .scale-step { font-variant-numeric: tabular-nums; color: var(--muted, #666); }
-.scale-labels { display: flex; justify-content: space-between; margin: 12px 0 0; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
-.scale-average { margin: 6px 0 0; font-size: var(--fs-small, 24px); font-weight: 600; }
+.poll .scale-labels { display: flex; justify-content: space-between; margin: 12px 0 0; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
+.poll .scale-average { margin: 10px 0 0; font-size: var(--fs-small, 24px); font-weight: 600; }
 
 /* <qrcode join />: the join code, large, on a slide of its own */
 .poll-join-slide { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }

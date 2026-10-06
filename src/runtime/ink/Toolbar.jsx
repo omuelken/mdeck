@@ -1,15 +1,18 @@
 import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon.jsx'
+import { inkPaint } from '../../core/ink.js'
 import './toolbar.css'
 
-// The floating ink toolbar: previous/next (so a lone iPad can present while
-// drawing), tools, colours, sizes, undo/redo, clear slide,
-// hide saved ink, drawing with a finger, and the ink file. It drives a
+// The floating ink toolbar: tools, colours (one is the theme's accent),
+// sizes, undo/redo, clear slide, hide saved ink, drawing with a finger, and
+// the drawings file. The deck's own controls and keys turn the slides. It drives a
 // <deck-stage> (inkTool, inkFinger, data-ink-hidden) and an ink controller.
 
-export const INK_COLORS = ['#e11d48', '#2563eb', '#16a34a', '#f59e0b', '#111111', '#ffffff']
-const COLOR_NAMES = { '#e11d48': 'Red', '#2563eb': 'Blue', '#16a34a': 'Green', '#f59e0b': 'Amber', '#111111': 'Black', '#ffffff': 'White' }
+// "accent" is stored as the word and drawn in the theme's --accent, so the
+// drawing follows the palette (inkPaint in core/ink.js).
+export const INK_COLORS = ['#e11d48', '#2563eb', '#16a34a', 'accent', '#111111']
+const COLOR_NAMES = { '#e11d48': 'Red', '#2563eb': 'Blue', '#16a34a': 'Green', accent: 'Accent', '#111111': 'Black' }
 const SIZES = { pen: [3, 6, 12], highlighter: [18, 30, 48], marker: [4, 8, 14] }
 // Each tool's icon has the tool's name.
 const TOOLS = [
@@ -83,14 +86,10 @@ export function InkToolbar({ stage, controller, onDone }) {
 
   return <div class="ink-toolbar" role="toolbar" aria-label="Ink">
     <div class="ink-group">
-      {button('Previous', 'prev', () => stage.prev('click'))}
-      {button('Next', 'next', () => stage.next('click'))}
-    </div>
-    <div class="ink-group">
       {TOOLS.map(([id, label]) => button(label, id, () => setTool(id), { active: tool === id }))}
     </div>
     <div class="ink-group">
-      {INK_COLORS.map(value => <button type="button" key={value} class={`ink-color${value === color ? ' is-active' : ''}`} style={{ '--swatch': value }} title={COLOR_NAMES[value] ?? value} aria-label={`Colour ${COLOR_NAMES[value] ?? value}`} aria-pressed={value === color} onClick={() => { setColor(value); if (tool === 'eraser') setTool('pen') }} />)}
+      {INK_COLORS.map(value => <button type="button" key={value} class={`ink-color${value === color ? ' is-active' : ''}`} style={{ '--swatch': inkPaint(value) }} title={COLOR_NAMES[value] ?? value} aria-label={`Colour ${COLOR_NAMES[value] ?? value}`} aria-pressed={value === color} onClick={() => { setColor(value); if (tool === 'eraser') setTool('pen') }} />)}
     </div>
     <div class="ink-group">
       {[0, 1, 2].map(i => <button type="button" key={i} class={`ink-size${i === sizeIndex ? ' is-active' : ''}`} title={['Thin', 'Medium', 'Thick'][i]} aria-label={['Thin', 'Medium', 'Thick'][i]} aria-pressed={i === sizeIndex} onClick={() => setSizeIndex(i)}><span style={{ width: `${6 + i * 5}px`, height: `${6 + i * 5}px` }} /></button>)}
@@ -114,7 +113,7 @@ export function InkToolbar({ stage, controller, onDone }) {
       {!history.saving && button(history.unsaved ? 'Download the drawings file (changes are only in this browser)' : 'Download the drawings file', 'download', () => controller.download(), { active: history.unsaved })}
     </div>
     <div class="ink-group">
-      {button('Done drawing (D)', 'check', onDone)}
+      {button('Stop drawing (D)', 'close', onDone)}
     </div>
   </div>
 }

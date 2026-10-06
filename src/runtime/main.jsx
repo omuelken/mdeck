@@ -191,6 +191,11 @@ function PresenterView({ deckConfig, slides }) {
   }
   const fullscreen = window.mdeckFullscreen
   const canFullscreen = !!fullscreen?.available()
+  // The button enters and leaves full screen, and shows which it will do.
+  const [isFullscreen, setIsFullscreen] = useState(() => !!fullscreen?.element())
+  useEffect(() => fullscreen?.onChange?.(setIsFullscreen), [])
+  const fullscreenLabel = isFullscreen ? 'Exit full screen (F)' : 'Full screen (F)'
+  const fullscreenIcon = isFullscreen ? 'fullscreen-exit' : 'fullscreen'
 
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [themeOpen, setThemeOpen] = useState(false)
@@ -367,7 +372,7 @@ function PresenterView({ deckConfig, slides }) {
           <button style={pill} title="Next" aria-label="Next" onClick={() => navCommand('next')}><PresenterIcon name="next" /></button>
           <button class="presenter-draw" title="Draw on the slide (D)" aria-pressed={inking} style={{ ...pill, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }} onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}><PresenterIcon name="pen" /></button>
           <button class="presenter-notes" title="Notes (N)" aria-pressed={drawerOpen} style={{ ...pill, ...(drawerOpen ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={() => setDrawerOpen(open => !open)}>Notes</button>
-          {canFullscreen && <button style={pill} title="Full screen (F)" onClick={() => fullscreen.toggle()}><PresenterIcon name="fullscreen" /></button>}
+          {canFullscreen && <button class="presenter-fullscreen" style={pill} title={fullscreenLabel} aria-label={fullscreenLabel} aria-pressed={isFullscreen} onClick={() => fullscreen.toggle()}><PresenterIcon name={fullscreenIcon} /></button>}
           <button style={pill} title="Speaker layout: slide, notes and next slide side by side" onClick={() => chooseLayout('speaker')}><PresenterIcon name="speaker" /></button>
         </div>
       )}
@@ -391,7 +396,7 @@ function PresenterView({ deckConfig, slides }) {
             <ConnectedViews presence={presence} phones={hasActivities()} style={{ color: '#888' }} />
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {!slideLayout && canFullscreen && <button style={{ ...S.btn, padding: '3px 8px' }} title="Full screen (F)" onClick={() => fullscreen.toggle()}><PresenterIcon name="fullscreen" /></button>}
+            {!slideLayout && canFullscreen && <button class="presenter-fullscreen" style={{ ...S.btn, padding: '3px 8px' }} title={fullscreenLabel} aria-label={fullscreenLabel} aria-pressed={isFullscreen} onClick={() => fullscreen.toggle()}><PresenterIcon name={fullscreenIcon} /></button>}
             {!slideLayout && <button class="presenter-layout" style={{ ...S.btn, padding: '3px 8px' }} title="Slide only, notes in a drawer (for an iPad)" onClick={() => chooseLayout('slide')}><PresenterIcon name="tablet" /></button>}
             <span style={{ color: '#666', fontVariantNumeric: 'tabular-nums' }}>
               {String(index + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
