@@ -304,11 +304,21 @@ strong { color: var(--ink); font-weight: 700; }
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 8px 0 8px 96px;
+  padding-left: 96px;
+  box-sizing: border-box;
+}
+/* The bars stand beside the statement only, not beside code or a list below it. */
+.focus-content > :is(h1, h2, h3, p, blockquote):first-child { position: relative; }
+.focus-content > :is(h1, h2, h3, p, blockquote):first-child::before {
+  content: '';
+  position: absolute;
+  left: -96px;
+  top: 0.08em;
+  bottom: 0.08em;
+  width: 50px;
   background:
     linear-gradient(var(--accent), var(--accent)) 0 0 / 18px 100% no-repeat,
     linear-gradient(var(--accent-2), var(--accent-2)) 32px 0 / 18px 100% no-repeat;
-  box-sizing: border-box;
 }
 .focus-statement,
 .slide--focus .focus-content h1,
@@ -513,7 +523,7 @@ strong { color: var(--ink); font-weight: 700; }
 .slide-body .callout p { padding-left: 0; color: var(--ink); font-size: var(--fs-body); }
 
 /* ─────────────────────────────────────────────
-   CODE BLOCK — a tinted surface with a bar of the first accent
+   CODE BLOCK — a tinted surface with a rule of the first accent on top
    ───────────────────────────────────────────── */
 .code-block {
   --code-bg: var(--surface);
@@ -521,7 +531,7 @@ strong { color: var(--ink); font-weight: 700; }
   --code-size: 28px;
   background: var(--code-bg);
   border-radius: 0;
-  border-left: 8px solid var(--accent);
+  border-top: 6px solid var(--accent);
   padding: 40px 48px;
   margin: 0;
   overflow: hidden;
