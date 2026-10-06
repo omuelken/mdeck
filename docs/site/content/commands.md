@@ -8,6 +8,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 
 | Command | Use it to… |
 |---|---|
+| `mdeck skill --install claude` | Teach your AI assistant to write mdeck slides ([details](claude-skill.html)) |
 | `mdeck new` | Make a presentation with guided questions |
 | `mdeck run my-talk.md` | Open the launch page: present, edit, check and send from one place; slides reload when you save |
 | `mdeck edit my-talk.md` | Edit slides, colors and themes in the browser; saves to the file |
@@ -129,7 +130,7 @@ mdeck skill --install claude codex
 mdeck skill --print
 ```
 
-Installs the slide-writing skill for the assistants you use, or prints it for any other tool. See [Write slides with an AI assistant](claude-skill.html).
+Installs the slide-writing skill for the assistants you use, or prints it for any other tool. See [Work with an AI assistant](claude-skill.html).
 
 ## Why do some examples use Node directly?
 

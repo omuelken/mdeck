@@ -2,7 +2,7 @@
 
 A reusable layout is a slide arrangement someone has made for a particular purpose: a comparison, a timeline, or a team introduction.
 
-You do not have to create a layout to use one. Someone comfortable with coding can make it once, and other people can fill it with their own words.
+You do not have to create a layout to use one. Someone, or an AI assistant, makes it once, and other people fill it with their own words. Your assistant sees every layout in the folder when it writes slides, so you can ask for one by name: “use the comparison layout for the before and after slide”.
 
 <!-- preview -->
 
@@ -71,4 +71,4 @@ mdeck check my-talk.md
 
 If a layout requires a particular area or setting, mdeck tells you when it is missing. The creator of each layout chooses its available settings, so one layout's options may not work in another.
 
-Want to make a layout yourself? The [advanced layout guide](custom-layouts.html) explains the coding involved.
+Want a new layout? Describe it to your assistant. The [advanced layout guide](custom-layouts.html) explains the code it writes.

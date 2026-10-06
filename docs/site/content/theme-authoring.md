@@ -1,6 +1,16 @@
 # Create a theme or palette
 
-This guide is for people comfortable with CSS. For the existing choices, see [Change the look](appearance.html).
+This guide describes the files behind a theme or palette. For the existing choices, see [Change the look](appearance.html).
+
+You do not need to write these files yourself. Describe the look to your assistant, and give it colours, fonts or a picture of a design you like:
+
+```prompt
+Make a theme for this deck in the style of our institute's poster:
+dark green backgrounds, a condensed sans-serif for headings, thin
+rules between sections. Keep it readable on a projector.
+```
+
+The rest of this page is the reference for what it writes, and for anyone comfortable with CSS who prefers to write it by hand.
 
 If you would rather click than type, `mdeck edit my-talk.md` has form-based editors for palettes and themes with a live preview; see [Edit slides in your browser](editing.html). The files it writes are the ones described here.
 

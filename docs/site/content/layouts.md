@@ -1,6 +1,13 @@
 # Choose a slide layout
 
-A layout arranges your words and pictures. Start with one of the ready-made layouts below, then replace the example text with your own.
+A layout arranges your words and pictures. Your assistant chooses one for each slide; this page shows what each looks like in the file, so you know what to ask for:
+
+```prompt
+Make slide 2 a title slide, and put the photo of the garden beside
+the text on slide 5.
+```
+
+To change a layout by hand, copy one of the examples below and replace the example text with your own.
 
 <!-- preview -->
 
@@ -116,4 +123,4 @@ overlay: true
 
 ## More layouts
 
-Your presentation folder can contain extra layouts made for your team or organization. Learn how to [use a reusable layout](reusable-layouts.html).
+Your presentation folder can contain extra layouts made for your team or organization. Learn how to [use a reusable layout](reusable-layouts.html). If none of them fits, your assistant can make a new one for the talk, just by describing it.

@@ -2,6 +2,15 @@
 
 A **theme** chooses the fonts and the style of the slides. A **palette** chooses the colours, in a light and a dark version. You can change either without rewriting your slides.
 
+Ask your assistant by name or by description:
+
+```prompt
+Use the aurora theme, dark. Or suggest a look that suits a talk for
+a design conference.
+```
+
+The settings it changes are the ones described below. To try looks before deciding, use the presenter view (see “Try a look before saving it”).
+
 ## Choose a theme
 
 Put the theme name under `theme` in the settings at the very top of your file:

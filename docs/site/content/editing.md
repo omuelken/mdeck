@@ -2,7 +2,7 @@
 
 > The editor is new and marked **experimental**. It only ever rewrites the parts of your file you change, every change can be undone, and before its first change mdeck keeps a copy of the file (see below).
 
-You can write slides in any text editor. If you prefer clicking and typing in forms, mdeck also has a visual editor:
+Your assistant and any text editor write the same slide file. If you prefer clicking and typing in forms, mdeck also has a visual editor:
 
 ```sh
 mdeck edit my-talk.md
@@ -20,7 +20,7 @@ The **Deck** tab in the right panel changes the whole presentation: the theme, t
 
 There is no save button. Every change is written into your slide file within a moment; the status next to the file name says *Saved* when it is done. Undo and redo (⌘Z and ⇧⌘Z, or Ctrl on Windows and Linux) work across everything you change, and the file follows along.
 
-Because the file is the only copy, you can keep your text editor open at the same time. When you save there, the visual editor shows the change. If both change the same file at the same moment, the editor asks which version to keep.
+Because the file is the only copy, you can keep your text editor or your AI assistant working at the same time. When either changes the file, the visual editor shows the change. If both change the same file at the same moment, the editor asks which version to keep.
 
 The editor only ever rewrites the parts of the file you change. Your blank lines, comments and the order of everything else stay as they are.
 

@@ -2,6 +2,16 @@
 
 A slide can ask a question that people answer on their phones, with the results appearing on the slide as they come in.
 
+Your assistant can add these for you. Say what you want to find out and where in the talk:
+
+```prompt
+Before the chapter on methods, ask which of the three methods people
+have used, and end with a slide for open questions. Show the QR code
+once at the start.
+```
+
+The rest of this page shows what it writes, and how to run the questions in a real room.
+
 ## Add a poll
 
 ```markdown
@@ -161,4 +171,4 @@ Answers are anonymous. Each phone gets a random number so it can change its vote
 
 ## Make your own activity
 
-Polls, scales, word clouds and questions are ordinary components. The [interactive content](components.html#audience-interaction) guide shows how to write your own, such as a quiz.
+Polls, scales, word clouds and questions are ordinary components. The [interactive content](components.html#audience-interaction) guide shows how to write your own, such as a quiz, or ask your assistant to write one.

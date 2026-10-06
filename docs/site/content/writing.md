@@ -1,6 +1,8 @@
-# Write your slides
+# Read and adjust your slides
 
-Markdown is a way to add simple formatting to plain text. You write a few marks alongside your words, and mdeck turns them into headings, lists, and slides.
+Whether your assistant wrote the slides or you did, they are a plain text file in **Markdown**: a way to add simple formatting to plain text. A few marks alongside the words tell mdeck what is a heading, a list, or a new slide.
+
+You do not have to write Markdown yourself. But knowing these marks lets you read what the assistant wrote, check it, and fix a word or a number without asking. Markdown is also what AI assistants write most naturally, which is why mdeck uses it.
 
 ## Headings and paragraphs
 

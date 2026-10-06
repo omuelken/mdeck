@@ -73,7 +73,7 @@ export function renderPage(page, markdown) {
       const language = (info ?? '').split(/\s/)[0]
       const grammar = Prism.languages[{ sh: 'bash', html: 'markup', text: 'plain' }[language] ?? language]
       const html = grammar ? Prism.highlight(code, grammar, language) : escape(code)
-      return `<figure class="code-example"><figcaption><span>${language === 'sh' ? 'In your terminal' : 'Example'}</span><button type="button" data-copy aria-label="Copy example">Copy</button></figcaption><pre><code>${html}</code></pre></figure>\n`
+      return `<figure class="code-example"><figcaption><span>${{ sh: 'In your terminal', prompt: 'Ask your assistant' }[language] ?? 'Example'}</span><button type="button" data-copy aria-label="Copy example">Copy</button></figcaption><pre><code>${html}</code></pre></figure>\n`
     },
     table(token) { return `<div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">${Renderer.prototype.table.call(this, token)}</div>` },
     link({ href, title: linkTitle, tokens }) {

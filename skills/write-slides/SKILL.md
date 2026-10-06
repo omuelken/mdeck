@@ -1,11 +1,11 @@
 ---
 name: write-slides
-description: Write a complete mdeck slide deck. Use when the user asks to create slides, a presentation, or a talk using the mdeck framework.
+description: Write a complete mdeck slide deck. Use when the user asks to create slides, a presentation, or a talk using the mdeck framework, including turning existing PowerPoint, PDF, Word documents or notes into a deck.
 license: MIT
 compatibility: Best with the mdeck command installed (npm install -g @tilman.schieber/mdeck); works without it using the quick reference.
 allowed-tools: Read Write Bash(mdeck:*) Bash(npm root:*) Bash(ls:*)
 metadata:
-  argument-hint: "[topic, audience, length, language]"
+  argument-hint: "[source files, audience, length, language]"
   homepage: https://mdeck-996814.pages.fhnw.ch/
 ---
 
@@ -96,7 +96,15 @@ Right column
 
 ## 3. Write the deck
 
-The request is the message that invoked this skill: topic, audience, length and language. If any of those are missing and matter, ask once, then write a complete deck.
+The request is the message that invoked this skill: usually source material to turn into a deck, plus audience, length and language. If any of those are missing and matter, ask once, then write a complete deck.
+
+**Source material**
+- Most requests point at existing material: a `.pptx` or `.key` deck, a PDF (slides, a paper, a report), a `.docx`, Markdown or plain-text notes, spreadsheets. Read all of it before writing. If the request names no files, look in the deck's folder and ask whether to use what is there.
+- Reuse the material's pictures: copy the ones you use into `./img/` with descriptive names. If you cannot open a file, say so.
+- The material is the content. Keep its argument, order, facts, numbers, examples, terminology and citations; do not add claims, data or examples it does not contain. Your job is the deck: one idea per slide, statement headings, fitting layouts, detail moved from crowded slides into the notes, and notes written from the material's own text.
+- Follow the requested degree of faithfulness. "Keep my wording" means light edits only; "tighten" or a time limit means cutting, and the cuts go into the notes or into your summary, not silently away.
+- When rebuilding an old deck, keep its sequence unless asked otherwise, split slides that carry several ideas, and turn text-heavy slides into a few points with the rest in notes.
+- Without any material, write the content yourself from the brief, and say clearly that it needs checking.
 
 **Structure**
 - Start with the deck settings: pick a `theme` and, if it suits the subject, a `palette` from the lists you gathered; fill in `meta.title`, `meta.author`, `meta.organization`, `meta.date`. For a talk that is not in English, set `lang` (for example `lang: de`).
@@ -123,4 +131,4 @@ Save the deck as a `.md` file named after the topic (for example `enzyme-kinetic
 mdeck check <deck>.md
 ```
 
-Fix anything it reports. Finish by telling the user the two commands they will want next: `mdeck run <deck>.md` for the launch page (preview, presenting, editor, builds and checks), and `mdeck send <deck>.md` for a file to send around (a reader view with a PDF; notes are removed unless `--notes` is added).
+Fix anything it reports. When you worked from source material, list what you left out or moved to notes, and anything you added that is not in the material. Finish by telling the user the two commands they will want next: `mdeck run <deck>.md` for the launch page (preview, presenting, editor, builds and checks), and `mdeck send <deck>.md` for a file to send around (a reader view with a PDF; notes are removed unless `--notes` is added).

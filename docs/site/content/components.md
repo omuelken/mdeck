@@ -1,6 +1,13 @@
 # Create interactive content
 
-This guide is for people comfortable writing JavaScript. You do not need custom components to make ordinary presentations.
+A component is a small piece of JavaScript that puts something interactive on a slide: a chart with sliders, a quiz, a calculator. You do not need one for ordinary presentations, and you do not need to write one yourself. Describe it to your assistant:
+
+```prompt
+Make a component that shows a titration curve, with a slider for the
+added volume, and put it on the slide about equivalence points.
+```
+
+This guide describes the files it writes, for review or for writing them by hand.
 
 ## Add a deck-local component
 

@@ -21,6 +21,13 @@ Welcome everyone. Ask who has visited the garden.
 
 The words between `:::notes` and `:::` appear in the presenter view, not on the audience slide.
 
+The `write-slides` skill writes notes for every content slide. Make them yours before you present, by hand or by asking:
+
+```prompt
+Shorten the notes to cues I can glance at, and mark which slides I
+can skip if I run out of time.
+```
+
 ## Open the presenter view
 
 ```sh

@@ -2,6 +2,15 @@
 
 Keep your slide file and its pictures together in one folder. That makes the presentation easier to move and share later.
 
+Your assistant can place pictures for you once they are in the folder. Tell it which file belongs where and what it shows:
+
+```prompt
+Put img/garden.jpg on the opening slide, full size, and the three
+photos in img/beds/ side by side on the slide about planting.
+```
+
+When it suggests pictures you do not have yet, it names the files it expects; `mdeck check` lists the ones still missing.
+
 ## Keep the files together
 
 For example, your folder could look like this:

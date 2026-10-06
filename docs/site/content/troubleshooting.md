@@ -2,6 +2,13 @@
 
 Most problems come from a filename, a small settings mistake, or a preview that is no longer running. Start with the message you see below.
 
+If an AI assistant wrote or changed the slides, ask it first. It can run `mdeck check`, read the message and fix the file:
+
+```prompt
+The picture on the title slide is missing. Run mdeck check and fix
+what it reports.
+```
+
 ## The command is not recognized
 
 If the terminal cannot find `mdeck`, open the mdeck project folder and run `npm link`. Close and reopen the terminal if needed, then try `mdeck --help`.
@@ -54,7 +61,7 @@ For new slides, a settings block should begin with `:::meta` and end with `:::`.
 
 ## Text is missing or does not fit
 
-A slide has a fixed amount of space. Split a long explanation over two slides, shorten a paragraph, or try a simpler layout. The current checker does not automatically detect visual overflow.
+A slide has a fixed amount of space. Split a long explanation over two slides, shorten a paragraph, or try a simpler layout. The current checker does not automatically detect visual overflow; tell your assistant which slides overflow.
 
 If you see an “unknown region” error, check that the layout supports the named area you used. For example, `left` and `right` work with `split`, but not with `title`.
 
@@ -82,4 +89,4 @@ If a tag such as `<chart />` shows nothing, run `mdeck check my-talk.md`. It rep
 
 ## Still stuck?
 
-Keep the exact error message and a small copy of the slide that causes it. Include the command you ran and whether the problem happens in the live preview or a built file. Those details make it much easier for someone to help.
+Keep the exact error message and a small copy of the slide that causes it. Include the command you ran and whether the problem happens in the live preview or a built file. Those details make it much easier for someone, or an AI assistant, to help.

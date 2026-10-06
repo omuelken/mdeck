@@ -1,6 +1,13 @@
 # Tables, tips, and more
 
-Once you are comfortable with headings and lists, you can add a few other kinds of content. Use these when they make an idea easier to understand.
+Besides headings and lists, slides can hold tables, callouts, columns, citations, QR codes, formulas and code. Use these when they make an idea easier to understand. Your assistant knows all of them; ask for the content rather than the format:
+
+```prompt
+Compare the three sampling methods in a small table, add a warning
+about contamination, and show the rate equation as a formula.
+```
+
+The examples below show what each looks like in the file.
 
 ## Make a table
 
