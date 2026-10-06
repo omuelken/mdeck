@@ -21,7 +21,7 @@ If you already have a settings block there, change the existing lines rather tha
 | `duet` | Two voices: two accent colours that take turns, slab headings |
 | `editorial` | A magazine spread: serif headlines, drop caps, pull quotes |
 | `fhnw` | The FHNW visual identity |
-| `terminal` | A dark look with lettering like a computer terminal |
+| `terminal` | A terminal session: headings typed at a prompt, a blinking cursor, a status bar |
 
 Each theme comes with colours that suit it, so you do not have to choose any.
 

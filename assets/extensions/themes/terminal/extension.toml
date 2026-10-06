@@ -2,12 +2,12 @@ schema = 1
 kind = "theme"
 id = "terminal"
 title = "Terminal"
-description = "Dark by default, monospace throughout, terminal green accent."
+description = "A terminal session: JetBrains Mono, headings at a prompt, a blinking cursor, log-line callouts and a tmux status bar; dark by default."
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
 palette = "forest"
 appearance = "dark"
 fonts = [
-  "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&display=swap",
+  "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap",
 ]
 
 [files]
@@ -22,17 +22,17 @@ styles = "styles.css"
 "--font-body" = "'JetBrains Mono', ui-monospace, monospace"
 
 # Type scale (px) — projection-appropriate at 1920×1080
-"--fs-display" = "100px"
-"--fs-h" = "52px"
+"--fs-display" = "112px"
+"--fs-h" = "60px"
 "--fs-sub" = "36px"
-"--fs-body" = "30px"
-"--fs-eyebrow" = "22px"
-"--fs-small" = "20px"
-"--fs-focus" = "68px"
-"--fs-title" = "60px"
+"--fs-body" = "29px"
+"--fs-eyebrow" = "24px"
+"--fs-small" = "24px"
+"--fs-focus" = "72px"
+"--fs-title" = "96px"
 
 # Spacing
 "--pad-x" = "120px"
-"--pad-y" = "80px"
-"--gap-title" = "32px"
-"--gap-item" = "20px"
+"--pad-y" = "72px"
+"--gap-title" = "44px"
+"--gap-item" = "24px"

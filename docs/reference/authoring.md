@@ -104,7 +104,7 @@ view is reachable in any build through `?view=reader`.
 | `duet` | Two voices: heavy Zilla Slab headings, DM Sans body; the two accents take turns (split fields, diagonal chapters, alternating markers) |
 | `editorial` | Magazine spread: Newsreader headlines, Lora body, drop caps and pull quotes |
 | `fhnw` | The FHNW corporate design: Inter, black on white, yellow accent areas |
-| `terminal` | Dark by default, JetBrains Mono throughout, terminal green accent |
+| `terminal` | A terminal session: JetBrains Mono, headings at a prompt, a blinking cursor on the title, log-line callouts, a tmux status bar; dark by default |
 
 `mdeck list <deck>.md` lists these together with any themes kept beside
 the deck.
