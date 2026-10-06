@@ -12,8 +12,8 @@ export const shortLink = url => url.replace(/^https?:\/\//, '')
 export const wantsQr = qr => !/^(false|no|off|0)$/i.test(String(qr ?? 'true'))
 
 /** The join code with the short link, or how to make phones reach the server. */
-export function JoinCode({ room, joinUrl, localJoinUrl, qr = true, size = 300, label = t('poll.scan') }) {
-  if (!qr) return null
+export function JoinCode({ room, joinUrl, localJoinUrl, known, offline, qr = true, size = 300, label = t('poll.scan') }) {
+  if (!qr || offline || (!known && !joinUrl)) return null
   if (!joinUrl) return <p class="poll-join poll-join--local">{t('poll.unreachable', { command: <code>mdeck run --network</code>, setting: <code>server</code> })} <a href={localJoinUrl} target="_blank" rel="noopener">{t('poll.tryHere')}</a></p>
   return <a class="poll-join" href={joinUrl} target="_blank" rel="noopener" data-room={room}>
     <QrCode url={joinUrl} size={String(size)} />
@@ -23,7 +23,9 @@ export function JoinCode({ room, joinUrl, localJoinUrl, qr = true, size = 300, l
 }
 
 /** Number of answers, whether the room is live, and Reset for the presenter; `children` go at the end. */
-export function ActivityFooter({ count, connected, canReset, reset, children }) {
+export function ActivityFooter({ count, connected, canReset, reset, offline, children }) {
+  // Without a server this is a record of the talk: no count, dot or buttons.
+  if (offline && !count) return <p class="poll-total poll-static">{t('poll.static')}</p>
   return <p class="poll-total">
     <span class={`poll-dot${connected ? ' is-live' : ''}`} title={connected ? t('poll.live') : t('poll.offline')} />
     {count === 1 ? t('poll.answer') : t('poll.answers', { n: count })}

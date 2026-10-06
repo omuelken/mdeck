@@ -114,6 +114,9 @@ function joinUrl(info) {
   return info.network ? new URL(`__mdeck/live/${settings.code}`, info.network).href : null
 }
 const localJoinUrl = () => `${serverBase()}/${settings.code}`
+// Until the server has answered or failed, `known` is false and activities
+// show no join code, so a quick capture never shows a passing warning.
+const reach = info => ({ known: info.reachable != null, offline: info.reachable === false })
 
 /**
  * Follow a room's answers on a slide.
@@ -122,6 +125,9 @@ const localJoinUrl = () => `${serverBase()}/${settings.code}`
  *             reach the server; localJoinUrl works on this computer
  *   canReset / reset()  presenter only
  *   connected false until the live stream is open
+ *   offline   no room server answered: a PDF, a file sent to readers or a
+ *             build hosted without one. Activities then show their question
+ *             as a record of the talk, without a join code.
  * Off the current slide the room keeps its last messages but disconnects.
  */
 export function useRoom(room) {
@@ -148,14 +154,14 @@ export function useRoom(room) {
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error ?? 'Could not reset')
   }, [room])
 
-  return { messages, reset, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code }
+  return { messages, reset, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
 }
 
 /** The deck's join link alone, for a slide that only invites people in (<qrcode join />). */
 export function useJoinLink() {
   const [info, setInfo] = useState({})
   useEffect(() => { serverInfo().then(setInfo) }, [])
-  return { joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code }
+  return { joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
 }
 
 /** The latest answer of each device, e.g. to count votes that can be changed. */

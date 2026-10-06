@@ -13,6 +13,7 @@ import './poll.css'
 function JoinQr({ size }) {
   const link = useJoinLink()
   return <div class="poll-join-slide">
+    {link.offline && <p class="poll-static">{t('join.static')}</p>}
     <JoinCode {...link} size={Number(size) || 420} label={t('join.scan')} />
   </div>
 }

@@ -23,7 +23,7 @@ export default function Scale({ room = 'scale', question = '', low = '', high = 
   const most = Math.max(1, ...counts)
   const average = values.length ? (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1) : null
   const code = wantsQr(qr)
-  return <div class="poll poll--scale">
+  return <div class={`poll poll--scale${live.offline && !values.length ? ' is-static' : ''}`}>
     <div class="poll-main">
       {question && <p class="poll-question">{question}</p>}
       <div class="scale-columns" role="list">

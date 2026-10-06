@@ -169,6 +169,10 @@ Two presentations with the same title share a session code. Give one of them `se
 
 Answers are anonymous. Each phone gets a random number so it can change its vote; nothing else identifies it. The server keeps answers in memory only. It forgets a room after twelve hours without visitors and everything when it restarts. Each phone can send a limited number of answers in a short time.
 
+## In a PDF or a shared file
+
+A PDF, a file made with `mdeck send` and a folder hosted without a poll server keep your questions as a record of the talk: each shows its question and options, with a note that it was answered live, and no join code. If the deck's `server` still answers when the file is made or opened, the results it holds appear instead. Printed slides never show the join code or the presenter's buttons.
+
 ## Make your own activity
 
 Polls, scales, word clouds and questions are ordinary components. The [interactive content](components.html#audience-interaction) guide shows how to write your own, such as a quiz, or ask your assistant to write one.

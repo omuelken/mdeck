@@ -53,4 +53,4 @@ Many large Wi-Fi networks do not let devices reach each other. If phones cannot 
 
 **Drawings.** `mdeck run` saves them in `my-talk.drawings.json` next to the slides. An iPad next to your laptop pairs with `mdeck run --network` through a QR code on the launch page, or from any network with `mdeck run --server`; the audience window on the laptop then follows it. See [Draw on your slides](drawing.html).
 
-**PDFs.** Only building one needs Chrome. The PDF shows interactive slides finished, and polls with the answers they had at that moment.
+**PDFs.** Only building one needs Chrome. The PDF shows interactive slides finished. Polls show the answers the deck's `server` had at that moment; without one, they show their question and options, marked as answered live during the talk.

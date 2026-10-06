@@ -18,7 +18,7 @@ export default function Question({ room = 'question', question = '', limit = '8'
       {question && <p class="poll-question">{question}</p>}
       {shown.length
         ? <ul class="question-cards">{shown.map(answer => <li key={answer.n}>{answer.text}</li>)}</ul>
-        : <p class="question-empty">{t('question.empty')}</p>}
+        : !live.offline && <p class="question-empty">{t('question.empty')}</p>}
       <ActivityFooter count={answers.length} {...live} />
     </div>
     <JoinCode room={room} {...live} qr={code} size={240} />

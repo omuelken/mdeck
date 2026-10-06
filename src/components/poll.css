@@ -68,3 +68,14 @@ deck-stage[data-follower] .poll-solve { display: none; }
 .poll-join-slide .poll-join { font-size: var(--fs-body, 32px); gap: 16px; padding: 24px 32px; }
 .poll-join-slide .poll-link { font-size: 28px; }
 @media print { .poll-reset, .poll-dot, .poll-solve { display: none; } .poll-fill, .scale-fill, .word { transition: none; animation: none; } .question-cards li { animation: none; } }
+
+/* A record of the talk (no room server: a PDF, a file sent to readers): the
+   question and its options, without counts, the live dot or a join code. */
+.poll.is-static .poll-count, .poll.is-static .scale-count { visibility: hidden; }
+.poll .poll-static, .poll-join-slide .poll-static { margin: 36px 0 0; color: var(--muted, #666); font-style: italic; font-size: var(--fs-small, 24px); }
+.poll-join-slide .poll-static { margin: 0; font-size: var(--fs-body, 32px); }
+
+/* On paper the join code and the presenter's controls have no use. */
+@media print {
+  .poll-join, .poll-reset, .poll-solve, .poll-dot { display: none !important; }
+}

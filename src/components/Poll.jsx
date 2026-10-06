@@ -42,7 +42,8 @@ export default function Poll({ room = 'poll', question = '', options = '', qr, a
   const counts = choices.map(choice => votes.filter(vote => vote === choice).length)
   const max = Math.max(1, ...counts)
   const code = wantsQr(qr)
-  return <div class={`poll${shown ? ' is-solved' : ''}`} ref={ref}>
+  const still = live.offline && !votes.length
+  return <div class={`poll${shown ? ' is-solved' : ''}${still ? ' is-static' : ''}`} ref={ref}>
     <div class="poll-main">
       {question && <p class="poll-question">{question}</p>}
       <div class="poll-bars" role="list">
