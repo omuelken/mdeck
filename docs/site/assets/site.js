@@ -96,3 +96,28 @@ for (const example of document.querySelectorAll('[data-preview]')) {
     output.textContent = `Slide ${index + 1}`
   })
 }
+
+// Tabs: one panel at a time; without the script every panel shows.
+for (const group of document.querySelectorAll('[data-tabs]')) {
+  const tabs = [...group.querySelectorAll('[role="tab"]')]
+  const select = tab => {
+    for (const other of tabs) {
+      const selected = other === tab
+      other.setAttribute('aria-selected', String(selected))
+      other.tabIndex = selected ? 0 : -1
+      document.getElementById(other.getAttribute('aria-controls')).hidden = !selected
+    }
+  }
+  tabs.forEach(tab => tab.addEventListener('click', () => select(tab)))
+  group.querySelector('[role="tablist"]').addEventListener('keydown', event => {
+    const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key]
+    const index = tabs.indexOf(document.activeElement)
+    if (index < 0) return
+    const next = step ? tabs[(index + step + tabs.length) % tabs.length] : event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs.at(-1) : null
+    if (!next) return
+    event.preventDefault()
+    select(next)
+    next.focus()
+  })
+  select(tabs.find(tab => tab.getAttribute('aria-selected') === 'true') ?? tabs[0])
+}

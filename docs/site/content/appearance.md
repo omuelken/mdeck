@@ -116,27 +116,17 @@ Some slides use the other version on purpose: neue's statement slides are dark i
 
 ## Every theme in every palette
 
-The same content slide in each palette a theme offers, light and dark. The FHNW theme has only its own colours, so it is not shown here. Click a sheet to see it larger.
+The first chapter slide of the tour in each palette a theme offers. Choose a theme above the pictures; click a sheet to see it larger. The FHNW theme has only its own colours, so it is not shown here.
 
-### Neue
+Some themes turn their chapter slides around on purpose: aurora's are a night sky in a light talk, and light in a dark one.
 
-[![A content slide in the Neue theme with every palette, light and dark](images/themes/neue-palettes.webp)](images/themes/neue-palettes.webp)
+### Light
 
-### Aurora
+<!-- theme-sheets light -->
 
-[![A content slide in the Aurora theme with every palette, light and dark](images/themes/aurora-palettes.webp)](images/themes/aurora-palettes.webp)
+### Dark
 
-### Duet
-
-[![A content slide in the Duet theme with every palette, light and dark](images/themes/duet-palettes.webp)](images/themes/duet-palettes.webp)
-
-### Editorial
-
-[![A content slide in the Editorial theme with every palette, light and dark](images/themes/editorial-palettes.webp)](images/themes/editorial-palettes.webp)
-
-### Terminal
-
-[![A content slide in the Terminal theme with every palette, light and dark](images/themes/terminal-palettes.webp)](images/themes/terminal-palettes.webp)
+<!-- theme-sheets dark -->
 
 ## Try a look before saving it
 

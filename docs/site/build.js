@@ -11,7 +11,8 @@ import 'prismjs/components/prism-jsx.js'
 import 'prismjs/components/prism-bash.js'
 import { pages } from './pages.js'
 import { frameworkRoot as projectRoot } from '../../src/paths.js'
-import { loadRegistry } from '../../src/extensions/discover.js'
+import { loadRegistry, manifestsOf } from '../../src/extensions/discover.js'
+import { palettesFor } from '../../src/extensions/tokens.js'
 import { createRequire } from 'node:module'
 
 const REPO = 'https://gitlab.fhnw.ch/tilman.schieber/mdeck'
@@ -19,7 +20,7 @@ const LINKS = [['Repository', REPO], ['Releases', `${REPO}/-/releases`], ['Packa
 const version = createRequire(import.meta.url)('../../package.json').version
 const projectLinks = () => LINKS.map(([label, href]) => `<a href="${href}" rel="noopener">${label}</a>`).join('')
 import { parseSlides } from '../../src/core/parseSlides.js'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 
 export const docsRoot = dirname(fileURLToPath(import.meta.url))
 const exec = promisify(execFile)
@@ -54,6 +55,22 @@ function preview(page) {
   </figure>`
 }
 
+// <!-- theme-sheets light --> (or dark) becomes one tab per theme with a
+// contact sheet of its chapter slide in every palette (tools/theme-images.mjs).
+function themeSheets(appearance) {
+  const registry = loadRegistry(exampleFiles['first-talk'])
+  const palettes = manifestsOf(registry, 'palette')
+  const themes = Object.values(manifestsOf(registry, 'theme'))
+    .filter(theme => palettesFor(theme, palettes).length > 1 && existsSync(resolve(docsRoot, `images/themes/${theme.id}-${appearance}.webp`)))
+  const id = theme => `sheet-${appearance}-${theme.id}`
+  const tabs = themes.map((theme, i) => `<button type="button" role="tab" id="${id(theme)}-tab" aria-controls="${id(theme)}" aria-selected="${i === 0}">${escape(theme.title)}</button>`).join('')
+  const panels = themes.map(theme => {
+    const src = `images/themes/${theme.id}-${appearance}.webp`
+    return `<div class="theme-sheet" role="tabpanel" id="${id(theme)}" aria-labelledby="${id(theme)}-tab"><a href="${src}"><img src="${src}" alt="The ${escape(theme.title)} theme's chapter slide in every palette, ${appearance}" loading="lazy"></a></div>`
+  }).join('')
+  return `<div class="theme-sheets" data-tabs><div class="theme-tabs" role="tablist" aria-label="Theme, ${appearance}">${tabs}</div>${panels}</div>`
+}
+
 export function renderPage(page, markdown) {
   const headings = [], used = new Map()
   let title = page.title
@@ -86,6 +103,7 @@ export function renderPage(page, markdown) {
   }
   const parser = new Marked({ renderer })
   const article = parser.parse(markdown).replace('<!-- preview -->', preview(page))
+    .replace(/<!-- theme-sheets (light|dark) -->/g, (_, appearance) => themeSheets(appearance))
   const index = pages.indexOf(page)
   const previous = pages[index - 1], next = pages[index + 1]
   const footerLinks = `${previous ? `<a href="${previous.slug}.html"><small>Previous guide</small>${escape(previous.title)}</a>` : '<span></span>'}${next ? `<a href="${next.slug}.html"><small>Next guide</small>${escape(next.title)}</a>` : ''}`

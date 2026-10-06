@@ -1,8 +1,8 @@
 // Renders the theme pictures in the "Change the look" guide from the tour:
 // docs/site/images/themes/<theme>.webp, its title slide in the theme's default
-// look, and <theme>-palettes.webp, a contact sheet of a content slide in every
-// palette the theme offers, light and dark. Themes with a single palette get
-// no contact sheet.
+// look, and <theme>-light.webp and <theme>-dark.webp, contact sheets of its
+// first chapter slide in every palette the theme offers. Themes with a single
+// palette get no contact sheets.
 // Needs a local Chrome and ImageMagick (`magick`).
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs'
@@ -40,21 +40,22 @@ try {
       console.log('wrote', `${theme.id}.webp`)
       const offered = palettesFor(theme, palettes)
       if (offered.length < 2) continue
-      const tiles = []
-      for (const palette of offered) {
-        for (const appearance of ['light', 'dark']) {
+      for (const appearance of ['light', 'dark']) {
+        const tiles = []
+        for (const palette of offered) {
           const file = resolve(temp, `${theme.id}-${palette.id}-${appearance}.png`)
-          // "Lists and emphasis": background, a code card, accent bullets and emphasis.
-          await shot(`theme=${theme.id}&palette=${palette.id}&appearance=${appearance}`, file, { width: 960, height: 540 }, 4)
-          tiles.push({ file, label: `${palette.id} · ${appearance}` })
+          // The first chapter slide: the theme's showpiece, in the palette's colours.
+          await shot(`theme=${theme.id}&palette=${palette.id}&appearance=${appearance}`, file, { width: 1280, height: 720 }, 2)
+          tiles.push({ file, label: palette.id })
         }
+        // Two tiles a row, so each is large in the guide's tab.
+        const sheet = resolve(temp, `${theme.id}-${appearance}-sheet.png`)
+        execFileSync('magick', ['montage', ...tiles.flatMap(t => ['-label', t.label, t.file]),
+          ...(font ? ['-font', font] : []), '-pointsize', '26', '-fill', '#333333', '-background', '#ffffff',
+          '-bordercolor', '#cccccc', '-border', '1', '-geometry', '800x450+16+14', '-tile', '2x', sheet])
+        execFileSync('magick', [sheet, '-quality', '80', resolve(out, `${theme.id}-${appearance}.webp`)])
+        console.log('wrote', `${theme.id}-${appearance}.webp`)
       }
-      // Four tiles a row: each palette light and dark side by side.
-      execFileSync('magick', ['montage', ...tiles.flatMap(t => ['-label', t.label, t.file]),
-        ...(font ? ['-font', font] : []), '-pointsize', '22', '-fill', '#333333', '-background', '#ffffff',
-        '-bordercolor', '#cccccc', '-border', '1', '-geometry', '480x270+12+12', '-tile', '4x', resolve(temp, `${theme.id}-sheet.png`)])
-      execFileSync('magick', [resolve(temp, `${theme.id}-sheet.png`), '-quality', '80', resolve(out, `${theme.id}-palettes.webp`)])
-      console.log('wrote', `${theme.id}-palettes.webp`)
     }
   } finally { await browser.close() }
 } finally { rmSync(temp, { recursive: true, force: true }) }
