@@ -141,6 +141,25 @@ try {
   await until(presenter, `${stage}.state.index === 1 && ${stage}.state.step === 0`)
   await audience.evaluate(`${audienceStage}.prev()`)
   await until(presenter, `${stage}.state.step === -1`)
+  // Both directions, quickly and many times: a message that arrives late
+  // must never take a window back (src/runtime/syncOrder.js). One round
+  // alone missed such a race most of the time.
+  const position = async page => JSON.stringify(await page.evaluate(`${page === presenter ? stage : audienceStage}.state`))
+  for (let round = 0; round < 15; round++) {
+    for (const [from, act, to, expected] of [
+      [presenter, `${stage}.goTo(1); ${stage}.next()`, audience, `${audienceStage}.state.index === 1 && ${audienceStage}.state.step === 0`],
+      [presenter, `${stage}.reset()`, audience, `${audienceStage}.state.index === 0`],
+      [audience, `${audienceStage}.goTo(1); ${audienceStage}.next()`, presenter, `${stage}.state.index === 1 && ${stage}.state.step === 0`],
+      [audience, `${audienceStage}.prev()`, presenter, `${stage}.state.step === -1`],
+      [audience, `${audienceStage}.reset()`, presenter, `${stage}.state.index === 0`],
+    ]) {
+      await from.evaluate(act)
+      if (!await to.waitFor(expected, { attempts: 150, interval: 50 })) throw new Error(`Round ${round + 1}: after ${act} on one side the other did not follow; presenter ${await position(presenter)}, audience ${await position(audience)}`)
+    }
+  }
+  // Back to where the checks below start: the second slide, nothing revealed.
+  await presenter.evaluate(`${stage}.goTo(1)`)
+  await until(audience, `${audienceStage}.state.index === 1 && ${audienceStage}.state.step === -1`)
   await presenter.evaluate(`${stage}.next()`)
   await until(audience, `${audienceStage}.state.step === 0`)
   assert.equal(await other.evaluate(`${audienceStage}.state.index`), 0, 'audience navigation stays in its presenter session')

@@ -32,7 +32,7 @@
  *     e.detail.total         // total slide count
  *     e.detail.slide         // the new active slide element
  *     e.detail.previousSlide // the prior slide element, or null on init
- *     e.detail.reason        // 'init' | 'keyboard' | 'click' | 'tap' | 'api'
+ *     e.detail.reason        // 'init' | 'keyboard' | 'click' | 'tap' | 'api' | 'reset' | 'sync'
  *   });
  *
  * Print mode — before printing (the browser's `beforeprint`, or an explicit
@@ -627,7 +627,7 @@ import { iconSvg } from '../core/icons.js'
           total: this._slides.length,
           slide: this._slides[curr] || null,
           previousSlide: prev >= 0 ? (this._slides[prev] || null) : null,
-          reason: reason, // 'init' | 'keyboard' | 'click' | 'tap' | 'api'
+          reason: reason, // 'init' | 'keyboard' | 'click' | 'tap' | 'api' | 'reset' | 'sync'
         };
         this.dispatchEvent(new CustomEvent('slidechange', {
           detail,
@@ -1008,7 +1008,11 @@ import { iconSvg } from '../core/icons.js'
     /** Reset to first slide and clear all step state. */
     reset() {
       this._stepMap.clear();
-      this._go(0, 'api');
+      // Moving to the first slide reports the new position itself; report it
+      // once more only when the deck was already there, for the cleared steps.
+      // Two reports for one reset arrived in other windows one after the
+      // other, and the late one could undo a change made in between.
+      if (this._index !== 0) { this._go(0, 'reset'); return; }
       this._applySteps(0);
       this._broadcastState('reset');
     }

@@ -295,6 +295,7 @@ This is what the presenter view shows for this slide. Its header also shows what
 ---
 :::meta
 section: Presenting
+id: draw-on-any-slide
 :::
 # Draw on any slide
 

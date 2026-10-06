@@ -14,6 +14,7 @@ import { ReaderView } from './ReaderView.jsx'
 import { configureLive, announce, setLookSource, actAsPresenter, useSteering } from '../live/client.js'
 import { registry } from './registry'
 import { followActiveRooms } from '../live/follow.js'
+import { createOrder } from './syncOrder.js'
 import { attachInk, watchInk } from './ink/attach.js'
 import { roomTransport, followStageRoom, announceStagePosition } from './ink/room.js'
 import { claimPairing } from '../live/pairing.js'
@@ -202,6 +203,9 @@ function PresenterView({ deckConfig, slides }) {
   const previewRef = useRef(null)
   const audienceRef = useRef(null)
   const bcRef = useRef(null)
+  // Positions sent to and taken from audience windows are ordered (syncOrder.js).
+  const orderRef = useRef(null)
+  orderRef.current ??= createOrder()
   const indexRef = useRef(0)
   const stateRef = useRef({ index: 0, step: -1 })
   const paletteDropRef = useRef(null)
@@ -232,8 +236,9 @@ function PresenterView({ deckConfig, slides }) {
   useEffect(() => {
     bcRef.current = new BroadcastChannel(DECK_CHANNEL)
     bcRef.current.onmessage = ({ data }) => {
-      if (data?.audienceReady) bcRef.current?.postMessage({ deckControl: { command: 'setState', value: stateRef.current } })
-      if (data?.deckStateChanged) sendTo(iframeRef.current?.contentWindow, 'setState', data.deckStateChanged)
+      if (data?.audienceReady) bcRef.current?.postMessage({ deckControl: { command: 'setState', value: stateRef.current, order: orderRef.current.current() } })
+      // An audience window moved: follow it, unless this view has moved on since.
+      if (data?.deckStateChanged && orderRef.current.accept(data.order)) sendTo(iframeRef.current?.contentWindow, 'setState', data.deckStateChanged)
     }
     return () => bcRef.current?.close()
   }, [])
@@ -260,7 +265,7 @@ function PresenterView({ deckConfig, slides }) {
       stateRef.current = state
       setIndex(i)
       if (data.reason !== 'sync') {
-        bcRef.current?.postMessage({ deckControl: { command: 'setState', value: state } })
+        bcRef.current?.postMessage({ deckControl: { command: 'setState', value: state, order: orderRef.current.stamp() } })
       }
       sendTo(previewRef.current?.contentWindow, 'goTo', i + 1)
     }
@@ -775,9 +780,12 @@ async function init() {
   // that doesn't depend on keeping a live cross-window reference
   if (audienceMode) {
     const bc = new BroadcastChannel(DECK_CHANNEL)
+    const order = createOrder()
     bc.onmessage = ({ data }) => {
       const ctrl = data?.deckControl
       if (!ctrl) return
+      // A position older than this window's own last change is ignored.
+      if (ctrl.command === 'setState' && !order.accept(ctrl.order)) return
       if (ctrl.command === 'setTheme') {
         loadTheme({ theme: ctrl.theme, palette: ctrl.palette, accent: ctrl.accent, accent2: ctrl.accent2 })
       } else {
@@ -788,7 +796,7 @@ async function init() {
       if (event.detail.reason === 'init') bc.postMessage({ audienceReady: true })
     })
     document.querySelector('deck-stage')?.addEventListener('statechange', event => {
-      if (!['init', 'sync'].includes(event.detail.reason)) bc.postMessage({ deckStateChanged: event.detail })
+      if (!['init', 'sync'].includes(event.detail.reason)) bc.postMessage({ deckStateChanged: event.detail, order: order.stamp() })
     })
     bc.postMessage({ audienceReady: true })
   }
