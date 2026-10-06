@@ -334,7 +334,7 @@ section: Sharing
 ```markdown
 ---
 theme: neue
-palette: paper
+palette: swiss
 ---
 ```
 :::

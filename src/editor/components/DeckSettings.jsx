@@ -1,7 +1,8 @@
 import { h } from 'preact'
 import { Icon } from '../../components/Icon.jsx'
 import { setDeckConfig } from '../../core/editDeck.js'
-import { effectiveToken } from '../../extensions/appearance.js'
+import { resolvePalette } from '../../extensions/appearance.js'
+import { palettesFor } from '../../extensions/tokens.js'
 import { deckDiagnostics } from '../model.js'
 import { Field } from './Field.jsx'
 import { Diagnostics } from './Diagnostics.jsx'
@@ -21,8 +22,10 @@ export function DeckSettings({ state, edit }) {
   const patch = (values, group) => edit(d => setDeckConfig(d, values), { group })
   const themeId = config.theme ?? 'neue'
   const theme = manifests.themes[themeId]
-  const palette = config.palette ? manifests.palettes[config.palette] : null
-  const appearance = { theme, palette, params: config.params, accent: config.accent, accent2: config.accent2 }
+  // The palettes this theme offers and the one the deck gets (its own, else the theme's).
+  const offered = theme ? palettesFor(theme, manifests.palettes) : Object.values(manifests.palettes)
+  const shown = theme ? resolvePalette({ theme, palettes: manifests.palettes, palette: config.palette, appearance: config.appearance }) : { palette: null, appearance: 'light' }
+  const palette = shown.palette
   const text = (key, value) => patch({ [key]: value === '' ? undefined : value }, `deck:${key}`)
   const meta = (key, value) => { const next = { ...(config.meta ?? {}) }; if (value === '') delete next[key]; else next[key] = value; patch({ meta: Object.keys(next).length ? next : undefined }, `deck:meta:${key}`) }
   const show = (key, value) => { const next = { ...(config.show ?? {}) }; if (value === '') delete next[key]; else next[key] = value; patch({ show: Object.keys(next).length ? next : undefined }, `deck:show:${key}`) }
@@ -40,21 +43,18 @@ export function DeckSettings({ state, edit }) {
     <Field label="Palette" hint={palette?.description}>
       <div class="row">
         <select value={config.palette ?? ''} onChange={e => text('palette', e.currentTarget.value)}>
-          <option value="">Default (the theme's own colours)</option>
-          {config.palette && !palette && <option value={config.palette}>{config.palette}</option>}
-          {Object.values(manifests.palettes).map(p => <option key={p.id} value={p.id}>{p.title}{p.dark ? ' (dark)' : ''}</option>)}
+          {config.palette && !offered.some(p => p.id === config.palette) && <option value={config.palette}>{config.palette} (not available)</option>}
+          {offered.map(p => <option key={p.id} value={p.id === theme?.palette ? '' : p.id}>{p.title}{p.id === theme?.palette ? ' · theme default' : ''}</option>)}
         </select>
-        {palette && <Swatches tokens={palette.tokens} />}
+        {palette && <Swatches tokens={palette[shown.appearance] ?? {}} />}
       </div>
     </Field>
-    <div class="grid-2">
-      <Field label="Accent">
-        <div class="row"><input type="color" value={effectiveToken('--accent', appearance) ?? '#888888'} onInput={e => text('accent', e.currentTarget.value)} style={{ flex: '0 0 auto' }} /><span style={{ color: '#b0b0b0' }}>{config.accent ?? 'from theme'}</span>{config.accent && <button class="btn is-small is-icon" title="Back to the theme's accent" aria-label="Clear accent" onClick={() => text('accent', '')}><Icon name="close" size={14} /></button>}</div>
-      </Field>
-      {theme?.accent2 && <Field label="Accent 2">
-        <div class="row"><input type="color" value={effectiveToken('--accent-2', appearance) ?? '#888888'} onInput={e => text('accent2', e.currentTarget.value)} style={{ flex: '0 0 auto' }} /><span style={{ color: '#b0b0b0' }}>{config.accent2 ?? 'from theme'}</span>{config.accent2 && <button class="btn is-small is-icon" title="Back to the theme's second accent" aria-label="Clear second accent" onClick={() => text('accent2', '')}><Icon name="close" size={14} /></button>}</div>
-      </Field>}
-    </div>
+    <Field label="Light or dark" hint="dark for dark rooms; inverted slides use the other one">
+      <select value={config.appearance ?? ''} onChange={e => text('appearance', e.currentTarget.value)}>
+        <option value="">{(theme?.appearance ?? 'light') === 'dark' ? 'Dark' : 'Light'} · theme default</option>
+        <option value={(theme?.appearance ?? 'light') === 'dark' ? 'light' : 'dark'}>{(theme?.appearance ?? 'light') === 'dark' ? 'Light' : 'Dark'}</option>
+      </select>
+    </Field>
     {theme && Object.keys(theme.params).length > 0 && <>
       <p class="section-title">Theme settings</p>
       {Object.entries(theme.params).map(([key, def]) => {

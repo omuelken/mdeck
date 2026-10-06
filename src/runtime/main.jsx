@@ -5,8 +5,9 @@ import { marked } from 'marked'
 import slidesContent from 'virtual:slides'
 import { parseSlides } from '../core/parseSlides'
 import { validateDeck } from '../core/validateDeck'
-import { loadTheme, setExtensionOverrides, THEME_NAMES, PALETTE_NAMES, THEME_METAS, PALETTES } from './themeLoader'
-import { effectiveToken } from '../extensions/appearance.js'
+import { loadTheme, setExtensionOverrides, THEME_NAMES, THEME_METAS, PALETTES } from './themeLoader'
+import { resolvePalette } from '../extensions/appearance.js'
+import { palettesFor } from '../extensions/tokens.js'
 import { S, PaletteSwatches } from './chrome.jsx'
 import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
 import { createEditorBridge } from './editorBridge.js'
@@ -50,15 +51,15 @@ function withConfigOverrides(deckConfig) {
   const url = new URL(window.location.href)
   const theme = url.searchParams.get('theme')
   const palette = url.searchParams.get('palette')
-  const accent  = url.searchParams.get('accent')
-  const accent2 = url.searchParams.get('accent2')
+  const appearance = url.searchParams.get('appearance')
+  // The presenter view and previews pass their choices in the address. An
+  // empty ?palette= or ?appearance= means the theme's default, whatever the
+  // deck sets; a missing one keeps the deck's.
   return {
     ...deckConfig,
-    // Use !== null so an explicit ?palette= / ?accent= (empty string) overrides the frontmatter value
-    ...(theme  !== null ? { theme }  : {}),
-    ...(palette !== null ? { palette } : {}),
-    ...(accent  !== null ? { accent }  : {}),
-    ...(accent2 !== null ? { accent2 } : {}),
+    ...(theme ? { theme } : {}),
+    ...(palette !== null ? { palette: palette || undefined } : {}),
+    ...(appearance !== null ? { appearance: appearance || undefined } : {}),
   }
 }
 
@@ -110,7 +111,7 @@ function injectSpeakerNotes(slides) {
 }
 
 // URL for the presenter's own iframe and preview pane (uses postMessage)
-function buildChildUrl(theme, palette, accent, accent2, slideIndex = null, { draw = false } = {}) {
+function buildChildUrl(theme, palette, appearance, slideIndex = null, { draw = false } = {}) {
   const url = new URL(window.location.href)
   url.searchParams.delete('v')
   url.searchParams.set('view', 'deck')
@@ -118,25 +119,28 @@ function buildChildUrl(theme, palette, accent, accent2, slideIndex = null, { dra
   if (draw) url.searchParams.set('draw', '1')
   if (theme) url.searchParams.set('theme', theme)
   else url.searchParams.delete('theme')
-  // Always set these params so choosing the default palette overrides the deck's frontmatter
-  url.searchParams.set('palette', palette ?? '')
-  url.searchParams.set('accent', accent ?? '')
-  url.searchParams.set('accent2', accent2 ?? '')
+  setLookParams(url, palette, appearance)
   if (slideIndex != null) url.hash = String(slideIndex + 1)
   return url.toString()
 }
 
+// The palette and light or dark chosen in the presenter view, for its frames
+// and the audience window.
+function setLookParams(url, palette, appearance) {
+  // Always set: empty means the theme's default (see withConfigOverrides).
+  url.searchParams.set('palette', palette ?? '')
+  url.searchParams.set('appearance', appearance ?? '')
+}
+
 // URL for the audience window — view=audience makes it listen on BroadcastChannel
-function buildAudienceUrl(theme, palette, accent, accent2, slideIndex = null) {
+function buildAudienceUrl(theme, palette, appearance, slideIndex = null) {
   const url = new URL(window.location.href)
   url.searchParams.delete('embedded')
   url.searchParams.delete('v')
   url.searchParams.set('view', 'audience')
   if (theme) url.searchParams.set('theme', theme)
   else url.searchParams.delete('theme')
-  url.searchParams.set('palette', palette ?? '')
-  url.searchParams.set('accent', accent ?? '')
-  url.searchParams.set('accent2', accent2 ?? '')
+  setLookParams(url, palette, appearance)
   if (slideIndex != null) url.hash = String(slideIndex + 1)
   return url.toString()
 }
@@ -171,9 +175,9 @@ function usePresence() {
 function PresenterView({ deckConfig, slides }) {
   const [index, setIndex] = useState(0)
   const [theme, setTheme] = useState(deckConfig.theme ?? 'neue')
-  const [palette, setPalette] = useState(PALETTE_NAMES.includes(deckConfig.palette) ? deckConfig.palette : '')
-  const [accent, setAccent] = useState(deckConfig.accent ?? '')
-  const [accent2, setAccent2] = useState(deckConfig.accent2 ?? '')
+  // '' means the theme's own default, for both.
+  const [palette, setPalette] = useState(deckConfig.palette ?? '')
+  const [appearance, setAppearance] = useState(deckConfig.appearance ?? '')
   const [audienceConnected, setAudienceConnected] = useState(false)
   const [noteSize, setNoteSize] = useState(13)
   const [inking, setInking] = useState(false)
@@ -225,17 +229,18 @@ function PresenterView({ deckConfig, slides }) {
   }, [index])
 
   const themeMeta = THEME_METAS[theme]
-  const usesAccent2 = themeMeta?.accent2 ?? false
-  const appearance = { theme: themeMeta, palette: PALETTES[palette], params: deckConfig.params, accent, accent2 }
-  const effectiveAccent  = effectiveToken('--accent', appearance) || '#888888'
-  const effectiveAccent2 = effectiveToken('--accent-2', appearance) || '#888888'
+  // The palettes this theme offers, and what the deck shows right now.
+  const offered = palettesFor(themeMeta, PALETTES)
+  const shown = resolvePalette({ theme: themeMeta, palettes: PALETTES, palette, appearance })
+  // A theme that does not offer the chosen palette falls back to its own.
+  useEffect(() => { if (palette && !offered.some(p => p.id === palette)) setPalette('') }, [theme])
   const notes = useMemo(() => slides.map(s => s.meta?.notes ?? ''), [slides])
   // Preserve current slide when theme/palette causes an iframe reload
-  const iframeSrc = useMemo(() => buildChildUrl(theme, palette, accent, accent2, indexRef.current, { draw: true }), [theme, palette, accent, accent2])
-  // previewSrc only recomputes on theme/palette/accent change; slide changes use postMessage
+  const iframeSrc = useMemo(() => buildChildUrl(theme, palette, appearance, indexRef.current, { draw: true }), [theme, palette, appearance])
+  // previewSrc only recomputes on a change of look; slide changes use postMessage
   const previewSrc = useMemo(
-    () => buildChildUrl(theme, palette, accent, accent2, indexRef.current + 1),
-    [theme, palette, accent, accent2]
+    () => buildChildUrl(theme, palette, appearance, indexRef.current + 1),
+    [theme, palette, appearance]
   )
 
   // BroadcastChannel for audience sync — more reliable than cross-window postMessage
@@ -332,8 +337,8 @@ function PresenterView({ deckConfig, slides }) {
   // When theme/palette changes, tell the audience to hot-swap its theme without
   // a reload. Phones pick it up with the next announcement.
   useEffect(() => {
-    bcRef.current?.postMessage({ deckControl: { command: 'setTheme', theme, palette, accent, accent2 } })
-  }, [theme, palette, accent, accent2])
+    bcRef.current?.postMessage({ deckControl: { command: 'setTheme', theme, palette, appearance } })
+  }, [theme, palette, appearance])
 
   // Nav buttons drive the presenter iframe; audience follows via slideIndexChanged
   function navCommand(cmd) {
@@ -342,7 +347,7 @@ function PresenterView({ deckConfig, slides }) {
 
   function openAudienceWindow() {
     const aw = window.open(
-      buildAudienceUrl(theme, palette, accent, accent2, indexRef.current),
+      buildAudienceUrl(theme, palette, appearance, indexRef.current),
       'deck-audience-view'
     )
     if (!aw) return
@@ -488,31 +493,26 @@ function PresenterView({ deckConfig, slides }) {
                 <span style={S.label}>Palette</span>
                 <div ref={paletteDropRef} style={{ position: 'relative' }}>
                   <button
+                    class="presenter-palette"
                     onClick={() => setPaletteOpen(o => !o)}
                     style={{ ...S.select, display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', textAlign: 'left' }}
                   >
-                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{palette || 'default'}</span>
-                    <PaletteSwatches tokens={palette ? PALETTES[palette]?.tokens ?? {} : themeMeta?.tokens ?? {}} />
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shown.palette?.title ?? ''}</span>
+                    <PaletteSwatches tokens={shown.palette?.[shown.appearance] ?? {}} />
                     <span style={{ opacity: 0.5, flexShrink: 0 }}><PresenterIcon name="dropdown" size={13} /></span>
                   </button>
                   {paletteOpen && (
                     <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0, background: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '5px', zIndex: 100, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.6)' }}>
-                      <div
-                        onClick={() => { setPalette(''); setAccent(''); setPaletteOpen(false) }}
-                        title="The theme's own colours"
-                        style={{ padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', fontSize: '13px', color: palette ? '#aaa' : '#f0f0f0', background: palette ? 'transparent' : '#2a2a2a' }}
-                      >
-                        <span>default</span>
-                        <PaletteSwatches tokens={themeMeta?.tokens ?? {}} />
-                      </div>
-                      {PALETTE_NAMES.map(n => (
+                      {offered.map(p => (
                         <div
-                          key={n}
-                          onClick={() => { setPalette(n); setAccent(''); setPaletteOpen(false) }}
-                          style={{ padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', fontSize: '13px', color: palette === n ? '#f0f0f0' : '#aaa', background: palette === n ? '#2a2a2a' : 'transparent' }}
+                          key={p.id}
+                          class="presenter-palette-option"
+                          title={p.description}
+                          onClick={() => { setPalette(p.id === themeMeta?.palette ? '' : p.id); setPaletteOpen(false) }}
+                          style={{ padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', fontSize: '13px', color: shown.palette?.id === p.id ? '#f0f0f0' : '#aaa', background: shown.palette?.id === p.id ? '#2a2a2a' : 'transparent' }}
                         >
-                          <span>{n}</span>
-                          <PaletteSwatches tokens={PALETTES[n]?.tokens ?? {}} />
+                          <span>{p.title}{p.id === themeMeta?.palette ? <span style={{ color: '#666' }}> · theme default</span> : null}</span>
+                          <PaletteSwatches tokens={p[shown.appearance] ?? {}} />
                         </div>
                       ))}
                     </div>
@@ -520,35 +520,19 @@ function PresenterView({ deckConfig, slides }) {
                 </div>
               </label>
               <label style={{ flexShrink: 0 }}>
-                <span style={S.label}>Accent</span>
-                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '28px' }}>
-                  <input
-                    type="color"
-                    value={effectiveAccent}
-                    onInput={e => setAccent(e.currentTarget.value)}
-                    style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent ? 1 : 0.6 }}
-                  />
-                  {accent && (
-                    <button onClick={() => setAccent('')} title="Back to the default accent" aria-label="Clear accent" style={{ ...S.btn, padding: '4px 6px' }}><PresenterIcon name="close" size={14} /></button>
-                  )}
+                <span style={S.label}>Light or dark</span>
+                <div class="presenter-appearance" role="group" aria-label="Light or dark" style={{ display: 'flex', gap: '2px', height: '28px' }}>
+                  {['light', 'dark'].map(mode => (
+                    <button
+                      key={mode}
+                      aria-pressed={shown.appearance === mode}
+                      title={mode === 'light' ? 'Light: for bright rooms' : 'Dark: for dark rooms'}
+                      onClick={() => setAppearance(mode === (themeMeta?.appearance ?? 'light') ? '' : mode)}
+                      style={{ ...S.btn, padding: '3px 9px', ...(shown.appearance === mode ? { background: '#2a2a2a', color: '#f0f0f0', borderColor: '#444' } : {}) }}
+                    >{mode === 'light' ? 'Light' : 'Dark'}</button>
+                  ))}
                 </div>
               </label>
-              {usesAccent2 && (
-                <label style={{ flexShrink: 0 }}>
-                  <span style={S.label}>Accent 2</span>
-                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '28px' }}>
-                    <input
-                      type="color"
-                      value={effectiveAccent2}
-                      onInput={e => setAccent2(e.currentTarget.value)}
-                      style={{ width: '28px', height: '28px', padding: '2px', border: '1px solid #2e2e2e', borderRadius: '5px', background: '#1e1e1e', cursor: 'pointer', opacity: accent2 ? 1 : 0.6 }}
-                    />
-                    {accent2 && (
-                      <button onClick={() => setAccent2('')} title="Back to the default second accent" aria-label="Clear second accent" style={{ ...S.btn, padding: '4px 6px' }}><PresenterIcon name="close" size={14} /></button>
-                    )}
-                  </div>
-                </label>
-              )}
             </div>
           )}
         </div>
@@ -597,12 +581,12 @@ function PresenterView({ deckConfig, slides }) {
               {THEME_NAMES.map(n => (
                 <div
                   key={n}
-                  onClick={() => { setTheme(n); setAccent2(''); setThemeModalOpen(false) }}
+                  onClick={() => { setTheme(n); setThemeModalOpen(false) }}
                   style={{ cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', border: `2px solid ${n === theme ? '#60a5fa' : '#2a2a2a'}`, background: '#111' }}
                 >
                   <div style={{ aspectRatio: '16/9', overflow: 'hidden' }}>
                     <iframe
-                      src={buildChildUrl(n, palette, accent, accent2, index)}
+                      src={buildChildUrl(n, palette, appearance, index)}
                       scrolling="no"
                       style={{ width: '100%', height: '100%', border: 0, pointerEvents: 'none', display: 'block' }}
                     />
@@ -799,7 +783,7 @@ async function init() {
       // A position older than this window's own last change is ignored.
       if (ctrl.command === 'setState' && !order.accept(ctrl.order)) return
       if (ctrl.command === 'setTheme') {
-        loadTheme({ theme: ctrl.theme, palette: ctrl.palette, accent: ctrl.accent, accent2: ctrl.accent2 })
+        loadTheme({ theme: ctrl.theme, palette: ctrl.palette || undefined, appearance: ctrl.appearance || undefined })
       } else {
         handleDeckControl(ctrl)
       }

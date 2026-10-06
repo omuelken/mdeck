@@ -5,6 +5,7 @@ import { marked } from 'marked'
 import { deckOutline } from '../core/outline.js'
 import { manifests, SlideRenderer } from '../layouts/renderSlide'
 import { loadTheme, THEME_METAS, PALETTES } from './themeLoader'
+import { palettesFor } from '../extensions/tokens.js'
 import './reader.css'
 import { t, stageLabels } from '../core/labels.js'
 import { followActiveRooms } from '../live/follow.js'
@@ -16,11 +17,16 @@ import { Icon } from '../components/Icon.jsx'
 
 const lookKey = deckConfig => `mdeck-reader-look:${deckConfig.meta?.title ?? location.pathname}`
 
+// The look the deck was made with; '' is the theme's default palette or appearance.
+function senderLookOf(deckConfig) {
+  return { theme: THEME_METAS[deckConfig.theme] ? deckConfig.theme : 'neue', palette: PALETTES[deckConfig.palette] ? deckConfig.palette : '', appearance: deckConfig.appearance ?? '' }
+}
+
 function restoreLook(deckConfig) {
-  const fallback = { theme: THEME_METAS[deckConfig.theme] ? deckConfig.theme : 'neue', palette: PALETTES[deckConfig.palette] ? deckConfig.palette : '' }
+  const fallback = senderLookOf(deckConfig)
   try {
     const stored = JSON.parse(localStorage.getItem(lookKey(deckConfig)) ?? 'null')
-    if (stored && THEME_METAS[stored.theme] && (!stored.palette || PALETTES[stored.palette])) return stored
+    if (stored && THEME_METAS[stored.theme] && (!stored.palette || PALETTES[stored.palette]) && ['', 'light', 'dark'].includes(stored.appearance ?? '')) return { appearance: '', ...stored }
   } catch {}
   return fallback
 }
@@ -65,7 +71,9 @@ export function ReaderView({ deck, deckConfig }) {
   const stageRef = useRef(null)
   const readRef = useRef(null)
   const outline = useMemo(() => deckOutline(deck, manifests, { slideName: n => t('reader.slide', { n }) }), [deck])
-  const themedConfig = { ...deckConfig, theme: look.theme, palette: look.palette, accent: undefined, accent2: undefined }
+  const themedConfig = { ...deckConfig, theme: look.theme, palette: look.palette || undefined, appearance: look.appearance || undefined }
+  const lookTheme = THEME_METAS[look.theme]
+  const offered = palettesFor(lookTheme, PALETTES)
   const pickerAllowed = deckConfig.reader?.themes !== false
   const pdf = useMemo(pdfLink, [])
   // Notes stay private unless the deck opts in; a file may carry them for the presenter.
@@ -74,7 +82,7 @@ export function ReaderView({ deck, deckConfig }) {
   useEffect(() => {
     loadTheme(themedConfig).catch(error => console.warn(error.message))
     try { localStorage.setItem(lookKey(deckConfig), JSON.stringify(look)) } catch {}
-  }, [look.theme, look.palette])
+  }, [look.theme, look.palette, look.appearance])
 
   useEffect(() => {
     const stage = stageRef.current
@@ -141,8 +149,8 @@ export function ReaderView({ deck, deckConfig }) {
 
   const meta = deckConfig.meta ?? {}
   const metaLine = [meta.author, meta.organization, meta.date].filter(Boolean).join(' · ')
-  const senderLook = { theme: THEME_METAS[deckConfig.theme] ? deckConfig.theme : 'neue', palette: PALETTES[deckConfig.palette] ? deckConfig.palette : '' }
-  const isSenderLook = look.theme === senderLook.theme && (look.palette || '') === (senderLook.palette || '')
+  const senderLook = senderLookOf(deckConfig)
+  const isSenderLook = look.theme === senderLook.theme && (look.palette || '') === (senderLook.palette || '') && (look.appearance || '') === (senderLook.appearance || '')
 
   return <div class="reader-view">
     <header class="reader-top">
@@ -156,8 +164,9 @@ export function ReaderView({ deck, deckConfig }) {
       {pickerAllowed && <div class="reader-menu">
         <button class={`reader-btn${lookOpen ? ' is-active' : ''}`} onClick={() => setLookOpen(open => !open)}><ReaderIcon name="look" />{t('reader.look')}</button>
         {lookOpen && <div class="reader-menu-panel">
-          <label>{t('reader.theme')}<select class="reader-select" value={look.theme} onChange={e => setLook({ ...look, theme: e.currentTarget.value })}>{Object.values(THEME_METAS).map(theme => <option key={theme.id} value={theme.id}>{theme.title}</option>)}</select></label>
-          <label>{t('reader.colors')}<select class="reader-select" value={look.palette} onChange={e => setLook({ ...look, palette: e.currentTarget.value })}><option value="">{t('reader.themeColors')}</option>{Object.values(PALETTES).map(palette => <option key={palette.id} value={palette.id}>{palette.title}</option>)}</select></label>
+          <label>{t('reader.theme')}<select class="reader-select" value={look.theme} onChange={e => { const theme = e.currentTarget.value; const keeps = palettesFor(THEME_METAS[theme], PALETTES).some(p => p.id === look.palette); setLook({ ...look, theme, palette: keeps ? look.palette : '' }) }}>{Object.values(THEME_METAS).map(theme => <option key={theme.id} value={theme.id}>{theme.title}</option>)}</select></label>
+          <label>{t('reader.colors')}<select class="reader-select" value={look.palette && look.palette !== lookTheme?.palette ? look.palette : ''} onChange={e => setLook({ ...look, palette: e.currentTarget.value })}>{offered.map(palette => <option key={palette.id} value={palette.id === lookTheme?.palette ? '' : palette.id}>{palette.title}{palette.id === lookTheme?.palette ? ` · ${t('reader.themeColors')}` : ''}</option>)}</select></label>
+          <label>{t('reader.appearance')}<select class="reader-select" value={look.appearance || lookTheme?.appearance || 'light'} onChange={e => setLook({ ...look, appearance: e.currentTarget.value === (lookTheme?.appearance ?? 'light') ? '' : e.currentTarget.value })}><option value="light">{t('reader.light')}</option><option value="dark">{t('reader.dark')}</option></select></label>
           <button class="reader-btn" disabled={isSenderLook} onClick={() => setLook(senderLook)} title={isSenderLook ? t('reader.senderLook') : t('reader.resetLookHint')}><ReaderIcon name="reset" />{t('reader.resetLook')}</button>
         </div>}
       </div>}

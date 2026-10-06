@@ -11,7 +11,7 @@ A deck is a single `.md` file. The first block is the **deck frontmatter** — i
 ```markdown
 ---
 theme: neue
-palette: paper
+palette: swiss
 meta:
   title: "My Talk"
   author: "Jane Smith"
@@ -41,9 +41,8 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | Field | Default | Description |
 |---|---|---|
 | `theme` | `neue` | Theme name |
-| `palette` | _(theme default)_ | Color palette override |
-| `accent` | _(theme/palette default)_ | Primary accent color override |
-| `accent2` | _(theme/palette default)_ | Secondary accent color (themes with a second accent, such as Aurora and Duet) |
+| `palette` | _(theme default)_ | Colour palette: `lagoon`, `swiss`, `graphite`, `terra`, `forest`, `ember`, `neon`, or one of your own |
+| `appearance` | _(theme default)_ | `light` or `dark`: which variant of the palette the slides use |
 | `meta.title` | — | Deck title (shown in footer) |
 | `meta.author` | — | Author name (shown in footer) |
 | `meta.organization` | — | Organization name (shown in header) |
@@ -67,15 +66,15 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 
 ### Theme params
 
-Some themes expose configurable tokens. Set them under `params:`:
+Some themes expose their fonts as settings. Set them under `params:`:
 
 ```yaml
 params:
-  primaryColor: "#e63946"
-  backgroundColor: "#fafafa"
+  fontDisplay: "Georgia, serif"
 ```
 
-Available params depend on the theme — check the presenter sidebar for a list.
+Available params depend on the theme; `mdeck list themes` shows them. Colours
+are not params: they come from the palette.
 
 ---
 
@@ -114,16 +113,19 @@ the deck.
 
 ## Available palettes
 
-| Key | Style |
-|---|---|
-| `paper` | Clean white |
-| `sage` | Muted sage green |
-| `mono` | Pure monochrome |
-| `terra` | Warm sand and red |
-| `dark-slate` | Dark cool blue |
-| `dark-ember` | Dark warm amber |
-| `dark-neon` | Dark vivid neon |
-| `dark-mono` | Dark neutral grey |
+Each palette has a light and a dark variant; `appearance:` picks one.
+
+| Key | Light | Dark |
+|---|---|---|
+| `lagoon` | Teal on warm stone (neue's default) | Bright teal on teal-black |
+| `swiss` | White, black, signal red | Black, white, red |
+| `graphite` | Black and white, steel blue | Charcoal, light steel blue |
+| `terra` | Cream, navy, brick red (editorial's default) | Navy, cream, coral |
+| `forest` | Deep green, moss, ochre | Forest night, light green (terminal's default) |
+| `ember` | Sand, espresso, orange | Dark brown, glowing orange |
+| `neon` | White, violet, magenta (duet's and aurora's default) | Black, neon violet and pink |
+
+The FHNW theme uses its own palette, `brand`, and no other.
 
 ---
 
@@ -483,7 +485,10 @@ labels:
 | `reader.look` | Look | Aussehen |
 | `reader.theme` | Theme | Design |
 | `reader.colors` | Colors | Farben |
-| `reader.themeColors` | Default | Standard |
+| `reader.themeColors` | theme default | Standard des Designs |
+| `reader.appearance` | Light or dark | Hell oder dunkel |
+| `reader.light` | Light | Hell |
+| `reader.dark` | Dark | Dunkel |
 | `reader.resetLook` | Reset to default | Zurücksetzen |
 | `reader.resetLookHint` | Return to the look the deck was made with | Zum ursprünglichen Aussehen zurück |
 | `reader.senderLook` | This is the look the deck was made with | Das ist das ursprüngliche Aussehen |

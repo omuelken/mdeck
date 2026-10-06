@@ -3,7 +3,8 @@ kind = "theme"
 id = "duet"
 title = "Duet"
 description = "Slab-serif headings and two accent colors for contrasting ideas."
-accent2 = true
+# The palette this theme uses unless the deck sets one; colours come only from palettes.
+palette = "neon"
 fonts = [
   "https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap",
 ]
@@ -11,18 +12,9 @@ fonts = [
 [files]
 styles = "styles.css"
 
-# Default values for the CSS custom properties used by styles.css.
-# Palettes and deck settings override these in order.
+# Type, spacing and fonts used by styles.css; colours come from the palette.
+# Deck settings (params) override these.
 [tokens]
-"--bg" = "#f8f8f5"
-"--ink" = "#111110"
-"--ink-soft" = "#3c3c38"
-"--muted" = "#888882"
-"--rule" = "#e0e0d8"
-"--accent" = "#6d28d9"  # violet
-"--accent-2" = "#0891b2"  # cyan
-"--surface" = "#eeeeea"
-"--on-accent" = "#ffffff"
 
 # Type scale (px) — projection-appropriate at 1920×1080
 "--fs-display" = "128px"
@@ -45,22 +37,6 @@ styles = "styles.css"
 "--font-body" = "\"DM Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
 
 # Settings authors can change under `params:` in the deck; each points at a token above.
-[params.primaryColor]
-token = "--accent"
-title = "Primary color"
-
-[params.secondaryColor]
-token = "--accent-2"
-title = "Secondary color"
-
-[params.backgroundColor]
-token = "--bg"
-title = "Background"
-
-[params.inkColor]
-token = "--ink"
-title = "Text color"
-
 [params.fontDisplay]
 token = "--font-display"
 title = "Display font"

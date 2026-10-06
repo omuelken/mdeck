@@ -236,11 +236,22 @@ strong { color: var(--ink); font-weight: 600; }
 }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: FOCUS — inverted, flush left, the key words in the accent
+   LAYOUT: FOCUS — the palette's other variant, flush left, the key words in its accent
    ───────────────────────────────────────────── */
 .slide--focus {
-  --focus-bg: var(--ink);
-  --focus-ink: var(--bg);
+  /* The palette's other variant (dark on a light deck, light on a dark one),
+     tuned as a whole: its accent stays readable on its own background. */
+  --bg: var(--inverse-bg);
+  --surface: var(--inverse-surface);
+  --ink: var(--inverse-ink);
+  --ink-soft: var(--inverse-ink-soft);
+  --muted: var(--inverse-muted);
+  --rule: var(--inverse-rule);
+  --accent: var(--inverse-accent);
+  --accent-2: var(--inverse-accent-2);
+  --on-accent: var(--inverse-on-accent);
+  --focus-bg: var(--bg);
+  --focus-ink: var(--ink);
   background: var(--focus-bg);
   color: var(--focus-ink);
 }

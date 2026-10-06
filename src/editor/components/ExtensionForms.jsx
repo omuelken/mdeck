@@ -17,10 +17,10 @@ function Identity({ model, onChange }) {
   </>
 }
 
-export function TokenList({ tokens, onChange, suggestions = CORE_TOKENS }) {
+export function TokenList({ tokens, onChange, suggestions = CORE_TOKENS, title = 'Tokens' }) {
   const missing = suggestions.filter(name => !tokens.some(token => token.name === name))
   return <>
-    <p class="section-title">Tokens</p>
+    <p class="section-title">{title}</p>
     {tokens.map((token, index) => <div class="field" key={index}>
       <div class="row">
         <input type="text" value={token.name} placeholder="--name" style={{ flex: '0 0 140px', fontFamily: 'ui-monospace, monospace' }} onInput={e => onChange(update(tokens, index, { name: e.currentTarget.value }))} />
@@ -36,11 +36,14 @@ export function TokenList({ tokens, onChange, suggestions = CORE_TOKENS }) {
   </>
 }
 
+// A palette has every colour twice: light (for bright rooms) and dark. Themes
+// use the other variant for inverted slides.
 export function PaletteForm({ model, onChange }) {
   return <>
     <Identity model={model} onChange={onChange} />
-    <Field><label class="row" style={{ textTransform: 'none', letterSpacing: 0, color: '#e0e0e0', fontSize: '13px' }}><input type="checkbox" checked={model.dark} style={{ flex: '0 0 auto' }} onChange={e => onChange({ dark: e.currentTarget.checked })} /> <span>Dark palette (inverts logos and code colors)</span></label></Field>
-    <TokenList tokens={model.tokens} onChange={tokens => onChange({ tokens })} />
+    <Field label="Only for the theme" hint="leave empty to offer it to every theme"><input type="text" value={model.theme ?? ''} placeholder="theme id" onInput={e => onChange({ theme: e.currentTarget.value.trim() })} /></Field>
+    <TokenList title="Light colours" tokens={model.light} onChange={light => onChange({ light })} />
+    <TokenList title="Dark colours" tokens={model.dark} onChange={dark => onChange({ dark })} />
   </>
 }
 
@@ -49,16 +52,16 @@ export function ThemeForm({ model, files, onChange, onFile }) {
   return <>
     <Identity model={model} onChange={onChange} />
     <div class="grid-2">
-      <Field><label class="row" style={{ textTransform: 'none', letterSpacing: 0, color: '#e0e0e0', fontSize: '13px' }}><input type="checkbox" checked={model.dark} style={{ flex: '0 0 auto' }} onChange={e => onChange({ dark: e.currentTarget.checked })} /> <span>Dark by default</span></label></Field>
-      <Field><label class="row" style={{ textTransform: 'none', letterSpacing: 0, color: '#e0e0e0', fontSize: '13px' }}><input type="checkbox" checked={model.accent2} style={{ flex: '0 0 auto' }} onChange={e => onChange({ accent2: e.currentTarget.checked })} /> <span>Uses a second accent</span></label></Field>
+      <Field label="Default palette" hint="colours come only from palettes"><input type="text" value={model.palette} placeholder="lagoon" onInput={e => onChange({ palette: e.currentTarget.value.trim() })} /></Field>
+      <Field label="Starts"><select value={model.appearance} onChange={e => onChange({ appearance: e.currentTarget.value })}><option value="light">Light</option><option value="dark">Dark</option></select></Field>
     </div>
-    {model.accent2 && <Field label="Accent 2 preview color" hint="only needed when --accent-2 is not a plain color"><input type="text" value={model.accent2Preview} onInput={e => onChange({ accent2Preview: e.currentTarget.value })} /></Field>}
+    <Field label="Only these palettes" hint="comma-separated; empty offers every palette"><input type="text" value={(model.palettes ?? []).join(', ')} onInput={e => onChange({ palettes: e.currentTarget.value.split(',').map(id => id.trim()).filter(Boolean) })} /></Field>
     <Field label="Font stylesheets" hint="one URL per line"><TextArea rows={2} value={model.fonts.join('\n')} onInput={text => onChange({ fonts: text.split(/\r?\n/).map(line => line.trim()).filter(Boolean) })} /></Field>
-    <TokenList tokens={model.tokens} onChange={tokens => onChange({ tokens })} suggestions={[...CORE_TOKENS, '--font-display', '--font-body', '--fs-display', '--fs-title', '--fs-h', '--fs-body', '--fs-small', '--pad-x', '--pad-y']} />
+    <TokenList tokens={model.tokens} onChange={tokens => onChange({ tokens })} suggestions={['--font-display', '--font-body', '--fs-display', '--fs-title', '--fs-h', '--fs-body', '--fs-small', '--pad-x', '--pad-y']} />
     <p class="section-title">Author settings (params)</p>
     {model.params.map((param, index) => <div class="field" key={index}>
       <div class="row">
-        <input type="text" value={param.name} placeholder="primaryColor" onInput={e => onChange({ params: update(model.params, index, { name: e.currentTarget.value }) })} />
+        <input type="text" value={param.name} placeholder="fontBody" onInput={e => onChange({ params: update(model.params, index, { name: e.currentTarget.value }) })} />
         <select value={param.token ?? ''} onChange={e => onChange({ params: update(model.params, index, { token: e.currentTarget.value }) })}><option value="">token…</option>{tokenNames.map(name => <option key={name} value={name}>{name}</option>)}</select>
         <input type="text" value={param.title ?? ''} placeholder="Title" onInput={e => onChange({ params: update(model.params, index, { title: e.currentTarget.value }) })} />
         <button class="btn is-small is-icon" title="Remove setting" aria-label="Remove setting" onClick={() => onChange({ params: without(model.params, index) })}><Icon name="close" size={14} /></button>

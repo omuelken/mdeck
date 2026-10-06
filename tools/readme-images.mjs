@@ -27,10 +27,10 @@ try {
       await page.close()
       console.log('wrote', file)
     }
-    await shot('theme=neue&palette=&accent=&accent2=#1', resolve(out, 'hero.png'), { width: 1600, height: 900 })
+    await shot('theme=neue&palette=&appearance=#1', resolve(out, 'hero.png'), { width: 1600, height: 900 })
     const themes = Object.keys(loadRegistry(deck).themes)
     const frames = themes.map(theme => resolve(temp, `theme-${theme}.png`))
-    for (const [i, theme] of themes.entries()) await shot(`theme=${theme}&palette=&accent=&accent2=#1`, frames[i], { width: 1280, height: 720 })
+    for (const [i, theme] of themes.entries()) await shot(`theme=${theme}&palette=&appearance=#1`, frames[i], { width: 1280, height: 720 })
     const row = list => ['(', ...list.flatMap(file => ['(', file, '-resize', '640x360', '-bordercolor', '#111111', '-border', '6', ')']), '+append', ')']
     execFileSync('magick', [...row(frames.slice(0, 3)), ...row(frames.slice(3)), '-append', '-background', '#111111', resolve(out, 'themes.png')])
     execFileSync('magick', ['-delay', '140', '-loop', '0', ...frames, '-resize', '960x540', '-layers', 'optimize', resolve(out, 'themes.gif')])

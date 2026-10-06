@@ -1,0 +1,29 @@
+schema = 1
+kind = "palette"
+id = "brand"
+title = "FHNW"
+description = "The FHNW corporate colours: black, white and FHNW yellow."
+# Only for the fhnw theme: its corporate colours.
+theme = "fhnw"
+
+[light]
+"--bg" = "#ffffff"
+"--surface" = "#f1f1ee"
+"--ink" = "#000000"
+"--ink-soft" = "#262626"
+"--muted" = "#6e6e6e"
+"--rule" = "#deded9"
+"--accent" = "#fde70e"
+"--accent-2" = "#000000"
+"--on-accent" = "#000000"
+
+[dark]
+"--bg" = "#000000"
+"--surface" = "#1c1c1c"
+"--ink" = "#ffffff"
+"--ink-soft" = "#dcdcdc"
+"--muted" = "#9a9a9a"
+"--rule" = "#333333"
+"--accent" = "#fde70e"
+"--accent-2" = "#ffffff"
+"--on-accent" = "#000000"

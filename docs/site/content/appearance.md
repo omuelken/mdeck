@@ -1,6 +1,6 @@
 # Change the look
 
-A **theme** chooses the fonts and overall style. A **palette** chooses a set of colors. You can change either without rewriting your slides.
+A **theme** chooses the fonts and the style of the slides. A **palette** chooses the colours, in a light and a dark version. You can change either without rewriting your slides.
 
 ## Choose a theme
 
@@ -9,7 +9,6 @@ Put the theme name under `theme` in the settings at the very top of your file:
 ```yaml
 ---
 theme: neue
-palette: paper
 ---
 ```
 
@@ -17,39 +16,51 @@ If you already have a settings block there, change the existing lines rather tha
 
 | Name to use | What it looks like |
 |---|---|
-| `neue` | Clear, simple type and generous space |
-| `aurora` | A modern look with geometric shapes and color accents |
-| `duet` | Two accent colors for contrasting ideas |
+| `neue` | Swiss style: large type, clear lines, chapters in full colour |
+| `aurora` | A modern look with geometric shapes and colour accents |
+| `duet` | Two accent colours for contrasting ideas |
 | `editorial` | A book-like look with serif headings |
 | `fhnw` | The FHNW visual identity |
 | `terminal` | A dark look with lettering like a computer terminal |
 
-## Choose colors
+Each theme comes with colours that suit it, so you do not have to choose any.
 
-Set `palette` to one of these names:
+## Choose colours
 
-| Light palettes | Dark palettes |
+To use other colours, set `palette` to one of these:
+
+| Name to use | Colours |
 |---|---|
-| `paper` — white and neutral | `dark-slate` — cool and restrained |
-| `sage` — muted green | `dark-ember` — warm highlights |
-| `mono` — black and white | `dark-neon` — vivid highlights |
-| `terra` — warm earth colors | `dark-mono` — dark monochrome |
-
-Leave out `palette` to use the theme's own colors.
-
-## Pick your own accent color
-
-The accent is the color used for highlights. You can set it directly:
+| `lagoon` | Teal on warm stone (neue's own) |
+| `swiss` | White, black and signal red |
+| `graphite` | Black and white with a steel-blue accent |
+| `terra` | Cream, deep navy and brick red |
+| `forest` | Deep green with moss and ochre |
+| `ember` | Sand and espresso with orange |
+| `neon` | Violet and magenta, loud |
 
 ```yaml
 ---
 theme: neue
-palette: paper
-accent: "#2455c7"
+palette: terra
 ---
 ```
 
-The value beginning with `#` is a color code. Many color pickers let you copy this value. Keep the quotation marks around it. Themes that use a second accent also accept `accent2`.
+The FHNW theme always uses the FHNW colours.
+
+## Light or dark
+
+Every palette has a light and a dark version. Choose dark for a dark lecture hall, light for a bright room:
+
+```yaml
+---
+theme: neue
+palette: terra
+appearance: dark
+---
+```
+
+Some slides use the other version on purpose: neue's statement slides are dark in a light talk and light in a dark one.
 
 ## Try a look before saving it
 
@@ -59,7 +70,7 @@ Open the launch page and choose **Presenter view**:
 mdeck run my-talk.md
 ```
 
-Its appearance controls let you try themes and colors. These changes are a preview: they do not save back to your text file. Once you find a look you like, put its settings in the file and save.
+Its **Theme & Palette** controls let you try themes, palettes and light or dark. These changes are a preview: they do not save back to your text file. Once you find a look you like, put its settings in the file and save.
 
 ## Add your name and organization
 

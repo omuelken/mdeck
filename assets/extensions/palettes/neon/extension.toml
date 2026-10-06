@@ -1,0 +1,27 @@
+schema = 1
+kind = "palette"
+id = "neon"
+title = "Neon"
+description = "Violet and magenta; loud, for workshops."
+
+[light]
+"--bg" = "#ffffff"
+"--surface" = "#f4f0fb"
+"--ink" = "#14072b"
+"--ink-soft" = "#3a2d55"
+"--muted" = "#6a6084"
+"--rule" = "#e4ddf3"
+"--accent" = "#9b00d9"
+"--accent-2" = "#d6106f"
+"--on-accent" = "#ffffff"
+
+[dark]
+"--bg" = "#0d0d0d"
+"--surface" = "#1a1a1a"
+"--ink" = "#f0f0f0"
+"--ink-soft" = "#cccccc"
+"--muted" = "#8a8a8a"
+"--rule" = "#2a2a2a"
+"--accent" = "#cc17ff"
+"--accent-2" = "#ff1791"
+"--on-accent" = "#0d0d0d"

@@ -1,0 +1,27 @@
+schema = 1
+kind = "palette"
+id = "ember"
+title = "Ember"
+description = "Sand and espresso with a glowing orange."
+
+[light]
+"--bg" = "#fbf6ef"
+"--surface" = "#f1e7da"
+"--ink" = "#2a1a10"
+"--ink-soft" = "#4a3324"
+"--muted" = "#7a6656"
+"--rule" = "#e6d6c3"
+"--accent" = "#c2410c"
+"--accent-2" = "#8f5a3c"
+"--on-accent" = "#ffffff"
+
+[dark]
+"--bg" = "#121005"
+"--surface" = "#1f1e19"
+"--ink" = "#eae0d5"
+"--ink-soft" = "#c6ac8f"
+"--muted" = "#9a8a77"
+"--rule" = "#2b2a29"
+"--accent" = "#eb5e28"
+"--accent-2" = "#c98b6b"
+"--on-accent" = "#0d0a05"

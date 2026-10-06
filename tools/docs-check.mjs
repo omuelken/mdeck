@@ -19,7 +19,8 @@ try {
   assert.ok(await page.waitFor("!!document.querySelector('[data-preview] iframe')?.contentDocument?.getElementById('deck-theme')"))
   const before = await page.evaluate("document.querySelector('[data-preview] iframe').contentDocument.getElementById('deck-theme').textContent")
   await page.evaluate("const select = document.querySelector('[data-preview] select'); select.value = 'terminal'; select.dispatchEvent(new Event('change'))")
-  assert.ok(await page.waitFor("document.querySelector('[data-preview] iframe')?.contentDocument?.getElementById('deck-theme')?.textContent?.includes('#0d0f12')"))
+  // Terminal starts dark with its default palette, forest.
+  assert.ok(await page.waitFor("document.querySelector('[data-preview] iframe')?.contentDocument?.getElementById('deck-palette')?.textContent?.includes('#0e1a14')"))
   const after = await page.evaluate("document.querySelector('[data-preview] iframe').contentDocument.getElementById('deck-theme').textContent")
   assert.notEqual(after, before, 'picker actually changes the iframe theme')
   const address = new URL(await page.evaluate("document.querySelector('[data-preview] iframe').src"))

@@ -35,7 +35,7 @@ test('GET /deck returns the file, its hash and the extension registry', async ()
   assert.equal(body.name, 'slides.md')
   assert.ok(body.registry.layouts.find(t => t.id === 'split')?.starter.includes('layout: split'))
   assert.ok(body.registry.layouts.find(t => t.id === 'comparison'))
-  assert.ok(body.registry.themes.find(t => t.id === 'neue')?.tokens['--accent'])
+  assert.equal(body.registry.themes.find(t => t.id === 'neue')?.palette, 'lagoon')
   assert.deepEqual(body.warnings, [])
 })
 
@@ -132,11 +132,11 @@ test('deck-local extensions can be read, written and removed; built-ins are read
   assert.equal(body.source, 'local')
   assert.ok(body.files['extension.toml'].includes('kind = "layout"'))
   assert.ok(body.files['layout.jsx'].includes('MarkdownRegion'))
-  assert.equal((await api('/extension/palette/paper')).status, 200)
+  assert.equal((await api('/extension/palette/swiss')).status, 200)
   assert.equal((await api('/extension/palette/nope')).status, 404)
   assert.equal((await api('/extension/thing/paper')).status, 400)
 
-  const toml = 'schema = 1\nkind = "palette"\nid = "ocean"\ntitle = "Ocean"\ndark = true\n[tokens]\n"--bg" = "#102030"\n"--accent" = "#ffbd69"\n'
+  const toml = 'schema = 1\nkind = "palette"\nid = "ocean"\ntitle = "Ocean"\n[light]\n\"--bg\" = \"#f4f8fb\"\n\"--surface\" = \"#e6eef4\"\n\"--ink\" = \"#0b1d2a\"\n\"--ink-soft\" = \"#22394a\"\n\"--muted\" = \"#4f6474\"\n\"--rule\" = \"#c9d7e2\"\n\"--accent\" = \"#0a6aa8\"\n\"--accent-2\" = \"#b45309\"\n\"--on-accent\" = \"#ffffff\"\n[dark]\n\"--bg\" = \"#102030\"\n\"--surface\" = \"#17293b\"\n\"--ink\" = \"#eef4f8\"\n\"--ink-soft\" = \"#c8d6e0\"\n\"--muted\" = \"#8ea3b3\"\n\"--rule\" = \"#24384b\"\n\"--accent\" = \"#ffbd69\"\n\"--accent-2\" = \"#7cc4ff\"\n\"--on-accent\" = \"#102030\"\n'
   const created = await api('/extension/palette/ocean', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': toml } }) })
   const createdText = await created.text()
   assert.equal(created.status, 200, createdText)
@@ -146,10 +146,10 @@ test('deck-local extensions can be read, written and removed; built-ins are read
 
   const invalid = await api('/extension/palette/ocean', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': toml.replace('"--bg"', '"bg"') } }) })
   assert.equal(invalid.status, 500)
-  assert.match((await invalid.json()).error, /tokens.bg/)
+  assert.match((await invalid.json()).error, /light.bg/)
   assert.equal(readFileSync(resolve(dir, 'extensions/ocean/extension.toml'), 'utf8'), toml, 'invalid manifests are not written')
 
-  const builtin = await api('/extension/palette/paper', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': toml.replace('ocean', 'paper') } }) })
+  const builtin = await api('/extension/palette/swiss', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': toml.replace('ocean', 'swiss') } }) })
   assert.equal(builtin.status, 403)
   const mismatch = await api('/extension/theme/ocean', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': toml } }) })
   assert.equal(mismatch.status, 409)
@@ -167,7 +167,7 @@ test('deck-local extensions can be read, written and removed; built-ins are read
   assert.equal(dropStarter.status, 200)
   assert.deepEqual(Object.keys((await dropStarter.json()).files).sort(), ['extension.toml', 'layout.jsx'])
 
-  assert.equal((await api('/extension/palette/paper', { method: 'DELETE' })).status, 403)
+  assert.equal((await api('/extension/palette/swiss', { method: 'DELETE' })).status, 403)
   assert.equal((await api('/extension/palette/ocean', { method: 'DELETE' })).status, 200)
   assert.equal((await api('/extension/layout/box', { method: 'DELETE' })).status, 200)
   assert.equal(existsSync(resolve(dir, 'extensions/ocean')), false)

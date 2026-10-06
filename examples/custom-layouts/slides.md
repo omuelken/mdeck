@@ -1,6 +1,6 @@
 ---
 theme: neue
-palette: paper
+palette: swiss
 meta:
   title: Deck-local layouts
 ---

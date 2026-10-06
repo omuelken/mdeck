@@ -25,13 +25,14 @@ test('every built-in manifest round-trips through the editor model', () => {
 })
 
 test('starter files for new extensions validate', () => {
-  for (const [kind, from] of [['palette', null], ['palette', registry.palettes.sage.manifest], ['theme', null], ['theme', registry.themes.duet.manifest], ['layout', null], ['layout', registry.layouts.split.manifest]]) {
+  for (const [kind, from] of [['palette', null], ['palette', registry.palettes.forest.manifest], ['theme', null], ['theme', registry.themes.duet.manifest], ['layout', null], ['layout', registry.layouts.split.manifest]]) {
     const files = starterFiles(kind, 'fresh', 'Fresh', from, { 'styles.css': '.slide {}', 'layout.jsx': 'export default () => null', 'starter.md': ':::meta\nlayout: split\n:::\n# X\n' })
     const record = validateManifest(parseManifest(files['extension.toml']).raw, { file: 'x', dir: '/x/fresh', folderName: 'fresh', fileExists: path => Object.hasOwn(files, path.slice('/x/fresh/'.length)) })
     assert.equal(record.kind, kind)
     assert.equal(record.title, 'Fresh')
     if (kind === 'layout') assert.match(files['starter.md'], /layout: fresh/)
-    if (kind === 'theme' && from) assert.equal(record.manifest.params.secondaryColor.default, '#0891b2')
+    if (kind === 'theme' && from) assert.equal(record.manifest.palette, 'neon', 'a copy keeps the default palette')
+    if (kind === 'palette' && from) assert.equal(record.manifest.dark['--accent'], '#7bd389', 'a copy keeps both variants')
   }
   assert.match(parseManifest('id = \n').error, /value expected|invalid value/)
 })

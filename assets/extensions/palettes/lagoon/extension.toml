@@ -1,0 +1,27 @@
+schema = 1
+kind = "palette"
+id = "lagoon"
+title = "Lagoon"
+description = "Teal on warm stone, with an orange second accent."
+
+[light]
+"--bg" = "#f8f8f6"
+"--surface" = "#edede8"
+"--ink" = "#121210"
+"--ink-soft" = "#383631"
+"--muted" = "#6b6862"
+"--rule" = "#e0deda"
+"--accent" = "#0d9488"
+"--accent-2" = "#c2410c"
+"--on-accent" = "#ffffff"
+
+[dark]
+"--bg" = "#0e1716"
+"--surface" = "#15211f"
+"--ink" = "#eef5f3"
+"--ink-soft" = "#c5d3cf"
+"--muted" = "#8aa19b"
+"--rule" = "#23332f"
+"--accent" = "#2dd4bf"
+"--accent-2" = "#fb923c"
+"--on-accent" = "#062b26"

@@ -3,6 +3,8 @@ kind = "theme"
 id = "neue"
 title = "Neue"
 description = "Swiss typography: large flush-left type, rules instead of boxes, and the accent as a surface on chapter slides."
+# The palette this theme uses unless the deck sets one; colours come only from palettes.
+palette = "lagoon"
 fonts = [
   "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@300;400;500;600;700&display=swap",
 ]
@@ -10,17 +12,9 @@ fonts = [
 [files]
 styles = "styles.css"
 
-# Default values for the CSS custom properties used by styles.css.
-# Palettes and deck settings override these in order.
+# Type, spacing and fonts used by styles.css; colours come from the palette.
+# Deck settings (params) override these.
 [tokens]
-"--bg" = "#f8f8f6"  # warm stone-white
-"--ink" = "#121210"  # warm near-black
-"--ink-soft" = "#383631"  # warm dark
-"--muted" = "#888580"  # warm medium gray
-"--rule" = "#e0deda"  # warm light rule
-"--accent" = "#0d9488"  # teal-600 — distinct from plain blue, Clarity violet, FHNW yellow
-"--surface" = "#edede8"  # parchment
-"--on-accent" = "#ffffff"  # text on accent surfaces (chapter slides)
 
 # Type scale (px) — projection-appropriate at 1920×1080
 "--fs-display" = "128px"
@@ -43,22 +37,6 @@ styles = "styles.css"
 "--font-body" = "\"Inter\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
 
 # Settings authors can change under `params:` in the deck; each points at a token above.
-[params.primaryColor]
-token = "--accent"
-title = "Primary color"
-
-[params.backgroundColor]
-token = "--bg"
-title = "Background"
-
-[params.inkColor]
-token = "--ink"
-title = "Text color"
-
-[params.mutedColor]
-token = "--muted"
-title = "Muted text"
-
 [params.fontDisplay]
 token = "--font-display"
 title = "Display font"

@@ -1,0 +1,27 @@
+schema = 1
+kind = "palette"
+id = "forest"
+title = "Forest"
+description = "Deep green with moss and ochre; calm, with contrast."
+
+[light]
+"--bg" = "#f6f5ef"
+"--surface" = "#e9eadf"
+"--ink" = "#12261c"
+"--ink-soft" = "#2c4436"
+"--muted" = "#5a6c60"
+"--rule" = "#d3d8c8"
+"--accent" = "#2e7d32"
+"--accent-2" = "#9a6b00"
+"--on-accent" = "#ffffff"
+
+[dark]
+"--bg" = "#0e1a14"
+"--surface" = "#16261d"
+"--ink" = "#e9f1e6"
+"--ink-soft" = "#c4d3c0"
+"--muted" = "#8ea493"
+"--rule" = "#24382c"
+"--accent" = "#7bd389"
+"--accent-2" = "#e6c35c"
+"--on-accent" = "#0e1a14"

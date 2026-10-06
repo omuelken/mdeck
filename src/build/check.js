@@ -6,6 +6,7 @@ import { drawingsDiagnostic } from './drawings.js'
 import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck } from '../core/validateDeck.js'
 import { manifestsOf } from '../extensions/discover.js'
+import { paletteProblems } from '../extensions/contrast.js'
 import { collectLocalAssetRefs } from './slidesPlugin.js'
 import { componentFolders, isFolder } from './components.js'
 import { inkFileFor, validateInk, normalizeInk, orphanIds } from '../core/ink.js'
@@ -18,6 +19,12 @@ export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath
   }
   for (const folder of componentFolders(slidesPath, source).filter(folder => folder.source === 'shared')) {
     if (!isFolder(folder.dir)) diagnostics.push({ severity: 'error', code: 'missing-components', message: `Components folder not found: ${folder.path} (${folder.dir})`, line: 1, column: 1 })
+  }
+  // The deck's own palettes: colours too close to read are worth knowing
+  // before the talk (the built-in ones are held to this by the tests).
+  for (const record of Object.values(registry.palettes)) {
+    if (record.source !== 'local') continue
+    for (const problem of paletteProblems(record.manifest)) diagnostics.push({ severity: 'warning', code: 'palette-contrast', message: `Palette "${record.id}", ${problem}`, line: 1, column: 1 })
   }
   // The deck's drawings file: readable, and only for slides that still exist.
   const inkPath = inkFileFor(resolve(slidesPath))

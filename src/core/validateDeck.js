@@ -1,5 +1,6 @@
 import { diagnostic } from './source.js'
 import { isPlainObject, RENAMED_DECK_KEYS } from './parseSlides.js'
+import { palettesFor } from '../extensions/tokens.js'
 import { LABEL_KEYS } from './labels.js'
 import { resolveLayoutProps, propertyErrors } from '../layouts/layoutProps.js'
 
@@ -16,6 +17,11 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
   for (const [old, now] of Object.entries(RENAMED_DECK_KEYS)) {
     if (config[old] != null) add('renamed-setting', `${old} is now ${now}${old === 'live' ? ': the address is server, and id and code are session.id and session.code' : ''}`, deck.configSource?.start)
   }
+  // Colours come only from the palette now.
+  for (const key of ['accent', 'accent2']) {
+    if (config[key] != null) add('removed-setting', `${key} is no longer a setting: colours come from the palette; choose one with palette (see mdeck list palettes)`, deck.configSource?.start)
+  }
+  if (config.appearance != null && !['light', 'dark'].includes(config.appearance)) add('invalid-config', 'appearance must be light or dark', deck.configSource?.start)
   for (const key of ['meta', 'params', 'callouts', 'labels', 'show', 'reader', 'session']) {
     if (config[key] != null && !isPlainObject(config[key])) add('invalid-config', `${key} must be a mapping`, deck.configSource?.start)
   }
@@ -44,7 +50,12 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
     }
   }
   if (themes && config.theme != null && !Object.hasOwn(themes, config.theme)) add('unknown-theme', `Unknown theme "${config.theme}"; available: ${Object.keys(themes).join(', ')}`, deck.configSource?.start)
-  if (palettes && config.palette != null && config.palette !== '' && !Object.hasOwn(palettes, config.palette)) add('unknown-palette', `Unknown palette "${config.palette}"; available: ${Object.keys(palettes).join(', ')}`, deck.configSource?.start, 'warning')
+  if (palettes && themes && config.palette != null) {
+    const theme = themes[config.theme ?? 'neue']
+    const offered = theme ? palettesFor(theme, palettes).map(palette => palette.id) : Object.keys(palettes)
+    if (!Object.hasOwn(palettes, config.palette)) add('unknown-palette', `Unknown palette "${config.palette}"; available: ${offered.join(', ')}`, deck.configSource?.start)
+    else if (theme && !offered.includes(config.palette)) add('unknown-palette', `The theme "${theme.id}" does not offer the palette "${config.palette}"; available: ${offered.join(', ')}`, deck.configSource?.start)
+  }
   if (themes && config.params != null && isPlainObject(config.params) && Object.hasOwn(themes, config.theme ?? 'neue')) {
     const theme = themes[config.theme ?? 'neue']
     for (const name of Object.keys(config.params)) if (!Object.hasOwn(theme.params ?? {}, name)) add('unknown-param', `Theme "${theme.id}" has no parameter "${name}"; available: ${Object.keys(theme.params ?? {}).join(', ') || 'none'}`, deck.configSource?.start, 'warning')

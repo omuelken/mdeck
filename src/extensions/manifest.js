@@ -4,7 +4,7 @@
 import { existsSync } from 'node:fs'
 import { resolve, relative, isAbsolute, sep } from 'node:path'
 import { parse as parseToml, TomlError } from 'smol-toml'
-import { TOKEN_NAME_RE } from './tokens.js'
+import { TOKEN_NAME_RE, COLOR_ROLES, APPEARANCES } from './tokens.js'
 import { propertyErrors } from '../layouts/layoutProps.js'
 
 export const SCHEMA_VERSION = 1
@@ -17,8 +17,8 @@ const PROPERTY_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'obje
 const SHARED_KEYS = ['schema', 'kind', 'id', 'title', 'description']
 const KEYS = {
   layout: [...SHARED_KEYS, 'frame', 'files', 'regions', 'properties'],
-  theme: [...SHARED_KEYS, 'dark', 'fonts', 'files', 'tokens', 'params', 'accent2', 'accent2Preview'],
-  palette: [...SHARED_KEYS, 'dark', 'tokens'],
+  theme: [...SHARED_KEYS, 'palette', 'palettes', 'appearance', 'fonts', 'files', 'tokens', 'params'],
+  palette: [...SHARED_KEYS, 'theme', 'light', 'dark'],
 }
 const SCHEMA_KEYS = ['type', 'title', 'description', 'enum', 'required', 'default', 'minimum', 'maximum', 'minItems', 'maxItems', 'items']
 const RESERVED_NAMES = ['constructor', 'prototype', '__proto__']
@@ -55,6 +55,10 @@ export function validateManifest(raw, { file, dir, folderName, fileExists = exis
   if (!KINDS.includes(raw.kind)) fail(`kind must be one of: ${KINDS.join(', ')}`, 'kind')
   const kind = raw.kind
   if (raw.name !== undefined) fail('name is not a setting; use id for the identifier and title for the display name', 'name')
+  // Colours used to live in themes and in a palette's single [tokens] table.
+  if (kind === 'theme' && raw.dark !== undefined) fail('dark is now appearance = "dark"; the colours come from the palette', 'dark')
+  if (kind === 'theme' && (raw.accent2 !== undefined || raw.accent2Preview !== undefined)) fail('a theme no longer sets colours; the second accent comes from the palette (--accent-2)', raw.accent2 !== undefined ? 'accent2' : 'accent2Preview')
+  if (kind === 'palette' && raw.tokens !== undefined) fail('a palette has a [light] and a [dark] table of colours instead of [tokens]', 'tokens')
   for (const key of Object.keys(raw)) {
     if (!KEYS[kind].includes(key)) fail(`Unknown setting for a ${kind}. Allowed: ${KEYS[kind].join(', ')}`, key)
   }
@@ -150,23 +154,27 @@ function validatePropertySchema(schema, path, fail) {
   return normalized
 }
 
-function validateTokens(raw, fail) {
-  if (!isPlainObject(raw.tokens) || !Object.keys(raw.tokens).length) fail('a [tokens] table with at least one CSS custom property is required', 'tokens')
+function validateTokens(table, path, fail, { required = false } = {}) {
+  if (!isPlainObject(table) || (required && !Object.keys(table).length)) fail(`a [${path}] table with at least one CSS custom property is required`, path)
   const tokens = {}
-  for (const [name, value] of Object.entries(raw.tokens)) {
-    if (!TOKEN_NAME_RE.test(name)) fail(`token names look like "--accent" (quote them in TOML: "--accent" = "#ff0000")`, `tokens.${name}`)
-    if (typeof value !== 'string' || !value.trim()) fail('token values are CSS text', `tokens.${name}`)
+  for (const [name, value] of Object.entries(table)) {
+    if (!TOKEN_NAME_RE.test(name)) fail(`token names look like "--accent" (quote them in TOML: "--accent" = "#ff0000")`, `${path}.${name}`)
+    if (typeof value !== 'string' || !value.trim()) fail('token values are CSS text', `${path}.${name}`)
     tokens[name] = value.trim()
   }
   return tokens
 }
 
 function validateTheme(raw, shared, fail) {
-  if (raw.dark != null && typeof raw.dark !== 'boolean') fail('must be true or false', 'dark')
   if (raw.fonts != null && (!Array.isArray(raw.fonts) || raw.fonts.some(url => typeof url !== 'string' || !url.trim()))) fail('must be a list of stylesheet URLs', 'fonts')
-  if (raw.accent2 != null && typeof raw.accent2 !== 'boolean') fail('must be true or false', 'accent2')
-  if (raw.accent2Preview != null && typeof raw.accent2Preview !== 'string') fail('must be a CSS color', 'accent2Preview')
-  const tokens = validateTokens(raw, fail)
+  // Colours come from palettes only: a theme names its default palette, may
+  // limit which palettes fit it, and says whether it starts light or dark.
+  if (typeof raw.palette !== 'string' || !ID_RE.test(raw.palette)) fail('palette must name the palette this theme uses by default, such as palette = "lagoon"', 'palette')
+  if (raw.palettes != null && (!Array.isArray(raw.palettes) || !raw.palettes.length || raw.palettes.some(id => typeof id !== 'string' || !ID_RE.test(id)))) fail('palettes must be a nonempty list of palette ids, or be left out to offer every palette', 'palettes')
+  if (raw.palettes && !raw.palettes.includes(raw.palette)) fail(`palettes must include the default palette "${raw.palette}"`, 'palettes')
+  if (raw.appearance != null && !APPEARANCES.includes(raw.appearance)) fail(`appearance must be one of: ${APPEARANCES.join(', ')}`, 'appearance')
+  const tokens = validateTokens(raw.tokens ?? {}, 'tokens', fail)
+  for (const name of Object.keys(tokens)) if (COLOR_ROLES.includes(name)) fail(`${name} is a colour; colours come from the palette, not the theme`, `tokens.${name}`)
   if (raw.params != null && !isPlainObject(raw.params)) fail('params must be a table', 'params')
   const params = {}
   for (const [name, param] of Object.entries(raw.params ?? {})) {
@@ -179,12 +187,23 @@ function validateTheme(raw, shared, fail) {
     params[name] = { token: param.token, default: tokens[param.token], ...(param.title ? { title: param.title } : {}), ...(param.description ? { description: param.description } : {}) }
   }
   return {
-    ...shared, dark: raw.dark ?? false, fonts: raw.fonts ?? [], tokens, params,
-    accent2: raw.accent2 ?? false, ...(raw.accent2Preview ? { accent2Preview: raw.accent2Preview } : {}),
+    ...shared, palette: raw.palette, ...(raw.palettes ? { palettes: [...raw.palettes] } : {}),
+    appearance: raw.appearance ?? 'light', fonts: raw.fonts ?? [], tokens, params,
   }
 }
 
+// A palette is a family of colours in two variants: [light] and [dark], each
+// with every colour role. Themes use one variant for the slides and the
+// other for inverted slides. `theme` makes a palette private to that theme.
 function validatePalette(raw, shared, fail) {
-  if (raw.dark != null && typeof raw.dark !== 'boolean') fail('must be true or false', 'dark')
-  return { ...shared, dark: raw.dark ?? false, tokens: validateTokens(raw, fail) }
+  if (raw.theme != null && (typeof raw.theme !== 'string' || !ID_RE.test(raw.theme))) fail('theme must be the id of the only theme that may use this palette', 'theme')
+  const variants = {}
+  for (const appearance of APPEARANCES) {
+    if (!isPlainObject(raw[appearance])) fail(`a [${appearance}] table with the ${appearance} colours is required`, appearance)
+    const tokens = validateTokens(raw[appearance], appearance, fail, { required: true })
+    const missing = COLOR_ROLES.filter(role => !Object.hasOwn(tokens, role))
+    if (missing.length) fail(`missing colours: ${missing.join(', ')}`, appearance)
+    variants[appearance] = tokens
+  }
+  return { ...shared, ...(raw.theme ? { theme: raw.theme } : {}), light: variants.light, dark: variants.dark }
 }

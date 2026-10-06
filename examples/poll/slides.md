@@ -1,6 +1,6 @@
 ---
 theme: neue
-palette: sage
+palette: forest
 meta:
   title: "Ask the room"
   author: "Tilman Schieber"

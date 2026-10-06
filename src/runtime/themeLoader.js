@@ -6,7 +6,6 @@ const SELF_CONTAINED = typeof __MDECK_SELF_CONTAINED__ !== 'undefined'
   && __MDECK_SELF_CONTAINED__
 
 export const THEME_NAMES = Object.keys(themes)
-export const PALETTE_NAMES = Object.keys(palettes)
 export const THEME_METAS = Object.fromEntries(Object.entries(themes).map(([id, theme]) => [id, theme.manifest]))
 export const PALETTES = Object.fromEntries(Object.entries(palettes).map(([id, palette]) => [id, palette.manifest]))
 
@@ -22,7 +21,8 @@ function themeEntry(id) {
   if (override) return { manifest: override.manifest ?? override, load: () => typeof override.styles === 'string' ? Promise.resolve(override.styles) : themes[id]?.load() ?? Promise.resolve('') }
   return themes[id]
 }
-const paletteManifest = id => overrides.palettes[id]?.manifest ?? overrides.palettes[id] ?? PALETTES[id]
+// Every palette, with the editor's unsaved ones in place of the registered.
+const allPalettes = () => ({ ...PALETTES, ...Object.fromEntries(Object.entries(overrides.palettes).map(([id, palette]) => [id, palette.manifest ?? palette])) })
 
 function upsertStyle(id, textContent) {
   let el = document.getElementById(id)
@@ -47,22 +47,22 @@ function syncThemeFonts(urls) {
   }
 }
 
-export async function loadTheme({ theme = 'neue', palette, accent, accent2, params = {}, meta = {} } = {}) {
+export async function loadTheme({ theme = 'neue', palette, appearance, params = {}, meta = {} } = {}) {
   const entry = themeEntry(theme)
   if (!entry) throw new Error(`Unknown theme: "${theme}". Available: ${THEME_NAMES.join(', ')}`)
 
   const styles = await entry.load()
-  const appearance = buildAppearance({
-    theme: entry.manifest, palette: paletteManifest(palette) ?? null, paletteId: palette ?? '',
-    params, accent, accent2, meta, offline: SELF_CONTAINED,
+  const look = buildAppearance({
+    theme: entry.manifest, palettes: allPalettes(), palette, appearance,
+    params, meta, offline: SELF_CONTAINED,
   })
-  for (const warning of appearance.warnings) console.warn(warning)
+  for (const warning of look.warnings) console.warn(warning)
 
   // Token defaults come from the manifest; the stylesheet only holds rules.
-  upsertStyle('deck-theme', [baseCSS, appearance.themeCss, styles].join('\n'))
+  upsertStyle('deck-theme', [baseCSS, look.themeCss, styles].join('\n'))
   // Offline-ready builds deliberately use the declared system-font fallbacks.
-  syncThemeFonts(appearance.fonts)
-  // Palette sits between theme tokens and per-deck params.
-  upsertStyle('deck-palette', appearance.paletteCss)
-  upsertStyle('deck-overrides', appearance.overridesCss)
+  syncThemeFonts(look.fonts)
+  // The palette's colours, between the theme's tokens and the deck's params.
+  upsertStyle('deck-palette', look.paletteCss)
+  upsertStyle('deck-overrides', look.overridesCss)
 }

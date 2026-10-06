@@ -3,8 +3,8 @@ kind = "theme"
 id = "aurora"
 title = "Aurora"
 description = "Geometric shapes with a violet accent and a derived magenta second accent."
-accent2 = true
-accent2Preview = "#d946ef"
+# The palette this theme uses unless the deck sets one; colours come only from palettes.
+palette = "neon"
 fonts = [
   "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap",
 ]
@@ -12,17 +12,9 @@ fonts = [
 [files]
 styles = "styles.css"
 
-# Default values for the CSS custom properties used by styles.css.
-# Palettes and deck settings override these in order.
+# Type, spacing and fonts used by styles.css; colours come from the palette.
+# Deck settings (params) override these.
 [tokens]
-"--bg" = "#fafafe"  # barely-perceptible lavender tint
-"--surface" = "#f0f0fc"  # lavender surface: code blocks, glass pill
-"--ink" = "#0f0c29"  # deep violet-black
-"--ink-soft" = "#352a5e"  # dark violet
-"--muted" = "#7b6fa8"  # muted violet-gray
-"--rule" = "#ccc8eb"  # lavender rule
-"--accent" = "#6d28d9"  # vibrant violet — oklch +60° yields magenta
-"--accent-2" = "oklch(from var(--accent) l c calc(h + 60))"
 
 # Type scale (px) — projection-appropriate at 1920×1080
 "--fs-display" = "136px"
@@ -43,16 +35,3 @@ styles = "styles.css"
 # Type families
 "--font-display" = "\"Plus Jakarta Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
 "--font-body" = "\"Plus Jakarta Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
-
-# Settings authors can change under `params:` in the deck; each points at a token above.
-[params.primaryColor]
-token = "--accent"
-title = "Primary color"
-
-[params.backgroundColor]
-token = "--bg"
-title = "Background"
-
-[params.inkColor]
-token = "--ink"
-title = "Text color"

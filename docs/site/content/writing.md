@@ -87,7 +87,7 @@ A settings block at the very top of the file controls the whole presentation. It
 ```markdown
 ---
 theme: neue
-palette: paper
+palette: swiss
 meta:
   title: "Our next adventure"
   author: "Alex Morgan"

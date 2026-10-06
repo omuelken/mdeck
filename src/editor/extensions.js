@@ -4,7 +4,12 @@ import { parse, stringify } from 'smol-toml'
 
 export const MANIFEST = 'extension.toml'
 export const ID_RE = /^[a-z][a-z0-9-]*$/
-export const CORE_TOKENS = ['--bg', '--surface', '--ink', '--ink-soft', '--muted', '--rule', '--accent', '--accent-2', '--on-accent']
+export { COLOR_ROLES as CORE_TOKENS } from '../extensions/tokens.js'
+// Readable colours a new palette starts from.
+const STARTER_COLORS = {
+  light: { '--bg': '#ffffff', '--surface': '#f2f2f2', '--ink': '#111111', '--ink-soft': '#333333', '--muted': '#666666', '--rule': '#dadada', '--accent': '#0b6bcb', '--accent-2': '#c2410c', '--on-accent': '#ffffff' },
+  dark: { '--bg': '#111111', '--surface': '#1e1e1e', '--ink': '#f2f2f2', '--ink-soft': '#cfcfcf', '--muted': '#8f8f8f', '--rule': '#2e2e2e', '--accent': '#6aaeff', '--accent-2': '#fb923c', '--on-accent': '#111111' },
+}
 export const PROPERTY_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object']
 export const FRAMES = ['standard', 'title', 'chapter', 'none']
 
@@ -19,10 +24,11 @@ export function parseManifest(text) {
 // Raw TOML object → editable model. Unknown fields are kept in `extra`.
 export function toModel(raw) {
   // `starter`, `source` and `file` come from registry listings, not manifests.
-  const { schema, kind, id, title, description, dark, accent2, accent2Preview, fonts, files, tokens, params, frame, regions, properties, starter, source, file, ...extra } = raw
+  const { schema, kind, id, title, description, theme, light, dark, palette, palettes, appearance, fonts, files, tokens, params, frame, regions, properties, starter, source, file, ...extra } = raw
   const model = { kind, id: id ?? '', title: title ?? '', description: description ?? '', extra, files: files ?? {} }
-  if (kind === 'palette') return { ...model, dark: Boolean(dark), tokens: entries(tokens) }
-  if (kind === 'theme') return { ...model, dark: Boolean(dark), accent2: Boolean(accent2), accent2Preview: accent2Preview ?? '', fonts: fonts ?? [], tokens: entries(tokens), params: entries(params) }
+  // A palette: its light and dark colours, and the theme it belongs to, if any.
+  if (kind === 'palette') return { ...model, theme: theme ?? '', light: entries(light), dark: entries(dark) }
+  if (kind === 'theme') return { ...model, palette: palette ?? '', palettes: palettes ?? [], appearance: appearance ?? 'light', fonts: fonts ?? [], tokens: entries(tokens), params: entries(params) }
   if (kind === 'layout') return { ...model, frame: frame ?? 'standard', regions: entries(regions), properties: entries(properties).map(property => ({ ...property, enum: property.enum ?? [], items: property.items ?? null })) }
   return model
 }
@@ -31,9 +37,9 @@ export function toToml(model) {
   const base = { schema: 1, kind: model.kind, id: model.id, title: model.title, ...clean({ description: model.description }) }
   const tokens = table(model.tokens ?? [], token => token.value ?? '')
   let raw
-  if (model.kind === 'palette') raw = { ...base, ...(model.dark ? { dark: true } : {}), ...model.extra, tokens }
+  if (model.kind === 'palette') raw = { ...base, ...clean({ theme: model.theme }), ...model.extra, light: table(model.light ?? [], token => token.value ?? ''), dark: table(model.dark ?? [], token => token.value ?? '') }
   else if (model.kind === 'theme') raw = {
-    ...base, ...(model.dark ? { dark: true } : {}), ...(model.accent2 ? { accent2: true } : {}), ...clean({ accent2Preview: model.accent2Preview }), fonts: model.fonts ?? [], ...model.extra,
+    ...base, palette: model.palette, ...clean({ palettes: model.palettes }), ...(model.appearance === 'dark' ? { appearance: 'dark' } : {}), fonts: model.fonts ?? [], ...model.extra,
     files: { styles: 'styles.css', ...(model.files ?? {}) }, tokens,
     params: table(model.params ?? [], param => clean({ token: param.token, title: param.title, description: param.description })),
   }
@@ -60,9 +66,9 @@ function propertySchema(property) {
 export function toRuntimeManifest(model) {
   const tokens = table(model.tokens ?? [], token => token.value ?? '')
   const shared = { id: model.id, title: model.title, description: model.description ?? '' }
-  if (model.kind === 'palette') return { ...shared, dark: Boolean(model.dark), tokens }
+  if (model.kind === 'palette') return { ...shared, ...(model.theme ? { theme: model.theme } : {}), light: table(model.light ?? [], token => token.value ?? ''), dark: table(model.dark ?? [], token => token.value ?? '') }
   if (model.kind === 'theme') return {
-    ...shared, dark: Boolean(model.dark), fonts: model.fonts ?? [], tokens, accent2: Boolean(model.accent2), ...(model.accent2Preview ? { accent2Preview: model.accent2Preview } : {}),
+    ...shared, palette: model.palette, ...(model.palettes?.length ? { palettes: model.palettes } : {}), appearance: model.appearance ?? 'light', fonts: model.fonts ?? [], tokens,
     params: table(model.params ?? [], param => ({ token: param.token, default: tokens[param.token] ?? '', ...(param.title ? { title: param.title } : {}) })),
   }
   return shared
@@ -71,12 +77,14 @@ export function toRuntimeManifest(model) {
 // Starting points for new extensions. `from` is a registry manifest to copy.
 export function starterFiles(kind, id, title, from = null, fromFiles = {}) {
   if (kind === 'palette') {
-    const tokens = from?.tokens ? entries(from.tokens) : CORE_TOKENS.map(name => ({ name, value: '#888888' }))
-    return { [MANIFEST]: toToml({ kind, id, title, description: '', dark: Boolean(from?.dark), tokens, extra: {} }) }
+    // A copy of another palette, or readable starting colours to change.
+    const light = from?.light ? entries(from.light) : entries(STARTER_COLORS.light)
+    const dark = from?.dark ? entries(from.dark) : entries(STARTER_COLORS.dark)
+    return { [MANIFEST]: toToml({ kind, id, title, description: '', theme: '', light, dark, extra: {} }) }
   }
   if (kind === 'theme') {
     const model = from ? { ...toModel({ ...from, kind, params: from.params && Object.fromEntries(Object.entries(from.params).map(([name, param]) => [name, { token: param.token, title: param.title, description: param.description }])) }), id, title, files: {} }
-      : { kind, id, title, description: '', dark: false, accent2: false, accent2Preview: '', fonts: [], tokens: [...CORE_TOKENS.map(name => ({ name, value: name === '--bg' ? '#ffffff' : name.includes('ink') ? '#111111' : '#888888' })), { name: '--font-display', value: 'system-ui, sans-serif' }, { name: '--font-body', value: 'system-ui, sans-serif' }], params: [{ name: 'primaryColor', token: '--accent', title: 'Primary color' }], extra: {}, files: {} }
+      : { kind, id, title, description: '', palette: 'lagoon', palettes: [], appearance: 'light', fonts: [], tokens: [{ name: '--font-display', value: 'system-ui, sans-serif' }, { name: '--font-body', value: 'system-ui, sans-serif' }], params: [{ name: 'fontBody', token: '--font-body', title: 'Body font' }], extra: {}, files: {} }
     return { [MANIFEST]: toToml(model), 'styles.css': fromFiles['styles.css'] ?? DEFAULT_THEME_CSS }
   }
   const model = from ? { ...toModel({ ...from, kind }), id, title, files: {} } : { kind, id, title, description: '', frame: 'standard', regions: [{ name: 'body', description: 'Main content' }], properties: [], extra: {}, files: {} }

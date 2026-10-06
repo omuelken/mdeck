@@ -1,5 +1,6 @@
 // One discovery layer for layouts, themes and palettes. The same registry
 // backs `mdeck check`, CLI listings, the dev server and builds.
+import { palettesFor } from './tokens.js'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve, dirname, relative } from 'node:path'
 import { MANIFEST_FILENAME, ManifestError, KINDS, parseManifestText, validateManifest } from './manifest.js'
@@ -59,7 +60,27 @@ export function discoverExtensions(roots) {
     if (!existsSync(root.dir) || !statSync(root.dir).isDirectory()) continue
     for (const found of walk(root.dir)) add(loadManifest(found), root.source)
   }
+  checkPaletteReferences(registry)
   return registry
+}
+
+// Themes and palettes name each other across files: a theme's default palette
+// and its list must exist and fit it, a private palette's theme must exist.
+function checkPaletteReferences(registry) {
+  for (const theme of Object.values(registry.themes)) {
+    const offered = palettesFor(theme.manifest, manifestsOf(registry, 'palette'))
+    for (const id of theme.manifest.palettes ?? []) {
+      if (!registry.palettes[id]) throw new ManifestError(`palettes names "${id}", which is not a palette. Available: ${Object.keys(registry.palettes).join(', ')}`, { file: theme.file, path: 'palettes' })
+      const owner = registry.palettes[id].manifest.theme
+      if (owner && owner !== theme.id) throw new ManifestError(`palette "${id}" belongs to the theme "${owner}"`, { file: theme.file, path: 'palettes' })
+    }
+    if (!registry.palettes[theme.manifest.palette]) throw new ManifestError(`palette "${theme.manifest.palette}" does not exist. Available: ${Object.keys(registry.palettes).join(', ')}`, { file: theme.file, path: 'palette' })
+    if (!offered.some(palette => palette.id === theme.manifest.palette)) throw new ManifestError(`palette "${theme.manifest.palette}" belongs to another theme`, { file: theme.file, path: 'palette' })
+  }
+  for (const palette of Object.values(registry.palettes)) {
+    const owner = palette.manifest.theme
+    if (owner && !registry.themes[owner]) throw new ManifestError(`theme "${owner}" does not exist, so nothing could use this palette`, { file: palette.file, path: 'theme' })
+  }
 }
 
 export function loadRegistry(slidesPath, options) {

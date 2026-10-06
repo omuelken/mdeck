@@ -1,105 +1,102 @@
 # Palettes
 
-A palette is a set of color values that map to the framework's core token vocabulary. Palettes are independent of any specific theme — any theme that respects the token contract will render correctly with any palette.
+A palette gives a deck its colours. It is the only place colours come from: themes set type, spacing and layout, and leave colour to the palette, so any palette fits any theme.
+
+Every palette is a family with two variants, **light** and **dark**. A deck chooses the family with `palette:` and the variant with `appearance:`. Themes use the *other* variant for inverted slides, such as neue's statement slides, so those stay readable and in tune.
 
 ## Using a palette
-
-Set `palette:` in the deck frontmatter:
 
 ```yaml
 ---
 theme: neue
-palette: paper
+palette: terra        # optional; without it the theme's default palette
+appearance: dark      # optional: light or dark; without it the theme's default
 ---
 ```
 
-Palette values sit between the theme's base token defaults and any individual `params:` overrides, so per-deck color tweaks always win.
-
-## Tokens
-
-| Token | Role |
-|---|---|
-| `--bg` | Slide background |
-| `--surface` | Raised surfaces — code block background, image pane fill |
-| `--ink` | Primary text |
-| `--ink-soft` | Body text, descriptions |
-| `--muted` | Small metadata — headers, footers, eyebrows |
-| `--rule` | Borders, dividers |
-| `--accent` | Brand highlight — bullet markers, `em` text, code border |
-| `--accent-2` | Secondary accent — used for paired color moments |
-| `--on-accent` | Text color for content rendered *on top of* the accent background |
-
-All nine tokens should be set. Omitting a token leaves the theme default in place, which may look inconsistent.
-
-## Authoring a palette
-
-A palette is one kind of [extension](extensions.md): a folder named after the
-palette containing `extension.toml`. Put it under the framework's
-`assets/extensions/palettes/` folder or in `extensions/` beside a deck.
-
-```toml
-schema = 1
-kind = "palette"
-id = "notebook"
-title = "Blue notebook"
-description = "Cool blues on white."
-
-[tokens]
-"--bg" = "#ffffff"
-"--surface" = "#f5f5f5"
-"--ink" = "#0a0a0a"
-"--ink-soft" = "#2a2a2a"
-"--muted" = "#6b6b6b"
-"--rule" = "#e5e5e5"
-"--accent" = "#2563eb"
-"--accent-2" = "#7c3aed"
-"--on-accent" = "#ffffff"
-```
-
-No registration step is needed; any palette folder is found automatically.
-Token names start with dashes, so quote them as TOML keys.
-
-## Dark palettes
-
-Add `dark = true` above `[tokens]` to mark a palette as dark. This triggers dark-mode adjustments in the runtime: syntax-highlight colors are inverted, and the logo gets a CSS `invert()` filter so light logos remain legible.
-
-```toml
-schema = 1
-kind = "palette"
-id = "dark-slate"
-title = "Dark Slate"
-dark = true
-
-[tokens]
-"--bg" = "#0d0d0d"
-# ...
-```
+The presenter view and the reader view switch palette and light or dark without changing the file. Choose dark for a dark lecture hall, light for a bright seminar room.
 
 ## Built-in palettes
 
-| Light | Dark |
+| Palette | Light | Dark |
+|---|---|---|
+| `lagoon` | teal on warm stone, orange second accent | deep teal-black, bright teal |
+| `swiss` | white, black and signal red | black, white and red |
+| `graphite` | black and white with a steel-blue accent | charcoal with light steel blue |
+| `terra` | cream, deep navy and brick red | deep navy, cream and coral |
+| `forest` | deep green with moss and ochre | forest night with light green |
+| `ember` | sand and espresso with orange | dark brown with glowing orange |
+| `neon` | white with violet and magenta | black with neon violet and pink |
+
+`mdeck list palettes` lists them, with any of your own.
+
+Each theme names a default: neue uses `lagoon`, editorial `terra`, duet and aurora `neon`, terminal `forest` (dark). The FHNW theme uses its own palette `brand` (FHNW yellow, black and white) and offers no other.
+
+## Colours
+
+Every variant sets all nine:
+
+| Colour | Role |
 |---|---|
-| `paper` — white and neutral | `dark-slate` — cool and restrained |
-| `sage` — muted green | `dark-ember` — warm highlights |
-| `mono` — black and white | `dark-neon` — vivid highlights |
-| `terra` — warm earth colors | `dark-mono` — dark monochrome |
+| `--bg` | Slide background |
+| `--surface` | Raised surfaces: code blocks, image panes, cards |
+| `--ink` | Headings and primary text |
+| `--ink-soft` | Body text |
+| `--muted` | Small labels: headers, footers, captions |
+| `--rule` | Lines and dividers |
+| `--accent` | The highlight: emphasis, markers, chapter slides |
+| `--accent-2` | A second highlight for themes that pair two |
+| `--on-accent` | Text set on the accent, such as a chapter slide's title |
 
-## The `--on-accent` token
+Themes may mix them (for example a light tint of the accent), and read the other variant as `--inverse-bg`, `--inverse-ink`, `--inverse-accent` and so on.
 
-Some themes render text directly on the accent background — the FHNW theme does this for the title Akzentfläche, `em` highlights, ordered-list number badges, and full-bleed overlay titles. The default is `var(--ink)`, which works when the accent is bright (e.g. FHNW yellow + black ink). It breaks when accent and ink have similar luminance.
+## Making a palette
 
-Set `--on-accent` explicitly whenever the accent color is dark, light, or mid-tone in a way that gives poor contrast against `--ink`:
+A palette is an [extension](extensions.md): a folder named after it with an `extension.toml`, in `extensions/` beside a deck.
 
-| Situation | `--on-accent` |
+```toml
+schema = 1
+kind = "palette"
+id = "harbour"
+title = "Harbour"
+description = "Sea blue and rust on chalk white."
+
+[light]
+"--bg" = "#f7f9fa"
+"--surface" = "#e9eef1"
+"--ink" = "#0b1d2a"
+"--ink-soft" = "#22394a"
+"--muted" = "#4f6474"
+"--rule" = "#c9d7e2"
+"--accent" = "#0a6aa8"
+"--accent-2" = "#b45309"
+"--on-accent" = "#ffffff"
+
+[dark]
+"--bg" = "#0d1a24"
+"--surface" = "#152635"
+"--ink" = "#eef4f8"
+"--ink-soft" = "#c8d6e0"
+"--muted" = "#8ea3b3"
+"--rule" = "#24384b"
+"--accent" = "#5fb3f0"
+"--accent-2" = "#f59e5b"
+"--on-accent" = "#0d1a24"
+```
+
+Colour names start with dashes, so quote them as TOML keys. A dark variant also gets dark code colours and an inverted logo; set `--logo-filter` or the `--token-*` code colours in `[dark]` to change that.
+
+`theme = "my-theme"` makes a palette private: only that theme offers it, as FHNW does with `brand`.
+
+## Readability
+
+`mdeck check` measures the contrast of your palette's colours and warns when they are too close to read from the back of a room:
+
+| Pair | At least |
 |---|---|
-| Bright accent, dark ink (default) | omit — inherits `var(--ink)` |
-| Dark accent (e.g. near-black) | `#ffffff` |
-| Light accent (e.g. light gray) | `#000000` or `#111111` |
-| Saturated mid-tone (orange, red, blue) | pick whichever of black/white gives ≥ 4.5:1 contrast |
+| text (`--ink`) on the background | 7 : 1 |
+| body text and muted text on the background | 4.5 : 1 |
+| both accents on the background | 3 : 1 (large type) |
+| text on the accent | 3 : 1 |
 
-## Design notes
-
-- `--surface` is for raised UI elements like code blocks and image pane fills. On dark palettes keep it slightly lighter than `--bg`; on light palettes slightly darker.
-- `--rule` is used for borders and dividers. It should sit between `--bg` and `--surface` in lightness.
-- `--muted` is used for small uppercase text. It sits against `--bg`, not body text, so it can be quite subdued.
-- Syntax highlighting colors are not palette-controlled. They are owned by the `CodeBlock` component (`src/components/code-block.css`) and stay consistent across palettes.
+The built-in palettes meet these in both variants. A private palette may use its accent only as a surface (FHNW's yellow), so its accents are not checked as text.
