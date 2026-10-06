@@ -300,7 +300,7 @@ strong { color: var(--ink); font-weight: 600; }
   top: 0;
   font-family: var(--font-display);
   font-size: 300px;
-  font-weight: 700;
+  font-weight: 400;
   line-height: 0.8;
   color: var(--accent);
   pointer-events: none;
@@ -321,8 +321,8 @@ strong { color: var(--ink); font-weight: 600; }
   text-wrap: balance;
   text-align: left;
 }
-/* Emphasis inside an italic quote stands upright, in the accent. */
-.slide--focus .focus-content em { font-style: normal; font-weight: 700; }
+/* Emphasis inside the quote stays in its italic, a touch heavier, in the accent. */
+.slide--focus .focus-content em { font-style: italic; font-weight: 500; }
 .focus-attribution {
   font-family: var(--font-body);
   font-size: var(--fs-small);
