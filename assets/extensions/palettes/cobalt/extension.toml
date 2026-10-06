@@ -2,7 +2,7 @@ schema = 1
 kind = "palette"
 id = "cobalt"
 title = "Cobalt"
-description = "Strong ultramarine on white, with amber; bold and clear."
+description = "Strong ultramarine on white, with vivid orange; bold and clear."
 
 [light]
 "--bg" = "#ffffff"
@@ -12,7 +12,7 @@ description = "Strong ultramarine on white, with amber; bold and clear."
 "--muted" = "#5b6080"
 "--rule" = "#d5dbf0"
 "--accent" = "#1f3fd1"
-"--accent-2" = "#b45309"
+"--accent-2" = "#e8590c"
 "--on-accent" = "#ffffff"
 
 [dark]
@@ -23,5 +23,5 @@ description = "Strong ultramarine on white, with amber; bold and clear."
 "--muted" = "#8e97c4"
 "--rule" = "#212b5e"
 "--accent" = "#6f8cff"
-"--accent-2" = "#fbbf24"
+"--accent-2" = "#ff922b"
 "--on-accent" = "#0a1030"
