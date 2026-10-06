@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- The split layout's shared heading is styled like every other slide heading; it used the browser's default font and size, outside the slide body that themes style.
+- A numbered list right after a bullet list (or the other way round) gets the usual space between them.
+- The examples follow the current way of writing: `:::meta` settings and named `:::slot` sides. The showcase is now a tour that shows each feature's Markdown beside its result, from headings to live code, notes, drawing, a poll and sharing. The Python lesson asks a poll to check understanding and invites drawing on the loop; the FHNW deck sets `lang: de`, describes its pictures and no longer uses a removed layout.
+- The drawing guide names the buttons as they now look.
+
 ## 2.0.0 — 2026-10-05
 
 A cleaner interface, and presenting from an iPad on any network. This release renames commands, options, settings and files so that each word means one thing. Everything old stops with a message that names its replacement, so nothing changes silently. Decks, extensions and room servers need the changes in the tables below.

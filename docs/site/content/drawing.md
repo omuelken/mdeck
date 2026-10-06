@@ -4,7 +4,7 @@ You can draw on a slide while you present, or ahead of time: circle a number, un
 
 ## Start drawing
 
-Press **D** in standalone slides or in the presenter view, or use the pencil button (**✎ Draw**). A toolbar appears on the slide:
+Press **D** in standalone slides or in the presenter view, or use the pen button (**Draw** in the presenter view). A toolbar appears on the slide:
 
 | Tool | What it does |
 |---|---|
@@ -64,6 +64,6 @@ With a server of your own (the `server` setting, see [Ask your audience](audienc
 
 ## Tips for the iPad
 
-- **Full screen**: the ⛶ button or **F**, where the browser allows it. Safari on an iPhone does not. Alternatively, use Share → **Add to Home Screen**: the deck then opens without Safari's bars. Such a Home Screen app keeps its own browser data, apart from Safari's.
+- **Full screen**: the full-screen button (four corners) or **F**, where the browser allows it. Safari on an iPhone does not. Alternatively, use Share → **Add to Home Screen**: the deck then opens without Safari's bars. Such a Home Screen app keeps its own browser data, apart from Safari's.
 - **Fingers and the pencil**: until you use the pencil, a finger draws too. After that, only the pencil draws, so a resting hand leaves no marks. The hand button on the toolbar lets fingers draw again.
 - **Networks**: many large Wi-Fi networks do not let devices reach each other. If the iPad cannot open the pairing code, connect both to a phone hotspot.

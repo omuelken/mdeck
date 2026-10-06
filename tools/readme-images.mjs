@@ -15,7 +15,9 @@ const deck = resolve(root, 'examples/showcase/slides.md')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-readme-'))
 mkdirSync(out, { recursive: true })
 try {
-  execFileSync(process.execPath, [resolve(root, 'bin/mdeck.js'), 'build', deck, '--single-file', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
+  // A folder, not --single-file: single files keep to system fonts so they
+  // work offline, and these pictures show the themes' own fonts.
+  execFileSync(process.execPath, [resolve(root, 'bin/mdeck.js'), 'build', deck, '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   const browser = await launchChrome({ dir: temp })
   try {
     const shot = async (query, file, size) => {

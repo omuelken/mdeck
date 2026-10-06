@@ -8,9 +8,10 @@ meta:
 ---
 
 ---
+:::meta
 layout: title
 id: python-for-life-sciences
----
+:::
 # Python for Life Sciences.
 ## A step-by-step introduction for Master's students.
 
@@ -23,10 +24,11 @@ Welcome to the Python module. This session assumes no prior programming experien
 :::
 
 ---
+:::meta
 layout: focus
 eyebrow: Why Python?
 id: the-tools-your-field-uses-are-written-in
----
+:::
 # The tools your field uses are *written in Python*.
 
 :::notes
@@ -38,12 +40,13 @@ Point out that R is still common in statistics, but Python has largely converged
 :::
 
 ---
+:::meta
 layout: chapter
 number: 1
 part: Getting Started
 description: Variables, types, and your first lines of code.
 id: variables-and-data-types
----
+:::
 # Variables and data types.
 
 :::notes
@@ -52,11 +55,13 @@ Estimated time for this chapter: 20 minutes.
 :::
 
 ---
+:::meta
 layout: split
 section: Variables
 id: variables-store-data
----
-
+:::
+# A variable is a name for a value.
+:::slot left
 ```python live editable copy
 # Variables store data
 name = "E. coli"
@@ -65,9 +70,10 @@ gc_content = 0.506        # 50.6 %
 
 print(f"{name}: {genome_size:,} bp, GC = {gc_content:.1%}")
 ```
-
-# A variable is a name for a value.
+:::
+:::slot right
 Python works out the type automatically — *no declarations needed.*
+:::
 
 :::notes
 A variable is just a name attached to a value. Python figures out the type automatically.
@@ -77,9 +83,10 @@ Encourage students to change the values and re-run — that's the point of the l
 :::
 
 ---
+:::meta
 section: Data Types
 id: four-types-cover-most-biology-data
----
+:::
 # Four types cover most biology data.
 
 - **`int`** — whole numbers: counts, positions, indices
@@ -89,14 +96,31 @@ id: four-types-cover-most-biology-data
 
 :::notes
 Four types students will use constantly. Emphasise that booleans typically come from comparisons,
-not literal True/False. Ask: "what type is a p-value? a gene name? a significance flag?"
+not literal True/False. The next slide asks the room.
 :::
 
 ---
+:::meta
+section: Data Types
+title: "Poll: the type of a p-value"
+:::
+# What type is a p-value?
+
+<poll room="p-value" options="int|float|str|bool" />
+
+:::notes
+A quick check before moving on. Phones join with the QR code; start the deck with `mdeck run slides.md --network` so they can reach this computer.
+
+Answer: `float`. If many chose `bool`, they are thinking of the *significance flag* computed from it (`p < 0.05`): a good moment to show that comparisons produce booleans.
+:::
+
+---
+:::meta
 layout: split
 section: Strings
----
-
+:::
+# Strings behave like sequences.
+:::slot left
 ```python live editable copy
 sequence = "ATGCGTAAGCTTGAC"
 
@@ -106,9 +130,10 @@ print("A count:     ", sequence.count("A"))
 print("Reversed:    ", sequence[::-1])
 print("Uppercase:   ", sequence.lower().upper())
 ```
-
-# Strings behave like sequences.
+:::
+:::slot right
 Slicing, counting, and searching work the same on text *and* biological sequences.
+:::
 
 :::notes
 Strings are sequences — you can slice them just like a nucleotide sequence.
@@ -116,11 +141,12 @@ DNA manipulation is a great motivating example: the concepts transfer directly t
 :::
 
 ---
+:::meta
 layout: chapter
 number: 2
 part: Collections
 description: Storing and accessing multiple values at once.
----
+:::
 # Lists and dictionaries.
 
 :::notes
@@ -129,10 +155,12 @@ Estimated time for this chapter: 25 minutes.
 :::
 
 ---
+:::meta
 layout: split
 section: Lists
----
-
+:::
+# A list holds an *ordered* sequence of values.
+:::slot left
 ```python live editable copy
 concentrations = [0.12, 0.45, 0.33, 0.78, 0.21]
 
@@ -142,9 +170,10 @@ print("Last:   ", concentrations[-1])
 print("Sorted: ", sorted(concentrations))
 print("Mean:   ", sum(concentrations) / len(concentrations))
 ```
-
-# A list holds an *ordered* sequence of values.
+:::
+:::slot right
 Access items by index — indexing starts at *zero.*
+:::
 
 :::notes
 Lists maintain order and allow duplicates. Index from 0. Negative indices count from the end.
@@ -154,10 +183,12 @@ Common mistake: students try index 1 for the first element. Drill 0-indexing ear
 :::
 
 ---
+:::meta
 layout: split
 section: Dictionaries
----
-
+:::
+# A dictionary maps *keys* to values.
+:::slot left
 ```python live editable copy
 sample = {
     "id": "S042",
@@ -173,9 +204,10 @@ print("Treated:", sample["treated"])
 sample["weight_mg"] = 318   # update a field
 print("Updated weight:", sample["weight_mg"])
 ```
-
-# A dictionary maps *keys* to values.
+:::
+:::slot right
 Look up any field instantly by name — no loops, no column indices.
+:::
 
 :::notes
 Dictionaries map keys to values. Perfect for structured records — one dictionary = one sample.
@@ -183,11 +215,12 @@ Later, a list of dictionaries becomes a Pandas DataFrame. Plant that seed now.
 :::
 
 ---
+:::meta
 layout: chapter
 number: 3
 part: Control Flow
 description: Making decisions and repeating operations across your data.
----
+:::
 # Decisions and loops.
 
 :::notes
@@ -196,10 +229,12 @@ Estimated time for this chapter: 25 minutes.
 :::
 
 ---
+:::meta
 layout: split
 section: Conditions
----
-
+:::
+# `if` chooses a path based on a condition.
+:::slot left
 ```python live editable copy
 p_value = 0.023
 fold_change = 2.4
@@ -211,9 +246,10 @@ elif p_value < 0.05:
 else:
     print("Not significant")
 ```
-
-# `if` chooses a path based on a condition.
+:::
+:::slot right
 Indentation defines the block — *Python uses whitespace, not braces.*
+:::
 
 :::notes
 if / elif / else covers all branching. Indentation is not stylistic in Python — it is syntax.
@@ -222,10 +258,12 @@ Show what happens if you forget the colon: Python gives a SyntaxError.
 :::
 
 ---
+:::meta
 layout: split
 section: Loops
----
-
+:::
+# `for` repeats an action for every item.
+:::slot left
 ```python live editable copy
 measurements = [1.2, 0.8, 2.1, 1.5, 0.9, 2.8, 1.1, 1.7]
 
@@ -237,23 +275,27 @@ for value in measurements:
 print(f"{len(above_threshold)} of {len(measurements)} above threshold")
 print("Values:", above_threshold)
 ```
-
-# `for` repeats an action for every item.
+:::
+:::slot right
 Loop → test → collect is the core pattern of *data filtering.*
+:::
 
 :::notes
 for loops iterate over any collection. This pattern — loop, test, collect — is at the heart of
 almost every data processing script students will write.
 
+Press **D** and trace one value through the loop on the slide: into `value`, through the `if`, into `above_threshold`. Escape stops drawing; the drawing stays with the slide.
+
 After showing this, ask: "how would you count how many are below threshold instead?"
 :::
 
 ---
+:::meta
 layout: chapter
 number: 4
 part: Functions
 description: Packaging logic so you can reuse and test it.
----
+:::
 # Functions package logic for reuse.
 
 :::notes
@@ -263,9 +305,11 @@ Estimated time for this chapter: 20 minutes.
 :::
 
 ---
+:::meta
 layout: split
----
-
+:::
+# A function takes *inputs* and returns an *output.*
+:::slot left
 ```python live editable copy
 def gc_content(sequence):
     """Return the GC fraction of a DNA sequence."""
@@ -277,9 +321,10 @@ sequences = ["ATGCGC", "AATTAA", "GCGCGC", "ATATATAT"]
 for seq in sequences:
     print(f"{seq}:  GC = {gc_content(seq):.1%}")
 ```
-
-# A function takes *inputs* and returns an *output.*
+:::
+:::slot right
 Write it once — call it on every sample.
+:::
 
 :::notes
 def, parameters, return — that's the whole syntax.
@@ -288,11 +333,12 @@ The docstring (triple-quoted string after def) is best practice — introduce it
 :::
 
 ---
+:::meta
 layout: chapter
 number: 5
 part: Scientific Python
 description: NumPy, Pandas, and Matplotlib — the three pillars.
----
+:::
 # The scientific stack.
 
 :::notes
@@ -314,10 +360,12 @@ so students write less code and get faster, more reliable results than with pure
 :::
 
 ---
+:::meta
 layout: split
 section: NumPy
----
-
+:::
+# NumPy operates on *entire arrays* at once.
+:::slot left
 ```python live copy
 import numpy as np
 
@@ -330,9 +378,10 @@ print("Median:", np.median(measurements))
 # Vectorised filter — no loop needed
 print("Above 1.5:", measurements[measurements > 1.5])
 ```
-
-# NumPy operates on *entire arrays* at once.
+:::
+:::slot right
 No loops, no manual indexing — fast and readable.
+:::
 
 :::notes
 NumPy operations apply to the whole array at once — no loops. This is both faster and more readable.
@@ -341,9 +390,10 @@ Demo: ask students to predict what measurements > 1.5 returns before running it.
 :::
 
 ---
+:::meta
 layout: focus
 eyebrow: Key insight
----
+:::
 # Write operations on *arrays*, not on *individual values*.
 
 :::notes
@@ -352,11 +402,12 @@ Repeat it, let it sink in. Students who internalise this early write much cleane
 :::
 
 ---
+:::meta
 layout: chapter
 number: 6
 part: Next Steps
 description: Where to go from here.
----
+:::
 # Keep going.
 
 :::notes
@@ -379,9 +430,10 @@ For life sciences specifically: BioPython docs, and the Python for Bioinformatic
 :::
 
 ---
+:::meta
 layout: focus
 eyebrow: Remember
----
+:::
 # The best way to learn to code is to *write code.*
 
 :::notes
@@ -390,8 +442,9 @@ then things click. Encourage daily practice, even small scripts. Point to the ex
 :::
 
 ---
+:::meta
 layout: title
----
+:::
 # Questions?
 ## Thank you — now open your laptops.
 

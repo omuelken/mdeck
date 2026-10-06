@@ -1,5 +1,6 @@
 ---
 theme: fhnw
+lang: de
 meta:
   title: "FHNW — Design Theme"
   author: "Tilman Schieber"
@@ -10,32 +11,38 @@ width: 1920
 height: 1080
 ---
 ---
+:::meta
 layout: title
 image: ./img/fhnw-life-sciences.jpg
----
+alt: "Labor der Hochschule für Life Sciences"
+:::
 # Zehn Hochschulen, ein Ziel.
 ## Die Fachhochschule Nordwestschweiz bildet Zukünfte — praxisnah, vernetzt, evidenzbasiert.
 
 ---
+:::meta
 layout: chapter
 number: 1
 part: Teil Eins
 description: Wer wir sind, was wir lehren und warum die Praxis bei uns mehr zählt als die Vorlesung.
----
+:::
 # Die FHNW im Überblick.
 
 ---
+:::meta
 layout: focus
 eyebrow: Kernidee
 attribution: Corporate Design Manual §1
----
+:::
 # Wir treten *einheitlich* auf — und erzielen mit der Marke hohe *Wiedererkennbarkeit*.
 
 ---
+:::meta
 layout: image-text
 section: Hochschule Informatik
 image: ./img/fhnw-informatik.jpg
----
+alt: "Studierende der Hochschule für Informatik"
+:::
 ## Informatik, die Wirkung zeigt.
 
 Über 1'200 Studierende, 80 Forschende, ein Campus in Brugg-Windisch. Wir verbinden *Lehre*, *Forschung* und *Praxis* — vom ersten Semester bis zum Industrieprojekt.
@@ -43,9 +50,9 @@ image: ./img/fhnw-informatik.jpg
 Unser Bachelor- und Master-Programm ist eng mit Unternehmen aus der Region verzahnt.
 
 ---
-layout: bullet-list
+:::meta
 section: Zukunftsfelder
----
+:::
 # Drei Felder, in denen wir Wirkung erzielen.
 
 - *Future Health* — Datengetriebene Diagnostik und personalisierte Therapie.
@@ -54,18 +61,21 @@ section: Zukunftsfelder
 - Querverbunden über alle zehn Hochschulen der FHNW.
 
 ---
+:::meta
 layout: chapter
 number: 2
 part: Teil Zwei
 image: ./img/fhnw-campus.png
 description: Unsere Standorte, Infrastruktur und das Leben auf dem Campus.
----
+:::
 # Orte, an denen Wissen entsteht.
 
 ---
+:::meta
 layout: focus
 eyebrow: Beispiel · Codeblock
----
+:::
+# Code in den Farben der Marke.
 
 ```js
 function isFHNWYellow(hex) {
@@ -74,7 +84,10 @@ function isFHNWYellow(hex) {
 ```
 
 ---
+:::meta
 layout: full-bleed-image
 image: ./img/fhnw-life-sciences.jpg
----
+alt: "Campus Muttenz"
+overlay: true
+:::
 # Campus Muttenz — Heimat der Hochschule für Life Sciences.

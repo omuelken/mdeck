@@ -41,7 +41,7 @@ Ask who has seen the curve before.
 Save that as `talk.md`, run `mdeck run talk.md`, and it is a slide deck with a
 title slide, a content slide, a theme, and your notes in the presenter view.
 
-<p align="center"><img src="docs/images/hero.png" alt="The showcase deck's title slide in the Neue theme" width="800"></p>
+<p align="center"><img src="docs/images/hero.png" alt="The tour deck's title slide in the Neue theme" width="800"></p>
 
 ## One file, any look
 
@@ -115,9 +115,9 @@ complete folder.
 
 | Example | What it demonstrates |
 |---|---|
-| [Showcase](examples/showcase/slides.md) | Layouts and rich slide content |
-| [FHNW](examples/fhnw/slides.md) | Slides using the FHNW theme |
-| [Python](examples/python/slides.md) | A short introductory programming talk |
+| [Tour](examples/showcase/slides.md) | Start here: each slide shows the Markdown beside what it becomes, from headings to layouts, live code, notes, drawing, a poll and sharing |
+| [Python](examples/python/slides.md) | A real lesson: step-by-step live code, notes on every slide, a poll to check understanding |
+| [FHNW](examples/fhnw/slides.md) | A short German deck in the FHNW theme |
 | [Custom layouts](examples/custom-layouts/slides.md) | A deck-local comparison design and named regions |
 | [Poll](examples/poll/slides.md) | A join slide, then a poll, a scale, a word cloud and open questions; start it with `mdeck run slides.md --network` |
 

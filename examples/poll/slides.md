@@ -9,8 +9,9 @@ meta:
 ---
 
 ---
+:::meta
 layout: title
----
+:::
 # Ask the room.
 ## Live questions in a plain slide file.
 
@@ -32,8 +33,9 @@ Come back to this slide for latecomers, or leave the join code on the last quest
 :::
 
 ---
+:::meta
 title: "Poll: how do you make slides?"
----
+:::
 # How do you make slides today?
 
 <poll room="tools" options="PowerPoint|Keynote|Google Slides|LaTeX Beamer|Markdown" qr="false" />
@@ -47,8 +49,9 @@ Before the talk, hover over the results and click Reset to clear test votes.
 :::
 
 ---
+:::meta
 title: "Scale: Markdown"
----
+:::
 # How well do you know Markdown?
 
 <scale room="markdown" min="1" max="5" low="Never used it" high="Every day" qr="false" />
@@ -60,8 +63,9 @@ A high average means the rest of the talk can go faster.
 :::
 
 ---
+:::meta
 title: "Word cloud: slides"
----
+:::
 # One word for your last presentation?
 
 <wordcloud room="mood" placeholder="One word" qr="false" />
@@ -73,8 +77,9 @@ Pick out the largest word and one surprising small one.
 :::
 
 ---
+:::meta
 title: "Open question"
----
+:::
 # What would you like to ask?
 
 <question room="ask" placeholder="Your question" qr="false" />
