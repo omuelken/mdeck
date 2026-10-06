@@ -95,7 +95,7 @@ test('built-in and deck-local extensions load through one registry', () => {
   for (const manifest of Object.values(layouts)) {
     assert.deepEqual(validateDeck(parseSlides(manifest.starter), { layouts }), [], manifest.id)
   }
-  assert.equal(registry.themes.neue.manifest.palette, 'lagoon')
+  assert.equal(registry.themes.neue.manifest.palette, 'swiss')
   assert.equal(registry.themes.terminal.manifest.appearance, 'dark')
   assert.deepEqual(registry.themes.fhnw.manifest.palettes, ['brand'])
   assert.equal(registry.palettes.brand.manifest.theme, 'fhnw')

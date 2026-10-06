@@ -14,7 +14,7 @@ const loaded = reduce(initialState, { type: 'load', path: '/x/slides.md', name: 
 test('loading derives the deck, manifests and diagnostics', () => {
   assert.equal(loaded.deck.slides.length, 2)
   assert.equal(loaded.manifests.layouts.split.title, 'Split content')
-  assert.equal(loaded.manifests.themes.neue.palette, 'lagoon')
+  assert.equal(loaded.manifests.themes.neue.palette, 'swiss')
   assert.equal(loaded.manifests.palettes.lagoon.light['--accent'], '#0d9488')
   assert.deepEqual(loaded.diagnostics, [])
   assert.equal(loaded.status, 'saved')

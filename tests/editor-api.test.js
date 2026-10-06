@@ -35,7 +35,7 @@ test('GET /deck returns the file, its hash and the extension registry', async ()
   assert.equal(body.name, 'slides.md')
   assert.ok(body.registry.layouts.find(t => t.id === 'split')?.starter.includes('layout: split'))
   assert.ok(body.registry.layouts.find(t => t.id === 'comparison'))
-  assert.equal(body.registry.themes.find(t => t.id === 'neue')?.palette, 'lagoon')
+  assert.equal(body.registry.themes.find(t => t.id === 'neue')?.palette, 'swiss')
   assert.deepEqual(body.warnings, [])
 })
 

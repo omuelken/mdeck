@@ -26,10 +26,10 @@ test('every theme has a default palette it offers, and FHNW offers only its own'
 
 test('a deck gets the theme default, its own palette, and the other variant for inverted slides', () => {
   const plain = buildAppearance({ theme: themes.neue, palettes })
-  assert.equal(plain.palette, 'lagoon')
+  assert.equal(plain.palette, 'swiss')
   assert.equal(plain.appearance, 'light')
-  assert.match(plain.paletteCss, /--bg: #f8f8f6;/)
-  assert.match(plain.paletteCss, /--inverse-bg: #0e1716;/)
+  assert.match(plain.paletteCss, /--bg: #ffffff;/)
+  assert.match(plain.paletteCss, /--inverse-bg: #0d0d0d;/)
   const dark = buildAppearance({ theme: themes.neue, palettes, palette: 'terra', appearance: 'dark' })
   assert.match(dark.paletteCss, /--bg: #001f30;/)
   assert.match(dark.paletteCss, /--inverse-bg: #fdf0d5;/)
@@ -39,7 +39,7 @@ test('a deck gets the theme default, its own palette, and the other variant for 
 
 test('an unknown palette, or one the theme does not offer, falls back to the default with a warning', () => {
   const unknown = resolvePalette({ theme: themes.neue, palettes, palette: 'paper' })
-  assert.equal(unknown.palette.id, 'lagoon')
+  assert.equal(unknown.palette.id, 'swiss')
   assert.match(unknown.warnings[0], /Unknown palette "paper"/)
   const foreign = resolvePalette({ theme: themes.fhnw, palettes, palette: 'terra' })
   assert.equal(foreign.palette.id, 'brand')

@@ -16,7 +16,7 @@ If you already have a settings block there, change the existing lines rather tha
 
 | Name to use | What it looks like |
 |---|---|
-| `neue` | Swiss style: large type, clear lines, chapters in full colour |
+| `neue` | Swiss style: large type, clear lines, red on white |
 | `aurora` | Northern lights: curtains of light, night-sky chapters and glass |
 | `duet` | Two accent colours for contrasting ideas |
 | `editorial` | A book-like look with serif headings |
@@ -31,8 +31,8 @@ To use other colours, set `palette` to one of these:
 
 | Name to use | Colours |
 |---|---|
-| `lagoon` | Teal on warm stone (neue's own) |
-| `swiss` | White, black and signal red |
+| `lagoon` | Teal on warm stone |
+| `swiss` | White, black and signal red (neue's own) |
 | `cobalt` | Strong ultramarine on white |
 | `nordic` | Ice grey, deep navy and a cool steel blue |
 | `graphite` | Black and white with a steel-blue accent |

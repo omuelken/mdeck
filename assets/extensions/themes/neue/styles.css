@@ -1,8 +1,9 @@
 /* Neue — Swiss typography.
    One idea carries the theme: large, tight, flush-left type on a strict
    grid, structured by rules rather than boxes, and colour used as a surface.
-   Content slides stay calm; chapter slides fill with the accent and statement
-   slides invert, so a talk has a rhythm instead of thirty identical pages.
+   Content slides stay calm; chapter slides set their title in the accent,
+   and statement slides invert, so a talk has a rhythm instead of thirty
+   identical pages.
    Everything takes its colours from the palette's roles (--bg, --ink,
    --accent, --on-accent …), so every palette works on it. */
 
@@ -154,17 +155,9 @@ strong { color: var(--ink); font-weight: 600; }
 }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: CHAPTER — the slide fills with the accent; the number is so large
-   it runs off the bottom-right corner
+   LAYOUT: CHAPTER — on the slide's own background, the title in the accent;
+   the number is so large it runs off the bottom-right corner, as a tint
    ───────────────────────────────────────────── */
-.slide--chapter {
-  background: var(--accent);
-  --ink: var(--on-accent, #fff);
-  --ink-soft: color-mix(in oklab, var(--on-accent, #fff) 85%, var(--accent));
-  --muted: color-mix(in oklab, var(--on-accent, #fff) 70%, var(--accent));
-  --rule: color-mix(in oklab, var(--on-accent, #fff) 35%, var(--accent));
-  color: var(--ink);
-}
 .slide--chapter em { color: inherit; text-decoration: underline; text-decoration-thickness: 0.08em; text-underline-offset: 0.12em; }
 .slide--chapter .slide-body {
   justify-content: flex-end;
@@ -180,8 +173,8 @@ strong { color: var(--ink); font-weight: 600; }
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.06em;
-  color: var(--ink);
-  opacity: 0.16;
+  color: var(--accent);
+  opacity: 0.12;
   margin: 0;
   pointer-events: none;
 }
@@ -202,7 +195,7 @@ strong { color: var(--ink); font-weight: 600; }
   line-height: 0.98;
   letter-spacing: -0.045em;
   margin: 0 0 48px 0;
-  color: var(--ink);
+  color: var(--accent);
   max-width: 1300px;
   text-wrap: balance;
 }

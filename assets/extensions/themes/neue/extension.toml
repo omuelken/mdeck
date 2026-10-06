@@ -2,9 +2,9 @@ schema = 1
 kind = "theme"
 id = "neue"
 title = "Neue"
-description = "Swiss typography: large flush-left type, rules instead of boxes, and the accent as a surface on chapter slides."
+description = "Swiss typography: large flush-left type, rules instead of boxes, signal red on white."
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
-palette = "lagoon"
+palette = "swiss"
 fonts = [
   "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@300;400;500;600;700&display=swap",
 ]

@@ -117,8 +117,8 @@ Each palette has a light and a dark variant; `appearance:` picks one.
 
 | Key | Light | Dark |
 |---|---|---|
-| `lagoon` | Teal on warm stone (neue's default) | Bright teal on teal-black |
-| `swiss` | White, black, signal red | Black, white, red |
+| `lagoon` | Teal on warm stone | Bright teal on teal-black |
+| `swiss` | White, black, signal red (neue's default) | Black, white, red |
 | `cobalt` | White, ultramarine, amber | Deep navy, luminous blue |
 | `nordic` | Ice grey, navy, steel blue | Polar night, ice blue |
 | `graphite` | Black and white, steel blue | Charcoal, light steel blue |
