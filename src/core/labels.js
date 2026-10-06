@@ -23,6 +23,7 @@ export const LABELS = {
     'reader.linkCopied': 'Link copied',
     'reader.slide': 'Slide {n}',
     'deck.overview': 'Overview',
+    'slide.chapter': 'Chapter',
     'deck.controls': 'Deck controls',
     'deck.previous': 'Previous slide',
     'deck.next': 'Next slide',
@@ -67,6 +68,7 @@ export const LABELS = {
     'reader.linkCopied': 'Link kopiert',
     'reader.slide': 'Folie {n}',
     'deck.overview': 'Übersicht',
+    'slide.chapter': 'Kapitel',
     'deck.controls': 'Foliensteuerung',
     'deck.previous': 'Vorherige Folie',
     'deck.next': 'Nächste Folie',
@@ -96,6 +98,17 @@ export const LABELS = {
 }
 
 export const LABEL_KEYS = Object.keys(LABELS.en)
+
+// Callout titles by type (`::: tip`), in the deck's language; the deck's
+// `callouts` setting replaces single titles.
+export const CALLOUT_LABELS = {
+  en: { note: 'Note',    tip: 'Tip',  important: 'Important', warning: 'Warning', caution: 'Caution',
+    definition: 'Definition', theorem: 'Theorem', lemma: 'Lemma', corollary: 'Corollary', proof: 'Proof', example: 'Example', remark: 'Remark' },
+  de: { note: 'Hinweis', tip: 'Tipp', important: 'Wichtig',   warning: 'Achtung', caution: 'Vorsicht',
+    definition: 'Definition', theorem: 'Satz',    lemma: 'Lemma', corollary: 'Korollar',  proof: 'Beweis', example: 'Beispiel', remark: 'Bemerkung' },
+}
+
+export const CALLOUT_TYPES = Object.keys(CALLOUT_LABELS.en)
 
 let language = 'en'
 let current = LABELS.en

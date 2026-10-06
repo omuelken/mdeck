@@ -34,6 +34,9 @@ function preprocessFootnotes(markdown) {
   return { processed, footnotesHtml: `<ol>${items}</ol>` }
 }
 
+// The deck's words for the audience (`slide.chapter` …), for layouts that show any.
+export { t } from '../core/labels.js'
+
 export function extractContent(markdown, { headingLevels = [], paragraph = false } = {}) {
   const processed = markdown
   const footnotesHtml = ''

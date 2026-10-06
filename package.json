@@ -47,6 +47,7 @@
     "test:browser": "node tools/browser-check.mjs",
     "test:server": "node tools/server-check.mjs",
     "test:docs": "node tools/docs-check.mjs",
+    "test:themes": "node tools/theme-check.mjs",
     "docs": "node bin/mdeck.js docs",
     "docs:build": "node docs/site/build.js",
     "start": "node bin/mdeck.js run",

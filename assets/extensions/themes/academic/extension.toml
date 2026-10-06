@@ -2,7 +2,7 @@ schema = 1
 kind = "theme"
 id = "academic"
 title = "Academic"
-description = "A lecture: Source Sans and Source Serif, dense top-aligned slides, theorem and definition blocks, booktabs tables and a footnote rule."
+description = "A lecture: Source Sans and Source Serif, compact slides with the heading in a fixed place, theorem and definition blocks, booktabs tables and a footnote rule."
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
 palette = "nordic"
 fonts = [

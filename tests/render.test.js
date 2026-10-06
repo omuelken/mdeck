@@ -15,6 +15,7 @@ import { resolve } from 'node:path'
 const server = await createServer({ configFile: false, plugins: [preact(), slidesPlugin('examples/custom-layouts/slides.md')], server: { middlewareMode: true, hmr: { server: createHttpServer() } }, optimizeDeps: { noDiscovery: true, include: [] }, cacheDir: mkdtempSync(resolve(tmpdir(), 'mdeck-vite-cache-')), appType: 'custom' })
 after(() => server.close())
 const { setCalloutLabels } = await server.ssrLoadModule('/src/runtime/markedSetup.js')
+const { setDeckLanguage } = await server.ssrLoadModule('/src/core/labels.js')
 const { SlideRenderer, manifests } = await server.ssrLoadModule('/src/layouts/renderSlide.jsx')
 
 function htmlFragments(node) {
@@ -64,4 +65,18 @@ test('lecture callouts are labelled in the deck language, and a written title wi
     assert.match(marked.parse('::: proof\nTrivial.\n:::'), /callout-title">Beweis</)
     assert.match(marked.parse('::: theorem Satz 2.4 (Lagrange)\nStatement\n:::'), /callout-title">Satz 2\.4 \(Lagrange\)</)
   } finally { setCalloutLabels() }
+})
+
+test("a chapter slide's label is in the deck's language, and a regional code uses it too", () => {
+  // The label is plain text in the layout's markup, not HTML from Markdown.
+  const texts = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(texts).join(' ') : !node || typeof node !== 'object' ? ''
+    : typeof node.type === 'function' && !['HtmlContent', 'InkLayer'].includes(node.type.name) ? texts(node.type(node.props)) : texts(node.props?.children)
+  const chapter = () => texts(SlideRenderer({ meta: { layout: 'chapter', number: 2 }, content: '# Methods', deckConfig: {}, index: 0 }))
+  setDeckLanguage({ lang: 'de-CH' })
+  setCalloutLabels({ lang: 'de-CH' })
+  try {
+    assert.ok(chapter().includes('Kapitel'))
+    assert.match(marked.parse('::: tip\nx\n:::'), /callout-title">Tipp</)
+  } finally { setDeckLanguage(); setCalloutLabels() }
+  assert.ok(chapter().includes('Chapter'))
 })

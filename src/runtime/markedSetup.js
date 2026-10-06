@@ -4,6 +4,7 @@ import 'katex/dist/katex.min.css'
 import '../components/callout.css'
 import '../components/columns.css'
 import { scanDirectives, sourceLines, fenceState } from '../core/source.js'
+import { CALLOUT_LABELS, labelSetFor } from '../core/labels.js'
 
 function readDirective(src, name) {
   if (!/^:::\s*[\w-]+/.test(src)) return null
@@ -38,12 +39,6 @@ marked.use(markedKatex({ throwOnError: false, output: 'html' }))
 
 // marked.use() prepends via unshift, so last-registered = highest priority.
 // Register callout first (lowest priority) so columns and steps match before it.
-const CALLOUT_LABELS = {
-  en: { note: 'Note',    tip: 'Tip',  important: 'Important', warning: 'Warning', caution: 'Caution',
-    definition: 'Definition', theorem: 'Theorem', lemma: 'Lemma', corollary: 'Corollary', proof: 'Proof', example: 'Example', remark: 'Remark' },
-  de: { note: 'Hinweis', tip: 'Tipp', important: 'Wichtig',   warning: 'Achtung', caution: 'Vorsicht',
-    definition: 'Definition', theorem: 'Satz',    lemma: 'Lemma', corollary: 'Korollar',  proof: 'Beweis', example: 'Beispiel', remark: 'Bemerkung' },
-}
 
 let calloutLabels = CALLOUT_LABELS.en
 
@@ -52,7 +47,8 @@ let calloutLabels = CALLOUT_LABELS.en
 // Englisch, damit bestehende Decks unveraendert aussehen. Ein Titel hinter
 // dem Typ (`::: tip Eigener Titel`) sticht beides.
 export function setCalloutLabels({ lang, callouts } = {}) {
-  const base = CALLOUT_LABELS[String(lang ?? '').toLowerCase()] ?? CALLOUT_LABELS.en
+  // A regional code such as de-CH uses its language's titles.
+  const base = CALLOUT_LABELS[labelSetFor(lang)]
   calloutLabels = { ...base, ...(callouts ?? {}) }
 }
 

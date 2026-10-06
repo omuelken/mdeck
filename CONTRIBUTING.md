@@ -45,6 +45,7 @@ skills/              Distributable slide-authoring instructions
 ```sh
 npm test                 # unit and integration tests
 npm run test:browser     # real-Chrome check, also run in CI (set MDECK_CHROME if needed)
+npm run test:themes      # every theme, light and dark, on every layout: fit, cut-off text, contrast (CI)
 npm run test:server       # `mdeck run --server` through a local server, with Chrome as the iPad
 npm run playground       # scratch deck with hot reload
 npm run docs:build       # build the documentation site into docs/site/dist
@@ -63,8 +64,8 @@ writes to `dist/` in the current working folder.
   through the byte-preserving helpers in `src/core/editDeck.js`.
 - Built-in layouts, themes and palettes use the same `extension.toml` format
   as deck-local ones; there is no second registration path.
-- The browser editor is experimental: keep its features behind `mdeck edit`
-  and do not make presenting or building depend on it.
+- The browser editor is a tool beside presenting: keep its features behind
+  `mdeck edit` and do not make presenting or building depend on it.
 - Local-only APIs (the editor, the launch page) answer loopback requests from
   their own pages only (`isAllowedRequest`). The server is the exception:
   phones must reach it, so it accepts any origin but keeps no personal data and

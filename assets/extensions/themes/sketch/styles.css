@@ -487,8 +487,8 @@ strong {
   background: light-dark(color-mix(in oklab, var(--note) 24%, var(--bg)), color-mix(in oklab, var(--note) 40%, var(--bg)));
   border: 0;
   border-radius: 2px 2px 18px 2px;
-  padding: 36px 40px 30px;
-  margin: 28px 0 var(--gap-item);
+  padding: 26px 36px 22px;
+  margin: 22px 0 var(--gap-item);
   max-width: 1100px;
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14), 0 2px 4px rgba(0, 0, 0, 0.08);
   transform: rotate(-1deg);

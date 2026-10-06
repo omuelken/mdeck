@@ -27,8 +27,11 @@
 .callout-warning   { border-left-color: var(--callout-warning); }
 .callout-caution   { border-left-color: var(--callout-caution); }
 
-.callout-note      .callout-title { color: var(--callout-note); }
-.callout-tip       .callout-title { color: var(--callout-tip); }
-.callout-important .callout-title { color: var(--callout-important); }
-.callout-warning   .callout-title { color: var(--callout-warning); }
-.callout-caution   .callout-title { color: var(--callout-caution); }
+/* Titles are text: the signal colour mixed with the text colour, darker on
+   light slides and lighter on dark ones, so they can be read on both. The
+   yellow of a warning needs more of the text colour. */
+.callout-note      .callout-title { color: color-mix(in oklab, var(--callout-note) 65%, var(--ink)); }
+.callout-tip       .callout-title { color: color-mix(in oklab, var(--callout-tip) 65%, var(--ink)); }
+.callout-important .callout-title { color: color-mix(in oklab, var(--callout-important) 65%, var(--ink)); }
+.callout-warning   .callout-title { color: color-mix(in oklab, var(--callout-warning) 45%, var(--ink)); }
+.callout-caution   .callout-title { color: color-mix(in oklab, var(--callout-caution) 65%, var(--ink)); }

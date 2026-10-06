@@ -1,7 +1,7 @@
-import { diagnostic } from './source.js'
+import { diagnostic, scanDirectives } from './source.js'
 import { isPlainObject, RENAMED_DECK_KEYS } from './parseSlides.js'
 import { palettesFor } from '../extensions/tokens.js'
-import { LABEL_KEYS } from './labels.js'
+import { LABEL_KEYS, CALLOUT_TYPES } from './labels.js'
 import { resolveLayoutProps, propertyErrors } from '../layouts/layoutProps.js'
 
 // `layouts`, `themes` and `palettes` are manifest maps from the extension
@@ -60,6 +60,8 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
     const theme = themes[config.theme ?? 'neue']
     for (const name of Object.keys(config.params)) if (!Object.hasOwn(theme.params ?? {}, name)) add('unknown-param', `Theme "${theme.id}" has no parameter "${name}"; available: ${Object.keys(theme.params ?? {}).join(', ') || 'none'}`, deck.configSource?.start, 'warning')
   }
+  // Callout types the deck names under `callouts:` are its own, on purpose.
+  const calloutTypes = [...CALLOUT_TYPES, ...(isPlainObject(config.callouts) ? Object.keys(config.callouts).map(key => key.toLowerCase()) : [])]
   const ids = new Set()
   for (const slide of deck.slides) {
     const offset = slide.metaSource?.start ?? slide.source.start
@@ -74,6 +76,11 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
     }
     if (slide.meta.props != null && !isPlainObject(slide.meta.props)) add('invalid-props', 'props must be a mapping', offset)
     if (slide.meta.overlay != null && typeof slide.meta.overlay !== 'boolean') add('invalid-metadata', 'overlay must be true or false', offset)
+    for (const node of directivesIn(deck.source.slice(slide.source.start, slide.source.end))) {
+      if (DIRECTIVES.includes(node.name) || calloutTypes.includes(node.name.toLowerCase())) continue
+      const near = closest(node.name.toLowerCase(), [...DIRECTIVES, ...calloutTypes])
+      add('unknown-callout', `Unknown block "${node.name}"${near ? `; did you mean "${near}"?` : ''} It shows as a plain callout. Known: ${CALLOUT_TYPES.join(', ')}; name your own under callouts: in the settings`, slide.source.start + node.start, 'warning')
+    }
     if (!layouts) continue
     const layout = slide.meta.layout ?? 'generic'
     if (!Object.hasOwn(layouts, layout)) {
@@ -99,6 +106,32 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
     }
   }
   return diagnostics
+}
+
+// The `:::` blocks mdeck reads itself; any other name is a callout type.
+const DIRECTIVES = ['meta', 'notes', 'slot', 'steps', 'columns']
+
+function directivesIn(source) {
+  const all = []
+  const visit = nodes => { for (const node of nodes) { all.push(node); visit(node.children) } }
+  visit(scanDirectives(source).nodes)
+  return all
+}
+
+// The known name a misspelling is most likely meant to be: at most two
+// letters added, left out or changed.
+function closest(name, names) {
+  const distance = (a, b) => {
+    let row = Array.from({ length: b.length + 1 }, (_, i) => i)
+    for (let i = 1; i <= a.length; i++) {
+      const next = [i]
+      for (let j = 1; j <= b.length; j++) next[j] = Math.min(row[j] + 1, next[j - 1] + 1, row[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+      row = next
+    }
+    return row[b.length]
+  }
+  const [best] = names.map(candidate => [candidate, distance(name, candidate)]).sort((x, y) => x[1] - y[1])
+  return best && best[1] <= 2 ? best[0] : null
 }
 
 export function formatDiagnostics(diagnostics, filename = 'slides.md') {

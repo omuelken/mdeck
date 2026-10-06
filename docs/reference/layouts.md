@@ -97,7 +97,9 @@ returns that SVG's markup, or nothing, for layouts that place it themselves.
 
 The framework wraps the result in `SlideFrame`; do not add a second `<section>`
 or frame in your renderer. `SlideFrame`, `MarkdownRegion`, and `HtmlContent` are
-also exported from `mdeck/layout` for integrations. The API import resolves
+also exported from `mdeck/layout` for integrations, and so is `t(key)`, which
+returns a word the audience sees in the deck's language (`t('slide.chapter')`
+is "Chapter", or "Kapitel" with `lang: de`). The API import resolves
 through mdeck's build plugin, including when the deck is outside the framework.
 
 Keep CSS scoped to `.slide--comparison` and use theme variables:

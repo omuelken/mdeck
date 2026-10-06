@@ -1,5 +1,5 @@
 import { h } from 'preact'
-import { extractContent, HtmlContent, Picture } from 'mdeck/layout'
+import { extractContent, HtmlContent, Picture, t } from 'mdeck/layout'
 
 export default function ChapterLayout({ meta, content, props }) {
   const { headings, paragraphs, bodyHtml } = extractContent(content, { headingLevels: [1], paragraph: meta.description == null })
@@ -11,7 +11,7 @@ export default function ChapterLayout({ meta, content, props }) {
   return <div class="slide-body">
     <div class="chapter-content">
       {num && <div class="chapter-num" style={/^\d+$/.test(num) ? { '--chapter-number': Number(num) } : undefined}>{num}</div>}
-      <div class="chapter-meta">{meta.label ?? 'Chapter'}</div>
+      <div class="chapter-meta">{meta.label ?? t('slide.chapter')}</div>
       {headings[1] && <h2 class="chapter-title" dangerouslySetInnerHTML={{ __html: headings[1] }} />}
       {desc && <p class="chapter-desc" dangerouslySetInnerHTML={{ __html: desc }} />}
       {bodyHtml && <HtmlContent html={bodyHtml} />}

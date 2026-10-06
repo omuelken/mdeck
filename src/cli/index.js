@@ -309,7 +309,7 @@ const HELP = `
                              (the address, or the deck's server setting, or MDECK_SERVER;
                               the key in MDECK_SERVER_KEY)
       --no-open   --port <number>
-    ${c.green}mdeck edit${c.reset} [slides.md]                    Edit slides in the browser (experimental); saves to the file
+    ${c.green}mdeck edit${c.reset} [slides.md]                    Edit slides in the browser; saves to the file
 
   ${c.dim}Make something to hand out${c.reset}
     ${c.green}mdeck build${c.reset} [slides.md] [-o dir/index.html]   A folder to host

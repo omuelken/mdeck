@@ -195,3 +195,12 @@ test('appearance: the theme default palette, the deck palette and appearance, th
   assert.equal(paletteColor('--accent', { theme, palettes }), '#1f3fd1')
   assert.equal(paletteColor('--accent', { theme, palettes, palette: 'forest', appearance: 'dark' }), '#7bd389')
 })
+
+test('mdeck check warns about a misspelled callout type, but not about known blocks or the deck\'s own', () => {
+  const warnings = source => validateDeck(parseSlides(source)).filter(d => d.code === 'unknown-callout').map(d => d.message)
+  const [typo] = warnings('---\ntheme: neue\n---\n# A\n\n::: warnign\nCareful\n:::\n')
+  assert.match(typo, /Unknown block "warnign"; did you mean "warning"\?/)
+  assert.deepEqual(warnings('# A\n\n:::columns\n::: Theorem Satz 1\nx\n:::\n+++\n:::steps\n- a\n:::\n:::\n\n:::notes\nn\n:::\n'), [])
+  assert.deepEqual(warnings('---\ncallouts:\n  hint: Hinweis\n---\n# A\n\n::: hint\nx\n:::\n'), [], 'a type with a title under callouts: is intended')
+  assert.equal(warnings('# A\n\n```markdown\n::: nonsense\n```\n').length, 0, 'code examples are not blocks')
+})

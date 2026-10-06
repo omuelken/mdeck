@@ -102,13 +102,13 @@ view is reachable in any build through `?view=reader`.
 
 | Key | Description |
 |---|---|
-| `neue` | Clear sans-serif type (Inter Tight and Inter), warm stone background, teal accent |
-| `aurora` | Geometric shapes, Plus Jakarta Sans, violet accent with a derived magenta second accent |
+| `neue` | Swiss style: Inter Tight and Inter, large flush-left type, a rule across the top, square accent markers, red on white |
+| `aurora` | Northern lights: Plus Jakarta Sans, curtains of light in the palette's accents, night-sky chapter slides, frosted glass |
 | `duet` | Two voices: heavy Zilla Slab headings, DM Sans body; the two accents take turns (split fields, diagonal chapters, alternating markers) |
 | `editorial` | Magazine spread: Newsreader headlines, Lora body, drop caps and pull quotes |
 | `fhnw` | The FHNW corporate design: Inter, black on white, yellow accent areas |
 | `terminal` | A terminal session: JetBrains Mono, headings at a prompt, a blinking cursor on the title, log-line callouts, a tmux status bar; dark by default |
-| `academic` | A lecture: Source Sans and Source Serif, dense top-aligned slides, theorem and definition blocks, booktabs tables, a footnote rule |
+| `academic` | A lecture: Source Sans and Source Serif, compact type with the heading fixed at the top and the content centred below, theorem and definition blocks, booktabs tables, a footnote rule |
 | `sketch` | A sketchbook: Caveat and Patrick Hand on dotted paper, marker scribbles, circled numbers, sticky-note callouts, taped photos; a chalkboard in the dark |
 
 `mdeck list <deck>.md` lists these together with any themes kept beside
@@ -478,6 +478,8 @@ callouts:
 
 A title written after the type on the `:::` line still wins over both.
 
+`mdeck check` warns about other type names, which are usually typos (`::: warnign`). A type of your own, styled with your own CSS as `.callout-<type>`, is fine once it has a title under `callouts:`.
+
 ---
 
 ## Language
@@ -516,6 +518,7 @@ labels:
 | `reader.linkCopied` | Link copied | Link kopiert |
 | `reader.slide` | Slide {n} | Folie {n} |
 | `deck.overview` | Overview | Übersicht |
+| `slide.chapter` | Chapter (above a chapter slide's title; `label:` on the slide replaces it) | Kapitel |
 | `deck.controls` | Deck controls | Foliensteuerung |
 | `deck.previous` | Previous slide | Vorherige Folie |
 | `deck.next` | Next slide | Nächste Folie |

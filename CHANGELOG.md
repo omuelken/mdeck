@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `npm run test:themes` (also in CI) shows every theme, light and dark, on a deck with every built-in layout and kind of content, and fails when content does not fit, text is cut off at the slide's edge or is hard to read on what is behind it, or the page reports an error.
+- Callout titles are readable on light and dark slides: their colour is the signal colour mixed with the text colour (warnings were yellow on white in neue, editorial and FHNW).
+- Fixed: terminal's chapter slide with a picture was 4 px too tall and cut off at the bottom; sketch's sticky notes are a little more compact, so three fit on a slide.
+- Chapter slides say “Kapitel” in German decks (the label `slide.chapter`); layouts get the deck's words with `t` from `mdeck/layout`.
+- Fixed: callout titles were English in decks with a regional language code such as `lang: de-CH`.
+- `mdeck check` warns about an unknown callout type such as `::: warnign` and suggests the nearest one; types named under `callouts:` count as the deck's own.
 - Editor: the deck's palette is chosen from a list that shows each palette's colours in the current light or dark, the theme's own first; light or dark is a sun/moon switch. A palette written out that is also the theme's default shows as chosen instead of an empty field, and switching to a theme that does not offer the deck's palette removes it from the file instead of leaving an error.
 - Editor: palettes, themes and layouts are tabs on the left, in a wider column. Like the presenter view, the view tries one look at a time: choosing a theme keeps the palette where the theme offers it, choosing a palette keeps the theme, and the thumbnails show palettes in that theme and themes with that palette. A bar above the preview names the look and applies it to the deck with “Use for this deck”. Palettes the theme does not offer (FHNW offers only its own) are dimmed.
 - The presenter view shows the theme, palette and light/dark row by default. Its fold button folds it, like the drawing toolbar, into a round button beside Draw that shows the palette's accent; the choice is remembered.
