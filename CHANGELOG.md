@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.1 — 2026-10-06
 
 - The split layout's shared heading is styled like every other slide heading; it used the browser's default font and size, outside the slide body that themes style.
 - A numbered list right after a bullet list (or the other way round) gets the usual space between them.
