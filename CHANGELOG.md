@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Aurora: a title slide with an image shows it on the right at full height, with the title at the lower left, instead of a banner below the title that pushed it up into the brightest light.
 - Output of run code stays on the slide: when it appears, the code first gets smaller type and then scrolls to make room, and output that is still too long scrolls as well, in the code's type size and with a fade at the lower edge while there is more.
 - Fixed: Python code that imports a package Pyodide provides (`numpy`, `pandas` …) failed with `ModuleNotFoundError`; the package now loads before the code runs.
 - The duet theme is redesigned as two voices: its two accents take turns on every slide. The footer rule changes colour halfway, list markers and poll bars alternate between the accents, split slides become a dialogue of two tinted colour fields, chapter slides are cut diagonally (the number on a field of the first accent, a seam of the second, the title beside it), statement slides stand beside a bar in each accent, and callouts carry their title as a tab (tips in the first accent, warnings in the second). Headings are heavier and tighter Zilla Slab. Its default palette is now `cobalt` (ultramarine and amber) instead of `neon`.
