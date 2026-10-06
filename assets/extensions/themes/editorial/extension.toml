@@ -2,11 +2,11 @@ schema = 1
 kind = "theme"
 id = "editorial"
 title = "Editorial"
-description = "A magazine look with Playfair Display headings and Lora body text."
+description = "A magazine spread: Newsreader headlines, Lora text, drop caps, pull quotes and Roman chapter numerals."
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
 palette = "terra"
 fonts = [
-  "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap",
+  "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap",
 ]
 
 [files]
@@ -17,23 +17,23 @@ styles = "styles.css"
 [tokens]
 
 # Type scale (px) — projection-appropriate at 1920×1080
-"--fs-display" = "128px"
-"--fs-title" = "88px"
-"--fs-focus" = "72px"
-"--fs-h" = "60px"
+"--fs-display" = "148px"
+"--fs-title" = "112px"
+"--fs-focus" = "80px"
+"--fs-h" = "68px"
 "--fs-sub" = "40px"
 "--fs-body" = "32px"
 "--fs-small" = "24px"
-"--fs-eyebrow" = "20px"
+"--fs-eyebrow" = "22px"
 
 # Spacing
-"--pad-x" = "120px"
+"--pad-x" = "128px"
 "--pad-y" = "72px"
 "--gap-title" = "48px"
 "--gap-item" = "24px"
 
 # Type families
-"--font-display" = "\"Playfair Display\", Georgia, \"Times New Roman\", serif"
+"--font-display" = "\"Newsreader\", Georgia, \"Times New Roman\", serif"
 "--font-body" = "\"Lora\", Georgia, \"Times New Roman\", serif"
 
 # Settings authors can change under `params:` in the deck; each points at a token above.

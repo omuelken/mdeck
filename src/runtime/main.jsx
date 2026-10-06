@@ -290,6 +290,8 @@ function PresenterView({ deckConfig, slides }) {
       sendTo(previewRef.current?.contentWindow, 'goTo', i + 1)
     }
     window.addEventListener('message', onMessage)
+    // The frame may have started drawing before this listener was there.
+    try { if (iframeRef.current?.contentWindow?.document.querySelector('deck-stage')?.inking) setInking(true) } catch {}
     return () => window.removeEventListener('message', onMessage)
   }, [])
 

@@ -18,7 +18,7 @@ import './toolbar.css'
 export const INK_COLORS = ['#e11d48', '#2563eb', '#16a34a', 'accent', '#111111']
 export const HIGHLIGHTER_COLORS = ['#ffeb3b', '#76ff03', '#ff4081', '#40c4ff', '#ff9100']
 const COLORS = { pen: INK_COLORS, highlighter: HIGHLIGHTER_COLORS }
-const COLOR_NAMES = { '#e11d48': 'Red', '#2563eb': 'Blue', '#16a34a': 'Green', accent: 'Accent', '#111111': 'Black',
+const COLOR_NAMES = { '#e11d48': 'Red', '#2563eb': 'Blue', '#16a34a': 'Green', accent: 'Accent', '#111111': 'Text colour',
   '#ffeb3b': 'Yellow', '#76ff03': 'Green', '#ff4081': 'Pink', '#40c4ff': 'Blue', '#ff9100': 'Orange' }
 const SIZES = { pen: [3, 6, 12], highlighter: [18, 30, 48] }
 // Each tool's icon has the tool's name.

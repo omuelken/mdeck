@@ -64,6 +64,7 @@
  */
 
 import { iconSvg } from '../core/icons.js'
+import { inkPaint } from '../core/ink.js'
 
 (() => {
   const DESIGN_W_DEFAULT = 1920;
@@ -1112,8 +1113,8 @@ import { iconSvg } from '../core/icons.js'
 
     _styleLive(path, { tool, color, size }) {
       const renderer = !!this.inkRenderer;
-      // "accent" is the theme's accent colour (inkPaint in core/ink.js).
-      path.style[renderer ? 'fill' : 'stroke'] = color === 'accent' ? 'var(--accent, #e11d48)' : color;
+      // Pen colours follow the palette and appearance (inkPaint in core/ink.js).
+      path.style[renderer ? 'fill' : 'stroke'] = inkPaint(color);
       if (!renderer) { path.setAttribute('fill', 'none'); path.setAttribute('stroke-width', size); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round'); }
       path.setAttribute(renderer ? 'fill-opacity' : 'stroke-opacity', tool === 'highlighter' ? '0.35' : '1');
       // The highlighter goes under the pen, as on paper.

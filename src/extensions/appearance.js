@@ -17,6 +17,10 @@ export const DARK_TOKENS = {
   '--token-keyword':  '#90cdf4',
   '--token-function': '#d6bcfa',
   '--token-operator': '#fbd38d',
+  // The drawing pen's red, blue and green, lighter for dark slides.
+  '--pen-red':        '#fb7185',
+  '--pen-blue':       '#60a5fa',
+  '--pen-green':      '#4ade80',
 }
 
 const other = appearance => appearance === 'dark' ? 'light' : 'dark'

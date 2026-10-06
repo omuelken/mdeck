@@ -19,7 +19,7 @@ If you already have a settings block there, change the existing lines rather tha
 | `neue` | Swiss style: large type, clear lines, red on white |
 | `aurora` | Northern lights: curtains of light, night-sky chapters and glass |
 | `duet` | Two accent colours for contrasting ideas |
-| `editorial` | A book-like look with serif headings |
+| `editorial` | A magazine spread: serif headlines, drop caps, pull quotes |
 | `fhnw` | The FHNW visual identity |
 | `terminal` | A dark look with lettering like a computer terminal |
 

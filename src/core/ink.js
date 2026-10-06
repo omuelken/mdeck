@@ -172,7 +172,18 @@ export function serializeInk(ink) {
 }
 
 /** The CSS colour a stroke is drawn with: "accent" is the theme's accent. */
-export const inkPaint = color => color === 'accent' ? 'var(--accent, #e11d48)' : color
+// The pen's own colours follow the slide's appearance: on dark slides red,
+// blue and green are lighter (--pen-* in DARK_TOKENS) and black turns into
+// the palette's text colour, so a drawing stays readable when a talk
+// switches to dark. "accent" is the theme's accent colour.
+const PEN_PAINT = {
+  accent: 'var(--accent, #e11d48)',
+  '#e11d48': 'var(--pen-red, #e11d48)',
+  '#2563eb': 'var(--pen-blue, #2563eb)',
+  '#16a34a': 'var(--pen-green, #16a34a)',
+  '#111111': 'var(--ink, #111111)',
+}
+export const inkPaint = color => PEN_PAINT[color] ?? color
 
 /** Strokes in drawing order: highlighter below the pen, as on paper. */
 export const inkOrder = strokes => [...strokes.filter(s => s.tool === 'highlighter'), ...strokes.filter(s => s.tool !== 'highlighter')]

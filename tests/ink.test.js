@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { inkFileFor, emptyInk, normalizeInk, validateInk, orphanIds, applyOp, simplify, hitTest, strokePath, inkOrder, translateStroke, insidePolygon, strokesInLasso, strokesBox } from '../src/core/ink.js'
+import { inkFileFor, emptyInk, normalizeInk, validateInk, orphanIds, applyOp, simplify, hitTest, strokePath, inkOrder, translateStroke, insidePolygon, strokesInLasso, strokesBox, inkPaint } from '../src/core/ink.js'
+import { paletteTokens } from '../src/extensions/appearance.js'
 import { slidesPlugin } from '../src/build/slidesPlugin.js'
 import { checkDeck } from '../src/build/check.js'
 import { loadRegistry } from '../src/extensions/discover.js'
@@ -145,4 +146,14 @@ test('mdeck check reports broken ink files and ink for missing slides', () => {
   assert.deepEqual(codes(), [['invalid-ink', 'error']])
   writeFileSync(inkFileFor(deck), JSON.stringify({ version: 1, slides: { intro: [stroke('a')], gone: [stroke('b')] } }))
   assert.deepEqual(codes(), [['ink-orphan', 'warning']])
+})
+
+test('pen colours follow the palette and the appearance', () => {
+  assert.equal(inkPaint('accent'), 'var(--accent, #e11d48)')
+  assert.equal(inkPaint('#111111'), 'var(--ink, #111111)')
+  assert.equal(inkPaint('#e11d48'), 'var(--pen-red, #e11d48)')
+  assert.equal(inkPaint('#ffeb3b'), '#ffeb3b', 'other colours stay as drawn')
+  const palette = { light: { '--ink': '#111' }, dark: { '--ink': '#eee' } }
+  assert.ok(paletteTokens(palette, 'dark')['--pen-red'], 'dark slides get lighter pen colours')
+  assert.equal(paletteTokens(palette, 'light')['--pen-red'], undefined)
 })

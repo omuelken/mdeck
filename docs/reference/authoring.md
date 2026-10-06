@@ -102,7 +102,7 @@ view is reachable in any build through `?view=reader`.
 | `neue` | Clear sans-serif type (Inter Tight and Inter), warm stone background, teal accent |
 | `aurora` | Geometric shapes, Plus Jakarta Sans, violet accent with a derived magenta second accent |
 | `duet` | Zilla Slab headings with DM Sans body; two accents for structure and voice |
-| `editorial` | Magazine look, Playfair Display headings and Lora body, warm crimson accent |
+| `editorial` | Magazine spread: Newsreader headlines, Lora body, drop caps and pull quotes |
 | `fhnw` | The FHNW corporate design: Inter, black on white, yellow accent areas |
 | `terminal` | Dark by default, JetBrains Mono throughout, terminal green accent |
 
