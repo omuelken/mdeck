@@ -4,6 +4,7 @@ import { render } from 'preact'
 import { marked, Parser } from 'marked'
 import { registry } from '../runtime/registry'
 import { InkLayer } from '../runtime/ink/InkLayer.jsx'
+import themedSvgs from 'virtual:deck-svgs'
 
 // ─── Content extraction ────────────────────────────────────────────────────
 
@@ -52,6 +53,20 @@ export function extractContent(markdown, { headingLevels = [], paragraph = false
   const fullHtml = marked.parse(processed)
   const bodyHtml = marked.parser(Object.assign(remaining, { links: tokens.links }))
   return { headings, paragraphs, bodyHtml, fullHtml, footnotesHtml }
+}
+
+// ─── Pictures ─────────────────────────────────────────────────────────────
+
+// A picture from the slide's settings. An SVG that uses the theme's colour
+// variables is drawn inline, so it follows the theme, palette and light or
+// dark; `fit: cover` fills its box like a photo, otherwise it fits inside.
+export function Picture({ src, alt, fit, position, class: className, ...attributes }) {
+  const markup = themedSvgs[src] ?? themedSvgs[String(src ?? '').split(/[?#]/)[0]]
+  if (!markup) return <img class={className} src={src} alt={alt} style={{ objectFit: fit, objectPosition: position }} {...attributes} />
+  const aspect = fit === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet'
+  // The box sets the size; the drawing scales inside it.
+  const html = markup.replace(/<svg\b[^>]*>/, tag => tag.replace(/\s(width|height|preserveAspectRatio)="[^"]*"/g, '').replace('<svg', `<svg preserveAspectRatio="${aspect}"`))
+  return <div class={['themed-picture', className].filter(Boolean).join(' ')} role="img" aria-label={alt} dangerouslySetInnerHTML={{ __html: html }} {...attributes} />
 }
 
 // ─── Hydration for inline components ──────────────────────────────────────

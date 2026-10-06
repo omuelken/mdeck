@@ -585,6 +585,16 @@ Reference images with standard Markdown syntax or the `image:` frontmatter field
 ![Alt text](./img/diagram.png)
 ```
 
+An SVG used as the `image` of a `title` or `image-text` slide whose source
+contains `var(--…)` is drawn inline instead of as an `<img>`, so it can use the
+palette's custom properties (`--bg`, `--surface`, `--ink`, `--ink-soft`,
+`--muted`, `--rule`, `--accent`, `--accent-2`, `--on-accent`) and follows the
+theme, palette and appearance. Give each a fallback (`var(--accent, #1f3fd1)`)
+for places that show the file on its own, set `fit: contain` to keep the whole
+drawing, prefix class names in its `<style>` because inline styles apply to the
+page, and avoid `id`s, since a slide can be shown more than once. Such SVGs stay
+files in single-file builds and travel inside the deck's code instead.
+
 A normal build copies referenced local images, video, and audio next to the HTML
 while preserving their deck-relative paths. This is the recommended distribution
 format for decks containing substantial video.

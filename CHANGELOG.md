@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- SVG pictures on `title` and `image-text` slides can use the palette's colours (`var(--accent)` …): they are drawn inline and follow the theme, palette and light or dark. The tour's title picture is such a drawing.
 - Fixed: on duet's title slide, emphasis in the subtitle took the background colour and disappeared; it now keeps the slide's text colour, underlined in the second accent, like the headline.
 - Fixed: a picture path shown inside a code example (`image: ./img/photo.jpg`, `![…](./img/photo.jpg)`) was replaced by the embedded picture in PDFs, `mdeck send` files and `--single-file` builds, and a large picture could make the PDF time out. Code examples now stay text.
 - Fixed: the editorial theme showed two dashes before a statement slide's attribution.

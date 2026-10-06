@@ -21,6 +21,8 @@ const EXTENSIONS_ID = 'virtual:mdeck-extensions'
 const RESOLVED_EXTENSIONS_ID = '\0virtual:mdeck-extensions'
 const INK_ID = 'virtual:deck-ink'
 const RESOLVED_INK_ID = '\0virtual:deck-ink'
+const SVGS_ID = 'virtual:deck-svgs'
+const RESOLVED_SVGS_ID = '\0virtual:deck-svgs'
 
 const MIME_BY_EXT = {
   '.png': 'image/png',
@@ -54,11 +56,25 @@ function cleanAssetRef(ref) {
   return ref.slice(0, end)
 }
 
+// An SVG picture that uses the theme's colour variables (var(--accent) …) is
+// drawn inline by the picture layouts, so it follows the theme and palette.
+// Inside an <img> it could not see them.
+const themedSvg = file => /\.svg$/i.test(file) && existsSync(file) && /var\(--/.test(readFileSync(file, 'utf8'))
+
+export function themedSvgs(deckFile) {
+  const svgs = {}
+  for (const ref of collectLocalAssetRefs(readFileSync(deckFile, 'utf8'))) {
+    const file = resolve(dirname(deckFile), ref)
+    if (themedSvg(file)) svgs[ref] = { file, markup: readFileSync(file, 'utf8').replace(/^\s*<\?xml[^>]*>\s*/, '').replace(/<!DOCTYPE[^>]*>\s*/i, '') }
+  }
+  return svgs
+}
+
 function toDataUrl(ref, baseDir) {
   if (!isLocalAssetRef(ref)) return null
   const cleanRef = cleanAssetRef(ref)
   const abs = resolve(baseDir, cleanRef)
-  if (!existsSync(abs)) return null
+  if (!existsSync(abs) || themedSvg(abs)) return null
   const ext = cleanRef.toLowerCase().slice(cleanRef.lastIndexOf('.'))
   const mime = MIME_BY_EXT[ext]
   if (!mime) return null
@@ -200,7 +216,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     for (const dir of next) if (!allow.includes(dir)) allow.push(dir)
     return true
   }
-  const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID, RESOLVED_INK_ID]
+  const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID]
   const invalidate = (server, ids) => {
     for (const id of ids) {
       const mod = server.moduleGraph.getModuleById(id)
@@ -231,6 +247,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       if (id === COMPONENTS_ID) return RESOLVED_COMPONENTS_ID
       if (id === EXTENSIONS_ID) return RESOLVED_EXTENSIONS_ID
       if (id === INK_ID) return RESOLVED_INK_ID
+      if (id === SVGS_ID) return RESOLVED_SVGS_ID
     },
     load(id) {
       if (id === RESOLVED_ID) {
@@ -261,6 +278,12 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
           try { data = normalizeInk(JSON.parse(readFileSync(inkPath, 'utf-8')), size) } catch (error) { this.warn(`${inkPath}: ${error.message}; showing no ink`) }
         }
         return `export default ${JSON.stringify(data)}\nexport const inkFileName = ${JSON.stringify(basename(inkPath))}`
+      }
+      if (id === RESOLVED_SVGS_ID) {
+        this.addWatchFile(abs)
+        const svgs = themedSvgs(abs)
+        for (const { file } of Object.values(svgs)) this.addWatchFile(file)
+        return `export default ${JSON.stringify(Object.fromEntries(Object.entries(svgs).map(([ref, { markup }]) => [ref, markup])))}`
       }
       if (id === RESOLVED_EXTENSIONS_ID) {
         const registry = loadRegistry(abs)

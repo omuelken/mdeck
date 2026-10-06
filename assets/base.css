@@ -78,6 +78,8 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
   justify-content: stretch;
 }
 .image-pane img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.image-pane .themed-picture { width: 100%; height: 100%; }
+.themed-picture > svg { width: 100%; height: 100%; display: block; overflow: visible; }
 /* Structural skeleton for placeholder — visual (background, colors) stays in theme */
 .image-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 .text-pane {

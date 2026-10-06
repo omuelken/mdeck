@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="800" viewBox="0 0 960 800">
+  <!-- A Markdown file becoming a stack of slides. The colours come from the
+       deck's palette (var(--accent) …), so the picture follows the theme;
+       the fallbacks apply where it is shown as a plain image. -->
+  <style>
+    .mdk-paper { fill: var(--surface, #eef1fb); stroke: var(--rule, #d5dbf0); stroke-width: 3; }
+    .mdk-fold { fill: var(--rule, #d5dbf0); }
+    .mdk-shadow { fill: var(--ink, #0c1033); opacity: .12; }
+    .mdk-code { font-family: ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 30px; fill: var(--ink-soft, #2a2f55); }
+    .mdk-mark { fill: var(--accent, #1f3fd1); font-weight: 700; }
+    .mdk-quiet { fill: var(--muted, #5b6080); }
+    .mdk-slide { fill: var(--bg, #ffffff); stroke: var(--ink, #0c1033); stroke-width: 3; }
+    .mdk-accent { fill: var(--accent, #1f3fd1); }
+    .mdk-accent-2 { fill: var(--accent-2, #e8590c); }
+    .mdk-rule { fill: var(--rule, #d5dbf0); }
+    .mdk-on-accent { fill: var(--on-accent, #ffffff); font-family: var(--font-display, sans-serif); font-weight: 800; font-size: 96px; }
+    .mdk-title { fill: var(--ink, #0c1033); font-family: var(--font-display, sans-serif); font-weight: 800; font-size: 46px; }
+    .mdk-arrow { fill: none; stroke: var(--accent-2, #e8590c); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+
+  <!-- The text file -->
+  <g transform="rotate(-5 230 400)">
+    <rect class="mdk-shadow" x="56" y="146" width="370" height="510" rx="18"/>
+    <path class="mdk-paper" d="M58 130 h290 l62 62 v438 a18 18 0 0 1 -18 18 h-316 a18 18 0 0 1 -18 -18 v-482 a18 18 0 0 1 18 -18 z"/>
+    <path class="mdk-fold" d="M348 130 v44 a18 18 0 0 0 18 18 h44 z"/>
+    <text class="mdk-code" x="84" y="232"><tspan class="mdk-mark">#</tspan> A talk</text>
+    <text class="mdk-code" x="84" y="300"><tspan class="mdk-mark">-</tspan> one idea</text>
+    <text class="mdk-code" x="84" y="344"><tspan class="mdk-mark">-</tspan> an example</text>
+    <text class="mdk-code mdk-mark" x="84" y="412">---</text>
+    <text class="mdk-code mdk-quiet" x="84" y="480">:::notes</text>
+    <text class="mdk-code mdk-quiet" x="84" y="524">pause here</text>
+    <text class="mdk-code mdk-quiet" x="84" y="568">:::</text>
+  </g>
+
+  <!-- From text to slides -->
+  <path class="mdk-arrow" d="M300 112 C 380 20, 560 22, 640 150" stroke-dasharray="2 16"/>
+  <path class="mdk-arrow" d="M612 138 l30 16 l4 -34"/>
+  <path class="mdk-accent" d="M470 60 l7 17 l17 7 l-17 7 l-7 17 l-7 -17 l-17 -7 l17 -7 z"/>
+  <path class="mdk-accent-2" d="M760 210 l5 12 l12 5 l-12 5 l-5 12 l-5 -12 l-12 -5 l12 -5 z"/>
+
+  <!-- The slides: a chapter, a statement, and a content slide in front -->
+  <g transform="rotate(9 680 330)">
+    <rect class="mdk-accent-2" x="440" y="200" width="480" height="270" rx="14"/>
+  </g>
+  <g transform="rotate(3 660 420)">
+    <rect class="mdk-accent" x="420" y="290" width="480" height="270" rx="14"/>
+    <text class="mdk-on-accent" x="452" y="386">2</text>
+    <rect class="mdk-accent-2" x="512" y="350" width="80" height="10" rx="5"/>
+  </g>
+  <g transform="rotate(-3 640 540)">
+    <rect class="mdk-shadow" x="412" y="420" width="480" height="270" rx="14"/>
+    <rect class="mdk-slide" x="400" y="404" width="480" height="270" rx="14"/>
+    <text class="mdk-title" x="432" y="470">A talk</text>
+    <rect class="mdk-accent" x="432" y="486" width="88" height="8" rx="4"/>
+    <rect class="mdk-accent" x="432" y="524" width="14" height="14" rx="3"/>
+    <rect class="mdk-rule" x="458" y="525" width="150" height="12" rx="6"/>
+    <rect class="mdk-accent" x="432" y="562" width="14" height="14" rx="3"/>
+    <rect class="mdk-rule" x="458" y="563" width="120" height="12" rx="6"/>
+    <rect class="mdk-accent" x="432" y="600" width="14" height="14" rx="3"/>
+    <rect class="mdk-rule" x="458" y="601" width="136" height="12" rx="6"/>
+    <rect class="mdk-accent-2" x="682" y="580" width="34" height="62" rx="4"/>
+    <rect class="mdk-accent" x="726" y="530" width="34" height="112" rx="4"/>
+    <rect class="mdk-accent-2" x="770" y="556" width="34" height="86" rx="4"/>
+    <rect class="mdk-accent" x="814" y="500" width="34" height="142" rx="4"/>
+  </g>
+</svg>

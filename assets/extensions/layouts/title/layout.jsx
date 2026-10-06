@@ -1,5 +1,5 @@
 import { h } from 'preact'
-import { extractContent, HtmlContent } from 'mdeck/layout'
+import { extractContent, HtmlContent, Picture } from 'mdeck/layout'
 
 export default function TitleLayout({ content, props }) {
   const { headings, paragraphs, bodyHtml } = extractContent(content, { headingLevels: [1, 2], paragraph: !/^##\s/m.test(content) })
@@ -9,6 +9,6 @@ export default function TitleLayout({ content, props }) {
       {(headings[2] || paragraphs[0]) && <p class="subtitle" dangerouslySetInnerHTML={{ __html: headings[2] ?? paragraphs[0] }} />}
       {bodyHtml && <HtmlContent html={bodyHtml} />}
     </div>
-    {props.image && <img class="title-image" src={props.image} alt={props.alt} style={{ objectFit: props.fit, objectPosition: props.position }} />}
+    {props.image && <Picture class="title-image" src={props.image} alt={props.alt} fit={props.fit} position={props.position} />}
   </div>
 }

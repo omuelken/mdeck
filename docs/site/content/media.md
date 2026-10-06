@@ -57,6 +57,17 @@ props:
 
 For a cropped picture, use `fit: cover`. You can add `position: "left center"` or `position: "70% 50%"` to choose which part stays in view.
 
+## Pictures that follow the theme
+
+An SVG drawing can take its colours from the theme, so it matches every theme, palette, and light or dark. Colour it with the palette's names instead of fixed colours, for example `fill: var(--accent, #1f3fd1)`; the colour after the comma is used wherever the picture is shown on its own. The names are `--bg`, `--surface`, `--ink`, `--ink-soft`, `--muted`, `--rule`, `--accent`, `--accent-2` and `--on-accent`.
+
+Use it as the `image` of a `title` or `image-text` slide, with `fit: contain` so the whole drawing shows. The tour example's title picture, `examples/showcase/img/mdeck.svg`, works this way. An AI assistant can draw one for you:
+
+```prompt
+Draw an SVG title picture for this talk that uses the palette's
+colours, with a transparent background, and put it on the title slide.
+```
+
 ## Add a video file
 
 Paste this line into a normal slide, or into one side of a split slide:

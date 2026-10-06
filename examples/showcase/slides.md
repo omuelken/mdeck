@@ -5,14 +5,14 @@ meta:
   author: "Tilman Schieber"
   organization: "FHNW"
   date: "2026-10-06"
-  logo: ./img/logo.png
 ---
 
 ---
 :::meta
 layout: title
-image: ./img/image.jpg
-alt: "Contour lines like those on a map"
+image: ./img/mdeck.svg
+fit: contain
+alt: "A Markdown file turning into a stack of slides"
 id: a-talk-in-a-text-file
 :::
 # A talk in a text file.
