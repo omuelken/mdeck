@@ -3,6 +3,7 @@ import { resolve, dirname, basename, sep } from 'path'
 import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, extensionRoots, manifestsOf } from '../extensions/discover.js'
+import { resolvePalette } from '../extensions/appearance.js'
 import { embedFonts } from './fonts.js'
 import { stripNotes as stripNotesFrom } from '../core/editDeck.js'
 import { componentFolders, componentFiles } from './components.js'
@@ -196,10 +197,21 @@ export function generateExtensionsModule(registry) {
   return `${imports.join('\n')}\nexport const layouts = {\n${layouts.join(',\n')}\n}\nexport const themes = {\n${themes.join(',\n')}\n}\nexport const palettes = {\n${palettes.join(',\n')}\n}\n`
 }
 
+// A file for readers carries only the deck's own theme and the palette it
+// shows: the reader view offers light and dark, nothing else, and only that
+// theme's fonts travel with the file.
+export function deckLookOnly(registry, deckConfig = {}) {
+  const theme = registry.themes[deckConfig.theme ?? 'neue']
+  if (!theme) return registry
+  const palettes = Object.fromEntries(Object.entries(registry.palettes).map(([id, record]) => [id, record.manifest]))
+  const { palette } = resolvePalette({ theme: theme.manifest, palettes, palette: deckConfig.palette })
+  return { ...registry, themes: { [theme.id]: theme }, palettes: palette ? { [palette.id]: registry.palettes[palette.id] } : {} }
+}
+
 // `editor` keeps the page alive while `mdeck edit` rewrites the deck: deck
 // changes only invalidate the module, validation errors are warnings, and
 // extension changes are announced instead of forcing a reload.
-export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, ink = true, embedFonts: embedThemeFonts = false } = {}) {
+export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, ink = true, embedFonts: embedThemeFonts = false, deckLook = false } = {}) {
   const abs = resolve(slidesPath)
   const sourceFor = raw => stripNotes ? stripNotesFrom(raw) : raw
   const inkPath = inkFileFor(abs)
@@ -290,7 +302,10 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       if (id === RESOLVED_EXTENSIONS_ID) {
         const registry = loadRegistry(abs)
         for (const record of registry.records) this.addWatchFile(record.file)
-        return generateExtensionsModule(registry)
+        if (!deckLook) return generateExtensionsModule(registry)
+        let config = {}
+        try { config = parseSlides(readFileSync(abs, 'utf-8')).deckConfig ?? {} } catch {}
+        return generateExtensionsModule(deckLookOnly(registry, config))
       }
       if (id === RESOLVED_COMPONENTS_ID) {
         const files = componentFiles(abs)

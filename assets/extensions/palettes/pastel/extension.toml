@@ -1,0 +1,30 @@
+schema = 1
+kind = "palette"
+id = "pastel"
+title = "Pastel"
+description = "Soft pastels in the Catppuccin style: Latte by day, Mocha by night, mauve and peach."
+
+# Catppuccin Latte; the peach and the muted grey are a shade darker so they
+# can be read on the base.
+[light]
+"--bg" = "#eff1f5"
+"--surface" = "#e6e9ef"
+"--ink" = "#4c4f69"
+"--ink-soft" = "#5c5f77"
+"--muted" = "#676a80"
+"--rule" = "#ccd0da"
+"--accent" = "#8839ef"
+"--accent-2" = "#dc5c0c"
+"--on-accent" = "#eff1f5"
+
+# Catppuccin Mocha.
+[dark]
+"--bg" = "#1e1e2e"
+"--surface" = "#313244"
+"--ink" = "#cdd6f4"
+"--ink-soft" = "#bac2de"
+"--muted" = "#a6adc8"
+"--rule" = "#45475a"
+"--accent" = "#cba6f7"
+"--accent-2" = "#fab387"
+"--on-accent" = "#1e1e2e"

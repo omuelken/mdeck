@@ -57,8 +57,10 @@ function withConfigOverrides(deckConfig) {
   // deck sets; a missing one keeps the deck's.
   return {
     ...deckConfig,
-    ...(theme ? { theme } : {}),
-    ...(palette !== null ? { palette: palette || undefined } : {}),
+    // A file sent to readers carries only the deck's own theme and palette;
+    // others named in the address are left out rather than failing.
+    ...(theme && THEME_METAS[theme] ? { theme } : {}),
+    ...(palette !== null && (!palette || PALETTES[palette]) ? { palette: palette || undefined } : {}),
     ...(appearance !== null ? { appearance: appearance || undefined } : {}),
   }
 }
@@ -212,7 +214,14 @@ function PresenterView({ deckConfig, slides }) {
   const fullscreenIcon = isFullscreen ? 'fullscreen-exit' : 'fullscreen'
 
   const [paletteOpen, setPaletteOpen] = useState(false)
-  const [themeOpen, setThemeOpen] = useState(false)
+  // The theme row shows unless the presenter folded it, like the ink toolbar,
+  // into one round button.
+  const [lookFolded, setLookFolded] = useState(() => { try { return localStorage.getItem('mdeck-presenter-look') === 'folded' } catch { return false } })
+  function foldLook(folded) {
+    setLookFolded(folded)
+    setPaletteOpen(false)
+    try { localStorage.setItem('mdeck-presenter-look', folded ? 'folded' : 'open') } catch {}
+  }
   const [themeModalOpen, setThemeModalOpen] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [timerRunning, setTimerRunning] = useState(false)
@@ -480,74 +489,66 @@ function PresenterView({ deckConfig, slides }) {
           />
         </div>
 
-        <div style={{ flexShrink: 0 }}>
-          <button
-            onClick={() => setThemeOpen(o => !o)}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', padding: '2px 0 6px', cursor: 'pointer', color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', width: '100%' }}
-          >
-            <span style={{ opacity: 0.7 }}><PresenterIcon name={themeOpen ? 'collapse' : 'expand'} size={12} /></span>
-            Theme & Palette
-          </button>
-          {themeOpen && (
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
-              <label style={{ flex: 1 }}>
-                <span style={S.label}>Theme</span>
-                <button
-                  onClick={() => setThemeModalOpen(true)}
-                  style={{ ...S.select, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', cursor: 'pointer' }}
-                >
-                  <span>{theme}</span>
-                  <span style={{ opacity: 0.5, flexShrink: 0 }}><PresenterIcon name="grid" size={13} /></span>
-                </button>
-              </label>
-              <label style={{ flex: 1 }}>
-                <span style={S.label}>Palette</span>
-                <div ref={paletteDropRef} style={{ position: 'relative' }}>
-                  <button
-                    class="presenter-palette"
-                    onClick={() => setPaletteOpen(o => !o)}
-                    style={{ ...S.select, display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', textAlign: 'left' }}
-                  >
-                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shown.palette?.title ?? ''}</span>
-                    <PaletteSwatches tokens={shown.palette?.[shown.appearance] ?? {}} />
-                    <span style={{ opacity: 0.5, flexShrink: 0 }}><PresenterIcon name="dropdown" size={13} /></span>
-                  </button>
-                  {paletteOpen && (
-                    <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0, background: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '5px', zIndex: 100, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.6)' }}>
-                      {offered.map(p => (
-                        <div
-                          key={p.id}
-                          class="presenter-palette-option"
-                          title={p.description}
-                          onClick={() => { setPalette(p.id === themeMeta?.palette ? '' : p.id); setPaletteOpen(false) }}
-                          style={{ padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', fontSize: '13px', color: shown.palette?.id === p.id ? '#f0f0f0' : '#aaa', background: shown.palette?.id === p.id ? '#2a2a2a' : 'transparent' }}
-                        >
-                          <span>{p.title}{p.id === themeMeta?.palette ? <span style={{ color: '#666' }}> · theme default</span> : null}</span>
-                          <PaletteSwatches tokens={p[shown.appearance] ?? {}} />
-                        </div>
-                      ))}
+        {!lookFolded && <div class="presenter-look" style={{ flexShrink: 0, display: 'flex', gap: '6px', marginBottom: '8px', alignItems: 'flex-end' }}>
+          <label style={{ flex: 1 }}>
+            <span style={S.label}>Theme</span>
+            <button
+              onClick={() => setThemeModalOpen(true)}
+              style={{ ...S.select, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', cursor: 'pointer' }}
+            >
+              <span>{theme}</span>
+              <span style={{ opacity: 0.5, flexShrink: 0 }}><PresenterIcon name="grid" size={13} /></span>
+            </button>
+          </label>
+          <label style={{ flex: 1 }}>
+            <span style={S.label}>Palette</span>
+            <div ref={paletteDropRef} style={{ position: 'relative' }}>
+              <button
+                class="presenter-palette"
+                onClick={() => setPaletteOpen(o => !o)}
+                style={{ ...S.select, display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shown.palette?.title ?? ''}</span>
+                <PaletteSwatches tokens={shown.palette?.[shown.appearance] ?? {}} />
+                <span style={{ opacity: 0.5, flexShrink: 0 }}><PresenterIcon name="dropdown" size={13} /></span>
+              </button>
+              {paletteOpen && (
+                <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0, background: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '5px', zIndex: 100, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.6)' }}>
+                  {offered.map(p => (
+                    <div
+                      key={p.id}
+                      class="presenter-palette-option"
+                      title={p.description}
+                      onClick={() => { setPalette(p.id === themeMeta?.palette ? '' : p.id); setPaletteOpen(false) }}
+                      style={{ padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', fontSize: '13px', color: shown.palette?.id === p.id ? '#f0f0f0' : '#aaa', background: shown.palette?.id === p.id ? '#2a2a2a' : 'transparent' }}
+                    >
+                      <span>{p.title}{p.id === themeMeta?.palette ? <span style={{ color: '#666' }}> · theme default</span> : null}</span>
+                      <PaletteSwatches tokens={p[shown.appearance] ?? {}} />
                     </div>
-                  )}
-                </div>
-              </label>
-              <label style={{ flexShrink: 0 }}>
-                <span style={S.label}>Light or dark</span>
-                <div class="presenter-appearance" role="group" aria-label="Light or dark" style={{ display: 'flex', gap: '2px', height: '28px' }}>
-                  {['light', 'dark'].map(mode => (
-                    <button
-                      key={mode}
-                      aria-pressed={shown.appearance === mode}
-                      title={mode === 'light' ? 'Light: for bright rooms' : 'Dark: for dark rooms'}
-                      aria-label={mode === 'light' ? 'Light' : 'Dark'}
-                      onClick={() => setAppearance(mode === (themeMeta?.appearance ?? 'light') ? '' : mode)}
-                      style={{ ...S.btn, padding: '3px 7px', ...(shown.appearance === mode ? { background: '#2a2a2a', color: '#f0f0f0', borderColor: '#444' } : {}) }}
-                    ><PresenterIcon name={mode === 'light' ? 'sun' : 'moon'} size={16} /></button>
                   ))}
                 </div>
-              </label>
+              )}
             </div>
-          )}
-        </div>
+          </label>
+          <label style={{ flexShrink: 0 }}>
+            <span style={S.label}>Light or dark</span>
+            <div class="presenter-appearance" role="group" aria-label="Light or dark" style={{ display: 'flex', gap: '2px', height: '28px' }}>
+              {['light', 'dark'].map(mode => (
+                <button
+                  key={mode}
+                  aria-pressed={shown.appearance === mode}
+                  title={mode === 'light' ? 'Light: for bright rooms' : 'Dark: for dark rooms'}
+                  aria-label={mode === 'light' ? 'Light' : 'Dark'}
+                  onClick={() => setAppearance(mode === (themeMeta?.appearance ?? 'light') ? '' : mode)}
+                  style={{ ...S.btn, padding: '3px 7px', ...(shown.appearance === mode ? { background: '#2a2a2a', color: '#f0f0f0', borderColor: '#444' } : {}) }}
+                ><PresenterIcon name={mode === 'light' ? 'sun' : 'moon'} size={16} /></button>
+              ))}
+            </div>
+          </label>
+          <button class="presenter-look-fold" title="Fold theme and palette" aria-label="Fold theme and palette" onClick={() => foldLook(true)}
+            style={{ ...S.btn, padding: 0, width: '28px', height: '28px', flexShrink: 0, background: 'none', borderColor: 'transparent', color: '#888' }}
+          ><PresenterIcon name="fold" size={16} /></button>
+        </div>}
 
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -561,6 +562,16 @@ function PresenterView({ deckConfig, slides }) {
               style={{ ...S.btn, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }}
               onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}
             ><PresenterIcon name="pen" size={15} />Draw</button>
+            {lookFolded && <button
+              class="presenter-look-unfold"
+              title={`Theme and palette: ${themeMeta?.title ?? theme}, ${shown.palette?.title ?? ''}`}
+              aria-label="Show theme and palette"
+              onClick={() => foldLook(false)}
+              style={{ ...S.btn, position: 'relative', padding: 0, width: '32px', height: '32px', borderRadius: '50%' }}
+            >
+              <PresenterIcon name="look" size={16} />
+              <span style={{ position: 'absolute', right: '2px', bottom: '2px', width: '9px', height: '9px', borderRadius: '50%', background: shown.palette?.[shown.appearance]?.['--accent'] ?? '#888', boxShadow: '0 0 0 1.5px #222' }} />
+            </button>}
             <button
               style={{
                 ...S.btn,

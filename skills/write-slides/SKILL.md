@@ -34,7 +34,7 @@ If `mdeck` is not installed, rely on the quick reference below.
 ```markdown
 ---
 theme: neue            # theme id from `mdeck list themes`
-palette: terra          # optional: lagoon, swiss, cobalt, nordic, graphite, terra, forest, ember, neon, phosphor
+palette: terra          # optional: lagoon, swiss, cobalt, nordic, graphite, terra, forest, ember, neon, phosphor, pastel
 appearance: light       # optional: light or dark
 meta:
   title: "Talk title"
@@ -90,7 +90,7 @@ Right column
 - Slides are separated by `---` on its own line. Settings go in a `:::meta` block at the top of a slide.
 - Built-in layouts: `title`, `chapter`, `focus` (one big statement), `image-text`, `split`, `full-bleed-image`, and plain content slides without a `layout:`.
 - Named areas use `:::slot name … :::`; the layout's regions and settings come from `mdeck list layouts --json`.
-- `:::notes … :::` holds speaker notes. `:::steps … :::` reveals list items one at a time. `:::tip`, `:::warning`, `:::info` are callouts. `:::columns … +++ … :::` makes columns inside a slide.
+- `:::notes … :::` holds speaker notes. `:::steps … :::` reveals list items one at a time. `:::tip`, `:::warning`, `:::info` are callouts; for lectures, `:::definition`, `:::theorem`, `:::lemma`, `:::proof`, `:::example` and `:::remark`, numbered in the title (`::: theorem Theorem 2.4 (Lagrange)`). `:::columns … +++ … :::` makes columns inside a slide.
 - Code fences get syntax highlighting; `$…$` and `$$…$$` render math.
 - `<poll room="lunch" options="Mensa|Thai|Pizza" />` lets the audience vote on their phones through a QR code on the slide; each poll needs its own `room`. `<scale room="pace" min="1" max="5" low="Too slow" high="Too fast" />`, `<wordcloud room="mood" />` and `<question room="ask" />` ask for a rating, short words or open answers the same way. With several of them, put `<qrcode join />` (the deck's join code) on an early slide to show the QR code once, and add `qr="false"` to the questions. It works when the deck is presented with `mdeck run <deck>.md --network` or with a server set as `server:` in the deck settings.
 

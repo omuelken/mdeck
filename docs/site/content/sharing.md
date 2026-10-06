@@ -16,13 +16,13 @@ The quickest way to give slides to people who were not in the room:
 mdeck send my-talk.md
 ```
 
-Send `my-talk.html` by email. It opens in a **reader view**: an outline of all slides on the left, the slides in the middle, a **Read** mode that stacks every slide for scrolling on a phone, a **Look** menu to try other themes and colors, a **Download PDF** button, and a **Present** button that opens standalone slides. The PDF is inside the file, so there is nothing else to attach.
+Send `my-talk.html` by email. It opens in a **reader view**: an outline of all slides on the left, the slides in the middle, a **Read** mode that stacks every slide for scrolling on a phone, a **Light**/**Dark** button, a **Download PDF** button, and a **Present** button that opens standalone slides. The PDF is inside the file, so there is nothing else to attach.
 
 - Drawings from `my-talk.drawings.json` are part of every build and PDF; `--no-drawings` leaves them out. See [Draw on your slides](drawing.html).
 - Your speaker notes are removed. Add `--notes` to keep them in the file, for example when you also present from the same file. Readers only see notes if you put `reader:` with `notes: true` in the settings at the top of your slide file.
 - The PDF is made while sending, using Chrome or Chromium on your computer. If neither is found, the button offers the browser's own "Save as PDF" dialog instead. Set `MDECK_CHROME` to the browser's path if it is installed somewhere unusual. `--no-pdf` skips it.
 - `-o` chooses the name: `mdeck send my-talk.md -o handout.html`.
-- To stop recipients changing the look, put `reader:` with `themes: false` in the settings at the top of your slide file.
+- The file keeps your theme and colours; readers can only switch between light and dark. To keep that fixed too, put `reader:` with `themes: false` in the settings at the top of your slide file.
 
 Anyone who opens a normal build can reach the reader view through the small **Overview** link in the corner, or by adding `?view=reader` to the address. [Views, commands and servers](views.html) lists every view. Likewise `?view=presenter` opens the presenter view of any build, as long as the notes were kept in the file.
 

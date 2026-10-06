@@ -31,6 +31,8 @@ If you already have a settings block there, change the existing lines rather tha
 | `editorial` | A magazine spread: serif headlines, drop caps, pull quotes |
 | `fhnw` | The FHNW visual identity |
 | `terminal` | A terminal session: headings typed at a prompt, a blinking cursor, a status bar |
+| `academic` | A lecture: compact slides, theorem and definition boxes, tables like in a paper |
+| `sketch` | A sketchbook: handwriting, marker scribbles, sticky notes; a chalkboard in the dark |
 
 Each theme comes with colours that suit it, so you do not have to choose any.
 
@@ -74,6 +76,18 @@ Default colours: its own FHNW colours.
 
 Default colours: `phosphor`, dark.
 
+### Academic
+
+[![The tour's title slide in the Academic theme](images/themes/academic.webp)](images/themes/academic.webp)
+
+Default colours: `nordic`.
+
+### Sketch
+
+[![The tour's title slide in the Sketch theme](images/themes/sketch.webp)](images/themes/sketch.webp)
+
+Default colours: `pastel`.
+
 ## Choose colours
 
 To use other colours, set `palette` to one of these:
@@ -90,6 +104,7 @@ To use other colours, set `palette` to one of these:
 | `ember` | Sand and espresso with orange |
 | `neon` | Violet and magenta, loud |
 | `phosphor` | Green on black, like an old terminal screen |
+| `pastel` | Soft pastels, mauve and peach (in the style of Catppuccin) |
 
 ```yaml
 ---
@@ -136,7 +151,7 @@ Open the launch page and choose **Presenter view**:
 mdeck run my-talk.md
 ```
 
-Its **Theme & Palette** controls let you try themes, palettes and light or dark. These changes are a preview: they do not save back to your text file. Once you find a look you like, put its settings in the file and save.
+Its theme, palette and light or dark controls, under the notes, let you try other looks (fold them away with the arrow beside them). These changes are a preview: they do not save back to your text file. Once you find a look you like, put its settings in the file and save.
 
 ## Add your name and organization
 

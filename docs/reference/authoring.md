@@ -41,7 +41,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | Field | Default | Description |
 |---|---|---|
 | `theme` | `neue` | Theme name |
-| `palette` | _(theme default)_ | Colour palette: `lagoon`, `swiss`, `cobalt`, `nordic`, `graphite`, `terra`, `forest`, `ember`, `neon`, `phosphor`, or one of your own |
+| `palette` | _(theme default)_ | Colour palette: `lagoon`, `swiss`, `cobalt`, `nordic`, `graphite`, `terra`, `forest`, `ember`, `neon`, `phosphor`, `pastel`, or one of your own |
 | `appearance` | _(theme default)_ | `light` or `dark`: which variant of the palette the slides use |
 | `meta.title` | — | Deck title (shown in footer) |
 | `meta.author` | — | Author name (shown in footer) |
@@ -61,7 +61,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `session.code` | from `session.id` | The session code itself, 4 to 8 digits; phones join at `<server>/<code>` |
 | `components` | — | Extra folders of Preact components shared between decks, relative to the deck or starting with `~/` |
 | `params` | — | Theme-specific color/font overrides (see below) |
-| `reader.themes` | `true` | Whether the reader view offers other themes and palettes (see below) |
+| `reader.themes` | `true` | Whether the reader view offers a switch between light and dark (see below) |
 | `reader.notes` | `false` | Whether the reader view shows speaker notes under each slide in Read mode |
 
 ### Theme params
@@ -82,14 +82,17 @@ are not params: they come from the palette.
 
 ```yaml
 reader:
-  themes: false   # hide the theme and color picker in the reader view
+  themes: false   # no light/dark switch in the reader view
   notes: true     # show speaker notes under each slide in Read mode
 ```
 
 Views are chosen with one address parameter: `?view=deck`, `?view=reader`,
 `?view=presenter` or `?view=audience`. `mdeck send` produces a file that opens
-in the reader view (outline, Read mode, look picker, PDF download).
-`reader.themes: false` keeps the sender's look fixed. Speaker notes are
+in the reader view (outline, Read mode, a light/dark switch, PDF download).
+The file carries only the deck's own theme and palette, with that theme's
+fonts, so readers see the deck as it was made; they can switch between its
+light and dark version. `reader.themes: false` removes that switch too.
+`mdeck build --reader` bundles the same way. Speaker notes are
 removed from `mdeck send` files unless the command uses `--notes`, and even
 then the reader shows them only when `reader.notes` is `true`, so a file can
 carry notes for the presenter view without showing them to readers. The same
@@ -105,6 +108,8 @@ view is reachable in any build through `?view=reader`.
 | `editorial` | Magazine spread: Newsreader headlines, Lora body, drop caps and pull quotes |
 | `fhnw` | The FHNW corporate design: Inter, black on white, yellow accent areas |
 | `terminal` | A terminal session: JetBrains Mono, headings at a prompt, a blinking cursor on the title, log-line callouts, a tmux status bar; dark by default |
+| `academic` | A lecture: Source Sans and Source Serif, dense top-aligned slides, theorem and definition blocks, booktabs tables, a footnote rule |
+| `sketch` | A sketchbook: Caveat and Patrick Hand on dotted paper, marker scribbles, circled numbers, sticky-note callouts, taped photos; a chalkboard in the dark |
 
 `mdeck list <deck>.md` lists these together with any themes kept beside
 the deck.
@@ -127,6 +132,7 @@ Each palette has a light and a dark variant; `appearance:` picks one.
 | `ember` | Sand, espresso, orange | Dark brown, glowing orange |
 | `neon` | White, violet, magenta (aurora's default) | Black, neon violet and pink |
 | `phosphor` | Paper printout, green, ochre (terminal's default) | Phosphor green on black, amber |
+| `pastel` | Catppuccin Latte: mauve and peach (sketch's default) | Catppuccin Mocha: pastel mauve and peach |
 
 The FHNW theme uses its own palette, `brand`, and no other.
 
@@ -448,9 +454,21 @@ Callouts interrupt reading flow.
 
 Available types: `note`, `tip`, `important`, `warning`, `caution`.
 
+For lectures there are also `definition`, `theorem`, `lemma`, `corollary`, `proof`, `example` and `remark`. Every theme shows them as callouts; the academic theme sets them like lecture notes (theorem statements in italics, a proof without a box and ending with ∎). Number them in the title:
+
+```markdown
+::: theorem Theorem 2.4 (Lagrange)
+If $H$ is a subgroup of a finite group $G$, then $|H|$ divides $|G|$.
+:::
+
+::: proof
+The cosets of $H$ partition $G$ and all have $|H|$ elements.
+:::
+```
+
 ### Callout titles
 
-Without a custom title, a callout is labelled after its type. Set `lang: de` in the deck frontmatter to get German defaults (`Hinweis`, `Tipp`, `Wichtig`, `Achtung`, `Vorsicht`), or override individual titles:
+Without a custom title, a callout is labelled after its type. Set `lang: de` in the deck frontmatter to get German defaults (`Hinweis`, `Tipp`, `Wichtig`, `Achtung`, `Vorsicht`, and `Satz`, `Beweis`, `Beispiel`, `Bemerkung` …), or override individual titles:
 
 ```yaml
 lang: de
@@ -485,16 +503,9 @@ labels:
 | `reader.untitled` | Slides | Folien |
 | `reader.slides` | Slides | Folien |
 | `reader.read` | Read | Lesen |
-| `reader.look` | Look | Aussehen |
-| `reader.theme` | Theme | Design |
-| `reader.colors` | Colors | Farben |
-| `reader.themeColors` | theme default | Standard des Designs |
 | `reader.appearance` | Light or dark | Hell oder dunkel |
 | `reader.light` | Light | Hell |
 | `reader.dark` | Dark | Dunkel |
-| `reader.resetLook` | Reset to default | Zurücksetzen |
-| `reader.resetLookHint` | Return to the look the deck was made with | Zum ursprünglichen Aussehen zurück |
-| `reader.senderLook` | This is the look the deck was made with | Das ist das ursprüngliche Aussehen |
 | `reader.downloadPdf` | Download PDF | PDF herunterladen |
 | `reader.savePdf` | Save as PDF… | Als PDF sichern… |
 | `reader.savePdfHint` | Opens the browser's print dialog; choose Save as PDF | Öffnet den Druckdialog des Browsers; dort „Als PDF sichern“ wählen |

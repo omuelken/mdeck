@@ -22,6 +22,8 @@ theme: neue
 | `editorial` | Magazine spread: masthead rule, drop caps, pull quotes, Roman chapter numerals | `terra` |
 | `fhnw` | The FHNW corporate design | `brand` (the only one) |
 | `terminal` | A terminal session: prompts, a blinking cursor, a tmux status bar | `phosphor`, dark |
+| `academic` | A lecture: dense top-aligned slides, theorem and definition blocks, booktabs tables, a footnote rule | `nordic` |
+| `sketch` | A sketchbook: handwriting on dotted paper, marker scribbles, sticky-note callouts, taped photos | `pastel` |
 
 `mdeck list my-talk.md` lists them with their descriptions.
 

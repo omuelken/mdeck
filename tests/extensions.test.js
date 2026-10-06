@@ -9,7 +9,7 @@ import { buildAppearance, paletteColor, DARK_TOKENS } from '../src/extensions/ap
 import { resolveLayoutProps } from '../src/layouts/layoutProps.js'
 import { parseSlides } from '../src/core/parseSlides.js'
 import { validateDeck } from '../src/core/validateDeck.js'
-import { generateExtensionsModule } from '../src/build/slidesPlugin.js'
+import { generateExtensionsModule, deckLookOnly } from '../src/build/slidesPlugin.js'
 
 const path = 'examples/custom-layouts/slides.md'
 const registry = loadRegistry(path)
@@ -86,8 +86,8 @@ test('common manifest mistakes fail with the file, setting path and reason', () 
 })
 
 test('built-in and deck-local extensions load through one registry', () => {
-  assert.deepEqual(Object.keys(registry.themes), ['aurora', 'duet', 'editorial', 'fhnw', 'neue', 'terminal'])
-  assert.deepEqual(Object.keys(registry.palettes), ['brand', 'cobalt', 'ember', 'forest', 'graphite', 'lagoon', 'neon', 'nordic', 'phosphor', 'swiss', 'terra'])
+  assert.deepEqual(Object.keys(registry.themes), ['academic', 'aurora', 'duet', 'editorial', 'fhnw', 'neue', 'sketch', 'terminal'])
+  assert.deepEqual(Object.keys(registry.palettes), ['brand', 'cobalt', 'ember', 'forest', 'graphite', 'lagoon', 'neon', 'nordic', 'pastel', 'phosphor', 'swiss', 'terra'])
   assert.equal(registry.layouts.comparison.source, 'local')
   assert.equal(registry.layouts.title.source, 'built-in')
   assert.deepEqual(registry.warnings, [])
@@ -111,6 +111,16 @@ test('the generated runtime module imports every layout and lazily loads theme s
   assert.match(code, /import ".*\/comparison\/styles\.css"/)
   assert.match(code, /"neue": \{ manifest: \{.*"tokens".*load: \(\) => Promise\.all\(\[import\(".*\/themes\/neue\/styles\.css\?inline"\)\]\)/)
   assert.match(code, /export const palettes = \{\n"brand"/)
+})
+
+test('a file for readers carries only the deck theme and the palette it shows', () => {
+  const pick = config => { const only = deckLookOnly(registry, config); return [Object.keys(only.themes), Object.keys(only.palettes)] }
+  assert.deepEqual(pick({ theme: 'editorial' }), [['editorial'], ['terra']], "the theme's default palette")
+  assert.deepEqual(pick({ theme: 'sketch', palette: 'ember' }), [['sketch'], ['ember']], "the deck's own palette")
+  assert.deepEqual(pick({}), [['neue'], ['swiss']], 'neue without a theme')
+  assert.deepEqual(pick({ theme: 'fhnw', palette: 'terra' }), [['fhnw'], ['brand']], 'a palette the theme does not offer falls back')
+  assert.equal(Object.keys(deckLookOnly(registry, { theme: 'academic' }).layouts).length, Object.keys(registry.layouts).length, 'layouts stay')
+  assert.doesNotMatch(generateExtensionsModule(deckLookOnly(registry, { theme: 'academic' })), /themes\/neue\/styles\.css/)
 })
 
 test('template validation rejects missing regions, unknown props and incorrect values', () => {

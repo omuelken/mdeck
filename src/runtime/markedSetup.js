@@ -39,8 +39,10 @@ marked.use(markedKatex({ throwOnError: false, output: 'html' }))
 // marked.use() prepends via unshift, so last-registered = highest priority.
 // Register callout first (lowest priority) so columns and steps match before it.
 const CALLOUT_LABELS = {
-  en: { note: 'Note',    tip: 'Tip',  important: 'Important', warning: 'Warning', caution: 'Caution'  },
-  de: { note: 'Hinweis', tip: 'Tipp', important: 'Wichtig',   warning: 'Achtung', caution: 'Vorsicht' },
+  en: { note: 'Note',    tip: 'Tip',  important: 'Important', warning: 'Warning', caution: 'Caution',
+    definition: 'Definition', theorem: 'Theorem', lemma: 'Lemma', corollary: 'Corollary', proof: 'Proof', example: 'Example', remark: 'Remark' },
+  de: { note: 'Hinweis', tip: 'Tipp', important: 'Wichtig',   warning: 'Achtung', caution: 'Vorsicht',
+    definition: 'Definition', theorem: 'Satz',    lemma: 'Lemma', corollary: 'Korollar',  proof: 'Beweis', example: 'Beispiel', remark: 'Bemerkung' },
 }
 
 let calloutLabels = CALLOUT_LABELS.en

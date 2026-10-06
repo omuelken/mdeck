@@ -30,10 +30,11 @@ The presenter view and the reader view switch palette and light or dark without 
 | `ember` | sand and espresso with orange | dark brown with glowing orange |
 | `neon` | white with violet and magenta | black with neon violet and pink |
 | `phosphor` | a printout: near-black on paper, green and ochre | a terminal screen: phosphor green on black, amber |
+| `pastel` | Catppuccin Latte: soft grey-blue paper, mauve and peach | Catppuccin Mocha: dusk blue with pastel mauve and peach |
 
 `mdeck list palettes` lists them, with any of your own.
 
-Each theme names a default: neue uses `swiss`, editorial `terra`, duet `cobalt`, aurora `neon`, terminal `phosphor` (dark). The FHNW theme uses its own palette `brand` (FHNW yellow, black and white) and offers no other.
+Each theme names a default: neue uses `swiss`, editorial `terra`, duet `cobalt`, aurora `neon`, terminal `phosphor` (dark), academic `nordic`, sketch `pastel`. The FHNW theme uses its own palette `brand` (FHNW yellow, black and white) and offers no other.
 
 ## Colours
 

@@ -14,7 +14,7 @@ import { resolve } from 'node:path'
 // rebuild the shared node_modules/.vite cache at the same time.
 const server = await createServer({ configFile: false, plugins: [preact(), slidesPlugin('examples/custom-layouts/slides.md')], server: { middlewareMode: true, hmr: { server: createHttpServer() } }, optimizeDeps: { noDiscovery: true, include: [] }, cacheDir: mkdtempSync(resolve(tmpdir(), 'mdeck-vite-cache-')), appType: 'custom' })
 after(() => server.close())
-await server.ssrLoadModule('/src/runtime/markedSetup.js')
+const { setCalloutLabels } = await server.ssrLoadModule('/src/runtime/markedSetup.js')
 const { SlideRenderer, manifests } = await server.ssrLoadModule('/src/layouts/renderSlide.jsx')
 
 function htmlFragments(node) {
@@ -55,4 +55,13 @@ test('deck-local layouts load through the real plugin and share the frame', () =
   assert.equal(frame.props['data-slide-id'], 'local')
   const html = htmlFragments(node)
   for (const text of ['Shared', 'Left<sup>1</sup>', 'Right<sup>2</sup>', 'First source', 'Second source']) assert.ok(html.includes(text), text)
+})
+
+test('lecture callouts are labelled in the deck language, and a written title wins', () => {
+  assert.match(marked.parse('::: theorem\nStatement\n:::'), /class="callout callout-theorem"><div class="callout-title">Theorem</)
+  setCalloutLabels({ lang: 'de' })
+  try {
+    assert.match(marked.parse('::: proof\nTrivial.\n:::'), /callout-title">Beweis</)
+    assert.match(marked.parse('::: theorem Satz 2.4 (Lagrange)\nStatement\n:::'), /callout-title">Satz 2\.4 \(Lagrange\)</)
+  } finally { setCalloutLabels() }
 })

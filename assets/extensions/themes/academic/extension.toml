@@ -1,0 +1,53 @@
+schema = 1
+kind = "theme"
+id = "academic"
+title = "Academic"
+description = "A lecture: Source Sans and Source Serif, dense top-aligned slides, theorem and definition blocks, booktabs tables and a footnote rule."
+# The palette this theme uses unless the deck sets one; colours come only from palettes.
+palette = "nordic"
+fonts = [
+  "https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300..800;1,300..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&family=Source+Code+Pro:wght@400;600&display=swap",
+]
+
+[files]
+styles = "styles.css"
+
+# Type, spacing and fonts used by styles.css; colours come from the palette.
+# Deck settings (params) override these.
+[tokens]
+
+# Type scale (px) at 1920×1080: smaller than the other themes, so a slide
+# holds a definition, a formula and a few points.
+"--fs-display" = "104px"
+"--fs-title" = "84px"
+"--fs-focus" = "56px"
+"--fs-h" = "56px"
+"--fs-sub" = "36px"
+"--fs-body" = "30px"
+"--fs-small" = "21px"
+"--fs-eyebrow" = "20px"
+
+# Spacing
+"--pad-x" = "112px"
+"--pad-y" = "56px"
+"--gap-title" = "36px"
+"--gap-item" = "16px"
+
+# Type families
+"--font-display" = "\"Source Sans 3\", \"Source Sans Pro\", \"Helvetica Neue\", Arial, sans-serif"
+"--font-body" = "\"Source Sans 3\", \"Source Sans Pro\", \"Helvetica Neue\", Arial, sans-serif"
+"--font-serif" = "\"Source Serif 4\", \"Source Serif Pro\", Georgia, serif"
+"--font-mono" = "\"Source Code Pro\", ui-monospace, Menlo, Consolas, monospace"
+
+# Settings authors can change under `params:` in the deck; each points at a token above.
+[params.fontDisplay]
+token = "--font-display"
+title = "Display font"
+
+[params.fontBody]
+token = "--font-body"
+title = "Body font"
+
+[params.fontSerif]
+token = "--font-serif"
+title = "Serif for theorems and quotes"

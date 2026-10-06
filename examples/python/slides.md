@@ -110,6 +110,7 @@ Emphasise that booleans typically come from comparisons, not literal True/False.
 :::meta
 section: Data Types
 title: "Poll: the type of a p-value"
+id: poll-the-type-of-a-p-value
 :::
 # What type is a p-value?
 
