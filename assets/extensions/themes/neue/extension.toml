@@ -2,7 +2,7 @@ schema = 1
 kind = "theme"
 id = "neue"
 title = "Neue"
-description = "Clear sans-serif type, warm stone background and a teal accent."
+description = "Swiss typography: large flush-left type, rules instead of boxes, and the accent as a surface on chapter slides."
 fonts = [
   "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Inter+Tight:wght@300;400;500;600;700&display=swap",
 ]
@@ -20,6 +20,7 @@ styles = "styles.css"
 "--rule" = "#e0deda"  # warm light rule
 "--accent" = "#0d9488"  # teal-600 — distinct from plain blue, Clarity violet, FHNW yellow
 "--surface" = "#edede8"  # parchment
+"--on-accent" = "#ffffff"  # text on accent surfaces (chapter slides)
 
 # Type scale (px) — projection-appropriate at 1920×1080
 "--fs-display" = "128px"

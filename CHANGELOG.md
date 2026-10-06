@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The neue theme is redesigned in a Swiss style: large, tight, flush-left type, a rule across the top instead of floating labels, square accent markers, and callouts and code marked by a coloured rule instead of a grey box. Chapter slides fill with the accent colour, with the chapter number running off the corner; statement slides are inverted. Palettes keep working, using their text-on-accent colour on chapter slides.
+
 ## 2.0.1 — 2026-10-06
 
 - The split layout's shared heading is styled like every other slide heading; it used the browser's default font and size, outside the slide body that themes style.

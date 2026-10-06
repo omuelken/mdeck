@@ -1,10 +1,25 @@
+/* Neue — Swiss typography.
+   One idea carries the theme: large, tight, flush-left type on a strict
+   grid, structured by rules rather than boxes, and colour used as a surface.
+   Content slides stay calm; chapter slides fill with the accent and statement
+   slides invert, so a talk has a rhythm instead of thirty identical pages.
+   Everything takes its colours from the palette's roles (--bg, --ink,
+   --accent, --on-accent …), so every palette works on it. */
+
+.slide {
+  --accent-soft: color-mix(in oklab, var(--accent) 14%, var(--bg));
+}
+
 /* ─────────────────────────────────────────────
-   HEADER / FOOTER RAILS
+   HEADER / FOOTER: a rule across the top, labels on the grid
    ───────────────────────────────────────────── */
 .slide-header {
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--ink);
+  border-top: 4px solid var(--ink);
+  padding-top: 18px;
 }
 .slide-header .brand { color: var(--ink); }
 .slide-logo {
@@ -16,9 +31,10 @@
   max-width: 480px;
   object-fit: contain;
   filter: var(--logo-filter, none);
-  /* Vertically center logo with the eyebrow text row:
-     shift up by (logo-height/2 - eyebrow-line-height/2) */
   transform: translateY(calc(var(--fs-eyebrow) * 0.5 - 50%));
+  /* The rule across the top stops before the logo instead of crossing it. */
+  background: var(--bg);
+  padding-left: 32px;
 }
 
 .slide-footer {
@@ -26,8 +42,17 @@
   font-size: var(--fs-small);
   font-weight: 400;
   color: var(--muted);
-  border-top: 1px solid var(--rule);
-  padding-top: 32px;
+  padding-top: 24px;
+}
+/* The page number in the display face, on the grid's right edge (the
+   footer's second entry; a title slide's footer only has the author line). */
+.slide-footer > span:last-child:not(:first-child) {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sub);
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  line-height: 1;
 }
 
 /* ─────────────────────────────────────────────
@@ -36,18 +61,18 @@
 .eyebrow {
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);
-  font-weight: 500;
-  letter-spacing: 0.18em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--accent);
   margin: 0 0 var(--gap-title) 0;
 }
 .display {
   font-family: var(--font-display);
   font-size: var(--fs-display);
-  font-weight: 500;
-  line-height: 1.0;
-  letter-spacing: -0.035em;
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
   margin: 0;
   color: var(--ink);
   text-wrap: balance;
@@ -55,9 +80,9 @@
 .title {
   font-family: var(--font-display);
   font-size: var(--fs-h);
-  font-weight: 500;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.035em;
   margin: 0;
   color: var(--ink);
   text-wrap: balance;
@@ -65,7 +90,7 @@
 .subtitle {
   font-family: var(--font-body);
   font-size: var(--fs-sub);
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.25;
   letter-spacing: -0.01em;
   color: var(--ink-soft);
@@ -90,31 +115,38 @@ em {
   font-style: normal;
   color: var(--accent);
 }
+strong { color: var(--ink); font-weight: 600; }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: TITLE
+   LAYOUT: TITLE — the title fills the lower grid, a bar of accent above it
    ───────────────────────────────────────────── */
 .slide--title .slide-body {
   justify-content: flex-end;
-  padding-bottom: 40px;
+  padding-bottom: 48px;
+}
+.slide--title .title-text::before {
+  content: '';
+  display: block;
+  width: 220px;
+  height: 28px;
+  background: var(--accent);
+  margin-bottom: 56px;
 }
 .slide--title .display {
-  font-size: 156px;
-  font-weight: 400;
-  letter-spacing: -0.04em;
-  max-width: 1500px;
+  font-size: 196px;
+  max-width: 1640px;
 }
 .slide--title .subtitle {
-  margin-top: 40px;
-  max-width: 1100px;
+  margin-top: 48px;
+  max-width: 1200px;
 }
-/* TITLE + image: right-column layout */
 .slide--title.has-image .slide-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 80px;
   align-items: end;
 }
+.slide--title.has-image .display { font-size: 128px; }
 .slide--title.has-image .title-image {
   width: 100%;
   height: 640px;
@@ -122,50 +154,68 @@ em {
 }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: CHAPTER
+   LAYOUT: CHAPTER — the slide fills with the accent; the number is so large
+   it runs off the bottom-right corner
    ───────────────────────────────────────────── */
+.slide--chapter {
+  background: var(--accent);
+  --ink: var(--on-accent, #fff);
+  --ink-soft: color-mix(in oklab, var(--on-accent, #fff) 85%, var(--accent));
+  --muted: color-mix(in oklab, var(--on-accent, #fff) 70%, var(--accent));
+  --rule: color-mix(in oklab, var(--on-accent, #fff) 35%, var(--accent));
+  color: var(--ink);
+}
+.slide--chapter em { color: inherit; text-decoration: underline; text-decoration-thickness: 0.08em; text-underline-offset: 0.12em; }
 .slide--chapter .slide-body {
-  justify-content: center;
+  justify-content: flex-end;
   align-items: flex-start;
+  position: static;
 }
 .chapter-num {
+  position: absolute;
+  right: -40px;
+  bottom: -170px;
   font-family: var(--font-display);
-  font-size: 280px;
-  font-weight: 300;
-  line-height: 0.85;
-  letter-spacing: -0.05em;
+  font-size: 760px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.06em;
   color: var(--ink);
-  margin: 0 0 40px 0;
+  opacity: 0.16;
+  margin: 0;
+  pointer-events: none;
 }
 .chapter-meta {
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);
-  font-weight: 500;
-  letter-spacing: 0.18em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
-  margin: 0 0 24px 0;
-}
-.chapter-title {
-  font-family: var(--font-display);
-  font-size: var(--fs-title);
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  margin: 0 0 80px 0;
   color: var(--ink);
-  max-width: 1200px;
+  margin: 0 0 28px 0;
 }
-.chapter-desc {
+.slide--chapter .chapter-title {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 132px;
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  margin: 0 0 48px 0;
+  color: var(--ink);
+  max-width: 1300px;
+  text-wrap: balance;
+}
+.slide--chapter .chapter-desc {
+  position: relative;
   font-family: var(--font-body);
   font-size: var(--fs-sub);
-  font-weight: 300;
+  font-weight: 400;
   line-height: 1.3;
   color: var(--ink-soft);
   max-width: 1100px;
   margin: 0;
 }
-/* CHAPTER + image: right-column layout */
 .slide--chapter.has-image .slide-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -175,9 +225,10 @@ em {
 .slide--chapter.has-image .chapter-content {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: flex-start;
 }
+.slide--chapter.has-image .chapter-num { right: auto; left: calc(var(--pad-x) - 40px); }
 .slide--chapter.has-image .chapter-image {
   width: 100%;
   height: 100%;
@@ -185,62 +236,61 @@ em {
 }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: FOCUS
+   LAYOUT: FOCUS — inverted, flush left, the key words in the accent
    ───────────────────────────────────────────── */
+.slide--focus {
+  --focus-bg: var(--ink);
+  --focus-ink: var(--bg);
+  background: var(--focus-bg);
+  color: var(--focus-ink);
+}
+.slide--focus .slide-header { color: var(--focus-ink); border-top-color: var(--focus-ink); }
+.slide--focus .slide-header .brand { color: var(--focus-ink); }
+.slide--focus .slide-footer { color: color-mix(in oklab, var(--focus-ink) 60%, var(--focus-bg)); }
+.slide--focus .slide-footer > span:last-child:not(:first-child) { color: var(--focus-ink); }
 .slide--focus .slide-body {
   justify-content: center;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
 }
 .focus-eyebrow {
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);
-  font-weight: 500;
-  letter-spacing: 0.2em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
-  margin: 0 0 64px 0;
+  color: var(--accent);
+  margin: 0 0 48px 0;
 }
-.focus-statement {
+.focus-statement,
+.slide--focus .focus-content h1,
+.slide--focus .focus-content p {
   font-family: var(--font-display);
-  font-size: var(--fs-focus);
-  font-weight: 400;
-  line-height: 1.15;
-  letter-spacing: -0.025em;
-  color: var(--ink);
-  max-width: 1500px;
+  font-size: 104px;
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: var(--focus-ink);
+  max-width: 1560px;
   margin: 0;
   text-wrap: balance;
+  text-align: left;
 }
-/* Elements inside focus body get statement styling */
 .focus-content {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   width: 100%;
 }
-.focus-content h1,
-.focus-content p {
-  font-family: var(--font-display);
-  font-size: var(--fs-focus);
-  font-weight: 400;
-  line-height: 1.15;
-  letter-spacing: -0.025em;
-  color: var(--ink);
-  margin: 0;
-  text-wrap: balance;
-  text-align: center;
-  max-width: 1500px;
-}
-
+.slide--focus em { color: var(--accent); }
 .focus-attribution {
   font-family: var(--font-body);
   font-size: var(--fs-small);
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--muted);
-  margin: 64px 0 0 0;
+  color: color-mix(in oklab, var(--focus-ink) 60%, var(--focus-bg));
+  margin: 56px 0 0 0;
 }
 
 /* ─────────────────────────────────────────────
@@ -252,14 +302,14 @@ em {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #F4F4F2;
+  background: var(--surface);
   overflow: hidden;
   position: relative;
 }
 .image-placeholder {
   width: 100%;
   height: 100%;
-  background: repeating-linear-gradient(135deg, #ECECEA 0 22px, #F4F4F2 22px 44px);
+  background: repeating-linear-gradient(135deg, var(--surface) 0 22px, var(--bg) 22px 44px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -267,48 +317,49 @@ em {
 .image-placeholder span {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 22px;
-  color: #8A8A86;
+  color: var(--muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: #F4F4F2;
+  background: var(--bg);
   padding: 14px 20px;
-  border: 1px solid #DEDEDB;
+  border: 1px solid var(--rule);
 }
-.text-pane .title { font-size: 72px; }
+.text-pane .title { font-size: 76px; }
 .text-pane .body-text + .body-text { margin-top: 8px; }
-.text-pane .eyebrow { margin-bottom: 8px; }
+.text-pane .eyebrow { margin-bottom: 12px; }
 
 /* ─────────────────────────────────────────────
-   LISTS (global — any slide with a ul)
+   LISTS — square markers in the accent, numbers in the display face
    ───────────────────────────────────────────── */
 .slide-body ul li {
   font-weight: 400;
-  line-height: 1.3;
-  padding-left: 40px;
+  line-height: 1.32;
+  padding-left: 44px;
   position: relative;
 }
 .slide-body ul li::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0.6em;
-  width: 16px;
-  height: 2px;
+  top: 0.42em;
+  width: 14px;
+  height: 14px;
   background: var(--accent);
 }
 .slide-body ol li {
   counter-increment: slide-ol;
-  padding-left: 56px;
+  padding-left: 64px;
   position: relative;
 }
 .slide-body ol li::before {
   content: counter(slide-ol, decimal-leading-zero);
   position: absolute;
   left: 0;
-  top: 0;
+  top: 0.05em;
   font-family: var(--font-display);
-  font-size: var(--fs-eyebrow);
-  font-weight: 500;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  letter-spacing: -0.03em;
   color: var(--accent);
   line-height: 1.3;
 }
@@ -324,36 +375,36 @@ em {
 }
 .slide--full-bleed-image .overlay-title {
   font-family: var(--font-display);
-  font-size: var(--fs-h);
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  font-size: 96px;
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
   color: #fff;
   margin: 0;
-  max-width: 1200px;
+  max-width: 1300px;
   text-wrap: balance;
 }
 
 /* ─────────────────────────────────────────────
    GENERIC / CONTENT SLIDE
-   Applies to the no-layout fallback (GenericSlide).
-   Layout-specific rules below have higher specificity and take over.
    ───────────────────────────────────────────── */
 .slide-body h1 {
   font-family: var(--font-display);
-  font-size: var(--fs-h);
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+  font-size: 80px;
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
   color: var(--ink);
-  margin: 0 0 var(--gap-title) 0;
+  margin: 0 0 56px 0;
+  max-width: 1500px;
+  text-wrap: balance;
 }
 .slide-body h2 {
   font-family: var(--font-display);
   font-size: var(--fs-sub);
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
   color: var(--ink);
   margin: 0 0 var(--gap-item) 0;
 }
@@ -368,15 +419,35 @@ em {
 }
 
 /* ─────────────────────────────────────────────
-   CODE BLOCK COMPONENT
+   CALLOUTS — a coloured rule on top, no box
+   ───────────────────────────────────────────── */
+.slide-body .callout {
+  background: none;
+  border-left: 0;
+  border-top: 6px solid var(--rule);
+  padding: 20px 0 0;
+  margin: 40px 0 0;
+  max-width: 1200px;
+}
+.slide-body .callout-tip { border-top-color: var(--accent); }
+.slide-body .callout-tip .callout-title { color: var(--accent); }
+.slide-body .callout-note { border-top-color: var(--callout-note); }
+.slide-body .callout-important { border-top-color: var(--callout-important); }
+.slide-body .callout-warning { border-top-color: var(--callout-warning); }
+.slide-body .callout-caution { border-top-color: var(--callout-caution); }
+.slide-body .callout-title { letter-spacing: 0.12em; margin-bottom: 10px; }
+.slide-body .callout p { padding-left: 0; color: var(--ink); font-size: var(--fs-body); }
+
+/* ─────────────────────────────────────────────
+   CODE BLOCK — square, a rule of accent on top
    ───────────────────────────────────────────── */
 .code-block {
   --code-bg: var(--surface, var(--rule));
-  --code-radius: 8px;
+  --code-radius: 0;
   --code-size: 30px;
   background: var(--code-bg);
-  border-radius: 0 var(--code-radius) var(--code-radius) 0;
-  border-left: 6px solid var(--accent);
+  border-radius: 0;
+  border-top: 6px solid var(--accent);
   padding: 40px 48px;
   margin: 0;
   overflow: hidden;
@@ -384,13 +455,20 @@ em {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   line-height: 1.6;
 }
-/* Reset inner <code> only — do not zero out the <pre> itself */
 .code-block code {
   font-family: inherit;
   font-size: inherit;
   background: none;
   padding: 0;
 }
+
+/* ─────────────────────────────────────────────
+   AUDIENCE QUESTIONS — square bars on the grid
+   ───────────────────────────────────────────── */
+.slide .poll-track, .slide .poll-fill, .slide .scale-track, .slide .scale-fill { border-radius: 0; }
+.slide .poll-track, .slide .scale-track { background: var(--accent-soft); }
+.slide .question-cards li { border-radius: 0; background: var(--accent-soft); }
+.slide .poll-join { border-radius: 0; border-color: var(--ink); border-width: 2px; }
 
 /* ─────────────────────────────────────────────
    MATH (KaTeX)
@@ -401,4 +479,3 @@ em {
   overflow-x: auto;
   overflow-y: hidden;
 }
-
