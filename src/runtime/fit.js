@@ -1,0 +1,100 @@
+// Content that does not fit its place on a slide. Code blocks are the usual
+// cause: they get a smaller height, at least a few lines, and scroll inside
+// (code-block.css). Whatever still overflows marks the slide with
+// `data-overflow`, and the deck says so in the console, so a too-full slide
+// is found while writing rather than on the projector.
+
+const MIN_LINES = 4
+
+// The nearest box between the element and the slide whose content is taller
+// than the box itself, and by how much.
+function overflowAround(element, slide) {
+  for (let box = element.parentElement; box && box !== slide.parentElement; box = box.parentElement) {
+    const extra = box.scrollHeight - box.clientHeight
+    if (extra > 1) return { box, extra }
+  }
+  return null
+}
+
+// The element that scrolls: the highlighted layer of editable code (the text
+// field above it fills the same box), or the code itself.
+const scroller = wrapper => wrapper.querySelector('.code-editable-highlight') ?? wrapper.querySelector('pre.code-block')
+
+function lineHeight(element) {
+  const style = getComputedStyle(element)
+  return parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.5 || 30
+}
+
+// The fade at the lower edge goes once the code is scrolled to its end. For
+// editable code the text field scrolls and the highlighted layer follows.
+function watchEnd(wrapper, element) {
+  const scrolling = wrapper.querySelector('.code-editable-input') ?? element
+  const update = () => element.classList.toggle('is-at-end', scrolling.scrollTop + scrolling.clientHeight >= scrolling.scrollHeight - 4)
+  if (!scrolling.dataset.fitWatched) {
+    scrolling.dataset.fitWatched = ''
+    scrolling.addEventListener('scroll', update, { passive: true })
+  }
+  update()
+}
+
+/** Fits one slide's code blocks into the space they have; returns whether the slide still overflows. */
+export function fitSlide(slide) {
+  if (!slide) return false
+  const blocks = [...slide.querySelectorAll('.code-block-wrapper')].map(wrapper => ({ wrapper, element: scroller(wrapper) })).filter(block => block.element)
+  // Start from the natural size, so a slide that got more room fits again.
+  for (const { wrapper, element } of blocks) {
+    element.style.maxHeight = ''
+    element.classList.remove('is-capped')
+    wrapper.querySelector('.code-editable-container')?.classList.remove('is-capped')
+  }
+  // The tallest code gives way first.
+  blocks.sort((a, b) => b.element.offsetHeight - a.element.offsetHeight)
+  for (const { wrapper, element } of blocks) {
+    const smallest = lineHeight(element) * MIN_LINES
+    // Measured again after each step: a column's scrollHeight leaves out
+    // some margins, so one step can fall short.
+    for (let step = 0; step < 4; step++) {
+      const around = overflowAround(wrapper, slide)
+      if (!around) break
+      const height = Math.max(smallest, element.offsetHeight - around.extra - 2)
+      if (height >= element.offsetHeight) break
+      element.style.maxHeight = `${Math.floor(height)}px`
+      element.classList.add('is-capped')
+      wrapper.querySelector('.code-editable-container')?.classList.add('is-capped')
+    }
+    if (element.classList.contains('is-capped')) watchEnd(wrapper, element)
+  }
+  const body = slide.querySelector('.slide-body')
+  const columns = [...slide.querySelectorAll('.slide-body, .split-left, .split-right, .text-pane')]
+  const overflowing = columns.some(box => box.scrollHeight - box.clientHeight > 2) || (body && body.scrollHeight > body.clientHeight + 2)
+  slide.toggleAttribute('data-overflow', overflowing)
+  return overflowing
+}
+
+/**
+ * Keeps the deck's slides fitted: the slide on screen when it is shown, all
+ * of them once the fonts are there and when the size changes. Reports each
+ * slide that is still too full once.
+ */
+export function fitDeck(stage, { report = true } = {}) {
+  if (!stage) return () => {}
+  const reported = new Set()
+  const fit = slide => {
+    if (!slide || !slide.offsetHeight) return
+    if (fitSlide(slide) && report) {
+      const id = slide.dataset.slideId ?? ''
+      if (!reported.has(id)) {
+        reported.add(id)
+        console.warn(`mdeck: slide ${id} has more content than fits; it is cut off at the bottom.`)
+      }
+    }
+  }
+  const active = () => stage.querySelector(':scope > [data-deck-active]')
+  const fitActive = () => requestAnimationFrame(() => fit(active()))
+  stage.addEventListener('slidechange', fitActive)
+  document.fonts?.ready.then(fitActive)
+  const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fitActive) : null
+  observer?.observe(stage)
+  fitActive()
+  return () => { stage.removeEventListener('slidechange', fitActive); observer?.disconnect() }
+}

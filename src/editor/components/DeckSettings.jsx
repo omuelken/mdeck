@@ -40,7 +40,7 @@ export function DeckSettings({ state, edit }) {
     <Field label="Palette" hint={palette?.description}>
       <div class="row">
         <select value={config.palette ?? ''} onChange={e => text('palette', e.currentTarget.value)}>
-          <option value="">Theme colors</option>
+          <option value="">Default (the theme's own colours)</option>
           {config.palette && !palette && <option value={config.palette}>{config.palette}</option>}
           {Object.values(manifests.palettes).map(p => <option key={p.id} value={p.id}>{p.title}{p.dark ? ' (dark)' : ''}</option>)}
         </select>

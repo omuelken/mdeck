@@ -483,7 +483,7 @@ labels:
 | `reader.look` | Look | Aussehen |
 | `reader.theme` | Theme | Design |
 | `reader.colors` | Colors | Farben |
-| `reader.themeColors` | Theme colors | Farben des Designs |
+| `reader.themeColors` | Default | Standard |
 | `reader.resetLook` | Reset to default | Zurücksetzen |
 | `reader.resetLookHint` | Return to the look the deck was made with | Zum ursprünglichen Aussehen zurück |
 | `reader.senderLook` | This is the look the deck was made with | Das ist das ursprüngliche Aussehen |

@@ -3,6 +3,8 @@
 ## Unreleased
 
 - The neue theme is redesigned in a Swiss style: large, tight, flush-left type, a rule across the top instead of floating labels, square accent markers, and callouts and code marked by a coloured rule instead of a grey box. Chapter slides fill with the accent colour, with the chapter number running off the corner; statement slides are inverted. Palettes keep working, using their text-on-accent colour on chapter slides.
+- Code that is taller than its place on a slide no longer runs under the heading: it gets a smaller height and scrolls, with a fade at the lower edge while there is more; editable code scrolls together with its highlighting. Centred columns start at the top when their content is too tall. A slide that is still too full is marked (`data-overflow`) and named in the browser console.
+- The palette that keeps a theme's own colours is called **default** (Standard in German) instead of "none" or "Theme colors".
 
 ## 2.0.1 — 2026-10-06
 

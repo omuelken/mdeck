@@ -107,3 +107,15 @@ code[class*="language-"] { color: var(--token-default); }
   color: #f87171;
   border-left-color: #ef4444;
 }
+
+/* ── Code taller than its place on the slide (src/runtime/fit.js) ───────── */
+/* The runtime caps the height; the code scrolls inside. For editable code
+   the text field scrolls, and the highlighted layer follows it. */
+/* The capped height is the whole box, padding and rules included. */
+.code-block.is-capped { box-sizing: border-box; }
+pre.code-block.is-capped { overflow-y: auto; }
+.code-block.code-editable-highlight.is-capped { overflow: hidden; }
+.code-editable-container.is-capped .code-block.code-editable-input { overflow-y: auto; }
+/* While there is more below, the lower edge fades: the audience sees that
+   the code goes on. */
+.code-block.is-capped:not(.is-at-end) { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 72px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 72px), transparent); }

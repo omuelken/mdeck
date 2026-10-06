@@ -15,6 +15,7 @@ import { configureLive, announce, setLookSource, actAsPresenter, useSteering } f
 import { registry } from './registry'
 import { followActiveRooms } from '../live/follow.js'
 import { createOrder } from './syncOrder.js'
+import { fitDeck } from './fit.js'
 import { attachInk, watchInk } from './ink/attach.js'
 import { roomTransport, followStageRoom, announceStagePosition } from './ink/room.js'
 import { claimPairing } from '../live/pairing.js'
@@ -117,7 +118,7 @@ function buildChildUrl(theme, palette, accent, accent2, slideIndex = null, { dra
   if (draw) url.searchParams.set('draw', '1')
   if (theme) url.searchParams.set('theme', theme)
   else url.searchParams.delete('theme')
-  // Always set these params so an explicit "none" selection overrides the deck's frontmatter
+  // Always set these params so choosing the default palette overrides the deck's frontmatter
   url.searchParams.set('palette', palette ?? '')
   url.searchParams.set('accent', accent ?? '')
   url.searchParams.set('accent2', accent2 ?? '')
@@ -490,17 +491,19 @@ function PresenterView({ deckConfig, slides }) {
                     onClick={() => setPaletteOpen(o => !o)}
                     style={{ ...S.select, display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', textAlign: 'left' }}
                   >
-                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{palette || 'none'}</span>
-                    {palette && <PaletteSwatches tokens={PALETTES[palette]?.tokens ?? {}} />}
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{palette || 'default'}</span>
+                    <PaletteSwatches tokens={palette ? PALETTES[palette]?.tokens ?? {} : themeMeta?.tokens ?? {}} />
                     <span style={{ opacity: 0.5, flexShrink: 0 }}><PresenterIcon name="dropdown" size={13} /></span>
                   </button>
                   {paletteOpen && (
                     <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0, background: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '5px', zIndex: 100, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.6)' }}>
                       <div
                         onClick={() => { setPalette(''); setAccent(''); setPaletteOpen(false) }}
-                        style={{ padding: '6px 8px', cursor: 'pointer', fontSize: '13px', color: palette ? '#555' : '#ccc' }}
+                        title="The theme's own colours"
+                        style={{ padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', fontSize: '13px', color: palette ? '#aaa' : '#f0f0f0', background: palette ? 'transparent' : '#2a2a2a' }}
                       >
-                        none
+                        <span>default</span>
+                        <PaletteSwatches tokens={themeMeta?.tokens ?? {}} />
                       </div>
                       {PALETTE_NAMES.map(n => (
                         <div
@@ -619,6 +622,7 @@ function PresenterView({ deckConfig, slides }) {
 
 // Renders (or re-renders) the deck stage. Slides are keyed by id so an edit to
 // one slide leaves the others and the stage's position untouched.
+let unfit = null
 let followDeck = null
 function mountDeck({ deck, deckConfig, selection = null, editor = false }) {
   const { slides } = deck
@@ -642,6 +646,9 @@ function mountDeck({ deck, deckConfig, selection = null, editor = false }) {
   if (stage) stage.inkRenderer = strokePath
   followDeck?.()
   followDeck = followActiveRooms(document.querySelector('deck-stage'), slides)
+  // Code taller than its place scrolls; too-full slides are reported (fit.js).
+  unfit?.()
+  unfit = fitDeck(document.querySelector('deck-stage'))
   if (!selection) return
   // The stage re-collects its slides asynchronously after structural changes.
   setTimeout(() => {
