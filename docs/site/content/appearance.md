@@ -33,6 +33,8 @@ To use other colours, set `palette` to one of these:
 |---|---|
 | `lagoon` | Teal on warm stone (neue's own) |
 | `swiss` | White, black and signal red |
+| `cobalt` | Strong ultramarine on white |
+| `nordic` | Ice grey, deep navy and a cool steel blue |
 | `graphite` | Black and white with a steel-blue accent |
 | `terra` | Cream, deep navy and brick red |
 | `forest` | Deep green with moss and ochre |

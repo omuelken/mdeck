@@ -1,0 +1,27 @@
+schema = 1
+kind = "palette"
+id = "cobalt"
+title = "Cobalt"
+description = "Strong ultramarine on white, with amber; bold and clear."
+
+[light]
+"--bg" = "#ffffff"
+"--surface" = "#eef1fb"
+"--ink" = "#0c1033"
+"--ink-soft" = "#2a2f55"
+"--muted" = "#5b6080"
+"--rule" = "#d5dbf0"
+"--accent" = "#1f3fd1"
+"--accent-2" = "#b45309"
+"--on-accent" = "#ffffff"
+
+[dark]
+"--bg" = "#0a1030"
+"--surface" = "#121a44"
+"--ink" = "#eef1ff"
+"--ink-soft" = "#c9cff0"
+"--muted" = "#8e97c4"
+"--rule" = "#212b5e"
+"--accent" = "#6f8cff"
+"--accent-2" = "#fbbf24"
+"--on-accent" = "#0a1030"

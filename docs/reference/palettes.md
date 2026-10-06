@@ -22,6 +22,8 @@ The presenter view and the reader view switch palette and light or dark without 
 |---|---|---|
 | `lagoon` | teal on warm stone, orange second accent | deep teal-black, bright teal |
 | `swiss` | white, black and signal red | black, white and red |
+| `cobalt` | ultramarine on white, amber second accent | deep navy with a luminous blue |
+| `nordic` | ice grey, deep navy and a cool steel blue | polar night with ice blue |
 | `graphite` | black and white with a steel-blue accent | charcoal with light steel blue |
 | `terra` | cream, deep navy and brick red | deep navy, cream and coral |
 | `forest` | deep green with moss and ochre | forest night with light green |
