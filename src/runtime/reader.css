@@ -15,6 +15,8 @@
 .reader-icon { flex: 0 0 auto; opacity: 0.85; }
 .reader-btn.is-active .reader-icon { opacity: 1; }
 .reader-btn.is-active { background: #2a2a2a !important; border-color: #6a6a6a !important; }
+.reader-toggle { display: flex; gap: 2px; align-self: flex-end; }
+.reader-toggle .reader-btn { padding: 6px 8px; }
 .reader-select { padding: 6px 8px !important; border-radius: 6px; border: 1px solid #3a3a3a !important; background: #1b1b1b !important; color: #f0f0f0; }
 .reader-main { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 0; }
 .reader-nav { overflow: auto; border-right: 1px solid #262626 !important; padding: 8px !important; }

@@ -17,10 +17,10 @@ styles = "styles.css"
 [tokens]
 
 # Type scale (px) — projection-appropriate at 1920×1080
-"--fs-display" = "128px"
-"--fs-title" = "88px"
-"--fs-focus" = "72px"
-"--fs-h" = "64px"
+"--fs-display" = "196px"
+"--fs-title" = "132px"
+"--fs-focus" = "104px"
+"--fs-h" = "80px"
 "--fs-sub" = "44px"
 "--fs-body" = "34px"
 "--fs-small" = "28px"
@@ -29,7 +29,7 @@ styles = "styles.css"
 # Spacing
 "--pad-x" = "140px"
 "--pad-y" = "72px"
-"--gap-title" = "52px"
+"--gap-title" = "56px"
 "--gap-item" = "28px"
 
 # Type families

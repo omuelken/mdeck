@@ -17,10 +17,10 @@ styles = "styles.css"
 [tokens]
 
 # Type scale (px) — projection-appropriate at 1920×1080
-"--fs-display" = "136px"
-"--fs-title" = "88px"
-"--fs-focus" = "76px"
-"--fs-h" = "64px"
+"--fs-display" = "168px"
+"--fs-title" = "112px"
+"--fs-focus" = "100px"
+"--fs-h" = "76px"
 "--fs-sub" = "44px"
 "--fs-body" = "34px"
 "--fs-small" = "26px"

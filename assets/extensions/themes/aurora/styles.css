@@ -244,7 +244,7 @@ strong { color: var(--ink); font-weight: 700; }
   text-align: center;
 }
 .slide--title .display {
-  font-size: 168px;
+  font-size: var(--fs-display);
   max-width: 1500px;
 }
 .slide--title .title-text { display: flex; flex-direction: column; align-items: center; }
@@ -263,7 +263,7 @@ strong { color: var(--ink); font-weight: 700; }
   flex-shrink: 0;
   border-radius: 24px;
 }
-.slide--title.has-image .display { font-size: 120px; }
+.slide--title.has-image .display { font-size: calc(var(--fs-display) * 0.72); }
 .slide--title.has-image .title-text {
   flex: 1;
   display: flex;
@@ -309,7 +309,7 @@ strong { color: var(--ink); font-weight: 700; }
 }
 .slide--chapter .chapter-title {
   font-family: var(--font-display);
-  font-size: 112px;
+  font-size: var(--fs-title);
   font-weight: 800;
   line-height: 1.0;
   letter-spacing: -0.04em;
@@ -385,7 +385,7 @@ strong { color: var(--ink); font-weight: 700; }
 .slide--focus .focus-content h1,
 .slide--focus .focus-content p {
   font-family: var(--font-display);
-  font-size: 100px;
+  font-size: var(--fs-focus);
   font-weight: 800;
   line-height: 1.06;
   letter-spacing: -0.04em;
@@ -445,7 +445,7 @@ strong { color: var(--ink); font-weight: 700; }
   border: 1px solid var(--rule);
   border-radius: 999px;
 }
-.text-pane .title { font-size: 76px; }
+.text-pane .title { font-size: var(--fs-h); }
 .text-pane .body-text + .body-text { margin-top: 8px; }
 .text-pane .eyebrow { margin-bottom: 8px; }
 
@@ -499,7 +499,7 @@ strong { color: var(--ink); font-weight: 700; }
 }
 .slide--full-bleed-image .overlay-title {
   font-family: var(--font-display);
-  font-size: 96px;
+  font-size: calc(var(--fs-h) * 1.26);
   font-weight: 800;
   line-height: 1.02;
   letter-spacing: -0.04em;
@@ -514,7 +514,7 @@ strong { color: var(--ink); font-weight: 700; }
    ───────────────────────────────────────────── */
 .slide-body h1 {
   font-family: var(--font-display);
-  font-size: 76px;
+  font-size: var(--fs-h);
   font-weight: 800;
   line-height: 1.04;
   letter-spacing: -0.035em;

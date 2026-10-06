@@ -1,10 +1,13 @@
 // Content that does not fit its place on a slide. Code blocks are the usual
-// cause: they get a smaller height, at least a few lines, and scroll inside
-// (code-block.css). Whatever still overflows marks the slide with
+// cause: first their type gets smaller, down to a size still readable from
+// the back of a room; only then do they get a smaller height, at least a few
+// lines, and scroll inside (code-block.css). Whatever still overflows marks the slide with
 // `data-overflow`, and the deck says so in the console, so a too-full slide
 // is found while writing rather than on the projector.
 
 const MIN_LINES = 4
+// The smallest code type, in slide pixels (a 1920 × 1080 slide).
+const MIN_CODE_SIZE = 22
 
 // The nearest box between the element and the slide whose content is taller
 // than the box itself, and by how much.
@@ -37,12 +40,33 @@ function watchEnd(wrapper, element) {
   update()
 }
 
+// Smaller type first: the text of the code takes the height, the padding
+// stays, so the size needed follows from how much is missing. The editable
+// text field above highlighted code gets the same size, so the cursor stays
+// on its letters.
+function shrinkType(wrapper, element, slide) {
+  const codes = [...wrapper.querySelectorAll('.code-block')]
+  for (let step = 0; step < 4; step++) {
+    const around = overflowAround(wrapper, slide)
+    if (!around) return
+    const size = parseFloat(getComputedStyle(element).fontSize)
+    if (!(size > MIN_CODE_SIZE)) return
+    const style = getComputedStyle(element)
+    const text = element.scrollHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+    if (text <= 0) return
+    const next = Math.max(MIN_CODE_SIZE, Math.floor(size * Math.max(0, text - around.extra - 2) / text))
+    if (next >= size) return
+    for (const code of codes) code.style.fontSize = `${next}px`
+  }
+}
+
 /** Fits one slide's code blocks into the space they have; returns whether the slide still overflows. */
 export function fitSlide(slide) {
   if (!slide) return false
   const blocks = [...slide.querySelectorAll('.code-block-wrapper')].map(wrapper => ({ wrapper, element: scroller(wrapper) })).filter(block => block.element)
   // Start from the natural size, so a slide that got more room fits again.
   for (const { wrapper, element } of blocks) {
+    for (const code of wrapper.querySelectorAll('.code-block')) code.style.fontSize = ''
     element.style.maxHeight = ''
     element.classList.remove('is-capped')
     wrapper.querySelector('.code-editable-container')?.classList.remove('is-capped')
@@ -50,6 +74,7 @@ export function fitSlide(slide) {
   // The tallest code gives way first.
   blocks.sort((a, b) => b.element.offsetHeight - a.element.offsetHeight)
   for (const { wrapper, element } of blocks) {
+    shrinkType(wrapper, element, slide)
     const smallest = lineHeight(element) * MIN_LINES
     // Measured again after each step: a column's scrollHeight leaves out
     // some margins, so one step can fall short.

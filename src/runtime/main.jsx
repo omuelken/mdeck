@@ -527,9 +527,10 @@ function PresenterView({ deckConfig, slides }) {
                       key={mode}
                       aria-pressed={shown.appearance === mode}
                       title={mode === 'light' ? 'Light: for bright rooms' : 'Dark: for dark rooms'}
+                      aria-label={mode === 'light' ? 'Light' : 'Dark'}
                       onClick={() => setAppearance(mode === (themeMeta?.appearance ?? 'light') ? '' : mode)}
-                      style={{ ...S.btn, padding: '3px 9px', ...(shown.appearance === mode ? { background: '#2a2a2a', color: '#f0f0f0', borderColor: '#444' } : {}) }}
-                    >{mode === 'light' ? 'Light' : 'Dark'}</button>
+                      style={{ ...S.btn, padding: '3px 7px', ...(shown.appearance === mode ? { background: '#2a2a2a', color: '#f0f0f0', borderColor: '#444' } : {}) }}
+                    ><PresenterIcon name={mode === 'light' ? 'sun' : 'moon'} size={16} /></button>
                   ))}
                 </div>
               </label>

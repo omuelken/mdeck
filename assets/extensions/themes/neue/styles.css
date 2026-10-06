@@ -133,7 +133,7 @@ strong { color: var(--ink); font-weight: 600; }
   margin-bottom: 56px;
 }
 .slide--title .display {
-  font-size: 196px;
+  font-size: var(--fs-display);
   max-width: 1640px;
 }
 .slide--title .subtitle {
@@ -146,7 +146,7 @@ strong { color: var(--ink); font-weight: 600; }
   column-gap: 80px;
   align-items: end;
 }
-.slide--title.has-image .display { font-size: 128px; }
+.slide--title.has-image .display { font-size: calc(var(--fs-display) * 0.65); }
 .slide--title.has-image .title-image {
   width: 100%;
   height: 640px;
@@ -197,7 +197,7 @@ strong { color: var(--ink); font-weight: 600; }
 .slide--chapter .chapter-title {
   position: relative;
   font-family: var(--font-display);
-  font-size: 132px;
+  font-size: var(--fs-title);
   font-weight: 700;
   line-height: 0.98;
   letter-spacing: -0.045em;
@@ -277,7 +277,7 @@ strong { color: var(--ink); font-weight: 600; }
 .slide--focus .focus-content h1,
 .slide--focus .focus-content p {
   font-family: var(--font-display);
-  font-size: 104px;
+  font-size: var(--fs-focus);
   font-weight: 700;
   line-height: 1.02;
   letter-spacing: -0.04em;
@@ -335,7 +335,7 @@ strong { color: var(--ink); font-weight: 600; }
   padding: 14px 20px;
   border: 1px solid var(--rule);
 }
-.text-pane .title { font-size: 76px; }
+.text-pane .title { font-size: calc(var(--fs-h) * 0.95); }
 .text-pane .body-text + .body-text { margin-top: 8px; }
 .text-pane .eyebrow { margin-bottom: 12px; }
 
@@ -386,7 +386,7 @@ strong { color: var(--ink); font-weight: 600; }
 }
 .slide--full-bleed-image .overlay-title {
   font-family: var(--font-display);
-  font-size: 96px;
+  font-size: calc(var(--fs-h) * 1.2);
   font-weight: 700;
   line-height: 1.0;
   letter-spacing: -0.04em;
@@ -401,12 +401,12 @@ strong { color: var(--ink); font-weight: 600; }
    ───────────────────────────────────────────── */
 .slide-body h1 {
   font-family: var(--font-display);
-  font-size: 80px;
+  font-size: var(--fs-h);
   font-weight: 700;
   line-height: 1.0;
   letter-spacing: -0.04em;
   color: var(--ink);
-  margin: 0 0 56px 0;
+  margin: 0 0 var(--gap-title) 0;
   max-width: 1500px;
   text-wrap: balance;
 }
