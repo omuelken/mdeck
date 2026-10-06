@@ -98,7 +98,9 @@ code[class*="language-"] { color: var(--token-default); }
   font-size: var(--code-size, 30px);
   line-height: 1.55;
   white-space: pre;
-  max-height: 8em;
+  /* The height includes the padding, as the fitted height does (fit.js). */
+  box-sizing: border-box;
+  max-height: 10em;
   overflow-y: auto;
   border-radius: 0 8px 8px 8px;
   border-left: 4px solid var(--rule);
@@ -118,4 +120,4 @@ pre.code-block.is-capped { overflow-y: auto; }
 .code-editable-container.is-capped .code-block.code-editable-input { overflow-y: auto; }
 /* While there is more below, the lower edge fades: the audience sees that
    the code goes on. */
-.code-block.is-capped:not(.is-at-end) { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 72px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 72px), transparent); }
+:is(.code-block, .code-output).is-capped:not(.is-at-end) { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 72px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 72px), transparent); }

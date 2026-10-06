@@ -1,5 +1,5 @@
 import { h } from 'preact'
-import { useState, useMemo, useRef } from 'preact/hooks'
+import { useState, useMemo, useRef, useEffect } from 'preact/hooks'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-javascript'
 import 'prismjs/components/prism-typescript'
@@ -61,6 +61,8 @@ async function execPython(code) {
     let out = ''
     _pyodide.setStdout({ batched: s => { out += s + '\n' } })
     _pyodide.setStderr({ batched: s => { out += s + '\n' } })
+    // Packages the code imports (numpy, pandas …) come from Pyodide's CDN.
+    await _pyodide.loadPackagesFromImports(code)
     const r = await _pyodide.runPythonAsync(code)
     if (r != null && !out.trim()) out = String(r)
     return { output: out.trim() }
@@ -86,6 +88,13 @@ export default function CodeBlock({ lang = 'text', children = '', live, copy, ed
 
   const highlighted = useMemo(() => hl(code, lang), [code, lang])
   const highlightRef = useRef(null)
+  const wrapperRef = useRef(null)
+
+  // Output takes room on the slide: the deck fits the slide again, so code
+  // and output share its height (src/runtime/fit.js).
+  useEffect(() => {
+    wrapperRef.current?.dispatchEvent(new CustomEvent('mdeck:refit', { bubbles: true }))
+  }, [output])
 
   function syncScroll(e) {
     if (highlightRef.current) {
@@ -111,7 +120,7 @@ export default function CodeBlock({ lang = 'text', children = '', live, copy, ed
   }
 
   return (
-    <div class="code-block-wrapper">
+    <div class="code-block-wrapper" ref={wrapperRef}>
       {isEditable ? (
         <div class="code-editable-container">
           <pre ref={highlightRef} class={`code-block code-editable-highlight language-${lang}`} aria-hidden="true">

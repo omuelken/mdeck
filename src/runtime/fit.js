@@ -1,11 +1,15 @@
 // Content that does not fit its place on a slide. Code blocks are the usual
 // cause: first their type gets smaller, down to a size still readable from
 // the back of a room; only then do they get a smaller height, at least a few
-// lines, and scroll inside (code-block.css). Whatever still overflows marks the slide with
+// lines, and scroll inside (code-block.css). The output of run code is part
+// of the same fit: when it appears, the code gives way, and if that is not
+// enough, the output scrolls too. Whatever still overflows marks the slide with
 // `data-overflow`, and the deck says so in the console, so a too-full slide
 // is found while writing rather than on the projector.
 
 const MIN_LINES = 4
+// Output of run code keeps at least this many lines when it has to scroll.
+const MIN_OUTPUT_LINES = 2
 // The smallest code type, in slide pixels (a 1920 × 1080 slide).
 const MIN_CODE_SIZE = 22
 
@@ -30,8 +34,7 @@ function lineHeight(element) {
 
 // The fade at the lower edge goes once the code is scrolled to its end. For
 // editable code the text field scrolls and the highlighted layer follows.
-function watchEnd(wrapper, element) {
-  const scrolling = wrapper.querySelector('.code-editable-input') ?? element
+function watchEnd(element, scrolling = element) {
   const update = () => element.classList.toggle('is-at-end', scrolling.scrollTop + scrolling.clientHeight >= scrolling.scrollHeight - 4)
   if (!scrolling.dataset.fitWatched) {
     scrolling.dataset.fitWatched = ''
@@ -68,6 +71,8 @@ export function fitSlide(slide) {
   for (const { wrapper, element } of blocks) {
     for (const code of wrapper.querySelectorAll('.code-block')) code.style.fontSize = ''
     element.style.maxHeight = ''
+    const output = wrapper.querySelector('.code-output')
+    if (output) { output.style.maxHeight = ''; output.style.fontSize = ''; output.classList.remove('is-capped') }
     element.classList.remove('is-capped')
     wrapper.querySelector('.code-editable-container')?.classList.remove('is-capped')
   }
@@ -87,7 +92,23 @@ export function fitSlide(slide) {
       element.classList.add('is-capped')
       wrapper.querySelector('.code-editable-container')?.classList.add('is-capped')
     }
-    if (element.classList.contains('is-capped')) watchEnd(wrapper, element)
+    if (element.classList.contains('is-capped')) watchEnd(element, wrapper.querySelector('.code-editable-input') ?? element)
+  }
+  // Output in the code's type size; with the code at its smallest height and
+  // the slide still too full, the output scrolls as well.
+  for (const { wrapper, element } of blocks) {
+    const output = wrapper.querySelector('.code-output')
+    if (!output) continue
+    output.style.fontSize = element.style.fontSize
+    const around = overflowAround(output, slide)
+    if (around) {
+      const height = Math.max(lineHeight(output) * MIN_OUTPUT_LINES, output.offsetHeight - around.extra - 2)
+      if (height < output.offsetHeight) output.style.maxHeight = `${Math.floor(height)}px`
+    }
+    if (output.scrollHeight > output.clientHeight + 2) {
+      output.classList.add('is-capped')
+      watchEnd(output)
+    }
   }
   const body = slide.querySelector('.slide-body')
   const columns = [...slide.querySelectorAll('.slide-body, .split-left, .split-right, .text-pane')]
@@ -117,9 +138,12 @@ export function fitDeck(stage, { report = true } = {}) {
   const active = () => stage.querySelector(':scope > [data-deck-active]')
   const fitActive = () => requestAnimationFrame(() => fit(active()))
   stage.addEventListener('slidechange', fitActive)
+  // A slide's content changed size, as when run code shows its output.
+  const refit = event => requestAnimationFrame(() => fit(event.target.closest?.('.slide') ?? active()))
+  stage.addEventListener('mdeck:refit', refit)
   document.fonts?.ready.then(fitActive)
   const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fitActive) : null
   observer?.observe(stage)
   fitActive()
-  return () => { stage.removeEventListener('slidechange', fitActive); observer?.disconnect() }
+  return () => { stage.removeEventListener('slidechange', fitActive); stage.removeEventListener('mdeck:refit', refit); observer?.disconnect() }
 }

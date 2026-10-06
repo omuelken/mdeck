@@ -389,13 +389,13 @@ console.log(fib(10))
 
 | Flag | Effect |
 |---|---|
-| `live` | Adds a Run button; captures `console.log` output below the block |
+| `live` | Adds a Run button; shows the output (`console.log`, `print`) below the block, on the slide: the code gets smaller or scrolls to make room, and long output scrolls |
 | `editable` | Makes the block editable in-browser |
 | `copy` | Adds a clipboard copy button |
 
 Supported languages include `js`, `python`, `css`, `html`, `json`, `bash`, and any other Prism-supported language.
 
-> Python requires Pyodide, which loads on first run (~10 MB). JavaScript runs instantly in a sandboxed `Function`.
+> Python requires Pyodide, which loads on first run (~10 MB); packages the code imports, such as `numpy` or `pandas`, load with it. JavaScript runs instantly in a sandboxed `Function`.
 
 ---
 
