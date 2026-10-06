@@ -3,7 +3,8 @@ import { extractContent, HtmlContent } from 'mdeck/layout'
 
 export default function ChapterLayout({ meta, content, props }) {
   const { headings, paragraphs, bodyHtml } = extractContent(content, { headingLevels: [1], paragraph: meta.description == null })
-  const num = meta.number != null ? String(meta.number).padStart(2, '0') : null
+  // As written: 2 shows as 2; write "02" for a leading zero.
+  const num = meta.number != null ? String(meta.number) : null
   const desc = meta.description ?? paragraphs[0]
   return <div class="slide-body">
     <div class="chapter-content">
