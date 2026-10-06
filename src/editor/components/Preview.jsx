@@ -6,7 +6,7 @@ const PREVIEW_URL = '/?editor=1&embedded=1'
 
 // Hosts the deck runtime in editor mode and keeps it fed with the current
 // source. Navigation inside the preview reports back so the outline follows.
-export function Preview({ source, selection, config = null, overrides = null, reloadKey = 0, width, height, onState, onRendered }) {
+export function Preview({ source, selection, config = null, overrides = null, reloadKey = 0, width, height, onState, onRendered, bar = null }) {
   const frame = useRef(null)
   const [ready, setReady] = useState(false)
   const reported = useRef(null)
@@ -46,6 +46,7 @@ export function Preview({ source, selection, config = null, overrides = null, re
 
   const control = command => post({ deckControl: { command } })
   return <section class="preview" data-ready={String(ready)}>
+    {bar && <div class="preview-bar">{bar}</div>}
     <div class="preview-frame">
       {/* The runtime's listener exists once the frame has loaded; its own ready
           message may arrive before this component listens, so both count. */}

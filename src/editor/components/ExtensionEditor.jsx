@@ -9,7 +9,7 @@ const KIND_LABEL = { palette: 'Palette', theme: 'Theme', layout: 'Layout' }
 
 // Edits one extension. `files` is the source of truth; the form derives its
 // model from extension.toml and writes TOML back.
-export function ExtensionEditor({ extension, status, error, onFiles, onDelete, onCopy }) {
+export function ExtensionEditor({ extension, status, error, note, onFiles, onDelete, onCopy }) {
   const [mode, setMode] = useState('form')
   const [confirm, setConfirm] = useState(false)
   const { kind, id, source, files } = extension
@@ -31,6 +31,7 @@ export function ExtensionEditor({ extension, status, error, onFiles, onDelete, o
     </div>
     <div class="form" style={readOnly ? { opacity: 0.85 } : undefined}>
       <Diagnostics items={problems} />
+      {note && <p class="note">{note}</p>}
       {readOnly && <div class="row" style={{ display: 'flex', gap: '8px' }}><button class="btn is-small is-primary" onClick={onCopy}>Copy into this deck to edit</button></div>}
       <fieldset disabled={readOnly} style={{ border: 0, padding: 0, margin: 0, display: 'contents' }}>
         {mode === 'raw' || !model

@@ -1,10 +1,11 @@
 ---
-theme: fhnw
+theme: sketch
 meta:
   title: "Introduction to Python"
   author: "Tilman Schieber"
   organization: "FHNW"
   date: "2026-05-19"
+palette: graphite
 ---
 
 ---

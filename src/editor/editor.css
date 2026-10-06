@@ -81,3 +81,28 @@ details.more > .form { padding: 10px 0 0; }
 .swatches i { width: 10px; height: 10px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.08); }
 .empty { padding: 40px 20px; color: #a0a0a0; text-align: center; }
 .loading { display: flex; align-items: center; justify-content: center; height: 100vh; color: #b0b0b0; }
+/* The deck's palette: a list showing every palette's colours, and light or dark. */
+.palette-picker { position: relative; }
+.palette-current, .palette-list button { appearance: none; display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #3a3a3a; border-radius: 5px; background: #1b1b1b; color: #f2f2f2; cursor: pointer; text-align: left; }
+.palette-current:hover, .palette-current[aria-expanded="true"] { border-color: #4a6a8a; }
+.palette-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.palette-default { color: #8e8e8e; }
+.palette-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 10; max-height: 360px; overflow: auto; padding: 4px; border: 1px solid #3a3a3a; border-radius: 6px; background: #1b1b1b; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5); }
+.palette-list button { border-color: transparent; background: none; color: #c8c8c8; }
+.palette-list button:hover { background: #262626; color: #fff; }
+.palette-list button.is-active { background: #27436a; color: #fff; }
+.appearance-toggle { display: flex; gap: 6px; }
+.appearance-toggle .btn { flex: 1; }
+.appearance-toggle .btn.is-active { background: #27436a; border-color: #3d6094; color: #fff; }
+.note { margin: 0; padding: 8px 10px; border-left: 3px solid #4a6a8a; background: #1a2230; color: #c8d4e4; font-size: 12px; border-radius: 0 4px 4px 0; }
+.outline-item.is-unoffered { opacity: 0.45; }
+.extensions-tabs { padding: 0 10px 0 4px; align-items: stretch; }
+.extensions-tabs .tabs { flex: 1; padding: 0; border: 0; position: static; background: none; }
+.extensions-tabs .tabs button { padding: 12px 8px 10px; }
+.extensions-tabs > .btn { align-self: center; }
+/* The look being tried in the extensions view: its theme and palette are
+   marked in the list, and named above the preview. */
+.outline-item.is-in-look .thumb { outline: 2px solid #60a5fa; outline-offset: -2px; }
+.preview-bar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid #222; color: #e0e0e0; }
+.preview-bar .spacer { flex: 1; }
+.preview-bar .muted { color: #8e8e8e; }

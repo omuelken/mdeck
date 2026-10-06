@@ -1,28 +1,34 @@
 import { h } from 'preact'
-import { useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { ID_RE } from '../extensions.js'
+import { Icon } from '../../components/Icon.jsx'
 
 const KINDS = [['palette', 'Palettes'], ['theme', 'Themes'], ['layout', 'Layouts']]
 
-export function ExtensionsPanel({ registry, selected, onSelect, onCreate }) {
+export function ExtensionsPanel({ registry, offered, look = {}, selected, onSelect, onCreate }) {
+  // One kind at a time, in tabs; the tab follows the extension being edited.
+  const [kind, setKind] = useState(selected?.kind ?? 'palette')
+  useEffect(() => { if (selected?.kind) setKind(selected.kind) }, [selected?.kind])
   return <aside class="editor-panel">
-    {KINDS.map(([kind, label]) => <section key={kind}>
-      <div class="editor-panel-head"><span>{label}</span><button class="btn is-small is-primary" onClick={() => onCreate(kind)}>+ New</button></div>
-      <ol class="outline-list">
-        {(registry?.[`${kind}s`] ?? []).map(item => <li key={item.id} class={`outline-item${kind === 'theme' ? ' has-thumb' : ''}${selected?.kind === kind && selected?.id === item.id ? ' is-selected' : ''}`} onClick={() => onSelect(kind, item.id)} style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}>
-          {kind === 'theme' && <ThemeThumbnail id={item.id} />}
-          <span><span class="title" style={{ display: 'block' }}>{item.title}</span><span class="layout">{item.id}{item.source === 'local' ? ' · this deck' : ''}</span></span>
-          {kind === 'palette' && item.light && <span class="swatches">{['--bg', '--accent', '--ink'].map(key => item.light[key] ? <i key={key} style={{ background: item.light[key] }} /> : null)}{item.dark?.['--bg'] && <i style={{ background: item.dark['--bg'] }} />}</span>}
-        </li>)}
-      </ol>
-    </section>)}
+    <div class="editor-panel-head extensions-tabs">
+      <div class="tabs">{KINDS.map(([id, label]) => <button key={id} class={kind === id ? 'is-active' : ''} onClick={() => setKind(id)}>{label}</button>)}</div>
+      <button class="btn is-small is-primary is-icon" title={`New ${kind}`} aria-label={`New ${kind}`} onClick={() => onCreate(kind)}><Icon name="add" size={14} /></button>
+    </div>
+    <ol class="outline-list">
+      {(registry?.[`${kind}s`] ?? []).map(item => <li key={item.id} class={`outline-item${kind !== 'layout' ? ' has-thumb' : ''}${kind === 'palette' && offered && !offered.has(item.id) ? ' is-unoffered' : ''}${selected?.kind === kind && selected?.id === item.id ? ' is-selected' : ''}${look[kind] === item.id ? ' is-in-look' : ''}`} title={kind === 'palette' && offered && !offered.has(item.id) ? "The deck's theme does not offer this palette" : undefined} onClick={() => onSelect(kind, item.id)} style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}>
+        {kind === 'theme' && <Thumbnail theme={item.id} palette={look.palette} />}
+        {kind === 'palette' && <Thumbnail theme={look.theme} palette={item.id} />}
+        <span><span class="title" style={{ display: 'block' }}>{item.title}</span><span class="layout">{item.id}{item.source === 'local' ? ' · this deck' : ''}</span></span>
+      </li>)}
+    </ol>
   </aside>
 }
 
-// A theme is its typography and layout, so the list shows the deck's first
-// slide rendered with it rather than its default colors.
-function ThemeThumbnail({ id }) {
-  return <div class="thumb"><iframe src={`/?embedded=1&theme=${encodeURIComponent(id)}&palette=&appearance=`} title="" tabIndex={-1} loading="lazy" scrolling="no" /></div>
+// The deck's first slide in a theme and palette: themes are shown with the
+// palette being tried, palettes with the theme being tried, as in the
+// presenter view. Light or dark stays the deck's.
+function Thumbnail({ theme = '', palette = '' }) {
+  return <div class="thumb"><iframe src={`/?embedded=1&theme=${encodeURIComponent(theme)}&palette=${encodeURIComponent(palette)}`} title="" tabIndex={-1} loading="lazy" scrolling="no" /></div>
 }
 
 export function NewExtensionDialog({ kind, registry, existing, onCreate, onClose, initial = null }) {

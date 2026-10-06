@@ -114,8 +114,8 @@ export function App() {
       <a class="btn is-small" href="/" target="_blank" rel="noopener">Open deck</a>
     </header>
     {state.status === 'conflict' && <ConflictBanner onReload={() => actions.resolve('reload')} onOverwrite={() => actions.resolve('overwrite')} />}
-    <div class="editor-main" style={{ gridTemplateColumns: `240px minmax(0, 1fr) ${inspectorWidth}px` }}>
-      {mode === 'extensions' ? <ExtensionsMode state={stateWithPreview} dispatch={dispatch} previewReload={() => setPreviewKey(key => key + 1)} onResize={resize} /> : <>
+    <div class="editor-main" style={{ gridTemplateColumns: `${mode === 'extensions' ? 290 : 240}px minmax(0, 1fr) ${inspectorWidth}px` }}>
+      {mode === 'extensions' ? <ExtensionsMode state={stateWithPreview} dispatch={dispatch} edit={edit} previewReload={() => setPreviewKey(key => key + 1)} onResize={resize} /> : <>
       <Outline deck={deck} manifests={state.manifests} diagnostics={state.diagnostics} selectedIndex={selectedIndex}
         onSelect={select} onAdd={actions.add} onDuplicate={actions.duplicate} onRemove={actions.remove} onMove={actions.move} />
       <Preview source={state.source} selection={selection} reloadKey={previewKey} width={deck.deckConfig.width ?? 1920} height={deck.deckConfig.height ?? 1080}

@@ -1,4 +1,5 @@
 import { h } from 'preact'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon.jsx'
 import { setDeckConfig } from '../../core/editDeck.js'
 import { resolvePalette } from '../../extensions/appearance.js'
@@ -16,6 +17,31 @@ function Swatches({ tokens = {} }) {
   return <span class="swatches">{['--bg', '--surface', '--rule', '--accent', '--accent-2', '--ink'].map(key => tokens[key] ? <i key={key} style={{ background: tokens[key] }} /> : null)}</span>
 }
 
+// The palettes a theme offers, each with its colours in the light or dark
+// the deck shows, so they can be compared before choosing.
+function PalettePicker({ offered, selected, defaultId, appearance, onChoose }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!open) return
+    const close = event => { if (event.type === 'keydown' ? event.key === 'Escape' : !ref.current?.contains(event.target)) setOpen(false) }
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', close)
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', close) }
+  }, [open])
+  const label = palette => <><span class="palette-name">{palette.title}{palette.id === defaultId && <span class="palette-default"> · theme default</span>}</span><Swatches tokens={palette[appearance] ?? {}} /></>
+  return <div class="palette-picker" ref={ref}>
+    <button type="button" class="palette-current" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(o => !o)}>
+      {selected ? label(selected) : <span class="palette-name" />}
+      <Icon name="dropdown" size={14} />
+    </button>
+    {open && <div class="palette-list" role="listbox" aria-label="Palette">
+      {offered.map(palette => <button type="button" key={palette.id} role="option" aria-selected={palette.id === selected?.id} title={palette.description} class={palette.id === selected?.id ? 'is-active' : ''}
+        onClick={() => { setOpen(false); onChoose(palette.id) }}>{label(palette)}</button>)}
+    </div>}
+  </div>
+}
+
 export function DeckSettings({ state, edit }) {
   const { deck, manifests, diagnostics, warnings } = state
   const config = deck.deckConfig
@@ -23,10 +49,19 @@ export function DeckSettings({ state, edit }) {
   const themeId = config.theme ?? 'neue'
   const theme = manifests.themes[themeId]
   // The palettes this theme offers and the one the deck gets (its own, else the theme's).
-  const offered = theme ? palettesFor(theme, manifests.palettes) : Object.values(manifests.palettes)
+  // The theme's own palette comes first.
+  const offered = (theme ? palettesFor(theme, manifests.palettes) : Object.values(manifests.palettes))
+    .sort((a, b) => (b.id === theme?.palette) - (a.id === theme?.palette))
   const shown = theme ? resolvePalette({ theme, palettes: manifests.palettes, palette: config.palette, appearance: config.appearance }) : { palette: null, appearance: 'light' }
   const palette = shown.palette
   const text = (key, value) => patch({ [key]: value === '' ? undefined : value }, `deck:${key}`)
+  const themeAppearance = theme?.appearance ?? 'light'
+  // A palette the new theme does not offer is dropped, so the deck gets that theme's own.
+  const chooseTheme = id => {
+    const next = manifests.themes[id]
+    const keeps = !config.palette || !next || palettesFor(next, manifests.palettes).some(p => p.id === config.palette)
+    patch({ theme: id, ...(keeps ? {} : { palette: undefined }) }, 'deck:theme')
+  }
   const meta = (key, value) => { const next = { ...(config.meta ?? {}) }; if (value === '') delete next[key]; else next[key] = value; patch({ meta: Object.keys(next).length ? next : undefined }, `deck:meta:${key}`) }
   const show = (key, value) => { const next = { ...(config.show ?? {}) }; if (value === '') delete next[key]; else next[key] = value; patch({ show: Object.keys(next).length ? next : undefined }, `deck:show:${key}`) }
   const param = (key, value) => { const next = { ...(config.params ?? {}) }; if (value === '') delete next[key]; else next[key] = value; patch({ params: Object.keys(next).length ? next : undefined }, `deck:params:${key}`) }
@@ -35,25 +70,22 @@ export function DeckSettings({ state, edit }) {
     <Diagnostics items={[...warnings.map(message => ({ severity: 'warning', message, code: 'extension' })), ...problems]} />
     <p class="section-title">Look</p>
     <Field label="Theme" hint={theme?.description}>
-      <select value={themeId} onChange={e => text('theme', e.currentTarget.value)}>
+      <select value={themeId} onChange={e => chooseTheme(e.currentTarget.value)}>
         {!theme && <option value={themeId}>{themeId}</option>}
         {Object.values(manifests.themes).map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
       </select>
     </Field>
     <Field label="Palette" hint={palette?.description}>
-      <div class="row">
-        <select value={config.palette ?? ''} onChange={e => text('palette', e.currentTarget.value)}>
-          {config.palette && !offered.some(p => p.id === config.palette) && <option value={config.palette}>{config.palette} (not available)</option>}
-          {offered.map(p => <option key={p.id} value={p.id === theme?.palette ? '' : p.id}>{p.title}{p.id === theme?.palette ? ' · theme default' : ''}</option>)}
-        </select>
-        {palette && <Swatches tokens={palette[shown.appearance] ?? {}} />}
-      </div>
+      <PalettePicker offered={offered} selected={palette} defaultId={theme?.palette} appearance={shown.appearance}
+        onChoose={id => text('palette', id === theme?.palette ? '' : id)} />
     </Field>
     <Field label="Light or dark" hint="dark for dark rooms; inverted slides use the other one">
-      <select value={config.appearance ?? ''} onChange={e => text('appearance', e.currentTarget.value)}>
-        <option value="">{(theme?.appearance ?? 'light') === 'dark' ? 'Dark' : 'Light'} · theme default</option>
-        <option value={(theme?.appearance ?? 'light') === 'dark' ? 'light' : 'dark'}>{(theme?.appearance ?? 'light') === 'dark' ? 'Light' : 'Dark'}</option>
-      </select>
+      <div class="appearance-toggle" role="group" aria-label="Light or dark">
+        {['light', 'dark'].map(mode => <button type="button" key={mode} class={`btn${shown.appearance === mode ? ' is-active' : ''}`} aria-pressed={shown.appearance === mode}
+          onClick={() => text('appearance', mode === themeAppearance ? '' : mode)}>
+          <Icon name={mode === 'light' ? 'sun' : 'moon'} size={14} />{mode === 'light' ? 'Light' : 'Dark'}{mode === themeAppearance && <span class="palette-default"> · theme default</span>}
+        </button>)}
+      </div>
     </Field>
     {theme && Object.keys(theme.params).length > 0 && <>
       <p class="section-title">Theme settings</p>
