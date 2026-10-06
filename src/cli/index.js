@@ -630,7 +630,7 @@ if (command === 'new') {
   try {
     await build({
       ...baseConfig(input, { selfContained, defaultView: reader ? 'reader' : 'deck' }),
-      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: selfContained, inlineMedia: selfContained, stripNotes, ink: !hasFlag('--no-drawings') }), viteSingleFile()],
+      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: selfContained, inlineMedia: selfContained, embedFonts: selfContained, stripNotes, ink: !hasFlag('--no-drawings') }), viteSingleFile()],
       build: {
         outDir,
         emptyOutDir: !tempDir,
@@ -701,7 +701,7 @@ if (command === 'new') {
   try {
     await build({
       ...baseConfig(input, { selfContained: true }),
-      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true, ink: !hasFlag('--no-drawings') }), viteSingleFile()],
+      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true, embedFonts: true, ink: !hasFlag('--no-drawings') }), viteSingleFile()],
       build: { outDir: tempDir, emptyOutDir: true, target: 'esnext', assetsInlineLimit: 100 * 1024 * 1024 },
       logLevel: 'warn',
     })

@@ -193,8 +193,10 @@ title = "Body font"
 - `params` name the settings authors may change under `params:` in the deck.
   Each points at a token; its default is the token's value, so nothing is
   written twice.
-- `fonts` are stylesheet URLs loaded in normal builds. Self-contained builds
-  skip them and use the fallbacks named in the token values.
+- `fonts` are stylesheet URLs. Normal builds load them; single files (`mdeck send`,
+  `--single-file`) and PDFs embed their Latin character sets, so they look the
+  same offline. The fallbacks named in the token values apply when a font
+  cannot be fetched.
 
 Values are applied in this order: the palette's colours (the deck's variant,
 and the other as `--inverse-*`), the theme's tokens, then deck `params`.

@@ -3,6 +3,7 @@ import { resolve, dirname, basename, sep } from 'path'
 import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, extensionRoots, manifestsOf } from '../extensions/discover.js'
+import { embedFonts } from './fonts.js'
 import { stripNotes as stripNotesFrom } from '../core/editDeck.js'
 import { componentFolders, componentFiles } from './components.js'
 import { inkFileFor, normalizeInk, emptyInk } from '../core/ink.js'
@@ -160,7 +161,7 @@ export function generateExtensionsModule(registry) {
 // `editor` keeps the page alive while `mdeck edit` rewrites the deck: deck
 // changes only invalidate the module, validation errors are warnings, and
 // extension changes are announced instead of forcing a reload.
-export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, ink = true } = {}) {
+export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, ink = true, embedFonts: embedThemeFonts = false } = {}) {
   const abs = resolve(slidesPath)
   const inkPath = inkFileFor(abs)
   const extensionDirs = extensionRoots(abs).map(root => root.dir)
@@ -257,12 +258,20 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     },
     // The deck page carries the deck's language before any script runs, for
     // screen readers, hyphenation and search engines.
-    transformIndexHtml(html, context) {
+    // A single-file build also carries the theme's fonts (fonts.js).
+    async transformIndexHtml(html, context) {
       if (!/(^|[\/])index\.html$/.test(context.filename ?? context.path ?? '')) return html
-      let lang = null
-      try { lang = parseSlides(readFileSync(abs, 'utf-8')).deckConfig?.lang } catch {}
-      if (typeof lang !== 'string' || !/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(lang)) return html
-      return html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`)
+      let config = {}
+      try { config = parseSlides(readFileSync(abs, 'utf-8')).deckConfig ?? {} } catch {}
+      const lang = config.lang
+      if (typeof lang === 'string' && /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(lang)) html = html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`)
+      if (embedThemeFonts) {
+        const theme = loadRegistry(abs).themes[config.theme ?? 'neue']?.manifest
+        const { css, warnings } = await embedFonts(theme?.fonts ?? [])
+        for (const warning of warnings) console.warn(`  ! ${warning}`)
+        if (css) html = html.replace('</head>', `<style data-mdeck-fonts>\n${css}\n</style>\n</head>`)
+      }
+      return html
     },
     handleHotUpdate({ file, server }) {
       const changed = resolve(file)

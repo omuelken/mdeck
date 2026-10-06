@@ -594,7 +594,10 @@ To embed all local images and media in a single offline-ready HTML file, use:
 mdeck build slides.md --single-file -o slides.html
 ```
 
-Theme web fonts are replaced by their declared system-font fallbacks in this mode.
+The theme's web fonts are embedded too (Latin character sets), so the file and
+its PDF look like the slides on the presenter's screen, offline as well. They are
+fetched once and kept in a cache (`~/.cache/mdeck/fonts`, or `MDECK_CACHE_DIR`);
+without network and cache the build uses the fallback fonts and says so.
 Self-contained video is base64-encoded and is therefore roughly 33% larger than
 the source file; loading, memory use, and seeking can also be worse than with a
 separate media file.
