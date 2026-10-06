@@ -613,17 +613,6 @@ strong { color: var(--ink); font-weight: 700; }
   border: 1px solid color-mix(in oklab, var(--rule) 70%, transparent);
   box-shadow: 0 18px 50px -24px color-mix(in oklab, var(--aurora-c) 45%, transparent);
 }
-/* A thin line of light along the top edge. */
-.code-block::before {
-  content: '';
-  position: absolute;
-  left: 28px;
-  right: 28px;
-  top: 0;
-  height: 3px;
-  border-radius: 0 0 3px 3px;
-  background: var(--aurora-gradient);
-}
 .code-block code {
   font-family: inherit;
   font-size: inherit;
