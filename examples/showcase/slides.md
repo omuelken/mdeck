@@ -13,6 +13,7 @@ meta:
 layout: title
 image: ./img/image.jpg
 alt: "Contour lines like those on a map"
+id: a-talk-in-a-text-file
 :::
 # A talk in a text file.
 ## A tour of mdeck: each slide shows *what you write* and what you get.

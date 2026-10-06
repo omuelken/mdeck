@@ -407,6 +407,7 @@ layout: chapter
 number: 6
 part: Next Steps
 description: Where to go from here.
+id: keep-going
 :::
 # Keep going.
 
