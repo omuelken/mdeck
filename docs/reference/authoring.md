@@ -454,7 +454,7 @@ Callouts interrupt reading flow.
 
 Available types: `note`, `tip`, `important`, `warning`, `caution`.
 
-For lectures there are also `definition`, `theorem`, `lemma`, `corollary`, `proof`, `example` and `remark`. Every theme shows them as callouts; the academic theme sets them like lecture notes (theorem statements in italics, a proof without a box and ending with ∎). Number them in the title:
+For lectures there are also `definition`, `theorem`, `lemma`, `corollary`, `proof`, `example` and `remark`. Every theme tells them apart: theorems, lemmas and corollaries in the accent with the statement in italics, definitions in the second accent, examples and remarks plain, and a proof without a box, opening with *Proof.* and ending with ∎. Each theme does this in its own style; the academic theme sets them like lecture notes. Number them in the title:
 
 ```markdown
 ::: theorem Theorem 2.4 (Lagrange)

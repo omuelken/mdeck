@@ -503,14 +503,14 @@ strong { color: var(--ink); font-weight: 700; }
 .slide-body :is(.callout-example, .callout-remark) > .callout-title + * { margin-top: 6px; }
 
 /* Proof. … ∎ */
-.slide-body .callout-proof {
+.slide-body .callout.callout-proof {
   background: none;
   border: 0;
   border-radius: 0;
   overflow: visible;
 }
-.slide-body .callout-proof > * { padding: 0; }
-.slide-body .callout-proof .callout-title {
+.slide-body .callout.callout-proof > * { padding: 0; }
+.slide-body .callout.callout-proof .callout-title {
   float: left;
   background: none;
   padding: 0;
@@ -522,14 +522,13 @@ strong { color: var(--ink); font-weight: 700; }
   font-weight: 700;
   color: var(--ink);
 }
-.slide-body .callout-proof .callout-title::after { content: '.'; }
-.slide-body .callout-proof > .callout-title + * { margin-top: 0; }
-.slide-body .callout-proof p { padding-left: 0; color: var(--ink-soft); }
-.slide-body .callout-proof > :last-child { margin-bottom: 0; }
-.slide-body .callout-proof > :last-child::after {
+.slide-body .callout.callout-proof .callout-title::after { content: '.'; }
+.slide-body .callout.callout-proof > .callout-title + * { margin-top: 0; }
+.slide-body .callout.callout-proof p { padding-left: 0; color: var(--ink-soft); }
+.slide-body .callout.callout-proof > :last-child { margin-bottom: 0; }
+.slide-body .callout.callout-proof > :last-child::after {
   content: '\220E';
-  float: right;
-  margin-left: 1em;
+  margin-left: 0.6em;
   color: var(--ink);
 }
 

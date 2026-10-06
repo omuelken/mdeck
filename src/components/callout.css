@@ -35,3 +35,44 @@
 .callout-important .callout-title { color: color-mix(in oklab, var(--callout-important) 65%, var(--ink)); }
 .callout-warning   .callout-title { color: color-mix(in oklab, var(--callout-warning) 45%, var(--ink)); }
 .callout-caution   .callout-title { color: color-mix(in oklab, var(--callout-caution) 65%, var(--ink)); }
+
+/* Blocks for lectures, in every theme. Theorems, lemmas and corollaries in
+   the accent with the statement in italics, definitions in the second
+   accent; examples and remarks stay plain. A proof is no box: "Proof." runs
+   into its text, and a square ends it. Themes with their own callout style
+   colour these blocks their way; the proof is shared, and themes that set
+   it differently (academic, sketch) use the same selectors. */
+.callout:is(.callout-theorem, .callout-lemma, .callout-corollary) { border-left-color: var(--accent); }
+.callout.callout-definition { border-left-color: var(--accent-2); }
+.callout:is(.callout-theorem, .callout-lemma, .callout-corollary) .callout-title { color: color-mix(in oklab, var(--accent) 75%, var(--ink)); }
+.callout.callout-definition .callout-title { color: color-mix(in oklab, var(--accent-2) 75%, var(--ink)); }
+.callout:is(.callout-theorem, .callout-lemma, .callout-corollary) > :not(.callout-title) { font-style: italic; }
+
+.slide-body .callout.callout-proof {
+  display: block;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  max-width: none;
+}
+.slide-body .callout.callout-proof::before { display: none; }
+.slide-body .callout.callout-proof .callout-title {
+  display: inline;
+  float: left;
+  margin: 0 0.4em 0 0;
+  padding: 0;
+  background: none;
+  font-size: inherit;
+  font-style: italic;
+  font-weight: 700;
+  line-height: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+.slide-body .callout.callout-proof .callout-title::before { content: none; }
+.slide-body .callout.callout-proof .callout-title::after { content: '.'; }
+.slide-body .callout.callout-proof > :not(.callout-title) { padding-left: 0; font-style: normal; }
+.slide-body .callout.callout-proof > :last-child::after { content: '\220E'; margin-left: 0.6em; color: var(--ink); }

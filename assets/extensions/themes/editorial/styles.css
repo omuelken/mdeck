@@ -511,6 +511,9 @@ strong { color: var(--ink); font-weight: 600; }
 .slide-body .callout-important { border-left-color: var(--callout-important); }
 .slide-body .callout-warning { border-left-color: var(--callout-warning); }
 .slide-body .callout-caution { border-left-color: var(--callout-caution); }
+/* Lecture blocks: theorems in the accent's margin, definitions in the second accent */
+.slide-body :is(.callout-theorem, .callout-lemma, .callout-corollary) { border-left-color: var(--accent); }
+.slide-body .callout-definition { border-left-color: var(--accent-2); }
 .slide-body .callout-title {
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);

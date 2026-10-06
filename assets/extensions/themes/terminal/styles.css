@@ -469,7 +469,8 @@ deck-stage[data-deck-static] .slide--title .display::after { animation: none; }
   padding: 0;
   margin: 36px 0 0;
 }
-.slide-body :is(.callout-warning, .callout-caution) { --level: var(--accent-2); }
+.slide-body :is(.callout-warning, .callout-caution, .callout-definition) { --level: var(--accent-2); }
+.slide-body .callout:is(.callout-theorem, .callout-lemma, .callout-corollary, .callout-definition) .callout-title { color: var(--level); }
 .slide-body .callout-important { --level: var(--ink); }
 .slide-body .callout .callout-title {
   flex: none;
@@ -484,6 +485,11 @@ deck-stage[data-deck-static] .slide--title .display::after { animation: none; }
 .slide-body .callout .callout-title::after { content: ']'; }
 .slide-body .callout p { padding-left: 0; margin: 0; color: var(--ink); font-size: var(--fs-body); }
 .slide-body .callout > :not(.callout-title) + * { margin-top: 8px; }
+/* A proof is a log line too: [proof] … ∎ */
+.slide-body .callout.callout-proof { display: flex; }
+.slide-body .callout.callout-proof .callout-title { float: none; font-style: normal; text-transform: lowercase; color: var(--muted); }
+.slide-body .callout.callout-proof .callout-title::before { content: '['; }
+.slide-body .callout.callout-proof .callout-title::after { content: ']'; }
 
 /* ─────────────────────────────────────────────
    CODE BLOCK — a window: a frame in the rule colour and a title bar

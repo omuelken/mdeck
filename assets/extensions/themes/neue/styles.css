@@ -442,6 +442,9 @@ strong { color: var(--ink); font-weight: 600; }
 .slide-body .callout-caution { border-top-color: var(--callout-caution); }
 .slide-body .callout-title { letter-spacing: 0.12em; margin-bottom: 10px; }
 .slide-body .callout p { padding-left: 0; color: var(--ink); font-size: var(--fs-body); }
+/* Lecture blocks: theorems under a rule in the accent, definitions in the second */
+.slide-body :is(.callout-theorem, .callout-lemma, .callout-corollary) { border-top-color: var(--accent); }
+.slide-body .callout-definition { border-top-color: var(--accent-2); }
 
 /* ─────────────────────────────────────────────
    CODE BLOCK — square, a rule of accent on top

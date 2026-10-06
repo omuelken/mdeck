@@ -506,11 +506,13 @@ strong { color: var(--ink); font-weight: 700; }
   margin: 44px 0 0;
   max-width: 1300px;
 }
-.slide-body :is(.callout-warning, .callout-caution) {
+.slide-body :is(.callout-warning, .callout-caution, .callout-definition) {
   --tab: var(--accent-2);
   --tab-ink: var(--bg);
   background: var(--tint-2);
 }
+/* Lecture blocks: theorems in the first voice, definitions in the second (above) */
+.slide-body .callout:is(.callout-theorem, .callout-lemma, .callout-corollary, .callout-definition) .callout-title { color: var(--tab-ink); }
 .slide-body .callout .callout-title {
   display: inline-block;
   background: var(--tab);

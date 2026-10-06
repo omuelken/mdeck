@@ -525,24 +525,24 @@ strong {
 
 /* A proof is written on the page, not stuck on it: "Proof." and a
    square at the end. */
-.slide-body .callout-proof {
+.slide-body .callout.callout-proof {
   background: none;
   box-shadow: none;
   transform: none;
   padding: 0;
   max-width: 1500px;
 }
-.slide-body .callout-proof::before { display: none; }
-.slide-body .callout-proof .callout-title {
+.slide-body .callout.callout-proof::before { display: none; }
+.slide-body .callout.callout-proof .callout-title {
   float: left;
   margin: 0 0.3em 0 0;
   font-size: calc(var(--fs-body) * 1.2);
   line-height: 1.15;
   color: var(--accent);
 }
-.slide-body .callout-proof .callout-title::after { content: '.'; }
-.slide-body .callout-proof p { color: var(--ink-soft); }
-.slide-body .callout-proof > :last-child::after { content: '\25A1'; margin-left: 0.5em; color: var(--accent); }
+.slide-body .callout.callout-proof .callout-title::after { content: '.'; }
+.slide-body .callout.callout-proof p { color: var(--ink-soft); }
+.slide-body .callout.callout-proof > :last-child::after { content: '\25A1'; margin-left: 0.5em; color: var(--accent); }
 
 /* ─────────────────────────────────────────────
    CODE — a box drawn round the listing
