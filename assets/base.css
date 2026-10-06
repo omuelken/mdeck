@@ -88,11 +88,14 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 }
 
 /* ── Split layout ────────────────────────────────────────────────────────── */
-.slide--split .slide-body { flex-direction: row; align-items: stretch; gap: 100px; }
+/* The shared heading above, then the two columns side by side. */
+.split-heading { flex: none; margin-bottom: var(--gap-item); }
+.split-columns { flex: 1; min-height: 0; display: flex; flex-direction: row; align-items: stretch; gap: 100px; }
 .split-left  { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; --code-size: 20px; }
 .split-right { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--gap-item); }
 
 /* ── List containers ─────────────────────────────────────────────────────── */
+.slide-body :is(ul, ol) + :is(ul, ol) { margin-top: var(--gap-item); }
 /* Markers (::before), padding, and font styling are visual — defined per theme */
 .slide-body ul {
   list-style: none;
