@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.1.0 — 2026-10-06
 
 - The terminal theme is redesigned as a terminal session: headings are typed at a `~/talk $` prompt, the title waits at a blinking block cursor (still in print and with reduced motion), chapter slides start like a command (`$ ./chapter 2`, the part as a comment), statement slides are printed by `cat`, callouts are log lines (`[tip]`, `[warning]`), lists use `>` and `[1]`, split slides are divided like tmux panes, the footer is a tmux status bar with the deck's title, and code sits in a window with a title bar. Its default palette is the new `phosphor`: green text on near-black with amber, like an old terminal screen, and a printout on paper in light. A faint scanline shows on chapter slides on screen only.
 - Aurora: a title slide with an image shows it on the right at full height, with the title at the lower left, instead of a banner below the title that pushed it up into the brightest light.
