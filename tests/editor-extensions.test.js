@@ -31,7 +31,7 @@ test('starter files for new extensions validate', () => {
     assert.equal(record.kind, kind)
     assert.equal(record.title, 'Fresh')
     if (kind === 'layout') assert.match(files['starter.md'], /layout: fresh/)
-    if (kind === 'theme' && from) assert.equal(record.manifest.palette, 'neon', 'a copy keeps the default palette')
+    if (kind === 'theme' && from) assert.equal(record.manifest.palette, 'cobalt', 'a copy keeps the default palette')
     if (kind === 'palette' && from) assert.equal(record.manifest.dark['--accent'], '#7bd389', 'a copy keeps both variants')
   }
   assert.match(parseManifest('id = \n').error, /value expected|invalid value/)

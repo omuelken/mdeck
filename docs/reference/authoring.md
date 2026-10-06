@@ -101,7 +101,7 @@ view is reachable in any build through `?view=reader`.
 |---|---|
 | `neue` | Clear sans-serif type (Inter Tight and Inter), warm stone background, teal accent |
 | `aurora` | Geometric shapes, Plus Jakarta Sans, violet accent with a derived magenta second accent |
-| `duet` | Zilla Slab headings with DM Sans body; two accents for structure and voice |
+| `duet` | Two voices: heavy Zilla Slab headings, DM Sans body; the two accents take turns (split fields, diagonal chapters, alternating markers) |
 | `editorial` | Magazine spread: Newsreader headlines, Lora body, drop caps and pull quotes |
 | `fhnw` | The FHNW corporate design: Inter, black on white, yellow accent areas |
 | `terminal` | Dark by default, JetBrains Mono throughout, terminal green accent |
@@ -119,13 +119,13 @@ Each palette has a light and a dark variant; `appearance:` picks one.
 |---|---|---|
 | `lagoon` | Teal on warm stone | Bright teal on teal-black |
 | `swiss` | White, black, signal red (neue's default) | Black, white, red |
-| `cobalt` | White, ultramarine, amber | Deep navy, luminous blue |
+| `cobalt` | White, ultramarine, amber (duet's default) | Deep navy, luminous blue |
 | `nordic` | Ice grey, navy, steel blue | Polar night, ice blue |
 | `graphite` | Black and white, steel blue | Charcoal, light steel blue |
 | `terra` | Cream, navy, brick red (editorial's default) | Navy, cream, coral |
 | `forest` | Deep green, moss, ochre | Forest night, light green (terminal's default) |
 | `ember` | Sand, espresso, orange | Dark brown, glowing orange |
-| `neon` | White, violet, magenta (duet's and aurora's default) | Black, neon violet and pink |
+| `neon` | White, violet, magenta (aurora's default) | Black, neon violet and pink |
 
 The FHNW theme uses its own palette, `brand`, and no other.
 

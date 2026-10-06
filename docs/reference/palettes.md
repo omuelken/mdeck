@@ -32,7 +32,7 @@ The presenter view and the reader view switch palette and light or dark without 
 
 `mdeck list palettes` lists them, with any of your own.
 
-Each theme names a default: neue uses `swiss`, editorial `terra`, duet and aurora `neon`, terminal `forest` (dark). The FHNW theme uses its own palette `brand` (FHNW yellow, black and white) and offers no other.
+Each theme names a default: neue uses `swiss`, editorial `terra`, duet `cobalt`, aurora `neon`, terminal `forest` (dark). The FHNW theme uses its own palette `brand` (FHNW yellow, black and white) and offers no other.
 
 ## Colours
 

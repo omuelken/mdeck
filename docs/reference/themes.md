@@ -18,7 +18,7 @@ theme: neue
 |---|---|---|
 | `neue` | Swiss style: large flush-left type, rules, red on white | `swiss` |
 | `aurora` | Northern lights: curtains of light, night-sky chapters, frosted glass | `neon` |
-| `duet` | Slab-serif headings and two accent colours | `neon` |
+| `duet` | Two voices: heavy slab headings, split slides as two colour fields, diagonal chapters | `cobalt` |
 | `editorial` | Magazine spread: masthead rule, drop caps, pull quotes, Roman chapter numerals | `terra` |
 | `fhnw` | The FHNW corporate design | `brand` (the only one) |
 | `terminal` | Monospace throughout | `forest`, dark |

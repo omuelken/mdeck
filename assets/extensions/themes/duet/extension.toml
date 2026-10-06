@@ -2,11 +2,11 @@ schema = 1
 kind = "theme"
 id = "duet"
 title = "Duet"
-description = "Slab-serif headings and two accent colors for contrasting ideas."
+description = "Two voices: heavy slab headings, and two accents that take turns, as split fields, diagonal chapters and alternating markers."
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
-palette = "neon"
+palette = "cobalt"
 fonts = [
-  "https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap",
+  "https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=DM+Sans:wght@400;500;700&display=swap",
 ]
 
 [files]
@@ -17,10 +17,10 @@ styles = "styles.css"
 [tokens]
 
 # Type scale (px) — projection-appropriate at 1920×1080
-"--fs-display" = "128px"
-"--fs-title" = "88px"
-"--fs-focus" = "72px"
-"--fs-h" = "64px"
+"--fs-display" = "150px"
+"--fs-title" = "112px"
+"--fs-focus" = "88px"
+"--fs-h" = "68px"
 "--fs-sub" = "44px"
 "--fs-body" = "34px"
 "--fs-small" = "28px"
