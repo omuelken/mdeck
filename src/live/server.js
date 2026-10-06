@@ -21,11 +21,24 @@ export function livePlugin({ pairing = null, upstream = null, key = null, sessio
       })
       server.middlewares.use('/__mdeck/live', (request, response, next) => {
         const address = typeof upstream === 'function' ? upstream() : upstream
-        if (address && key) return controlProxy({ upstream: address, key, session, authorize: request => isAllowedRequest(request) || !!pairing?.allows(request) })(request, response)
+        // The stage room (position and live ink between the presenter's
+        // devices and the audience window) stays here, on the local network,
+        // even when polls go to a standalone server: the projector follows
+        // the iPad without a detour over the internet, or without internet.
+        if (address && key && !isStageRequest(request.url, session())) return controlProxy({ upstream: address, key, session, authorize: request => isAllowedRequest(request) || !!pairing?.allows(request) })(request, response)
         return handler(request, response, next)
       })
     },
   }
+}
+
+// A request for the deck's stage room: /rooms/<code>.stage[/…], or its
+// /info?stage=1 (src/live/client.js).
+function isStageRequest(url, code) {
+  try {
+    const { pathname, searchParams } = new URL(url, 'http://localhost')
+    return decodeURIComponent(pathname).startsWith(`/rooms/${code}.stage`) || (pathname === '/info' && searchParams.has('stage'))
+  } catch { return false }
 }
 
 // Standalone: put it behind a web server (proxy / to it) and give the deck

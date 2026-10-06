@@ -33,8 +33,10 @@ async function launchPage(port, base) {
   const ask = host => fetch(`http://${host}:${port}${base}__mdeck/home/info`).then(response => { last = response.status; return response.ok && response.json().then(info => ({ home: `http://${host}:${port}${base}`, info })) }).catch(error => { last = `${error.message} ${error.cause?.code ?? ''}` })
   return until(async () => await ask('localhost') || await ask('127.0.0.1') || await ask('[::1]'), () => `launch page answers (last: ${last})`)
 }
-const stageState = async () => {
-  const response = await fetch(`${ROOM}/rooms/123456.stage/events`)
+// The stage room stays on the laptop's `mdeck run` (src/live/server.js), so
+// its position is read there, through the laptop's own address.
+const stageState = async base => {
+  const response = await fetch(`${base}__mdeck/live/rooms/123456.stage/events`)
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let event = ''
@@ -112,10 +114,10 @@ try {
   await until(() => projector.evaluate("document.querySelector('deck-stage')?.state.step === -1"), 'projector follows iPad undo reveal')
   await projector.evaluate("document.querySelector('deck-stage').next()")
   await until(() => ipad.evaluate("document.querySelector('iframe')?.contentDocument?.querySelector('deck-stage')?.state.step === 0"), 'projector can repeat its previous reveal')
-  const position = await stageState()
+  const position = await stageState(home)
   assert.equal(position.index, 1)
   await delay(500)
-  assert.deepEqual(await stageState(), position, 'position remains stable without echoes')
+  assert.deepEqual(await stageState(home), position, 'position remains stable without echoes')
   await ipad.evaluate("document.querySelector('iframe').contentDocument.querySelector('deck-stage').goTo(2)")
   await until(() => projector.evaluate("document.querySelector('deck-stage')?.index === 2"), 'iPad can move back to its previous position')
   // the launch page under the base path

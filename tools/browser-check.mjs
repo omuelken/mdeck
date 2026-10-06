@@ -13,17 +13,29 @@ import { launchChrome } from '../src/build/chrome.js'
 import { baseConfig } from '../src/build/config.js'
 import { homePlugin } from '../src/build/homePlugin.js'
 import { livePlugin } from '../src/live/server.js'
+import { sessionCode } from '../src/live/code.js'
+import { parseSlides } from '../src/core/parseSlides.js'
 import { inkPlugin } from '../src/build/inkPlugin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-browser-check-'))
-let browser, dev, pollDev, inkDev, tablet2
+let browser, dev, pollDev, inkDev, stageDev, tablet2
 try {
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-layouts/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   browser = await launchChrome({ dir: temp, timeout: 45000 })
   const open = path => browser.open(path)
   async function until(page, expression) {
     if (!await page.waitFor(expression, { attempts: 150, interval: 50 })) throw new Error(`Condition did not become true: ${expression}`)
+  }
+  // Drawing starts with the laser; strokes need the pen. `doc` is the
+  // document with the stage (the presenter view's frame).
+  async function choosePen(page, doc = 'document') {
+    // A touch screen starts with the toolbar folded.
+    await page.evaluate(`${doc}.querySelector('.ink-expand')?.click()`)
+    await until(page, `!!${doc}.querySelector('.ink-btn[title=Pen]')`)
+    assert.equal(await page.evaluate(`${doc}.querySelector('deck-stage').inkTool.tool`), 'laser', 'drawing starts with the laser')
+    await page.evaluate(`${doc}.querySelector('.ink-btn[title=Pen]').click()`)
+    await until(page, `${doc}.querySelector('deck-stage').inkTool.tool === 'pen'`)
   }
 
   // A hosted reader keeps media separate and removes the notes themselves.
@@ -54,15 +66,16 @@ try {
 
   // Saved ink from <deck>.drawings.json is bundled and drawn in the deck and in Read mode.
   const inkDeck = resolve(temp, 'ink.md')
-  writeFileSync(inkDeck, '---\ntheme: neue\n---\n\n---\nid: marked\n---\n# Marked up\n')
+  writeFileSync(inkDeck, '---\ntheme: neue\n---\n\n---\nid: marked\n---\n# Marked up\n\n---\n# Second\n')
   writeFileSync(resolve(temp, 'ink.drawings.json'), JSON.stringify({ version: 1, width: 1920, height: 1080, slides: { marked: [{ id: 'check:1', tool: 'pen', color: '#e11d48', size: 8, points: [[200, 300, 0.4], [600, 320, 0.8], [900, 280, 0.6]] }] } }))
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', inkDeck, '-o', resolve(temp, 'ink.html')], { cwd: root, stdio: 'pipe' })
   const inked = await open('ink.html?view=deck')
   await until(inked, "document.querySelectorAll('.slide-ink path').length === 1")
   // Drawing: D starts ink mode, a pen stroke becomes saved ink on the same
-  // slide (tap zones stay off), and undo takes it back.
+  // slide, and undo takes it back.
   await inked.evaluate("document.querySelector('deck-stage').inking = true")
   await until(inked, "!!document.querySelector('.ink-toolbar')")
+  await choosePen(inked)
   const rect = await inked.evaluate("(() => { const r = document.querySelector('deck-stage').getBoundingClientRect(); return [r.left, r.top, r.width, r.height] })()")
   const at = f => [rect[0] + rect[2] * f[0], rect[1] + rect[3] * f[1]]
   const pen = { button: 'left', pointerType: 'pen', force: 0.6 }
@@ -89,6 +102,7 @@ try {
   await until(inkAudience, "document.querySelectorAll('.slide-ink path').length === 1")
   await inkPresenter.evaluate("document.querySelector('.presenter-draw').click()")
   await until(inkPresenter, "document.querySelector('.presenter-draw').getAttribute('aria-pressed') === 'true'")
+  await choosePen(inkPresenter, inkFrame)
   const frameBox = await inkPresenter.evaluate(`(() => { const f = document.querySelector('iframe').getBoundingClientRect(), r = ${inkFrame}.querySelector('deck-stage').getBoundingClientRect(); return [f.left + r.left, f.top + r.top, r.width, r.height] })()`)
   const inFrame = ([fx, fy]) => ({ x: frameBox[0] + frameBox[2] * fx, y: frameBox[1] + frameBox[3] * fy })
   await inkPresenter.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...inFrame([0.2, 0.3]), clickCount: 1, buttons: 1, ...pen })
@@ -97,22 +111,137 @@ try {
   await inkPresenter.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...inFrame([0.5, 0.3]), clickCount: 1, buttons: 0, ...pen })
   await until(inkAudience, "document.querySelectorAll('.slide-ink path').length === 2 && document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-live path').length === 0")
 
-  // On a touch screen (an iPad): a finger draws until a pen was used, and
-  // the presenter view opens with the slide filling the screen.
+  // On a touch screen (an iPad): while drawing, fingers still operate the
+  // deck (a tap on the right or left third moves the slides) and draw only
+  // when switched on; the presenter view opens with the slide filling the screen.
   const tablet = await open('ink.html?view=deck')
   await tablet.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   await until(tablet, "document.querySelectorAll('.slide-ink path').length === 2")
   await tablet.evaluate("document.querySelector('deck-stage').inking = true")
+  await until(tablet, "!!document.querySelector('.ink-toolbar')")
+  await choosePen(tablet)
+  const tabletStage = "document.querySelector('deck-stage')"
   const finger = (type, x, y) => tablet.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, radiusX: 4, radiusY: 4, force: 0.5, id: 1 }] })
-  await finger('touchStart', 300, 300)
-  for (let i = 1; i < 8; i++) await finger('touchMove', 300 + i * 30, 300 + i * 8)
-  await finger('touchEnd')
+  const fingerStroke = async () => {
+    await finger('touchStart', 300, 300)
+    for (let i = 1; i < 8; i++) await finger('touchMove', 300 + i * 30, 300 + i * 8)
+    await finger('touchEnd')
+  }
+  await fingerStroke()
+  await delay(200)
+  assert.equal(await tablet.evaluate("document.querySelectorAll('.slide-ink path').length"), 2, 'a finger does not draw')
+  assert.equal(await tablet.evaluate(`${tabletStage}.index`), 0, 'a finger stroke does not change slides')
+  const swipe = async (from, to) => {
+    await finger('touchStart', from, 300)
+    for (let i = 1; i <= 4; i++) await finger('touchMove', from + (to - from) * i / 4, 300)
+    await finger('touchEnd'); await delay(100)
+  }
+  await swipe(500, 300)
+  await until(tablet, `${tabletStage}.index === 1`)
+  await swipe(300, 500)
+  await until(tablet, `${tabletStage}.index === 0`)
+  assert.equal(await tablet.evaluate(`${tabletStage}.inking`), true, 'swiping through slides keeps drawing on')
+  const width = await tablet.evaluate('innerWidth')
+  await finger('touchStart', width - 40, 420); await finger('touchEnd'); await delay(200)
+  assert.equal(await tablet.evaluate(`${tabletStage}.index`), 0, 'a tap does not change slides')
+  await tablet.evaluate(`${tabletStage}.inkFinger = true`)
+  await fingerStroke()
   await until(tablet, "document.querySelectorAll('.slide-ink path').length === 3")
-  assert.equal(await tablet.evaluate("document.querySelector('deck-stage').index"), 0, 'a finger stroke does not change slides')
+  assert.equal(await tablet.evaluate(`${tabletStage}.index`), 0, 'a drawing finger does not change slides')
+  await tablet.evaluate(`${tabletStage}.inkFinger = false`)
+
+  // Select and move: a pen lasso around the finger's stroke selects it,
+  // dragging moves it, undo puts it back.
+  const pathBox = "(() => { const b = [...document.querySelectorAll('.slide-ink path')].at(-1).getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top)] })()"
+  const before = await tablet.evaluate(pathBox)
+  const tabletPen = async (type, x, y) => tablet.send('Input.dispatchMouseEvent', { type, x, y, clickCount: 1, buttons: type === 'mouseReleased' ? 0 : 1, ...pen })
+
+  // Holding the pen still at the end straightens a wobbly stroke.
+  const lastPathHeight = "Math.round([...document.querySelectorAll('.slide-ink path')].at(-1).getBoundingClientRect().height)"
+  await tabletPen('mousePressed', 300, 120)
+  for (let i = 1; i <= 12; i++) await tabletPen('mouseMoved', 300 + i * 20, 120 + (i % 2 ? 30 : -30))
+  await delay(800)
+  await tabletPen('mouseReleased', 540, 120)
+  await until(tablet, "document.querySelectorAll('.slide-ink path').length === 4")
+  assert.ok(await tablet.evaluate(lastPathHeight) < 30, 'the held stroke became a straight line')
+  // A finger's tap selects the straight line; the pen moves one of its ends.
+  const lastPathBox = "(() => { const b = [...document.querySelectorAll('.slide-ink path')].at(-1).getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom].map(Math.round) })()"
+  await finger('touchStart', 420, 120); await finger('touchEnd'); await delay(200)
+  await until(tablet, "!!document.querySelector('.ink-btn[title^=\"Delete selection\"]') && document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-handle').length === 2")
+  const [, , right] = await tablet.evaluate(lastPathBox)
+  await tabletPen('mousePressed', right - 4, 120)
+  for (let i = 1; i <= 6; i++) await tabletPen('mouseMoved', right - 4, 120 + i * 25)
+  await tabletPen('mouseReleased', right - 4, 270)
+  await until(tablet, `(${lastPathBox})[3] > 250`)
+  assert.equal(await tablet.evaluate("document.querySelectorAll('.slide-ink path').length"), 4, 'moving an end point draws nothing new')
+  await tablet.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
+  await until(tablet, `(${lastPathBox})[3] < 200`)
+  await tablet.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
+  await until(tablet, "document.querySelectorAll('.slide-ink path').length === 3")
+  await tablet.evaluate("document.querySelector('.ink-btn[title=\"Select and move\"]').click()")
+  await until(tablet, `${tabletStage}.inkTool.tool === 'select'`)
+  const lasso = [[270, 260], [560, 260], [560, 380], [270, 380], [270, 262]]
+  await tabletPen('mousePressed', ...lasso[0])
+  for (const [x, y] of lasso.slice(1)) await tabletPen('mouseMoved', x, y)
+  await tabletPen('mouseReleased', ...lasso.at(-1))
+  await until(tablet, "!!document.querySelector('.ink-btn[title^=\"Delete selection\"]')")
+  await tabletPen('mousePressed', 400, 330)
+  for (let i = 1; i <= 5; i++) await tabletPen('mouseMoved', 400, 330 + i * 20)
+  await tabletPen('mouseReleased', 400, 430)
+  await until(tablet, `(${pathBox})[1] >= ${before[1] + 90}`)
+  await tablet.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
+  await until(tablet, `(${pathBox})[1] === ${before[1]}`)
+
+  // The laser: a trail on its own layer that retracts, never saved. Frames
+  // only run in the visible tab.
+  await tablet.send('Page.bringToFront')
+  await tablet.evaluate("document.querySelector('.ink-btn[title=\"Laser pointer\"]').click()")
+  await until(tablet, `${tabletStage}.inkTool.tool === 'laser'`)
+  const laserPixels = `(() => { const c = ${tabletStage}.shadowRoot.querySelector('.ink-laser'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n })()`
+  await tabletPen('mousePressed', 300, 200)
+  for (let i = 1; i <= 8; i++) await tabletPen('mouseMoved', 300 + i * 30, 200)
+  await until(tablet, `${laserPixels} > 0`)
+  await tabletPen('mouseReleased', 540, 200)
+  await until(tablet, `${laserPixels} === 0`)
+  assert.equal(await tablet.evaluate("document.querySelectorAll('.slide-ink path').length"), 3, 'the laser is not saved')
+
+  // Zoom: two fingers enlarge the slide itself, not the toolbar; one finger
+  // moves the zoomed slide; the audience window shows the same part; the
+  // reset button shows the whole slide again.
+  const toolbarWidth = "Math.round(document.querySelector('.ink-toolbar').getBoundingClientRect().width)"
+  const barBefore = await tablet.evaluate(toolbarWidth)
+  const touches = (type, points) => tablet.send('Input.dispatchTouchEvent', { type, touchPoints: points.map(([x, y], id) => ({ x, y, id, radiusX: 4, radiusY: 4, force: 0.5 })) })
+  await touches('touchStart', [[300, 220], [400, 220]])
+  for (let i = 1; i <= 6; i++) await touches('touchMove', [[300 - i * 15, 220], [400 + i * 15, 220]])
+  await touches('touchEnd', [])
+  await until(tablet, `${tabletStage}.zoom.scale > 1.8`)
+  assert.equal(await tablet.evaluate(toolbarWidth), barBefore, 'the toolbar keeps its size')
+  assert.equal(await tablet.evaluate(`${tabletStage}.index`), 0, 'a pinch does not change slides')
+  await until(inkAudience, `document.querySelector('deck-stage').zoom.scale > 1.8`)
+  const zoomX = await tablet.evaluate(`${tabletStage}.zoom.x`)
+  await finger('touchStart', 400, 220)
+  for (let i = 1; i <= 5; i++) await finger('touchMove', 400 - i * 20, 220)
+  await finger('touchEnd')
+  await until(tablet, `${tabletStage}.zoom.x > ${zoomX + 10}`)
+  assert.equal(await tablet.evaluate(`${tabletStage}.index`), 0, 'moving a zoomed slide does not change slides')
+  await tablet.evaluate(`${tabletStage}.shadowRoot.querySelector('.zoom-reset').click()`)
+  await until(tablet, `${tabletStage}.zoom.scale === 1`)
+  await until(inkAudience, `document.querySelector('deck-stage').zoom.scale === 1`)
+
+  // The toolbar folds into one button in the corner; the pen keeps drawing.
+  await tablet.evaluate("document.querySelector('.ink-btn[title=\"Fold the toolbar\"]').click()")
+  await until(tablet, "document.querySelectorAll('.ink-toolbar button').length === 1 && document.querySelector('.ink-toolbar.is-collapsed')")
+  await tablet.evaluate("document.querySelector('.ink-expand').click()")
+  await until(tablet, "!!document.querySelector('.ink-btn[title=\"Fold the toolbar\"]')")
   const tabletPresenter = await open('about:blank')
   await tabletPresenter.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   await tabletPresenter.send('Page.navigate', { url: new URL('ink.html?view=presenter', await tablet.evaluate('location.href')).href })
   await until(tabletPresenter, "!!document.querySelector('.presenter--slide .presenter-pill') && getComputedStyle(document.querySelector('.presenter-aside')).display === 'none'")
+  // On a touch screen drawing is on from the start: the laser, the toolbar folded.
+  const tabletFrame = "document.querySelector('iframe')?.contentWindow?.document"
+  await until(tabletPresenter, `${tabletFrame}?.querySelector('deck-stage')?.inking === true && !!${tabletFrame}.querySelector('.ink-toolbar.is-collapsed')`)
+  assert.equal(await tabletPresenter.evaluate(`${tabletFrame}.querySelector('deck-stage').inkTool.tool`), 'laser')
+  await until(tabletPresenter, "document.querySelector('.presenter-draw').getAttribute('aria-pressed') === 'true'")
   await tabletPresenter.evaluate("document.querySelector('.presenter-notes').click()")
   await until(tabletPresenter, "getComputedStyle(document.querySelector('.presenter-aside')).display === 'flex'")
 
@@ -175,6 +304,7 @@ try {
   await until(drawing, "document.querySelector('deck-stage')?.length === 2")
   await delay(500)
   await drawing.evaluate('window.__sameDocument = true; document.querySelector("deck-stage").inking = true')
+  await choosePen(drawing)
   const box = await drawing.evaluate("(() => { const r = document.querySelector('deck-stage').getBoundingClientRect(); return [r.left, r.top, r.width, r.height] })()")
   const on = ([fx, fy]) => ({ x: box[0] + box[2] * fx, y: box[1] + box[3] * fy })
   await drawing.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...on([0.2, 0.5]), clickCount: 1, buttons: 1, ...pen })
@@ -202,6 +332,7 @@ try {
   await until(projector2, "document.querySelector('deck-stage').index === 1")
   await ipad.evaluate("document.querySelector('.presenter-draw').click()")
   await until(ipad, "document.querySelector('.presenter-draw').getAttribute('aria-pressed') === 'true'")
+  await choosePen(ipad, ipadFrame)
   const ipadBox = await ipad.evaluate(`(() => { const f = document.querySelector('iframe').getBoundingClientRect(), r = ${ipadFrame}.querySelector('deck-stage').getBoundingClientRect(); return [f.left + r.left, f.top + r.top, r.width, r.height] })()`)
   const onIpad = ([fx, fy]) => ({ x: ipadBox[0] + ipadBox[2] * fx, y: ipadBox[1] + ipadBox[3] * fy })
   await ipad.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...onIpad([0.2, 0.6]), clickCount: 1, buttons: 1, ...pen })
@@ -209,6 +340,54 @@ try {
   await until(projector2, "document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-live path').length === 1")
   await ipad.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...onIpad([0.6, 0.6]), clickCount: 1, buttons: 0, ...pen })
   await until(projector2, "document.querySelectorAll('[data-deck-active] .slide-ink path').length === 1 && document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-live path').length === 0")
+  // More strokes, the laser and the zoom follow too, not only the first stroke.
+  const ipadStroke = async y => {
+    await ipad.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...onIpad([0.2, y]), clickCount: 1, buttons: 1, ...pen })
+    for (let i = 1; i <= 8; i++) { await ipad.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...onIpad([0.2 + 0.05 * i, y]), buttons: 1, ...pen }); await delay(30) }
+    await ipad.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...onIpad([0.6, y]), clickCount: 1, buttons: 0, ...pen })
+  }
+  await delay(300)
+  await ipadStroke(0.45)
+  await until(projector2, "document.querySelectorAll('[data-deck-active] .slide-ink path').length === 2")
+  await delay(300)
+  await ipadStroke(0.5)
+  await until(projector2, "document.querySelectorAll('[data-deck-active] .slide-ink path').length === 3")
+  await ipad.evaluate(`${ipadFrame}.querySelector('.ink-btn[title="Laser pointer"]').click()`)
+  await until(ipad, `${ipadFrame}.querySelector('deck-stage').inkTool.tool === 'laser'`)
+  await ipad.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...onIpad([0.3, 0.4]), clickCount: 1, buttons: 1, ...pen })
+  for (let i = 1; i <= 8; i++) { await ipad.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...onIpad([0.3 + 0.03 * i, 0.4]), buttons: 1, ...pen }); await delay(30) }
+  await until(projector2, "document.querySelector('deck-stage')._lasers.size > 0")
+  await ipad.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...onIpad([0.54, 0.4]), clickCount: 1, buttons: 0, ...pen })
+  await ipad.evaluate(`${ipadFrame}.querySelector('deck-stage').setZoom({ scale: 2, x: 600, y: 400 })`)
+  await until(projector2, "document.querySelector('deck-stage').zoom.scale === 2")
+
+  // With a standalone server for the polls (controls passed on with its
+  // key), the stage room stays on mdeck run: here the server cannot be
+  // reached at all, and the projector still follows the iPad's slide and
+  // strokes.
+  const stageDeck = resolve(temp, 'stage.md')
+  writeFileSync(stageDeck, '---\ntheme: neue\nserver: http://127.0.0.1:9/live\n---\n\n---\nid: one\n---\n# One\n\n---\nid: two\n---\n# Two\n')
+  const stageConfig = baseConfig(stageDeck, { proxyControls: true })
+  const stageSession = sessionCode(parseSlides(readFileSync(stageDeck, 'utf8')).deckConfig)
+  stageDev = await createServer({ ...stageConfig, plugins: [...stageConfig.plugins, livePlugin({ upstream: 'http://127.0.0.1:9/live', key: 'check-key', session: () => stageSession })], server: { ...stageConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  await stageDev.listen()
+  const stageBase = stageDev.resolvedUrls.local[0]
+  const projector3 = await open(new URL('?view=audience&session=stage-check', stageBase).href)
+  await until(projector3, "document.querySelector('deck-stage')?.length === 2")
+  const ipad3 = await tablet2.open(new URL('?view=presenter', stageBase).href)
+  await until(ipad3, `${ipadFrame}?.querySelector('deck-stage')?.length === 2`)
+  await delay(500)
+  await ipad3.evaluate(`${ipadFrame}.querySelector('deck-stage').next()`)
+  await until(projector3, "document.querySelector('deck-stage').index === 1")
+  await ipad3.evaluate("document.querySelector('.presenter-draw').click()")
+  await until(ipad3, "document.querySelector('.presenter-draw').getAttribute('aria-pressed') === 'true'")
+  await choosePen(ipad3, ipadFrame)
+  const box3 = await ipad3.evaluate(`(() => { const f = document.querySelector('iframe').getBoundingClientRect(), r = ${ipadFrame}.querySelector('deck-stage').getBoundingClientRect(); return [f.left + r.left, f.top + r.top, r.width, r.height] })()`)
+  const on3 = ([fx, fy]) => ({ x: box3[0] + box3[2] * fx, y: box3[1] + box3[3] * fy })
+  await ipad3.send('Input.dispatchMouseEvent', { type: 'mousePressed', ...on3([0.2, 0.4]), clickCount: 1, buttons: 1, ...pen })
+  for (let i = 1; i <= 8; i++) { await ipad3.send('Input.dispatchMouseEvent', { type: 'mouseMoved', ...on3([0.2 + 0.05 * i, 0.4]), buttons: 1, ...pen }); await delay(30) }
+  await ipad3.send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...on3([0.6, 0.4]), clickCount: 1, buttons: 0, ...pen })
+  await until(projector3, "document.querySelectorAll('[data-deck-active] .slide-ink path').length === 1")
 
   // The launch page `mdeck run` opens renders the deck's details from its API.
   const slides = resolve(root, 'examples/custom-layouts/slides.md')
@@ -254,12 +433,13 @@ try {
   await until(projector, "[...document.querySelectorAll('[data-deck-active] .word-cloud text')].map(e => e.textContent).join() === 'fun'")
   await projector.evaluate("document.querySelector('deck-stage').goTo(4)")
   await until(projector, "!!document.querySelector('[data-deck-active] .poll-join-slide .poll-join')")
-  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, saved ink, drawing, drawing in the presenter view, touch, saving ink in dev, a second device through the stage room.')
+  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines and their end points, select and move, laser, zoom, saving ink in dev, a second device through the stage room (also with a standalone server for the polls).')
 } finally {
   await browser?.close()
   await tablet2?.close()
   await dev?.close()
   await pollDev?.close()
   await inkDev?.close()
+  await stageDev?.close()
   rmSync(temp, { recursive: true, force: true })
 }

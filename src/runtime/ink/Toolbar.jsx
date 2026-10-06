@@ -4,21 +4,29 @@ import { Icon } from '../../components/Icon.jsx'
 import { inkPaint } from '../../core/ink.js'
 import './toolbar.css'
 
-// The floating ink toolbar: tools, colours (one is the theme's accent),
-// sizes, undo/redo, clear slide, hide saved ink, drawing with a finger, and
-// the drawings file. The deck's own controls and keys turn the slides. It drives a
-// <deck-stage> (inkTool, inkFinger, data-ink-hidden) and an ink controller.
+// The floating ink toolbar: tools, colours and sizes of the pen and the
+// highlighter (each keeps its own; one pen colour is the theme's accent),
+// deleting a selection, undo/redo, clear slide, hide saved ink, drawing with a
+// finger, and the drawings file. Swipes and the deck's own controls and keys
+// turn the slides. It folds into one button in the bottom right corner,
+// showing the current tool, and drawing goes on while it is folded. It drives
+// a <deck-stage> (inkTool, inkFinger, data-ink-hidden), an ink controller and
+// the selection.
 
 // "accent" is stored as the word and drawn in the theme's --accent, so the
 // drawing follows the palette (inkPaint in core/ink.js).
 export const INK_COLORS = ['#e11d48', '#2563eb', '#16a34a', 'accent', '#111111']
-const COLOR_NAMES = { '#e11d48': 'Red', '#2563eb': 'Blue', '#16a34a': 'Green', accent: 'Accent', '#111111': 'Black' }
-const SIZES = { pen: [3, 6, 12], highlighter: [18, 30, 48], marker: [4, 8, 14] }
+export const HIGHLIGHTER_COLORS = ['#ffeb3b', '#76ff03', '#ff4081', '#40c4ff', '#ff9100']
+const COLORS = { pen: INK_COLORS, highlighter: HIGHLIGHTER_COLORS }
+const COLOR_NAMES = { '#e11d48': 'Red', '#2563eb': 'Blue', '#16a34a': 'Green', accent: 'Accent', '#111111': 'Black',
+  '#ffeb3b': 'Yellow', '#76ff03': 'Green', '#ff4081': 'Pink', '#40c4ff': 'Blue', '#ff9100': 'Orange' }
+const SIZES = { pen: [3, 6, 12], highlighter: [18, 30, 48] }
 // Each tool's icon has the tool's name.
 const TOOLS = [
   ['pen', 'Pen'],
   ['highlighter', 'Highlighter'],
-  ['marker', 'Marker (fades)'],
+  ['select', 'Select and move'],
+  ['laser', 'Laser pointer'],
   ['eraser', 'Eraser'],
 ]
 
@@ -62,21 +70,28 @@ function ConfirmPopover({ message, confirmLabel, onConfirm, onCancel }) {
   </div>
 }
 
-export function InkToolbar({ stage, controller, onDone }) {
-  const [tool, setTool] = useState(stage.inkTool?.tool ?? 'pen')
-  const [color, setColor] = useState(stage.inkTool?.color ?? INK_COLORS[0])
-  const [sizeIndex, setSizeIndex] = useState(1)
+export function InkToolbar({ stage, controller, selection, onDone }) {
+  const [tool, setTool] = useState(TOOLS.some(([id]) => id === stage.inkTool?.tool) ? stage.inkTool.tool : 'pen')
+  const [style, setStyle] = useState(() => ({ pen: { color: INK_COLORS[0], sizeIndex: 1 }, highlighter: { color: HIGHLIGHTER_COLORS[0], sizeIndex: 1 }, ...stage._inkStyle }))
+  const [selected, setSelected] = useState(0)
+  const [collapsed, setCollapsed] = useState(!!stage._inkCollapsed)
   const [hidden, setHidden] = useState(stage.hasAttribute('data-ink-hidden'))
   const [finger, setFinger] = useState(!!stage.inkFinger)
   const [clearing, setClearing] = useState(null) // the slide id awaiting confirmation
   const [history, setHistory] = useState({ canUndo: false, canRedo: false, unsaved: false })
 
   useEffect(() => controller.subscribe(setHistory), [controller])
+  useEffect(() => selection?.subscribe(setSelected), [selection])
   useEffect(() => {
-    const size = (SIZES[tool] ?? SIZES.pen)[sizeIndex]
-    stage.inkTool = { tool, color, size }
+    const { color, sizeIndex } = style[tool] ?? style.pen
+    stage.inkTool = { tool, color, size: (SIZES[tool] ?? SIZES.pen)[sizeIndex] }
+    // Remembered while the page is open, when drawing starts again.
+    stage._inkStyle = style
     stage.setAttribute('data-ink-tool', tool)
-  }, [tool, color, sizeIndex])
+    if (tool !== 'select') selection?.clear()
+  }, [tool, style])
+  const setOwn = change => setStyle(all => ({ ...all, [tool]: { ...all[tool], ...change } }))
+  useEffect(() => { stage._inkCollapsed = collapsed }, [collapsed])
   useEffect(() => { stage.toggleAttribute('data-ink-hidden', hidden) }, [hidden])
   useEffect(() => { stage.inkFinger = finger }, [finger])
 
@@ -84,16 +99,26 @@ export function InkToolbar({ stage, controller, onDone }) {
   const button = (label, icon, action, { active = false, disabled = false } = {}) =>
     <button type="button" class={`ink-btn${active ? ' is-active' : ''}`} title={label} aria-label={label} aria-pressed={active} disabled={disabled} onClick={action}><Icon name={icon} size={20} /></button>
 
-  return <div class="ink-toolbar" role="toolbar" aria-label="Ink">
+  const writing = !!COLORS[tool]
+  if (collapsed) {
+    const [, label] = TOOLS.find(([id]) => id === tool)
+    return <div class="ink-toolbar is-collapsed" role="toolbar" aria-label="Ink" data-ink-ui>
+      <button type="button" class="ink-btn ink-expand" title={`${label}: show the toolbar`} aria-label={`${label}: show the toolbar`} style={writing ? { '--tool-color': inkPaint(style[tool].color) } : {}} onClick={() => setCollapsed(false)}><Icon name={tool} size={20} /></button>
+    </div>
+  }
+  return <div class="ink-toolbar" role="toolbar" aria-label="Ink" data-ink-ui>
     <div class="ink-group">
       {TOOLS.map(([id, label]) => button(label, id, () => setTool(id), { active: tool === id }))}
     </div>
-    <div class="ink-group">
-      {INK_COLORS.map(value => <button type="button" key={value} class={`ink-color${value === color ? ' is-active' : ''}`} style={{ '--swatch': inkPaint(value) }} title={COLOR_NAMES[value] ?? value} aria-label={`Colour ${COLOR_NAMES[value] ?? value}`} aria-pressed={value === color} onClick={() => { setColor(value); if (tool === 'eraser') setTool('pen') }} />)}
-    </div>
-    <div class="ink-group">
-      {[0, 1, 2].map(i => <button type="button" key={i} class={`ink-size${i === sizeIndex ? ' is-active' : ''}`} title={['Thin', 'Medium', 'Thick'][i]} aria-label={['Thin', 'Medium', 'Thick'][i]} aria-pressed={i === sizeIndex} onClick={() => setSizeIndex(i)}><span style={{ width: `${6 + i * 5}px`, height: `${6 + i * 5}px` }} /></button>)}
-    </div>
+    {writing && <div class="ink-group">
+      {COLORS[tool].map(value => <button type="button" key={value} class={`ink-color${value === style[tool].color ? ' is-active' : ''}`} style={{ '--swatch': inkPaint(value) }} title={COLOR_NAMES[value] ?? value} aria-label={`Colour ${COLOR_NAMES[value] ?? value}`} aria-pressed={value === style[tool].color} onClick={() => setOwn({ color: value })} />)}
+    </div>}
+    {writing && <div class="ink-group">
+      {[0, 1, 2].map(i => <button type="button" key={i} class={`ink-size${i === style[tool].sizeIndex ? ' is-active' : ''}`} title={['Thin', 'Medium', 'Thick'][i]} aria-label={['Thin', 'Medium', 'Thick'][i]} aria-pressed={i === style[tool].sizeIndex} onClick={() => setOwn({ sizeIndex: i })}><span style={{ width: `${6 + i * 5}px`, height: `${6 + i * 5}px` }} /></button>)}
+    </div>}
+    {selected > 0 && <div class="ink-group">
+      {button('Delete selection (Delete)', 'trash', () => selection.remove())}
+    </div>}
     <div class="ink-group">
       {button('Undo', 'undo', () => controller.undo(), { disabled: !history.canUndo })}
       {button('Redo', 'redo', () => controller.redo(), { disabled: !history.canRedo })}
@@ -109,10 +134,11 @@ export function InkToolbar({ stage, controller, onDone }) {
     </div>
     <div class="ink-group">
       {button(hidden ? 'Show saved ink' : 'Hide saved ink', hidden ? 'eye-off' : 'eye', () => setHidden(!hidden), { active: hidden })}
-      {button(finger ? 'Fingers draw (on)' : 'Fingers draw (off: only the pen draws once used)', 'finger', () => setFinger(!finger), { active: finger })}
+      {button(finger ? 'Fingers draw (on)' : 'Fingers draw (off: fingers swipe and select)', 'finger', () => setFinger(!finger), { active: finger })}
       {!history.saving && button(history.unsaved ? 'Download the drawings file (changes are only in this browser)' : 'Download the drawings file', 'download', () => controller.download(), { active: history.unsaved })}
     </div>
     <div class="ink-group">
+      {button('Fold the toolbar', 'fold', () => setCollapsed(true))}
       {button('Stop drawing (D)', 'close', onDone)}
     </div>
   </div>

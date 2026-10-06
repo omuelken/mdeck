@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- Fingers keep operating the deck while drawing: the pencil and the mouse draw, a finger's swipe to the left or right moves the slides, a finger's tap on a stroke selects it, and buttons, polls and other controls on a slide keep working. Fingers draw only with the toolbar's hand button. Gestures are read from pointer events instead of the tap zones, so they work on every touch screen, including iPads whose pencil can hover, and no longer cover controls at the sides of a slide.
+- The laser pointer replaces the fading marker: a red dot with a white core and a trail that retracts within a second. It follows a hovering pencil without touching, is shown live in the audience window and on other devices, and is never saved.
+- Select and move: a loop around strokes, or a tap on one (a finger's tap with any tool), selects them; the pen drags inside the selection's box to move them, saved in their new place and undone with undo. Delete (or the toolbar's bin) removes the selection. A selection takes the pen with any tool; elsewhere the pen draws.
+- Straight lines: holding the pen still for half a second at the end of a stroke makes it a straight line, whose end follows the pen until it lifts. A selected straight line shows handles at its ends; the pen moves them.
+- The highlighter has its own colours (yellow, green, pink, blue, orange) and remembers its colour and size apart from the pen's; its strokes are drawn below the pen's.
+- The drawing toolbar folds into one button in the bottom right corner (↘), which shows the current tool; drawing goes on while it is folded. Colours and sizes show only for the pen and the highlighter.
+- Drawing starts with the laser pointer, and on a touch screen (an iPad) it is on as soon as the deck or the presenter view opens, with the toolbar folded. While drawing, the page no longer pans or bounces under the pencil (in the presenter view neither the page around the slide).
+- Zoom into a slide: two fingers zoom and move the slide itself, one finger moves a zoomed slide, Ctrl + scroll (a trackpad pinch) zooms at the pointer. Bars, the toolbar and the presenter's controls keep their size, drawings and the laser stay exact, and the audience window and paired devices show the same part. **1:1** or the next slide shows the whole slide again. Safari's page zoom is turned off on the stage and around it.
+- `<poll answer="…">`: a button with a tick outlines the right answer's row in green; the audience window and paired devices show it too. Activities show **Reset** all the time (greyed out while there are no answers), also on a touch screen without hover; the audience window shows neither.
+- With a standalone server and its key (`MDECK_SERVER_KEY`), `mdeck run` keeps the stage room (position and live drawing between a paired iPad and the audience window) on the local network; only polls and phones go to the server.
+- Finished strokes reach the point where the pen lifted (perfect-freehand's `last`, and the final position is kept); strokes trail the pen less while drawn.
+- Fixed: when a slide got its id with its first drawing, the audience window and other devices kept the old id, so they showed only that first stroke, and later the laser and the zoom did not match. The new id now reaches every window.
+- Fixed: a live stroke could stay on the live layer of a window that was hidden while it ended, showing on every slide. It is now removed by a timer as well, and the live layer is cleared on every slide change.
+
 ## 2.0.1 — 2026-10-06
 
 - The split layout's shared heading is styled like every other slide heading; it used the browser's default font and size, outside the slide body that themes style.

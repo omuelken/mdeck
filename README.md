@@ -11,6 +11,32 @@
   <a href="LICENSE">MIT license</a>
 </p>
 
+> [!NOTE]
+> **This is the `ink-annotate` branch** of a fork, based on mdeck **2.0.1**. It reworks drawing for presenting from an iPad with a pencil. Everything else is unchanged; see [What this branch changes](#what-this-branch-changes) below and the *Unreleased* section of the [changelog](CHANGELOG.md).
+
+## What this branch changes
+
+Drawing on slides (`D`) as it behaves in mdeck 2.0.1, and on this branch:
+
+| | mdeck 2.0.1 | `ink-annotate` |
+|---|---|---|
+| Fingers while drawing | Draw until a pencil was used; slides change with keys or the presenter view's arrows | **Never draw** (unless the hand button is on); a **swipe** changes slides, a **tap** selects a stroke, buttons and polls on the slide keep working |
+| Changing slides by touch | Tap zones, switched off on iPads that report a hovering pencil; they cover controls at the sides | **Swipe** left or right, read from pointer events: works on every touch screen, covers nothing |
+| Pointing | *Marker*, a stroke that fades after a few seconds | **Laser pointer**: red glow with a white core, a trail that retracts within a second, a dot that follows a hovering pencil; shown live in the audience window and on paired devices, never saved |
+| Highlighter | The pen's colours | Its own colours (yellow, green, pink, blue, orange), remembered apart from the pen's; always drawn **below** the pen |
+| Changing strokes | Eraser, undo | Plus **select and move**: a lasso or a tap selects strokes, the pen drags them (saved, undoable), Delete removes them |
+| Straight lines | – | Hold the pen still for 0.5 s at the end of a stroke: it becomes a straight line; tap it with a finger and drag its **end points** with the pen |
+| Toolbar | One line | Colours and sizes only for pen and highlighter; **folds into one button** in the bottom right corner |
+| Start | Pen; drawing off until `D` | **Laser**; on a touch screen drawing is on from the start, with the toolbar folded |
+| Zoom | Safari's page zoom, which enlarges every bar | **Stage zoom**: two fingers zoom and move the slide itself (Ctrl + scroll on a laptop), bars keep their size, drawings stay exact, the audience window shows the same part; **1:1** or the next slide shows the whole slide |
+| The page under the pencil | Could pan or bounce, in the presenter view too | Stays put while drawing |
+| Stroke ends | Trail behind where the pen lifted | Reach the point where the pen lifted |
+| Polls | Reset only on hover | `<poll answer="…">` adds a **tick button** that outlines the right answer in green, also in the audience window; **Reset** is always shown (not in the audience window) |
+| With a standalone server and its key | Polls and the stage room (iPad ↔ audience window) go to the server | The stage room stays on `mdeck run`, **over the local network**; only polls and phones use the server |
+| Audience window and paired iPad | Showed only the first stroke on a slide that got its id from that stroke | Fixed: the slide's new id reaches every window |
+
+The drawings file format is unchanged. The main changes are in `src/runtime/deck-stage.js` (input, gestures, laser, zoom, straight lines), `src/runtime/ink/` (toolbar, selection in `select.js`, live messages), `src/live/server.js` (the local stage room) and `src/components/Poll.jsx`. `npm test` and `npm run test:browser` cover the new behaviour.
+
 ## A presentation is a text file
 
 ```markdown

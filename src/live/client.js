@@ -256,8 +256,20 @@ export function announce({ room = null, activity = null, title = '', initial = f
  * The deck's stage room, which carries the presenter's position and live ink
  * to screens on other devices (src/runtime/ink/room.js).
  */
+// The stage room's own `info`: with a standalone server behind `mdeck run`,
+// the stage room stays on `mdeck run` (src/live/server.js), so it asks there.
+let stageRequest = null
+function stageInfo() {
+  if (!proxyControls) return serverInfo()
+  stageRequest ??= fetch(`${controlBase()}/info?session=${encodeURIComponent(settings.code)}&stage=1`, { headers: withKey() })
+    .then(response => { if (!response.ok) throw new Error(String(response.status)); return response.json() })
+    .then(info => ({ ...info, reachable: true }))
+    .catch(() => { stageRequest = null; return { reachable: false } })
+  return stageRequest
+}
+
 export function stageRoom() {
-  return { url: `${controlSessionPath()}.stage`, headers: withKey, info: serverInfo, screen: SCREEN }
+  return { url: `${controlSessionPath()}.stage`, headers: withKey, info: stageInfo, screen: SCREEN }
 }
 
 /** For the presenter view: null before the first announcement, else { ok, reason }. */

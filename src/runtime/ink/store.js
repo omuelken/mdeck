@@ -37,6 +37,12 @@ export function renameSlide(from, to) {
   replaceInk(ink)
 }
 
+/** Calls `listener(ink)` after every change; returns the way to stop. */
+export function onInkChange(listener) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
 export function useSlideInk(slideId) {
   const [strokes, setStrokes] = useState(() => slideStrokes(slideId))
   useEffect(() => {

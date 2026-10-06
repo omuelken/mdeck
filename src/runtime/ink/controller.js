@@ -63,6 +63,8 @@ export function createInkController({ storageKey, save = null, publish = () => {
     subscribe(listener) { listeners.add(listener); listener(state()); return () => listeners.delete(listener) },
     /** Changes kept in this browser, not saved anywhere yet. */
     localChanges: () => log.slice(),
+    /** Tells the other windows about a change already made here (a slide's new id). */
+    share(op) { publish(op) },
     /** Sends a change without adding it to the undo history. */
     replay(op) { send([op]) },
     /** From here on, changes go to `save(op)` and the local copy is dropped. */
@@ -82,6 +84,17 @@ export function createInkController({ storageKey, save = null, publish = () => {
       const hits = slideStrokes(slideId).filter(stroke => hitTest(stroke, point, radius))
       if (!hits.length) return
       commit([{ type: 'remove', slideId, ids: hits.map(stroke => stroke.id) }], hits.map(stroke => ({ type: 'add', slideId, stroke })), gesture == null ? null : `erase:${gesture}`)
+    },
+
+    /** Puts changed copies of strokes (the same ids) in place of the originals: moving a selection. */
+    replaceStrokes({ slideId, before, after }) {
+      if (!after.length) return
+      commit(after.map(stroke => ({ type: 'add', slideId, stroke })), before.map(stroke => ({ type: 'add', slideId, stroke })))
+    },
+
+    removeStrokes({ slideId, strokes }) {
+      if (!strokes.length) return
+      commit([{ type: 'remove', slideId, ids: strokes.map(stroke => stroke.id) }], strokes.map(stroke => ({ type: 'add', slideId, stroke })))
     },
 
     clearSlide(slideId) {

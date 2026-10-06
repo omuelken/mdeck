@@ -177,6 +177,15 @@ function PresenterView({ deckConfig, slides }) {
   const [noteSize, setNoteSize] = useState(13)
   const [inking, setInking] = useState(false)
   const presence = usePresence()
+  // Drawing in the slide's frame: this page around it must not pan or bounce either.
+  useEffect(() => { document.documentElement.classList.toggle('is-inking', inking) }, [inking])
+  // The slide zooms itself (two fingers in its frame); Safari's page zoom
+  // would enlarge the bars around it as well.
+  useEffect(() => {
+    const stop = event => event.preventDefault()
+    document.addEventListener('gesturestart', stop, { passive: false })
+    return () => document.removeEventListener('gesturestart', stop)
+  }, [])
   // 'slide': the slide fills the screen (an iPad); the notes open as a drawer.
   const [layout, setLayout] = useState(() => {
     try { const saved = localStorage.getItem('mdeck-presenter-layout'); if (saved) return saved } catch {}
@@ -356,7 +365,7 @@ function PresenterView({ deckConfig, slides }) {
   const pill = { ...S.btn, minWidth: '40px', height: '40px', padding: '0 10px', fontSize: '15px' }
 
   return (
-    <div class={`presenter presenter--${layout}`} style={{ display: 'grid', gridTemplateColumns: slideLayout ? '1fr' : '2fr 1fr', height: '100dvh', background: '#111', overflow: 'hidden' }}>
+    <div class={`presenter presenter--${layout}`} style={{ display: 'grid', gridTemplateColumns: slideLayout ? '1fr' : '2fr 1fr', height: '100dvh', background: '#111', overflow: 'hidden', touchAction: 'pan-x pan-y' }}>
       <iframe
         ref={iframeRef}
         title="Presenter deck"
@@ -765,7 +774,16 @@ async function init() {
       transports: [roomTransport({ receive: true, view: embedded ? 'presenter' : 'deck', onPresence: embedded ? presence => window.parent.postMessage({ presence }, window.location.origin) : null })],
       onMode: inking => { if (embedded) window.parent.postMessage({ inkMode: inking }, window.location.origin) },
     })
+    // On a touch screen (an iPad) drawing is on from the start, with the
+    // laser and the toolbar folded into its corner button; fingers still
+    // move the slides. D or Done turns it off.
+    if (matchMedia('(pointer: coarse)').matches) {
+      inkStage._inkCollapsed = true
+      inkStage.inking = true
+    }
   } else if (inkStage && audienceMode) {
+    // The audience window shows the presenter's zoom and a poll's answer, without their controls.
+    inkStage.setAttribute('data-follower', '')
     watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true, view: 'audience' })] })
   } else if (inkStage) watchInk(inkStage, { storageKey: inkStorageKey })
 

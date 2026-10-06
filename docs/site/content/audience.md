@@ -18,6 +18,7 @@ Every poll in a presentation shows the same code, so people scan once. Their pho
 | Setting | Meaning |
 |---|---|
 | `room` | A short name for this question, different for each poll in the deck. Letters, digits, hyphens and underscores. |
+| `answer` | Optional: the right answer, written exactly like the option. A button with a tick then appears under the bars; tapping it outlines the right answer, its bar and its number in green, and tapping again hides it. The audience window shows it too. |
 | `options` | The answers, separated by `\|` |
 | `question` | Optional question text. Without it, phones show the slide's heading. |
 | `qr` | `false` leaves out the QR code, when an earlier slide showed it with `<qrcode join />`. |
