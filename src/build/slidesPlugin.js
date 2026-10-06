@@ -61,9 +61,9 @@ function cleanAssetRef(ref) {
 // Inside an <img> it could not see them.
 const themedSvg = file => /\.svg$/i.test(file) && existsSync(file) && /var\(--/.test(readFileSync(file, 'utf8'))
 
-export function themedSvgs(deckFile) {
+export function themedSvgs(deckFile, source = readFileSync(deckFile, 'utf8')) {
   const svgs = {}
-  for (const ref of collectLocalAssetRefs(readFileSync(deckFile, 'utf8'))) {
+  for (const ref of collectLocalAssetRefs(source)) {
     const file = resolve(dirname(deckFile), ref)
     if (themedSvg(file)) svgs[ref] = { file, markup: readFileSync(file, 'utf8').replace(/^\s*<\?xml[^>]*>\s*/, '').replace(/<!DOCTYPE[^>]*>\s*/i, '') }
   }
@@ -201,6 +201,7 @@ export function generateExtensionsModule(registry) {
 // extension changes are announced instead of forcing a reload.
 export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, ink = true, embedFonts: embedThemeFonts = false } = {}) {
   const abs = resolve(slidesPath)
+  const sourceFor = raw => stripNotes ? stripNotesFrom(raw) : raw
   const inkPath = inkFileFor(abs)
   const extensionDirs = extensionRoots(abs).map(root => root.dir)
   let componentDirs = componentFolders(abs).map(folder => folder.dir)
@@ -217,6 +218,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     return true
   }
   const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID]
+  const SOURCE_IDS = [RESOLVED_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID]
   const invalidate = (server, ids) => {
     for (const id of ids) {
       const mod = server.moduleGraph.getModuleById(id)
@@ -261,7 +263,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         const errors = diagnostics.filter(d => d.severity === 'error')
         if (errors.length && !editor) throw new Error(formatDiagnostics(errors, abs))
         if (diagnostics.length) this.warn(formatDiagnostics(diagnostics, abs))
-        const source = maybeInlineAssets(stripNotes ? stripNotesFrom(raw) : raw, abs, { inlineImages, inlineMedia })
+        const source = maybeInlineAssets(sourceFor(raw), abs, { inlineImages, inlineMedia })
         return `export default ${JSON.stringify(source)}`
       }
       // The deck's saved ink (<deck>.drawings.json), scaled to its design size.
@@ -281,7 +283,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       }
       if (id === RESOLVED_SVGS_ID) {
         this.addWatchFile(abs)
-        const svgs = themedSvgs(abs)
+        const svgs = themedSvgs(abs, sourceFor(readFileSync(abs, 'utf8')))
         for (const { file } of Object.values(svgs)) this.addWatchFile(file)
         return `export default ${JSON.stringify(Object.fromEntries(Object.entries(svgs).map(([ref, { markup }]) => [ref, markup])))}`
       }
@@ -328,7 +330,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       // windows mid-talk: the pages refresh their ink on `mdeck:ink` instead.
       const own = [inkPath, abs].includes(changed) && (() => { try { return isOwnWrite(changed, readFileSync(changed, 'utf-8')) } catch { return false } })()
       if (own) {
-        invalidate(server, changed === abs ? [RESOLVED_ID, RESOLVED_INK_ID] : [RESOLVED_INK_ID])
+        invalidate(server, changed === abs ? SOURCE_IDS : [RESOLVED_INK_ID])
         return []
       }
       if (changed === inkPath) {
@@ -340,8 +342,8 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
           reload(server, ALL_IDS, changed)
           return []
         }
-        // The ink is scaled to the deck's design size, which the deck sets.
-        invalidate(server, [RESOLVED_ID, RESOLVED_INK_ID])
+        // The deck sets the ink's design size and which SVGs are inlined.
+        invalidate(server, SOURCE_IDS)
         if (editor) return []
         server.ws.send({ type: 'full-reload' })
       }

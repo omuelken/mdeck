@@ -8,20 +8,24 @@
 const randomId = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, '0')).join('')
 
 export function createOrder(id = randomId()) {
-  let clock = 0
+  let latest = { seq: 0, from: id }
   return {
     id,
     /** The stamp for a change made in this window. */
-    stamp() { clock += 1; return { seq: clock, from: id } },
+    stamp() { latest = { seq: latest.seq + 1, from: id }; return { ...latest } },
     /** This window's position as it is, for a window that just opened: taken unless it moved on. */
-    current() { return { seq: clock, from: id, initial: true } },
+    current() { return { ...latest, initial: true } },
     /** Whether a position from another window is newer than this one's; it is then this window's too. */
     accept(stamp) {
       // A sender without stamps (an older page) is followed as before.
       if (!Number.isInteger(stamp?.seq)) return true
-      if (stamp.seq < clock) return false
-      if (stamp.seq === clock && !stamp.initial && !(String(stamp.from) > id)) return false
-      clock = stamp.seq
+      if (stamp.seq < latest.seq) return false
+      // Before anyone has navigated, a new window takes the presenter's
+      // initial position regardless of its own id. Once navigation starts,
+      // replies and forwarded positions obey the same ordering as changes.
+      const opening = latest.seq === 0 && stamp.initial
+      if (stamp.seq === latest.seq && !opening && !(String(stamp.from) > latest.from)) return false
+      latest = { seq: stamp.seq, from: String(stamp.from) }
       return true
     },
   }

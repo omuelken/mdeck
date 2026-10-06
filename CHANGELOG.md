@@ -3,6 +3,8 @@
 ## Unreleased
 
 - Polls, scales, word clouds and questions in a PDF, an `mdeck send` file or a build without a poll server show their question and options with “Answered live during the talk”, instead of “Phones cannot reach this computer”, empty counts and “0 answers”. A `<qrcode join />` slide says that phones joined there. Printing hides join codes and the presenter's buttons. Results still show whenever a poll server answers.
+- Fixed: SVG pictures referenced only in speaker notes are excluded from exports without notes; `--notes` keeps them. Adding or removing themed SVG pictures while previewing refreshes the inline pictures without restarting the server.
+- Fixed: with three or more presenter and audience windows, tied navigation changes keep the last winning sender, including forwarded positions, so a late lower-priority change does not take a window back.
 - The “Change the look” guide shows every theme: a large preview in its default look, and, in a tab for each theme, its chapter slide in every palette, light and dark (`npm run theme-images` renders them).
 - SVG pictures can use the palette's colours (`var(--accent)` …): they are drawn inline and follow the theme, palette and light or dark, in slide text and as the picture of the title, chapter, image-text and full-bleed layouts. Local layouts get the same with `Picture` from `mdeck/layout`. The tour's title picture is such a drawing.
 - Fixed: on duet's title slide, emphasis in the subtitle took the background colour and disappeared; it now keeps the slide's text colour, underlined in the second accent, like the headline.

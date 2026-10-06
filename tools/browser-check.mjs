@@ -42,11 +42,12 @@ try {
   const hostedDeck = resolve(temp, 'hosted.md')
   writeFileSync(hostedDeck, '---\ntheme: neue\n---\n\n---\nid: first\n---\n# Hosted\n\n![Photo](./reader-photo.svg)\n\n:::notes\nPRIVATE_READER_NOTES\n![Private](./private-notes.svg)\n:::\n')
   writeFileSync(resolve(temp, 'reader-photo.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>')
-  writeFileSync(resolve(temp, 'private-notes.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>')
+  writeFileSync(resolve(temp, 'private-notes.svg'), '<svg xmlns="http://www.w3.org/2000/svg"><text fill="var(--accent)">PRIVATE_NOTES_SVG_CONTENT</text></svg>')
   writeFileSync(resolve(temp, 'hosted.ink.json'), '{}')
   const hosted = resolve(temp, 'hosted/index.html')
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', hostedDeck, '--reader', '--no-drawings', '-o', hosted], { cwd: root, stdio: 'pipe' })
   assert.ok(!readFileSync(hosted, 'utf8').includes('PRIVATE_READER_NOTES'))
+  assert.ok(!readFileSync(hosted, 'utf8').includes('PRIVATE_NOTES_SVG_CONTENT'), 'notes-only themed SVG markup is not bundled into public output')
   assert.ok(existsSync(resolve(temp, 'hosted/reader-photo.svg')))
   assert.equal(existsSync(resolve(temp, 'hosted/private-notes.svg')), false, 'notes-only media is not copied into public output')
   const reader = await open('hosted/index.html')
@@ -63,6 +64,7 @@ try {
   assert.equal(await oldAddress.evaluate("new URL(document.querySelector('[role=alert] a').href).searchParams.get('view')"), 'reader')
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', hostedDeck, '--reader', '--notes', '--no-drawings', '-o', resolve(temp, 'with-notes.html')], { cwd: root, stdio: 'pipe' })
   assert.ok(readFileSync(resolve(temp, 'with-notes.html'), 'utf8').includes('PRIVATE_READER_NOTES'))
+  assert.ok(readFileSync(resolve(temp, 'with-notes.html'), 'utf8').includes('PRIVATE_NOTES_SVG_CONTENT'), '--notes preserves themed SVGs referenced by the notes')
 
   // Saved ink from <deck>.drawings.json is bundled and drawn in the deck and in Read mode.
   const inkDeck = resolve(temp, 'ink.md')

@@ -29,3 +29,25 @@ test('a window that just opened takes the current position, and old pages are fo
   // Neither has moved yet: the newcomer still takes the presenter's position.
   assert.equal(createOrder('zz').accept(createOrder('p').current()), true)
 })
+
+test('three windows converge when tied changes arrive in different orders', () => {
+  const b = createOrder('b').stamp(), c = createOrder('c').stamp()
+  const first = createOrder('a'), second = createOrder('z')
+  assert.equal(first.accept(c), true)
+  assert.equal(first.accept(b), false, 'the lower sender cannot replace the accepted winner')
+  assert.equal(second.accept(b), true)
+  assert.equal(second.accept(c), true)
+  assert.deepEqual(first.current(), second.current(), 'both windows describe the same winning change')
+  assert.deepEqual(first.stamp(), { seq: 2, from: 'a' }, 'a local change after receiving still advances the clock')
+})
+
+test('forwarding the current position preserves its original sender', () => {
+  const winner = createOrder('c').stamp()
+  const middle = createOrder('a')
+  middle.accept(winner)
+  assert.deepEqual(middle.current(), { ...winner, initial: true })
+  const other = createOrder('b')
+  other.stamp()
+  assert.equal(other.accept(middle.current()), true, 'the forwarded winner still outranks a tied local change')
+  assert.equal(middle.accept({ seq: 1, from: 'b', initial: true }), false, 'initial replies cannot bypass ordering after navigation')
+})
