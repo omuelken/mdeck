@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process'
 import { buildDocs } from './build.js'
 import { pageFor } from './pages.js'
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.md': 'text/plain; charset=utf-8' }
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png', '.md': 'text/plain; charset=utf-8' }
 
 export function docsHandler(root) {
   return async (request, response) => {

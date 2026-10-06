@@ -60,6 +60,8 @@ button:disabled { cursor: default; }
 .nav-help code { display: block; margin-top: 3px; color: var(--ink); font-size: 12px; }
 main { min-width: 0; padding: 49px 0 20px; }
 article { max-width: 76ch; }
+article img { display: block; max-width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; }
+article a:has(> img) { display: block; margin: 16px 0 8px; }
 .breadcrumb { color: var(--secondary); font-size: 13px; margin: 0 0 12px; }
 h1, h2, h3 { line-height: 1.2; letter-spacing: -.035em; font-weight: 700; color: var(--ink); }
 h1 { font-size: clamp(32px, 3vw, 46px); margin: 0 0 24px; max-width: 23ch; }

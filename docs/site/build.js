@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, copyFile, cp } from 'node:fs/promises'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFile } from 'node:child_process'
@@ -113,6 +113,7 @@ export async function buildDocs({ outDir = resolve(docsRoot, 'dist'), examples =
     search.push(entry)
   }
   for (const file of ['site.css', 'site.js', 'favicon.svg', 'gitlab-logo.svg']) await copyFile(resolve(docsRoot, 'assets', file), resolve(outDir, 'assets', file))
+  await cp(resolve(docsRoot, 'images'), resolve(outDir, 'images'), { recursive: true })
   await writeFile(resolve(outDir, 'search.json'), JSON.stringify(search))
   await copyFile(resolve(projectRoot, 'examples/custom-layouts/slides.md'), resolve(outDir, 'downloads/comparison.md'))
   await copyFile(resolve(docsRoot, 'examples/first-talk.md'), resolve(outDir, 'downloads/first-talk.md'))

@@ -34,6 +34,46 @@ If you already have a settings block there, change the existing lines rather tha
 
 Each theme comes with colours that suit it, so you do not have to choose any.
 
+## See the themes
+
+Each theme in its own colours, on the title slide of the tour example. Click a picture to see it larger.
+
+### Neue
+
+[![The tour's title slide in the Neue theme](images/themes/neue.webp)](images/themes/neue.webp)
+
+Default colours: `swiss`.
+
+### Aurora
+
+[![The tour's title slide in the Aurora theme](images/themes/aurora.webp)](images/themes/aurora.webp)
+
+Default colours: `neon`.
+
+### Duet
+
+[![The tour's title slide in the Duet theme](images/themes/duet.webp)](images/themes/duet.webp)
+
+Default colours: `cobalt`.
+
+### Editorial
+
+[![The tour's title slide in the Editorial theme](images/themes/editorial.webp)](images/themes/editorial.webp)
+
+Default colours: `terra`.
+
+### FHNW
+
+[![The tour's title slide in the FHNW theme](images/themes/fhnw.webp)](images/themes/fhnw.webp)
+
+Default colours: its own FHNW colours.
+
+### Terminal
+
+[![The tour's title slide in the Terminal theme](images/themes/terminal.webp)](images/themes/terminal.webp)
+
+Default colours: `phosphor`, dark.
+
 ## Choose colours
 
 To use other colours, set `palette` to one of these:
@@ -73,6 +113,30 @@ appearance: dark
 ```
 
 Some slides use the other version on purpose: neue's statement slides are dark in a light talk and light in a dark one.
+
+## Every theme in every palette
+
+The same content slide in each palette a theme offers, light and dark. The FHNW theme has only its own colours, so it is not shown here. Click a sheet to see it larger.
+
+### Neue
+
+[![A content slide in the Neue theme with every palette, light and dark](images/themes/neue-palettes.webp)](images/themes/neue-palettes.webp)
+
+### Aurora
+
+[![A content slide in the Aurora theme with every palette, light and dark](images/themes/aurora-palettes.webp)](images/themes/aurora-palettes.webp)
+
+### Duet
+
+[![A content slide in the Duet theme with every palette, light and dark](images/themes/duet-palettes.webp)](images/themes/duet-palettes.webp)
+
+### Editorial
+
+[![A content slide in the Editorial theme with every palette, light and dark](images/themes/editorial-palettes.webp)](images/themes/editorial-palettes.webp)
+
+### Terminal
+
+[![A content slide in the Terminal theme with every palette, light and dark](images/themes/terminal-palettes.webp)](images/themes/terminal-palettes.webp)
 
 ## Try a look before saving it
 
