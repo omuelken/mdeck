@@ -235,7 +235,7 @@ try {
   assert.equal(await projector.evaluate("document.querySelector('.poll-join--local a')?.href"), new URL('__mdeck/live/424242', pollBase).href, 'on this computer only, a link to try the answer page')
   const phone = await open(new URL('__mdeck/live/424242', pollBase).href)
   await until(phone, "document.querySelectorAll('.answer-options button').length === 2 && document.querySelector('.answer h1')?.textContent === 'Lunch?'")
-  assert.equal(await phone.evaluate("document.documentElement.lang + ' ' + getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()"), 'de #0d9488', "the deck's language and look")
+  assert.equal(await phone.evaluate("document.documentElement.lang + ' ' + getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()"), 'de #e30613', "the deck's language and look (neue's default palette, swiss)")
   await phone.evaluate("document.querySelectorAll('.answer-options button')[1].click()")
   await until(projector, "[...document.querySelectorAll('.poll-count')].map(e => e.textContent).join() === '0,1'")
   await until(phone, "document.querySelector('.answer-status').textContent.includes('Thai')")
