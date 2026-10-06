@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed: on duet's title slide, emphasis in the subtitle took the background colour and disappeared; it now keeps the slide's text colour, underlined in the second accent, like the headline.
 - Fixed: a picture path shown inside a code example (`image: ./img/photo.jpg`, `![…](./img/photo.jpg)`) was replaced by the embedded picture in PDFs, `mdeck send` files and `--single-file` builds, and a large picture could make the PDF time out. Code examples now stay text.
 - Fixed: the editorial theme showed two dashes before a statement slide's attribution.
 - The guides start from handing your own slides, documents or notes to an AI assistant, and explain the file format so you can read and adjust what it writes. The `write-slides` skill works from source material: it keeps its content and pictures, and says what it left out, moved to the notes or added.

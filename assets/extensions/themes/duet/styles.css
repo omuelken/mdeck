@@ -164,7 +164,7 @@ strong { color: var(--ink); font-weight: 700; }
 }
 /* The second accent is not readable on the first: emphasis keeps the
    slide's text colour and is underlined in the second accent. */
-.slide--title .display em {
+.slide--title :is(.display, .subtitle) em {
   color: inherit;
   text-decoration: underline;
   text-decoration-color: var(--accent-2);
