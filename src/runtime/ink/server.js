@@ -41,7 +41,10 @@ export async function connectInkServer(controller, { headers = () => pairHeaders
       const body = await reply.json().catch(() => ({}))
       if (reply.ok) {
         deckHash = body.deckHash
-        for (const { from, to } of body.renamed ?? []) renameSlide(from, to)
+        // A slide got its id with this stroke: the audience window and other
+        // devices must use it too, or later strokes, the laser and the zoom
+        // would name a slide they do not know.
+        for (const { from, to } of body.renamed ?? []) { renameSlide(from, to); controller.share({ type: 'rename', from, to }) }
       } else {
         // The deck changed under this page: take the server's ink.
         console.warn('mdeck: ink not saved:', body.error ?? reply.status)

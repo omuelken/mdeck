@@ -40,9 +40,12 @@ export function roomTransport({ receive = false, view = null, onPresence = null 
     send(message) {
       if (allowed === false) return
       // Nobody on another device watches: strokes in progress can stay here.
-      if (message.type === 'segment' && listeners === 0) return
+      // Strokes in progress, the laser's dot and the zoom only matter to
+      // someone watching.
+      const live = message.type === 'segment' || message.type === 'dot' || message.type === 'zoom'
+      if (live && listeners === 0) return
       queue.push(message)
-      timer ??= setTimeout(flush, message.type === 'segment' ? BATCH_MS : 0)
+      timer ??= setTimeout(flush, live ? BATCH_MS : 0)
     },
     listen(handler) {
       if (!receive || typeof EventSource === 'undefined') return

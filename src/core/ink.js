@@ -99,7 +99,10 @@ export function applyOp(ink, op) {
     else delete next.slides[op.slideId]
   } else if (op?.type === 'rename') {
     if (!op.from || !op.to || op.from === op.to || !next.slides[op.from]) return ink
-    next.slides[op.to] = [...(next.slides[op.to] ?? []), ...next.slides[op.from]]
+    // A stroke already under the new id (the same change heard twice, say
+    // from a window that replays the room's history) is not doubled.
+    const known = new Set((next.slides[op.to] ?? []).map(stroke => stroke.id))
+    next.slides[op.to] = [...(next.slides[op.to] ?? []), ...next.slides[op.from].filter(stroke => !known.has(stroke.id))]
     delete next.slides[op.from]
   } else {
     return ink
@@ -136,8 +139,8 @@ export function hitTest(stroke, point, radius = 12) {
 }
 
 const TOOL_OPTIONS = {
-  pen: { thinning: 0.6, smoothing: 0.5, streamline: 0.5 },
-  highlighter: { thinning: 0, smoothing: 0.6, streamline: 0.6, start: { cap: false }, end: { cap: false } },
+  pen: { thinning: 0.6, smoothing: 0.5, streamline: 0.3 },
+  highlighter: { thinning: 0, smoothing: 0.6, streamline: 0.4, start: { cap: false }, end: { cap: false } },
 }
 
 /**
@@ -145,9 +148,13 @@ const TOOL_OPTIONS = {
  * strokes drawn with a finger or mouse (constant pressure) get simulated
  * pressure from their speed.
  */
-export function strokePath(stroke) {
-  const constant = stroke.points.every(point => point[2] === stroke.points[0][2])
-  const outline = getStroke(stroke.points, { size: stroke.size, simulatePressure: constant, ...TOOL_OPTIONS[stroke.tool] ?? TOOL_OPTIONS.pen })
+export function strokePath(stroke, { last = true } = {}) {
+  // A straight line (two points) keeps its pressure: simulated from speed,
+  // its one long segment would come out hairline thin.
+  const constant = stroke.points.length > 2 && stroke.points.every(point => point[2] === stroke.points[0][2])
+  // `last`: a finished stroke runs right to its final point instead of
+  // trailing behind it, as streamline does for a stroke still being drawn.
+  const outline = getStroke(stroke.points, { size: stroke.size, simulatePressure: constant, last, ...TOOL_OPTIONS[stroke.tool] ?? TOOL_OPTIONS.pen })
   if (!outline.length) return ''
   const d = outline.reduce((acc, [x0, y0], i, all) => {
     const [x1, y1] = all[(i + 1) % all.length]
@@ -166,6 +173,38 @@ export function serializeInk(ink) {
 
 /** The CSS colour a stroke is drawn with: "accent" is the theme's accent. */
 export const inkPaint = color => color === 'accent' ? 'var(--accent, #e11d48)' : color
+
+/** Strokes in drawing order: highlighter below the pen, as on paper. */
+export const inkOrder = strokes => [...strokes.filter(s => s.tool === 'highlighter'), ...strokes.filter(s => s.tool !== 'highlighter')]
+
+/** The stroke moved by dx, dy design pixels; the same id, so it replaces the original. */
+export const translateStroke = (stroke, dx, dy) => ({ ...stroke, points: stroke.points.map(([x, y, p]) => [x + dx, y + dy, p]) })
+
+/** Whether a point lies inside a polygon (ray casting). */
+export function insidePolygon([x, y], polygon) {
+  let inside = false
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [ax, ay] = polygon[i], [bx, by] = polygon[j]
+    if ((ay > y) !== (by > y) && x < (bx - ax) * (y - ay) / (by - ay) + ax) inside = !inside
+  }
+  return inside
+}
+
+/** Strokes with at least half their points inside a lasso. */
+export const strokesInLasso = (strokes, lasso) => lasso.length < 3 ? []
+  : strokes.filter(stroke => stroke.points.filter(point => insidePolygon(point, lasso)).length * 2 >= stroke.points.length)
+
+/** [x0, y0, x1, y1] around strokes, widened by `pad` and half their size; null for none. */
+export function strokesBox(strokes, pad = 0) {
+  let box = null
+  for (const stroke of strokes) {
+    const reach = pad + (stroke.size ?? 6) / 2
+    for (const [x, y] of stroke.points) {
+      box = box ? [Math.min(box[0], x - reach), Math.min(box[1], y - reach), Math.max(box[2], x + reach), Math.max(box[3], y + reach)] : [x - reach, y - reach, x + reach, y + reach]
+    }
+  }
+  return box
+}
 
 /** Opacity the SVG layer draws a tool with. */
 export const toolOpacity = tool => tool === 'highlighter' ? 0.35 : 1

@@ -9,11 +9,14 @@ Press **D** in standalone slides or in the presenter view, or use the pen button
 | Tool | What it does |
 |---|---|
 | Pen | Thin to thick with the pencil's pressure. Kept. |
-| Highlighter | A wide, see-through stroke over text. Kept. |
-| Marker | Fades after a few seconds, for pointing at something. Never kept. |
+| Highlighter | A wide, see-through stroke in its own colours, always below the pen's strokes. Kept. |
+| Select and move | Draw a loop around strokes, or tap one, to select it; a finger's tap on a stroke selects it with any tool. Drag inside the dashed box with the pen to move it; a straight line shows handles at its ends, which the pen moves. **Delete** (or the toolbar's bin) removes the selection. |
+| Laser pointer | A red dot with a white core and a short trail that disappears by itself, for pointing at something. With a pencil that can hover, the dot follows it without touching. Never kept. |
 | Eraser | Removes whole strokes you touch. |
 
-The toolbar also has colours, three sizes, undo and redo (also Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z), **Clear this slide**, and **×** to stop drawing; **D** and **Escape** do the same. One of the colours is **Accent**, the accent colour of the theme and palette: a drawing in it changes with them. Turn slides with the arrow keys or the presenter view's arrows, as always. While you draw, clicks and taps draw instead of changing slides.
+**Zoom**: two fingers zoom into the slide and move around it, one finger moves a zoomed slide, and Ctrl + scroll (a trackpad pinch) zooms on a laptop. Only the slide grows; the bars and the toolbar keep their size. The audience window shows the same part of the slide. **1:1** at the top left shows the whole slide again, as does the next slide.
+
+On a touch screen such as an iPad, drawing is on as soon as the presenter view opens, and in the deck as soon as the pencil touches it, with the toolbar folded into its button in the bottom right corner (↘ folds it again). Until then, a tap on the right third of the screen goes forward, on the left third back, and a swipe does the same. Drawing starts with the laser pointer; choose the pen or the highlighter to write. The pen and the highlighter each have colours and three sizes, and each keeps its own; one pen colour is **Accent**, the accent colour of the theme and palette: a drawing in it changes with them. The toolbar also has undo and redo (also Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z), **Clear this slide**, and **×** to stop drawing; **D** and **Escape** do the same. While you draw, the pencil and the mouse draw; fingers keep working: a swipe to the left goes forward, to the right back, a tap on a stroke selects it, and buttons and polls on the slide still respond. Turn slides with the arrow keys or the presenter view's arrows, as always. Holding the pen still for half a second at the end of a stroke makes it a straight line.
 
 **I** hides and shows what was drawn before, for example when a slide should look clean again. The toolbar has the same switch.
 
@@ -39,7 +42,7 @@ mdeck pdf my-talk.md --no-drawings
 
 There are two ways.
 
-**The iPad on its own.** Connect it to the projector, which usually shows the same picture as the iPad, and open standalone slides with **Present** from the reader view. Tap the left or right edge to go back or forward. While drawing, a tap draws: stop drawing with **×** to change the slide, or use a keyboard's arrow keys. This keeps notes off the wall.
+**The iPad on its own.** Connect it to the projector, which usually shows the same picture as the iPad, and open standalone slides with **Present** from the reader view. Swipe left or right to go forward or back, also while drawing. This keeps notes off the wall.
 
 **The iPad next to your laptop.** The laptop shows the slides on the projector; you draw and go through the slides on the iPad, with your notes on it.
 
@@ -60,10 +63,10 @@ Everything else works as with `--network`: drawings are saved in the drawings fi
 
 On a touch screen the presenter view shows only the slide, with a small bar at the top: timer, previous and next, draw, **Notes** (a drawer with your notes and the next slide, also **N**), full screen, and a button back to the layout with notes beside the slide. Your choice is remembered on that device.
 
-With a server of your own (the `server` setting, see [Ask your audience](audience.html)), the same also works with a hosted deck: open the presenter view on the iPad with your key (`?serverkey=…`), and the audience window anywhere else follows it. Drawings are then kept on the iPad; download the drawings file after the talk.
+With a server of your own (the `server` setting, see [Ask your audience](audience.html)), the same also works with a hosted deck: open the presenter view on the iPad with your key (`?serverkey=…`), and the audience window anywhere else follows it. With the deck opened through `mdeck run` and the server's key set (`MDECK_SERVER_KEY`), the paired iPad and the audience window talk over your own network, and only the polls go through the server. Drawings are then kept on the iPad; download the drawings file after the talk.
 
 ## Tips for the iPad
 
 - **Full screen**: the full-screen button (four corners) or **F**, where the browser allows it. Safari on an iPhone does not. Alternatively, use Share → **Add to Home Screen**: the deck then opens without Safari's bars. Such a Home Screen app keeps its own browser data, apart from Safari's.
-- **Fingers and the pencil**: until you use the pencil, a finger draws too. After that, only the pencil draws, so a resting hand leaves no marks. The hand button on the toolbar lets fingers draw again.
+- **Fingers and the pencil**: the pencil draws, fingers operate the slides, also while drawing. Swipe left to go forward, right to go back; tap a stroke to select it. To draw with a finger (on a device without a pencil), switch on the hand button on the toolbar; fingers then draw instead.
 - **Networks**: many large Wi-Fi networks do not let devices reach each other. If the iPad cannot open the pairing code, connect both to a phone hotspot.

@@ -22,11 +22,12 @@ export function JoinCode({ room, joinUrl, localJoinUrl, qr = true, size = 300, l
   </a>
 }
 
-/** Number of answers, whether the room is live, and Reset for the presenter. */
-export function ActivityFooter({ count, connected, canReset, reset }) {
+/** Number of answers, whether the room is live, and Reset for the presenter; `children` go at the end. */
+export function ActivityFooter({ count, connected, canReset, reset, children }) {
   return <p class="poll-total">
     <span class={`poll-dot${connected ? ' is-live' : ''}`} title={connected ? t('poll.live') : t('poll.offline')} />
     {count === 1 ? t('poll.answer') : t('poll.answers', { n: count })}
-    {canReset && count > 0 && <button class="poll-reset" onClick={() => reset().catch(() => {})}>{t('poll.reset')}</button>}
+    {canReset && <button class="poll-reset" disabled={count === 0} onClick={() => reset().catch(() => {})}>{t('poll.reset')}</button>}
+    {children}
   </p>
 }

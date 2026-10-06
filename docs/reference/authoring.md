@@ -653,6 +653,7 @@ For `play="auto"` the video pauses and resets to the beginning when you navigate
 | `options` | — | Answers separated by `\|` |
 | `question` | — | Question text; phones fall back to the slide heading |
 | `qr` | `true` | `false` leaves out the QR code (shown earlier with `<qrcode join />`) |
+| `answer` | — | The right answer (several separated by `\|`): a button with a tick outlines its label, bar and count in green, also in the audience window and on paired devices. `--poll-correct` sets the colour |
 
 Three more activities take the same `room`, `question` and `qr`:
 
@@ -700,7 +701,8 @@ Drawings on slides live in `<deck>.drawings.json` beside `<deck>.md` and are par
 - `points` are `[x, y, pressure]` in the deck's design pixels (`width` × `height`); if the deck's size changes, strokes are scaled. `tool` is `pen` or `highlighter`.
 - Drawings belong to a slide, not to a step of it.
 - `mdeck check` reports a broken drawings file and drawings for slide ids that are not in the deck.
-- Keys: `D` draw, `I` hide or show drawings, `F` full screen.
+- Keys: `D` draw, `I` hide or show drawings, `F` full screen, `Delete` removes the selected strokes.
+- The laser pointer and selections are never saved; moving strokes saves them in their new place, with the same ids.
 
 ## Deck-local components
 

@@ -11,8 +11,19 @@
 .poll .poll-total { display: flex; align-items: center; gap: 14px; margin: 36px 0 0; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
 .poll-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted, #999); opacity: .5; }
 .poll-dot.is-live { background: #16a34a; opacity: 1; }
-.poll-reset { margin-left: auto; padding: 4px 14px; border: 1px solid var(--rule, #ccc); border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; opacity: 0; transition: opacity .2s; }
-.poll:hover .poll-reset, .poll-reset:focus-visible { opacity: 1; }
+.poll-reset { margin-left: auto; padding: 4px 14px; border: 1px solid var(--rule, #ccc); border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.poll-reset:disabled { opacity: .4; cursor: default; }
+/* The audience sees the results, not the presenter's controls. */
+deck-stage[data-follower] .poll-reset { display: none; }
+/* answer="…": the tick outlines the right answer's row (label, bar, count) in green. */
+.poll-solve { display: grid; place-items: center; width: 44px; height: 44px; margin-left: auto; padding: 0; border: 1px solid var(--rule, #ccc); border-radius: 50%; background: none; color: var(--muted, #666); cursor: pointer; opacity: .55; transition: opacity .2s, background .2s, color .2s; }
+.poll-reset + .poll-solve { margin-left: 0; }
+.poll-solve svg { width: 24px; height: 24px; }
+.poll-solve:hover, .poll-solve:focus-visible { opacity: 1; }
+.poll-solve.is-on { opacity: 1; background: var(--poll-correct, #16a34a); border-color: var(--poll-correct, #16a34a); color: #fff; }
+deck-stage[data-follower] .poll-solve { display: none; }
+.poll.is-solved .poll-row.is-correct { outline: 4px solid var(--poll-correct, #16a34a); outline-offset: 10px; border-radius: 10px; }
+.poll.is-solved .poll-row.is-correct .poll-label { font-weight: 700; color: var(--poll-correct, #16a34a); }
 .poll-link { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 20px; color: var(--muted, #555); }
 /* The join code in the slide's own colours (see QrCode.jsx). */
 .poll-join { flex: none; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 18px; border: 1px solid var(--rule, rgba(0,0,0,.12)); border-radius: 12px; color: var(--ink, #111); text-decoration: none; font-size: var(--fs-small, 24px); }
@@ -56,4 +67,4 @@
 .poll-join-slide { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
 .poll-join-slide .poll-join { font-size: var(--fs-body, 32px); gap: 16px; padding: 24px 32px; }
 .poll-join-slide .poll-link { font-size: 28px; }
-@media print { .poll-reset, .poll-dot { display: none; } .poll-fill, .scale-fill, .word { transition: none; animation: none; } .question-cards li { animation: none; } }
+@media print { .poll-reset, .poll-dot, .poll-solve { display: none; } .poll-fill, .scale-fill, .word { transition: none; animation: none; } .question-cards li { animation: none; } }

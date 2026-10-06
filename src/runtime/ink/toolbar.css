@@ -1,5 +1,5 @@
 /* The floating ink toolbar, in the dark chrome of the other tools. It sits
-   above the stage's ink input layer, so fingers always work on it. */
+   above the stage and its ink layers, and the stage leaves its input alone. */
 .ink-toolbar {
   position: fixed; left: 0; right: 0; bottom: max(16px, env(safe-area-inset-bottom)); margin: 0 auto; width: fit-content;
   z-index: 2147483000;
@@ -9,7 +9,18 @@
   background: rgba(22, 22, 22, 0.94); color: #e6e6e6;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
   font: 13px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
-  touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  /* Taps only: a pinch here must not zoom the page, and the toolbar with it. */
+  touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+/* Folded: one button in the bottom right corner, with the tool's colour. */
+.ink-toolbar.is-collapsed {
+  left: auto; right: max(16px, env(safe-area-inset-right)); margin: 0;
+  padding: 4px; border-radius: 50%;
+}
+.ink-toolbar.is-collapsed .ink-btn { border-radius: 50%; position: relative; }
+.ink-expand[style*="--tool-color"]::after {
+  content: ''; position: absolute; right: 5px; bottom: 5px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--tool-color); box-shadow: 0 0 0 1.5px rgba(22, 22, 22, 0.94);
 }
 .ink-group { display: flex; align-items: center; gap: 4px; padding: 0 4px; }
 .ink-group + .ink-group { border-left: 1px solid #333; }
@@ -57,6 +68,12 @@
 @keyframes ink-pop-in { from { opacity: 0; margin-bottom: -4px; } }
 @media (pointer: coarse) { .ink-pop-btn { height: 40px; padding: 0 16px; } .ink-pop-text { font-size: 14px; } }
 @media (prefers-reduced-motion: reduce) { .ink-pop { animation: none; } }
-/* No rubber-band scrolling or pull-to-refresh while drawing. */
-html.is-inking, html.is-inking body { overscroll-behavior: none; overflow: hidden; }
+/* While drawing, touches neither pan, zoom the page, rubber-band nor select
+   text: the pencil's strokes must not move the page (or, in the presenter
+   view, the page around the slide). Two fingers zoom the slide itself (the
+   stage's zoom), and taps still reach buttons and the stage. */
+html.is-inking, html.is-inking body {
+  overscroll-behavior: none; overflow: hidden; touch-action: none;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
 @media print { .ink-toolbar { display: none !important; } }
