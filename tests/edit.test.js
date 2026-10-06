@@ -117,7 +117,7 @@ test('slides can be inserted, removed and moved without disturbing neighbours', 
 })
 
 test('inserting and removing a slide at any position restores the original bytes', () => {
-  for (const name of ['custom-layouts', 'showcase', 'python', 'fhnw']) {
+  for (const name of ['custom-layouts', 'showcase', 'python', 'poll']) {
     const source = readFileSync(new URL(`../examples/${name}/slides.md`, import.meta.url), 'utf8')
     const deck = clean(source, name)
     for (let index = 0; index <= deck.slides.length; index++) {
@@ -143,5 +143,5 @@ test('every helper keeps the example decks valid', () => {
   check(moveSlide(deck, 'built-in-regions', 0).source)
   assert.equal(deck.slides.length, 3)
   assert.equal(deck.slides[1].regions.left.content, '## Left\n\nChanged')
-  assert.deepEqual(deck.deckConfig, { theme: 'neue', palette: 'forest', meta: { title: 'Deck-local layouts' }, appearance: 'dark' })
+  assert.deepEqual(deck.deckConfig, { theme: 'terminal', meta: { title: 'Deck-local layouts' }, palette: 'forest', appearance: 'dark' })
 })

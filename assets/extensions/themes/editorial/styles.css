@@ -332,7 +332,6 @@ strong { color: var(--ink); font-weight: 600; }
   color: var(--muted);
   margin: 56px 0 0 0;
 }
-.focus-attribution::before { content: '\2014\2009'; }
 
 /* ─────────────────────────────────────────────
    LAYOUT: IMAGE + TEXT — square photographs, a caption-like text column

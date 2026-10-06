@@ -1,6 +1,5 @@
 ---
-theme: neue
-palette: swiss
+theme: terminal
 meta:
   title: Deck-local layouts
 ---

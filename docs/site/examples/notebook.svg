@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <!-- An open lab notebook on a dark desk: ruled pages with entries, a results table, a plot and a pen.
+       The lower part of the picture stays dark so a heading can sit on it. -->
+  <defs>
+    <linearGradient id="desk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a3b30"/>
+      <stop offset="1" stop-color="#211a15"/>
+    </linearGradient>
+    <linearGradient id="spine" x1="0" x2="1">
+      <stop offset="0" stop-color="#fbf8f1" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#b9ad98"/>
+      <stop offset="1" stop-color="#fbf8f1" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="rule" width="10" height="40" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="39.5" x2="10" y2="39.5" stroke="#bfd3e6" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#desk)"/>
+  <g transform="translate(260 40) scale(.68) rotate(-3 800 500)">
+    <rect x="150" y="90" width="1300" height="830" rx="14" fill="#1b2533"/>
+    <rect x="170" y="105" width="625" height="800" fill="#fbf8f1"/>
+    <rect x="805" y="105" width="625" height="800" fill="#fbf8f1"/>
+    <rect x="770" y="105" width="60" height="800" fill="url(#spine)"/>
+    <rect x="170" y="180" width="625" height="700" fill="url(#rule)"/>
+    <rect x="805" y="180" width="625" height="700" fill="url(#rule)"/>
+    <line x1="240" y1="105" x2="240" y2="905" stroke="#e39a9a" stroke-width="3"/>
+    <line x1="875" y1="105" x2="875" y2="905" stroke="#e39a9a" stroke-width="3"/>
+    <g fill="none" stroke="#24304a" stroke-width="5" stroke-linecap="round">
+      <path d="M262 165 h120 M402 165 h70"/>
+      <path d="M262 245 h300" stroke-width="7"/>
+      <path d="M262 325 h420 M262 365 h380 M262 405 h300"/>
+      <path d="M262 485 h30 M310 485 h300 M262 525 h30 M310 525 h340 M262 565 h30 M310 565 h260 M262 605 h30 M310 605 h320"/>
+      <path d="M262 685 h400 M262 725 h360"/>
+      <path d="M262 805 h250" stroke="#b5452f"/>
+    </g>
+    <path d="M520 798 q20 -18 40 0 t40 0" fill="none" stroke="#b5452f" stroke-width="4" stroke-linecap="round"/>
+    <g fill="none" stroke="#24304a" stroke-width="4" stroke-linecap="round">
+      <path d="M897 165 h160"/>
+      <rect x="897" y="220" width="460" height="200"/>
+      <path d="M897 270 h460 M897 320 h460 M897 370 h460 M1050 220 v200 M1200 220 v200"/>
+      <path d="M915 247 h90 M1068 247 h90 M1218 247 h90" stroke-width="5"/>
+      <path d="M915 297 h60 M1068 297 h70 M1218 297 h50 M915 347 h60 M1068 347 h40 M1218 347 h80 M915 397 h60 M1068 397 h60 M1218 397 h60" stroke-width="3"/>
+      <path d="M917 820 V480 M917 820 H1360"/>
+      <path d="M930 800 C1010 790 1060 700 1110 610 S1240 500 1340 495" stroke="#2455c7" stroke-width="5"/>
+    </g>
+    <g fill="#2455c7">
+      <circle cx="960" cy="792" r="9"/><circle cx="1040" cy="742" r="9"/><circle cx="1105" cy="628" r="9"/>
+      <circle cx="1175" cy="545" r="9"/><circle cx="1260" cy="510" r="9"/><circle cx="1335" cy="500" r="9"/>
+    </g>
+    <g transform="rotate(32 1260 690)">
+      <rect x="1000" y="676" width="430" height="30" rx="14" fill="#1d2735"/>
+      <rect x="1330" y="676" width="34" height="30" fill="#c9a24b"/>
+      <path d="M1000 676 l-46 15 l46 15 z" fill="#e8dcc4"/>
+      <path d="M954 691 l14 -4 v8 z" fill="#1d2735"/>
+      <rect x="1080" y="668" width="150" height="10" rx="5" fill="#c9a24b"/>
+    </g>
+  </g>
+</svg>

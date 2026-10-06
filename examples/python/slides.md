@@ -59,26 +59,30 @@ Estimated time for this chapter: 20 minutes.
 layout: split
 section: Variables
 id: variables-store-data
+props:
+  ratio: [3, 2]
 :::
 # A variable is a name for a value.
 :::slot left
 ```python live editable copy
-# Variables store data
 name = "E. coli"
 genome_size = 4_641_652   # base pairs
-gc_content = 0.506        # 50.6 %
+gc_content = 0.506        # fraction
 
-print(f"{name}: {genome_size:,} bp, GC = {gc_content:.1%}")
+print(name, genome_size, gc_content)
+print(f"GC content: {gc_content:.1%}")
 ```
 :::
 :::slot right
-Python works out the type automatically — *no declarations needed.*
+No declarations: Python sees the type from the value.
+
+**Try it:** change `gc_content` to `0.65` and run again.
 :::
 
 :::notes
 A variable is just a name attached to a value. Python figures out the type automatically.
 
-Point out: no semicolons, no type declarations, no boilerplate.
+Point out: no semicolons, no type declarations, no boilerplate. The `f"…"` string formats a value inside text; `:.1%` shows a fraction as a percentage.
 Encourage students to change the values and re-run — that's the point of the live block.
 :::
 
@@ -89,14 +93,17 @@ id: four-types-cover-most-biology-data
 :::
 # Four types cover most biology data.
 
+:::steps
 - **`int`** — whole numbers: counts, positions, indices
 - **`float`** — decimals: concentrations, p-values, fold changes
 - **`str`** — text: gene names, sequences, sample IDs
-- **`bool`** — True / False: significance flags, quality filters
+- **`bool`** — True or False: significance flags, quality filters
+:::
 
 :::notes
-Four types students will use constantly. Emphasise that booleans typically come from comparisons,
-not literal True/False. The next slide asks the room.
+Reveal one type at a time and ask for an example from the lab before showing the next.
+
+Emphasise that booleans typically come from comparisons, not literal True/False. The next slide asks the room.
 :::
 
 ---
@@ -106,38 +113,42 @@ title: "Poll: the type of a p-value"
 :::
 # What type is a p-value?
 
-<poll room="p-value" options="int|float|str|bool" />
+<poll room="p-value" options="int|float|str|bool" answer="float" />
 
 :::notes
 A quick check before moving on. Phones join with the QR code; start the deck with `mdeck run slides.md --network` so they can reach this computer.
 
-Answer: `float`. If many chose `bool`, they are thinking of the *significance flag* computed from it (`p < 0.05`): a good moment to show that comparisons produce booleans.
+Answer: `float`; the tick button under the bars marks it. If many chose `bool`, they are thinking of the *significance flag* computed from it (`p < 0.05`): a good moment to show that comparisons produce booleans.
 :::
 
 ---
 :::meta
 layout: split
 section: Strings
+props:
+  ratio: [3, 2]
 :::
 # Strings behave like sequences.
 :::slot left
 ```python live editable copy
-sequence = "ATGCGTAAGCTTGAC"
+dna = "ATGCGTAAGCTTGAC"
 
-print("Length:      ", len(sequence))
-print("First codon: ", sequence[:3])
-print("A count:     ", sequence.count("A"))
-print("Reversed:    ", sequence[::-1])
-print("Uppercase:   ", sequence.lower().upper())
+print("Length:     ", len(dna))
+print("First codon:", dna[:3])
+print("A count:    ", dna.count("A"))
+print("Reversed:   ", dna[::-1])
+print("As RNA:     ", dna.replace("T", "U"))
 ```
 :::
 :::slot right
-Slicing, counting, and searching work the same on text *and* biological sequences.
+Slicing, counting and replacing work the same on any text.
+
+**Try it:** print the last codon with `dna[-3:]`.
 :::
 
 :::notes
 Strings are sequences — you can slice them just like a nucleotide sequence.
-DNA manipulation is a great motivating example: the concepts transfer directly to BioPython later.
+`replace("T", "U")` is transcription in one line. The concepts transfer directly to BioPython later.
 :::
 
 ---
@@ -158,21 +169,25 @@ Estimated time for this chapter: 25 minutes.
 :::meta
 layout: split
 section: Lists
+props:
+  ratio: [3, 2]
 :::
-# A list holds an *ordered* sequence of values.
+# A list holds values in order.
 :::slot left
 ```python live editable copy
-concentrations = [0.12, 0.45, 0.33, 0.78, 0.21]
+conc = [0.12, 0.45, 0.33, 0.78, 0.21]
 
-print("Samples:", len(concentrations))
-print("First:  ", concentrations[0])
-print("Last:   ", concentrations[-1])
-print("Sorted: ", sorted(concentrations))
-print("Mean:   ", sum(concentrations) / len(concentrations))
+print("Samples:", len(conc))
+print("First:  ", conc[0])
+print("Last:   ", conc[-1])
+print("Sorted: ", sorted(conc))
+print("Mean:   ", sum(conc) / len(conc))
 ```
 :::
 :::slot right
-Access items by index — indexing starts at *zero.*
+Counting starts at zero: `conc[0]` is the first item, `conc[-1]` the last.
+
+**Try it:** add a sixth value and watch the mean change.
 :::
 
 :::notes
@@ -186,8 +201,10 @@ Common mistake: students try index 1 for the first element. Drill 0-indexing ear
 :::meta
 layout: split
 section: Dictionaries
+props:
+  ratio: [3, 2]
 :::
-# A dictionary maps *keys* to values.
+# A dictionary looks values up by name.
 :::slot left
 ```python live editable copy
 sample = {
@@ -195,18 +212,17 @@ sample = {
     "organism": "Mus musculus",
     "tissue": "liver",
     "weight_mg": 312,
-    "treated": True,
 }
 
 print(sample["organism"])
-print("Treated:", sample["treated"])
-
 sample["weight_mg"] = 318   # update a field
-print("Updated weight:", sample["weight_mg"])
+print(sample)
 ```
 :::
 :::slot right
-Look up any field instantly by name — no loops, no column indices.
+One dictionary describes one sample: no column numbers to remember.
+
+**Try it:** add `"treated": True`.
 :::
 
 :::notes
@@ -232,8 +248,10 @@ Estimated time for this chapter: 25 minutes.
 :::meta
 layout: split
 section: Conditions
+props:
+  ratio: [3, 2]
 :::
-# `if` chooses a path based on a condition.
+# `if` chooses a path.
 :::slot left
 ```python live editable copy
 p_value = 0.023
@@ -242,13 +260,15 @@ fold_change = 2.4
 if p_value < 0.05 and fold_change > 2:
     print("Significant upregulation")
 elif p_value < 0.05:
-    print("Significant — but modest effect")
+    print("Significant, modest effect")
 else:
     print("Not significant")
 ```
 :::
 :::slot right
-Indentation defines the block — *Python uses whitespace, not braces.*
+The indentation is the block: Python uses whitespace, not braces.
+
+**Try it:** set `fold_change = 1.5`.
 :::
 
 :::notes
@@ -261,32 +281,34 @@ Show what happens if you forget the colon: Python gives a SyntaxError.
 :::meta
 layout: split
 section: Loops
+props:
+  ratio: [3, 2]
 :::
 # `for` repeats an action for every item.
 :::slot left
 ```python live editable copy
-measurements = [1.2, 0.8, 2.1, 1.5, 0.9, 2.8, 1.1, 1.7]
+values = [1.2, 0.8, 2.1, 1.5, 0.9, 2.8]
 
-above_threshold = []
-for value in measurements:
+above = []
+for value in values:
     if value > 1.0:
-        above_threshold.append(value)
+        above.append(value)
 
-print(f"{len(above_threshold)} of {len(measurements)} above threshold")
-print("Values:", above_threshold)
+print(len(above), "of", len(values))
+print(above)
 ```
 :::
 :::slot right
-Loop → test → collect is the core pattern of *data filtering.*
+Loop, test, collect: the core pattern of filtering data.
+
+**Try it:** count the values below 1.0 instead.
 :::
 
 :::notes
 for loops iterate over any collection. This pattern — loop, test, collect — is at the heart of
 almost every data processing script students will write.
 
-Press **D** and trace one value through the loop on the slide: into `value`, through the `if`, into `above_threshold`. Escape stops drawing; the drawing stays with the slide.
-
-After showing this, ask: "how would you count how many are below threshold instead?"
+Press **D** and trace one value through the loop on the slide: into `value`, through the `if`, into `above`. Escape stops drawing; the drawing stays with the slide.
 :::
 
 ---
@@ -307,23 +329,26 @@ Estimated time for this chapter: 20 minutes.
 ---
 :::meta
 layout: split
+section: Functions
+props:
+  ratio: [3, 2]
 :::
-# A function takes *inputs* and returns an *output.*
+# A function turns inputs into an output.
 :::slot left
 ```python live editable copy
-def gc_content(sequence):
-    """Return the GC fraction of a DNA sequence."""
-    g = sequence.count("G")
-    c = sequence.count("C")
-    return (g + c) / len(sequence)
+def gc_content(seq):
+    """Return the GC fraction of a sequence."""
+    gc = seq.count("G") + seq.count("C")
+    return gc / len(seq)
 
-sequences = ["ATGCGC", "AATTAA", "GCGCGC", "ATATATAT"]
-for seq in sequences:
-    print(f"{seq}:  GC = {gc_content(seq):.1%}")
+for seq in ["ATGCGC", "AATTAA", "GCGCGC"]:
+    print(seq, f"{gc_content(seq):.0%}")
 ```
 :::
 :::slot right
-Write it once — call it on every sample.
+Write it once, then call it on every sample.
+
+**Try it:** add your own sequence to the list.
 :::
 
 :::notes
@@ -348,11 +373,16 @@ Estimated time for this chapter: 30 minutes.
 :::
 
 ---
+:::meta
+section: Scientific Python
+:::
 # Three libraries cover most life sciences workflows.
 
-- **NumPy** — fast arrays: mathematical operations on entire datasets at once
-- **Pandas** — tabular data: load, filter, group, and summarise spreadsheet-style data
-- **Matplotlib** — publication-quality plots with full control over every element
+:::steps
+- **NumPy** — fast arrays: calculate on a whole dataset at once
+- **Pandas** — tables: load, filter, group and summarise spreadsheet data
+- **Matplotlib** — plots, with control over every element
+:::
 
 :::notes
 Brief overview before diving in. The key message: these libraries handle the heavy lifting
@@ -363,30 +393,32 @@ so students write less code and get faster, more reliable results than with pure
 :::meta
 layout: split
 section: NumPy
+props:
+  ratio: [3, 2]
 :::
-# NumPy operates on *entire arrays* at once.
+# NumPy calculates on whole arrays.
 :::slot left
 ```python live copy
 import numpy as np
 
-measurements = np.array([1.2, 0.8, 2.1, 1.5, 0.9, 2.8, 1.1, 1.7])
+m = np.array([1.2, 0.8, 2.1, 1.5, 0.9, 2.8])
 
-print("Mean:  ", measurements.mean().round(3))
-print("Std:   ", measurements.std().round(3))
-print("Median:", np.median(measurements))
-
-# Vectorised filter — no loop needed
-print("Above 1.5:", measurements[measurements > 1.5])
+print("Mean:  ", m.mean().round(3))
+print("Std:   ", m.std().round(3))
+print("Median:", np.median(m))
+print("> 1.5: ", m[m > 1.5])
 ```
 :::
 :::slot right
-No loops, no manual indexing — fast and readable.
+`m[m > 1.5]` filters without a loop.
+
+Compare it with the `for` loop two chapters ago.
 :::
 
 :::notes
 NumPy operations apply to the whole array at once — no loops. This is both faster and more readable.
-The vectorised style ("broadcast operations") takes getting used to but is worth learning early.
-Demo: ask students to predict what measurements > 1.5 returns before running it.
+The vectorised style takes getting used to but is worth learning early.
+Demo: ask students to predict what `m > 1.5` returns before running it.
 :::
 
 ---
@@ -394,7 +426,7 @@ Demo: ask students to predict what measurements > 1.5 returns before running it.
 layout: focus
 eyebrow: Key insight
 :::
-# Write operations on *arrays*, not on *individual values*.
+# Write operations on *arrays*, not on single values.
 
 :::notes
 This is the most important mental model shift from pure Python to scientific Python.
@@ -417,12 +449,15 @@ and point them to the best free resources.
 :::
 
 ---
+:::meta
+section: Next Steps
+:::
 # What to learn next.
 
-- **Pandas** — load a CSV, filter rows, compute group statistics, export results
-- **Matplotlib / Seaborn** — scatter plots, heatmaps, survival curves, volcano plots
+- **Pandas** — load a CSV, filter rows, compute group statistics
+- **Matplotlib and Seaborn** — scatter plots, heatmaps, volcano plots
 - **scikit-learn** — classification, clustering, dimensionality reduction
-- **BioPython** — sequence analysis, BLAST, GenBank, PDB structure files
+- **BioPython** — sequences, BLAST, GenBank and PDB files
 
 :::notes
 For self-study: the official Python tutorial for syntax, Pandas documentation for data work.
@@ -435,7 +470,7 @@ For life sciences specifically: BioPython docs, and the Python for Bioinformatic
 layout: focus
 eyebrow: Remember
 :::
-# The best way to learn to code is to *write code.*
+# The best way to learn to code is to *write code*.
 
 :::notes
 Close on this. Programming is a skill — it takes practice. The first few weeks feel slow,

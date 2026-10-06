@@ -139,13 +139,15 @@ Technical references for layout, theme and tool authors live in
 Each example keeps its assets beside its slide source so it can be copied as a
 complete folder.
 
-| Example | What it demonstrates |
-|---|---|
-| [Tour](examples/showcase/slides.md) | Start here: each slide shows the Markdown beside what it becomes, from headings to layouts, live code, notes, drawing, a poll and sharing |
-| [Python](examples/python/slides.md) | A real lesson: step-by-step live code, notes on every slide, a poll to check understanding |
-| [FHNW](examples/fhnw/slides.md) | A short German deck in the FHNW theme |
-| [Custom layouts](examples/custom-layouts/slides.md) | A deck-local comparison design and named regions |
-| [Poll](examples/poll/slides.md) | A join slide, then a poll, a scale, a word cloud and open questions; start it with `mdeck run slides.md --network` |
+| Example | Theme | What it demonstrates |
+|---|---|---|
+| [Tour](examples/showcase/slides.md) | Aurora | Start here: each slide shows the Markdown beside what it becomes, from headings to layouts, live code, notes, drawing, a poll and sharing |
+| [Python](examples/python/slides.md) | FHNW | A real lesson: live code to try out, points revealed step by step, notes on every slide, a poll to check understanding |
+| [Poll](examples/poll/slides.md) | Duet | A join slide, then a poll, a scale, a word cloud and open questions; start it with `mdeck run slides.md --network` |
+| [Custom layouts](examples/custom-layouts/slides.md) | Terminal | A deck-local comparison design and named regions |
+
+The docs home page embeds a short talk in the Editorial theme, and the
+screenshots above show Neue.
 
 ## Made at FHNW
 

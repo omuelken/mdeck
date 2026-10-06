@@ -16,20 +16,30 @@ alt: "Contour lines like those on a map"
 id: a-talk-in-a-text-file
 :::
 # A talk in a text file.
-## A tour of mdeck: each slide shows *what you write* and what you get.
+## A tour of mdeck: each slide shows *what is written* and what it becomes.
 
 :::notes
-This deck teaches mdeck by example. Most slides show the Markdown on the left and what it becomes on the right.
+This deck teaches mdeck by example. Most slides show the Markdown beside what it becomes. Open `slides.md` next to it: every slide here is written exactly as shown.
 
-Go through it with the arrow keys or the space bar. Open `slides.md` beside it: every slide here is written exactly as shown.
+Go through it with the arrow keys or the space bar. These notes are only for you; open the presenter view from the launch page to see them beside the slide.
+:::
 
-These notes are only for you. Open the presenter view from the launch page to see them beside the slide.
+---
+:::meta
+layout: chapter
+number: 1
+part: Writing
+description: Plain Markdown, the format AI assistants already write. You can read and change every word.
+:::
+# Write it.
+
+:::notes
+In practice an AI assistant usually writes this file from your own material: old slides, a document, your notes. The `write-slides` skill teaches it mdeck. The next slides show what it writes, so you can read and adjust it.
 :::
 
 ---
 :::meta
 layout: split
-section: Writing
 :::
 # Words become slides
 :::slot left
@@ -60,7 +70,6 @@ Try it: change a heading in `slides.md` and save. The slide updates while it is 
 ---
 :::meta
 layout: split
-section: Writing
 :::
 # Lists and emphasis
 :::slot left
@@ -87,12 +96,9 @@ section: Writing
 :::
 
 ---
-:::meta
-layout: split
-section: Writing
-:::
 # Reveal points one at a time
-:::slot left
+
+:::columns
 ```markdown
 :::steps
 - First, a question.
@@ -100,8 +106,7 @@ section: Writing
 - Then, the answer.
 :::
 ```
-:::
-:::slot right
++++
 :::steps
 - First, a question.
 - Then, a pause.
@@ -111,12 +116,24 @@ section: Writing
 
 :::notes
 Press the next key: each press reveals one point, then moves on. Printed slides and the PDF show all the points.
+
+This slide has no layout: `:::columns` puts the source and the result side by side, and `+++` starts the second column.
 :::
 
 ---
 :::meta
+layout: chapter
+number: 2
+part: Layouts and content
+description: Layouts, pictures, code, tables and callouts. Pick a layout per slide; the theme does the rest.
+:::
+# Lay it out.
+
+---
+:::meta
 layout: split
-section: Layouts
+props:
+  ratio: [3, 2]
 :::
 # Choose a layout
 :::slot left
@@ -133,12 +150,12 @@ attribution: "A teacher"
 A `:::meta` block at the top of a slide holds its settings.
 
 `layout: focus` makes one large statement. The next slide is exactly this.
-
-Others: `title`, `chapter`, `split`, `image-text`, `full-bleed-image`.
 :::
 
 :::notes
-Without a layout, a slide is an ordinary heading with content. This slide is `layout: split`, with the two sides written as `:::slot left` and `:::slot right`.
+Without a layout, a slide is an ordinary heading with content. This slide is `layout: split`, with the two sides written as `:::slot left` and `:::slot right`; `ratio: [3, 2]` gives the code more room.
+
+The built-in layouts are `title`, `chapter`, `focus`, `split`, `image-text` and `full-bleed-image`.
 :::
 
 ---
@@ -151,7 +168,6 @@ attribution: "A teacher"
 ---
 :::meta
 layout: image-text
-section: Layouts
 image: ./img/image.jpg
 alt: "Contour lines like those on a map"
 :::
@@ -165,12 +181,39 @@ alt: "Contour lines"
 :::
 ```
 
-Keep pictures in a folder beside the slides. `alt` describes the picture for people who cannot see it.
+`alt` describes the picture for people who cannot see it.
+
+:::notes
+Keep pictures in a folder beside the slides, here `img/`. The next slide uses the same picture with `layout: full-bleed-image`.
+:::
+
+---
+:::meta
+layout: full-bleed-image
+image: ./img/image.jpg
+alt: "Contour lines like those on a map"
+overlay: true
+:::
+# Or let the picture fill the slide.
+
+:::notes
+This slide is written as:
+
+```markdown
+:::meta
+layout: full-bleed-image
+image: ./img/image.jpg
+overlay: true
+:::
+# Or let the picture fill the slide.
+```
+
+`overlay: true` darkens the picture so the heading stays readable.
+:::
 
 ---
 :::meta
 layout: split
-section: Content
 :::
 # Code you can run
 :::slot left
@@ -197,7 +240,6 @@ Live Python downloads its runtime the first time, so it needs an internet connec
 ---
 :::meta
 layout: split
-section: Content
 :::
 # Tables and formulas
 :::slot left
@@ -207,7 +249,9 @@ section: Content
 | Words | You |
 | Look | The theme |
 
-$A = \pi r^2$
+$$
+A = \pi r^2
+$$
 ```
 :::
 :::slot right
@@ -216,29 +260,28 @@ $A = \pi r^2$
 | Words | You |
 | Look | The theme |
 
-$A = \pi r^2$
+$$
+A = \pi r^2
+$$
 :::
 
 :::notes
-Formulas use LaTeX between dollar signs. Two dollar signs above and below put a formula on its own line.
+Formulas use LaTeX. Single dollar signs put a formula inside a sentence; two dollar signs above and below put it on its own line.
 :::
 
 ---
 :::meta
 layout: split
-section: Content
 :::
-# Tips and columns
+# Tips and warnings
 :::slot left
 ```markdown
 :::tip
 One tip per slide is plenty.
 :::
 
-:::columns
-**Before** the talk
-+++
-**After** the talk
+:::warning
+Check the room's projector.
 :::
 ```
 :::
@@ -247,23 +290,21 @@ One tip per slide is plenty.
 One tip per slide is plenty.
 :::
 
-:::columns
-**Before** the talk
-+++
-**After** the talk
+:::warning
+Check the room's projector.
 :::
 :::
 
 :::notes
-The other callouts are `note`, `important`, `warning` and `caution`. `+++` starts the next column.
+The other callouts are `note`, `important` and `caution`. Add your own label after the type, for example `:::tip Before the talk`.
 :::
 
 ---
 :::meta
 layout: chapter
-number: 2
+number: 3
 part: Presenting
-description: Notes, drawing and questions for the room.
+description: Notes for you, drawing on the slides, and questions for the room.
 id: give-the-talk
 :::
 # Give the talk.
@@ -271,7 +312,6 @@ id: give-the-talk
 ---
 :::meta
 layout: split
-section: Presenting
 :::
 # Notes only you can see
 :::slot left
@@ -296,7 +336,6 @@ This is what the presenter view shows for this slide. Its header also shows what
 
 ---
 :::meta
-section: Presenting
 id: draw-on-any-slide
 :::
 # Draw on any slide
@@ -306,13 +345,12 @@ Press **D** now, or the pen button. Draw with a pen, a highlighter, or a marker 
 Drawings are kept in `slides.drawings.json` beside the slides, and appear in the PDF.
 
 :::notes
+The underline and the circle on this slide were drawn with the pen and saved; they show in every view and in the PDF.
+
 On an iPad, pair it from the launch page: you draw and steer there while the laptop drives the projector.
 :::
 
 ---
-:::meta
-section: Presenting
-:::
 # Which part will you try first?
 
 <poll room="tour" options="Writing|Layouts|Drawing|Polls" />
@@ -327,28 +365,39 @@ Phones join with the QR code. They can reach this computer when you start `mdeck
 
 ---
 :::meta
+layout: chapter
+number: 4
+part: Sharing
+description: One file to send, a PDF, or a folder for a website.
+:::
+# Share it.
+
+---
+:::meta
 layout: split
-section: Sharing
 :::
 # Change the whole look
 :::slot left
 ```markdown
 ---
-theme: neue
-palette: swiss
+theme: editorial
+palette: terra
 ---
 ```
 :::
 :::slot right
-The settings at the top of the file choose the theme and colours for every slide at once.
+Two lines at the top of the file choose the theme and colours for every slide at once.
 
 To try them without changing the file, open the **reader view** and choose **Look**.
+:::
+
+:::notes
+mdeck has six themes and nine palettes, each light or dark. `mdeck list` shows them all, including any kept in an `extensions` folder beside the deck.
 :::
 
 ---
 :::meta
 layout: split
-section: Sharing
 :::
 # Send it, print it, host it
 :::slot left
@@ -366,8 +415,13 @@ mdeck build slides.md
 
 ---
 :::meta
-layout: focus
+layout: title
 :::
-# Now write your own.
+# Now make your own.
+## Hand your slides, documents or notes to an *AI assistant*.
 
-`mdeck new` asks a few questions and starts a deck for you.
+:::notes
+`mdeck skill --install claude` (or codex, cursor, copilot, gemini) installs the `write-slides` skill, which teaches the assistant mdeck. Then point it at your material: “Rebuild lecture-03.pptx as a 20-minute talk.”
+
+Without an assistant, `mdeck new` asks a few questions and starts a deck.
+:::

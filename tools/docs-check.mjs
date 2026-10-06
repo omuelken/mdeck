@@ -18,13 +18,13 @@ try {
   await page.evaluate("document.querySelector('[data-preview] iframe').scrollIntoView()")
   assert.ok(await page.waitFor("!!document.querySelector('[data-preview] iframe')?.contentDocument?.getElementById('deck-theme')"))
   const before = await page.evaluate("document.querySelector('[data-preview] iframe').contentDocument.getElementById('deck-theme').textContent")
-  await page.evaluate("const select = document.querySelector('[data-preview] select'); select.value = 'terminal'; select.dispatchEvent(new Event('change'))")
-  // Terminal starts dark with its default palette, phosphor.
-  assert.ok(await page.waitFor("document.querySelector('[data-preview] iframe')?.contentDocument?.getElementById('deck-palette')?.textContent?.includes('#050805')"))
+  await page.evaluate("const select = document.querySelector('[data-preview] select'); select.value = 'neue'; select.dispatchEvent(new Event('change'))")
+  // Neue starts light with its default palette, swiss.
+  assert.ok(await page.waitFor("document.querySelector('[data-preview] iframe')?.contentDocument?.getElementById('deck-palette')?.textContent?.includes('#e30613')"))
   const after = await page.evaluate("document.querySelector('[data-preview] iframe').contentDocument.getElementById('deck-theme').textContent")
   assert.notEqual(after, before, 'picker actually changes the iframe theme')
   const address = new URL(await page.evaluate("document.querySelector('[data-preview] iframe').src"))
-  assert.equal(address.searchParams.get('theme'), 'terminal')
+  assert.equal(address.searchParams.get('theme'), 'neue')
   assert.equal(address.searchParams.has('design'), false)
   console.log('Documentation checks passed: site builds, initial theme matches the deck, picker changes the preview.')
 } finally { await browser?.close(); rmSync(dir, { recursive: true, force: true }) }

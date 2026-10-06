@@ -21,7 +21,7 @@ test('stripNotes removes notes blocks but nothing else', () => {
   assert.equal(stripNotes('# Many notes\n' + ':::notes\nsecret\n:::\n'.repeat(12)), '# Many notes\n')
   assert.equal(stripNotes(':::notes\nsecret\n:::\n'), '')
   assert.equal(stripNotes(':::notes\nsecret\n:::\n---\n# Next\n\n:::notes\nmore\n:::\n'), '---\n# Next\n')
-  for (const name of ['showcase', 'python', 'fhnw']) {
+  for (const name of ['showcase', 'python', 'poll']) {
     const example = readFileSync(new URL(`../examples/${name}/slides.md`, import.meta.url), 'utf8')
     const before = parseSlides(example), after = parseSlides(stripNotes(example))
     assert.equal(after.slides.length, before.slides.length, name)

@@ -127,15 +127,37 @@ export function collectLocalAssetRefs(markdown) {
   return [...refs]
 }
 
-function maybeInlineAssets(markdown, abs, { inlineImages, inlineMedia }) {
+// Applies fn to the text outside fenced code blocks, so a path shown in a code
+// example stays text instead of becoming an embedded file.
+function outsideCodeFences(markdown, fn) {
+  const lines = markdown.split('\n')
+  let out = '', text = '', fence = null
+  for (const [i, line] of lines.entries()) {
+    const chunk = line + (i < lines.length - 1 ? '\n' : '')
+    const marker = line.match(/^ {0,3}(`{3,}|~{3,})/)?.[1]
+    if (fence) {
+      out += chunk
+      if (marker && marker[0] === fence[0] && marker.length >= fence.length && !line.trim().slice(marker.length).trim()) fence = null
+    } else if (marker) {
+      out += fn(text) + chunk
+      text = ''
+      fence = marker
+    } else text += chunk
+  }
+  return out + fn(text)
+}
+
+export function maybeInlineAssets(markdown, abs, { inlineImages, inlineMedia }) {
   if (!inlineImages && !inlineMedia) return markdown
   const baseDir = dirname(abs)
-  let out = markdown
-  if (inlineImages) out = inlineMarkdownImages(out, baseDir)
-  if (inlineImages) out = inlineHtmlImgSources(out, baseDir)
-  if (inlineImages) out = inlineYamlImageFields(out, baseDir)
-  if (inlineMedia) out = inlineHtmlMediaSources(out, baseDir)
-  return out
+  return outsideCodeFences(markdown, text => {
+    let out = text
+    if (inlineImages) out = inlineMarkdownImages(out, baseDir)
+    if (inlineImages) out = inlineHtmlImgSources(out, baseDir)
+    if (inlineImages) out = inlineYamlImageFields(out, baseDir)
+    if (inlineMedia) out = inlineHtmlMediaSources(out, baseDir)
+    return out
+  })
 }
 
 // ─── Extension registry module ────────────────────────────────────────────

@@ -1,5 +1,5 @@
 ---
-theme: neue
+theme: editorial
 show:
   organization: none
   author: none
@@ -10,8 +10,12 @@ show:
 layout: title
 id: hello
 :::
-# A small idea
-## A clear presentation
+# Write it down.
+## Why every lab keeps a notebook
+
+:::notes
+Ask who has ever repeated an experiment because nobody remembered how it was done.
+:::
 
 ---
 :::meta
@@ -19,27 +23,32 @@ layout: split
 props:
   ratio: [1, 1]
 :::
-# What comes next?
+# A notebook answers three questions.
 
-- Explain the idea.
-- Show an example.
-- Invite questions.
+- What did I do?
+- What did I see?
+- What would I change?
+
+:::notes
+Everything else in a good notebook serves one of these three questions.
+:::
 
 ---
 :::meta
 layout: focus
+attribution: "A saying in many labs"
 :::
-# Good questions make better conversations.
+# If it is not written down, it did not happen.
 
 ---
 :::meta
 layout: chapter
-number: 2
-part: "What we learned"
+number: 1
+part: "Good habits"
 :::
-# Listen first
+# Write as you work.
 
-Three lessons from our conversations.
+Two habits that make a notebook useful a year later.
 
 ---
 :::meta
@@ -47,32 +56,33 @@ layout: split
 props:
   ratio: [1, 1]
 :::
-# Two ways to begin
+# Two habits that pay off
 
 :::slot left
-## Ask
-What do people need?
+## Date every page
+The date and the experiment's name come first, before anything else.
 :::
 
 :::slot right
-## Listen
-Make space for their answers.
+## Record what went wrong
+Failed runs explain the successful ones. Never tear out a page.
 :::
 
 ---
 :::meta
 layout: image-text
-image: ./idea.svg
-alt: "Two overlapping circles labeled Your words and Your audience"
+image: ./notebook.svg
+alt: "An open lab notebook with written steps, a results table and a plot"
 :::
-# Find the connection
+# One page per experiment
 
-Start with something your audience already cares about.
+Aim, materials, steps, results and a short conclusion. Glue in printouts so nothing gets lost.
 
 ---
 :::meta
 layout: full-bleed-image
-image: ./idea.svg
+image: ./notebook.svg
+alt: "An open lab notebook with written steps, a results table and a plot"
 overlay: true
 :::
-# Something worth sharing
+# Your future self will thank you.

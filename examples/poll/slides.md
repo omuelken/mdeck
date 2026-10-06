@@ -1,6 +1,5 @@
 ---
-theme: neue
-palette: forest
+theme: duet
 meta:
   title: "Ask the room"
   author: "Tilman Schieber"
