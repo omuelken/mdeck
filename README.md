@@ -112,7 +112,7 @@ mdeck send talk.md           # one file to email, with a PDF inside
 ## What you get
 
 - **Layouts:** title, chapter, big statement, image and text, split, full-bleed image, and plain content slides, with points that appear one at a time.
-- **Looks:** six themes and nine colour palettes, each light or dark, changeable without touching the slides. Make your own as small `extension.toml` folders beside the deck.
+- **Looks:** six themes and ten colour palettes, each light or dark, changeable without touching the slides. Make your own as small `extension.toml` folders beside the deck.
 - **One launch page:** `mdeck run` opens a page with a live preview, the presenter and audience views, the deck and reader views, the editor, the guides, one-click builds and PDF, the deck's check results, and for decks with a server its health and the presenter code.
 - **Presenting:** a presenter view with notes and timer, and an audience window that stays in sync.
 - **Drawing on slides:** pen with pressure, highlighter and a fading marker, with a mouse, a finger or an iPad pencil (`D`). Drawings are saved in `<deck>.drawings.json` beside the deck and appear in every view, build and PDF. An iPad can present on its own, or pair with the laptop through a QR code on the launch page while the laptop's audience window follows it.
