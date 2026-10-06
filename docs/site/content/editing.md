@@ -1,7 +1,5 @@
 # Edit slides in your browser
 
-> The editor is new and marked **experimental**. It only ever rewrites the parts of your file you change, every change can be undone, and before its first change mdeck keeps a copy of the file (see below).
-
 Your assistant and any text editor write the same slide file. If you prefer clicking and typing in forms, mdeck also has a visual editor:
 
 ```sh
@@ -15,6 +13,8 @@ This opens a page on your own computer with three parts:
 - **Details**, on the right: what the selected slide contains. Every layout has one or more text areas for its content, and some have settings such as a picture or the width of two columns. Speaker notes and the slide's name are here too. The **Markdown** tab shows the same slide as plain text, if you prefer that.
 
 The **Deck** tab in the right panel changes the whole presentation: the theme, the colors, your name and title, and the slide shape.
+
+It is not a drag-and-drop editor like PowerPoint or Keynote. You do not place boxes or resize text on the slide; you fill in each slide's content and settings, and the layout and theme decide where things go and how they look. That is what keeps every slide consistent, and what lets you change the whole look with one setting.
 
 ## Changes are saved as you go
 

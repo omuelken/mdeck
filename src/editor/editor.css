@@ -10,7 +10,6 @@ a { color: #8ab4f8; }
 .editor-topbar .tabs button { padding: 10px 12px; }
 fieldset:disabled input, fieldset:disabled select, fieldset:disabled textarea, fieldset:disabled .btn { opacity: 0.6; cursor: not-allowed; }
 .editor-status { color: #a8a8a8; font-size: 12px; }
-.editor-chip { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #e3c36d; border: 1px solid #5a4a1a; border-radius: 999px; padding: 2px 8px; }
 .editor-status.is-error, .editor-status.is-conflict { color: #f28b82; }
 .editor-status.is-saving, .editor-status.is-unsaved { color: #e3c36d; }
 .editor-main { display: grid; grid-template-columns: 240px minmax(0, 1fr) 400px; min-height: 0; }
