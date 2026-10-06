@@ -10,10 +10,6 @@
 .slide {
   --tint-1: color-mix(in oklab, var(--accent) 9%, var(--bg));
   --tint-2: color-mix(in oklab, var(--accent-2) 12%, var(--bg));
-  /* Two short bars, one per voice: the theme's mark (title and focus slides). */
-  --duet-mark:
-    linear-gradient(var(--accent), var(--accent)) 0 0 / 180px 20px no-repeat,
-    linear-gradient(var(--accent-2), var(--accent-2)) 64px 32px / 180px 20px no-repeat;
 }
 
 /* ─────────────────────────────────────────────
@@ -125,27 +121,61 @@ em {
 strong { color: var(--ink); font-weight: 700; }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: TITLE — the duet mark above a heavy slab headline
+   LAYOUT: TITLE — the boldest slide: all of it in the first accent, a band
+   of the second slanted like the chapter seam, the headline in the
+   accent's own text colour
    ───────────────────────────────────────────── */
+.slide--title {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.slide--title::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-2);
+  clip-path: polygon(85% 0, 91% 0, 81% 100%, 75% 100%);
+  pointer-events: none;
+}
+.slide--title > :not(.slide-logo, .slide-ink) { position: relative; z-index: 1; }
+.slide--title .slide-logo { z-index: 1; }
+.slide--title :is(.slide-header, .slide-header .brand, .slide-footer) { color: var(--on-accent); }
+.slide--title .slide-footer { border-image-source: none; border-top-color: transparent; }
 .slide--title .slide-body {
   justify-content: center;
   align-items: flex-start;
 }
+/* The duet mark: a bar in the slide's text colour, one in the second accent. */
 .slide--title .title-text::before {
   content: '';
   display: block;
   width: 244px;
   height: 52px;
-  background: var(--duet-mark);
+  background:
+    linear-gradient(var(--on-accent), var(--on-accent)) 0 0 / 180px 20px no-repeat,
+    linear-gradient(var(--accent-2), var(--accent-2)) 64px 32px / 180px 20px no-repeat;
   margin-bottom: 64px;
 }
 .slide--title .display {
   font-size: var(--fs-display);
-  max-width: 1560px;
+  color: var(--on-accent);
+  /* Clear of the band on the right. */
+  max-width: 1280px;
+}
+/* The second accent is not readable on the first: emphasis keeps the
+   slide's text colour and is underlined in the second accent. */
+.slide--title .display em {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-2);
+  text-decoration-thickness: 0.09em;
+  text-underline-offset: 0.12em;
+  text-decoration-skip-ink: none;
 }
 .slide--title .subtitle {
   margin-top: 48px;
-  max-width: 1150px;
+  max-width: 1100px;
+  color: var(--on-accent);
 }
 .slide--title.has-image .slide-body {
   display: grid;
@@ -159,6 +189,7 @@ strong { color: var(--ink); font-weight: 700; }
   height: 600px;
   object-fit: cover;
 }
+.slide--title.has-image .display { max-width: none; }
 
 /* ─────────────────────────────────────────────
    LAYOUT: CHAPTER — cut diagonally: a field of the first accent with the
