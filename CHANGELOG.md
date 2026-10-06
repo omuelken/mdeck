@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.2.0 — 2026-10-07
 
 - Lecture blocks look different from each other in every theme, not only academic and sketch: theorems, lemmas and corollaries in the accent with the statement in italics, definitions in the second accent, and a proof without a box, opening with “Proof.” and ending with ∎ right after its last word (terminal writes `[proof]`, like its other log lines). Aurora's callout titles are readable on light glass too.
 - `npm run test:themes` (also in CI) shows every theme, light and dark, on a deck with every built-in layout and kind of content, and fails when content does not fit, text is cut off at the slide's edge or is hard to read on what is behind it, or the page reports an error.
