@@ -17,7 +17,7 @@ theme: neue
 | Theme | Look | Default palette |
 |---|---|---|
 | `neue` | Swiss style: large flush-left type, rules, chapters in full colour | `lagoon` |
-| `aurora` | Geometric shapes and soft colour | `neon` |
+| `aurora` | Northern lights: curtains of light, night-sky chapters, frosted glass | `neon` |
 | `duet` | Slab-serif headings and two accent colours | `neon` |
 | `editorial` | Magazine look with Playfair Display and Lora | `terra` |
 | `fhnw` | The FHNW corporate design | `brand` (the only one) |

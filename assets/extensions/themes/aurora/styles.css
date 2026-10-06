@@ -1,12 +1,121 @@
+/* Aurora — northern lights.
+   Soft curtains of light in the palette's two accents and their blend move
+   across the slides: as a faint shimmer at the edge of content slides, and
+   at full strength on title, chapter and statement slides. Chapter and
+   statement slides are night skies, in the palette's other variant, so a
+   talk alternates between day and night. Surfaces are frosted glass with a
+   fine gradient edge; key words glow in the accent gradient. All colours
+   come from the palette's roles, so every palette works. */
+
+.slide {
+  --aurora-a: var(--accent);
+  --aurora-b: var(--accent-2);
+  --aurora-c: color-mix(in oklab, var(--accent) 50%, var(--accent-2));
+  --aurora-gradient: linear-gradient(120deg, var(--aurora-a) 0%, var(--aurora-c) 50%, var(--aurora-b) 100%);
+  --glass: color-mix(in oklab, var(--bg) 72%, transparent);
+  --glass-edge: linear-gradient(135deg, color-mix(in oklab, var(--aurora-a) 70%, transparent), color-mix(in oklab, var(--rule) 60%, transparent) 45%, color-mix(in oklab, var(--aurora-b) 70%, transparent));
+}
+
+/* The curtains: narrow, tall bands of light hanging from the top of the
+   sky and fading downwards, slanted like an aurora. Every slide has them;
+   how strong is set per slide type with --aurora-strength. */
+.slide::before {
+  content: '';
+  position: absolute;
+  inset: -12% -16% 0;
+  background:
+    radial-gradient(ellipse 4.5% 62% at 8% 6%, var(--aurora-a), transparent 74%),
+    radial-gradient(ellipse 7% 78% at 20% 0%, var(--aurora-c), transparent 74%),
+    radial-gradient(ellipse 3.5% 54% at 31% 10%, var(--aurora-a), transparent 74%),
+    radial-gradient(ellipse 8% 86% at 45% 0%, var(--aurora-b), transparent 74%),
+    radial-gradient(ellipse 4% 58% at 58% 8%, var(--aurora-c), transparent 74%),
+    radial-gradient(ellipse 6.5% 74% at 72% 2%, var(--aurora-a), transparent 74%),
+    radial-gradient(ellipse 5% 66% at 88% 4%, var(--aurora-b), transparent 74%),
+    radial-gradient(ellipse 60% 22% at 50% 0%, color-mix(in oklab, var(--aurora-c) 60%, transparent), transparent 80%);
+  filter: blur(22px);
+  transform: skewX(-18deg);
+  opacity: var(--aurora-strength, 0);
+  pointer-events: none;
+  z-index: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 var(--aurora-reach, 40%), transparent calc(var(--aurora-reach, 40%) + 40%));
+  mask-image: linear-gradient(to bottom, #000 0%, #000 var(--aurora-reach, 40%), transparent calc(var(--aurora-reach, 40%) + 40%));
+}
+/* Content stays above the light. */
+.slide > .slide-header, .slide > .slide-body, .slide > .slide-footer { position: relative; z-index: 1; }
+.slide > .slide-logo { z-index: 1; }
+
+/* The light drifts slowly while presenting; never in print or for people
+   who prefer less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .slide--title::before, .slide--chapter::before, .slide--focus::before { animation: aurora-drift 26s ease-in-out infinite alternate; }
+}
+@keyframes aurora-drift {
+  from { transform: skewX(-18deg) translateX(-2.5%); }
+  to { transform: skewX(-11deg) translateX(2.5%); }
+}
+deck-stage[data-deck-static] .slide::before { animation: none; }
+@media print { .slide::before { animation: none; } }
+
+/* Content slides: a shimmer along the upper edge only. */
+.slide { --aurora-strength: 0.2; --aurora-reach: 0%; }
+
+/* Night slides: the palette's other variant (dark on a light deck). */
+.slide--chapter, .slide--focus {
+  --bg: var(--inverse-bg);
+  --surface: var(--inverse-surface);
+  --ink: var(--inverse-ink);
+  --ink-soft: var(--inverse-ink-soft);
+  --muted: var(--inverse-muted);
+  --rule: var(--inverse-rule);
+  --accent: var(--inverse-accent);
+  --accent-2: var(--inverse-accent-2);
+  --on-accent: var(--inverse-on-accent);
+  background: var(--bg);
+  color: var(--ink);
+}
+
 /* ─────────────────────────────────────────────
-   HEADER / FOOTER RAILS
+   HEADER / FOOTER
    ───────────────────────────────────────────── */
 .slide-header {
   font-weight: 600;
   letter-spacing: 0.10em;
   text-transform: uppercase;
+  color: var(--ink-soft);
 }
 .slide-header .brand { color: var(--ink); }
+/* The section label as a small glass pill with a glowing dot. */
+.slide-header > span:last-child:not(:empty) {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 22px 8px 16px;
+  border-radius: 999px;
+  background: var(--glass-edge) border-box;
+  border: 1px solid transparent;
+  background-clip: border-box;
+  position: relative;
+  isolation: isolate;
+}
+.slide-header > span:last-child:not(:empty)::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  z-index: -1;
+}
+.slide-header > span:last-child:not(:empty)::after {
+  content: '';
+  order: -1;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--aurora-gradient);
+  box-shadow: 0 0 12px var(--aurora-a);
+}
 
 .slide-logo {
   position: absolute;
@@ -29,19 +138,23 @@
   color: var(--muted);
   padding-top: 24px;
 }
-.slide-footer > span:last-child {
-  color: var(--accent);
-  font-weight: 700;
+.slide-footer > span:last-child:not(:first-child) {
+  font-weight: 800;
+  letter-spacing: 0;
+  background: var(--aurora-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* ─────────────────────────────────────────────
-   TYPOGRAPHY HELPERS
+   TYPOGRAPHY
    ───────────────────────────────────────────── */
 .eyebrow {
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
   margin: 0 0 var(--gap-title) 0;
@@ -50,8 +163,8 @@
   font-family: var(--font-display);
   font-size: var(--fs-display);
   font-weight: 800;
-  line-height: 1.0;
-  letter-spacing: -0.04em;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
   margin: 0;
   color: var(--ink);
   text-wrap: balance;
@@ -59,9 +172,9 @@
 .title {
   font-family: var(--font-display);
   font-size: var(--fs-h);
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
   margin: 0;
   color: var(--ink);
   text-wrap: balance;
@@ -70,7 +183,7 @@
   font-family: var(--font-body);
   font-size: var(--fs-sub);
   font-weight: 400;
-  line-height: 1.25;
+  line-height: 1.3;
   letter-spacing: -0.01em;
   color: var(--ink-soft);
   margin: 0;
@@ -90,94 +203,46 @@
   font-size: var(--fs-small);
   color: var(--muted);
 }
+/* Key words glow in the accent gradient. */
 em {
   font-style: normal;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  background: var(--aurora-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+strong { color: var(--ink); font-weight: 700; }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: TITLE
+   LAYOUT: TITLE — the full aurora over the sky
    ───────────────────────────────────────────── */
-
-/* Ambient gradient blobs */
-.slide--title::before {
-  content: '';
-  position: absolute;
-  top: 10%;
-  left: -20%;
-  width: 900px;
-  height: 900px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
-  filter: blur(80px);
-  opacity: 0.06;
-  pointer-events: none;
-}
-.slide--title::after {
-  content: '';
-  position: absolute;
-  bottom: 5%;
-  right: -20%;
-  width: 900px;
-  height: 900px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--accent-2) 0%, transparent 70%);
-  filter: blur(80px);
-  opacity: 0.06;
-  pointer-events: none;
-}
-
-
+.slide--title { --aurora-strength: 0.5; --aurora-reach: 30%; }
 .slide--title .slide-body {
   justify-content: center;
   align-items: center;
   text-align: center;
-  position: relative;
-  z-index: 1;
 }
 .slide--title .display {
-  font-size: var(--fs-display);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  max-width: 1400px;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 168px;
+  max-width: 1500px;
 }
-
-/* Gradient accent line between headline and subtitle */
+.slide--title .title-text { display: flex; flex-direction: column; align-items: center; }
 .slide--title .subtitle {
-  margin-top: var(--gap-title);
-  max-width: 1000px;
-  position: relative;
+  margin-top: 56px;
+  max-width: 1100px;
 }
-.slide--title .subtitle::before {
-  content: '';
-  position: absolute;
-  top: calc(var(--gap-title) * -0.5);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 64px;
-  height: 3px;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-  border-radius: 2px;
-  opacity: 0.5;
-}
-/* TITLE + image: horizontal strip at top, text centered below */
 .slide--title.has-image .slide-body {
   align-items: stretch;
   justify-content: flex-start;
 }
 .slide--title.has-image .title-image {
   width: 100%;
-  height: 300px;
+  height: 320px;
   object-fit: cover;
   flex-shrink: 0;
+  border-radius: 24px;
 }
+.slide--title.has-image .display { font-size: 120px; }
 .slide--title.has-image .title-text {
   flex: 1;
   display: flex;
@@ -187,53 +252,56 @@ em {
 }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: CHAPTER
+   LAYOUT: CHAPTER — a night sky with bright curtains
    ───────────────────────────────────────────── */
+.slide--chapter { --aurora-strength: 0.85; --aurora-reach: 35%; }
 .slide--chapter .slide-body {
-  justify-content: center;
+  justify-content: flex-end;
   align-items: flex-start;
+  padding-bottom: 24px;
 }
 .chapter-num {
   font-family: var(--font-display);
-  font-size: 280px;
+  font-size: 340px;
   font-weight: 800;
-  line-height: 0.85;
-  letter-spacing: -0.05em;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  line-height: 0.82;
+  letter-spacing: -0.06em;
+  background: var(--aurora-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin: 0 0 32px 0;
+  filter: drop-shadow(0 0 40px color-mix(in oklab, var(--aurora-c) 45%, transparent));
+  margin: 0 0 24px -12px;
 }
 .chapter-meta {
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--ink-soft);
   margin: 0 0 20px 0;
 }
-.chapter-title {
+.slide--chapter .chapter-title {
   font-family: var(--font-display);
-  font-size: var(--fs-title);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  margin: 0 0 64px 0;
+  font-size: 112px;
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+  margin: 0 0 40px 0;
   color: var(--ink);
-  max-width: 1200px;
+  max-width: 1400px;
+  text-wrap: balance;
 }
-.chapter-desc {
+.slide--chapter .chapter-desc {
   font-family: var(--font-body);
   font-size: var(--fs-sub);
   font-weight: 400;
   line-height: 1.35;
   color: var(--ink-soft);
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0;
 }
-/* CHAPTER + image: right-column layout */
 .slide--chapter.has-image .slide-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -243,83 +311,64 @@ em {
 .slide--chapter.has-image .chapter-content {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: flex-start;
 }
 .slide--chapter.has-image .chapter-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 24px;
 }
 
 /* ─────────────────────────────────────────────
-   LAYOUT: FOCUS
+   LAYOUT: FOCUS — a statement under the night sky
    ───────────────────────────────────────────── */
-
-/* Ambient blobs on focus slides too */
-.slide--focus::before {
-  content: '';
-  position: absolute;
-  top: -10%;
-  right: -15%;
-  width: 700px;
-  height: 700px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
-  filter: blur(80px);
-  opacity: 0.05;
-  pointer-events: none;
-}
-
+.slide--focus { --aurora-strength: 0.6; --aurora-reach: 20%; }
 .slide--focus .slide-body {
   justify-content: center;
   align-items: center;
   text-align: center;
-  position: relative;
-  z-index: 1;
 }
-
-/* Glass pill eyebrow */
 .focus-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 12px;
   padding: 10px 28px 10px 20px;
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  border-radius: 999px;
+  background: var(--glass);
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
-  border: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+  border: 1px solid color-mix(in oklab, var(--rule) 70%, transparent);
   font-family: var(--font-body);
   font-size: var(--fs-eyebrow);
-  font-weight: 600;
-  letter-spacing: 0.10em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-soft);
   margin: 0 0 56px 0;
 }
-/* Gradient dot inside pill */
 .focus-eyebrow::before {
   content: '';
-  display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-  flex-shrink: 0;
+  background: var(--aurora-gradient);
+  box-shadow: 0 0 12px var(--aurora-a);
 }
-
-.focus-statement {
+.focus-statement,
+.slide--focus .focus-content h1,
+.slide--focus .focus-content p {
   font-family: var(--font-display);
-  font-size: var(--fs-focus);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.025em;
+  font-size: 100px;
+  font-weight: 800;
+  line-height: 1.06;
+  letter-spacing: -0.04em;
   color: var(--ink);
-  max-width: 1400px;
+  max-width: 1500px;
   margin: 0;
   text-wrap: balance;
+  text-align: center;
 }
 .focus-content {
   display: flex;
@@ -327,24 +376,11 @@ em {
   align-items: center;
   width: 100%;
 }
-.focus-content h1,
-.focus-content p {
-  font-family: var(--font-display);
-  font-size: var(--fs-focus);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.025em;
-  color: var(--ink);
-  margin: 0;
-  text-wrap: balance;
-  text-align: center;
-  max-width: 1400px;
-}
 .focus-attribution {
   font-family: var(--font-body);
   font-size: var(--fs-small);
   font-weight: 600;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
   margin: 56px 0 0 0;
@@ -359,15 +395,16 @@ em {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--rule);
+  background: var(--surface);
   overflow: hidden;
   position: relative;
-  border-radius: 16px;
+  border-radius: 28px;
+  box-shadow: 0 24px 60px -24px color-mix(in oklab, var(--aurora-c) 45%, transparent);
 }
 .image-placeholder {
   width: 100%;
   height: 100%;
-  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--rule) 40%, var(--bg)) 0 22px, var(--bg) 22px 44px);
+  background: repeating-linear-gradient(135deg, var(--surface) 0 22px, var(--bg) 22px 44px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -381,45 +418,45 @@ em {
   background: var(--bg);
   padding: 14px 20px;
   border: 1px solid var(--rule);
-  border-radius: 4px;
+  border-radius: 999px;
 }
-.text-pane .title { font-size: 72px; font-weight: 700; }
+.text-pane .title { font-size: 76px; }
 .text-pane .body-text + .body-text { margin-top: 8px; }
 .text-pane .eyebrow { margin-bottom: 8px; }
 
 /* ─────────────────────────────────────────────
-   LISTS (global — any slide with a ul)
+   LISTS — glowing dots, gradient numbers
    ───────────────────────────────────────────── */
 .slide-body ul li {
   font-weight: 400;
   line-height: 1.35;
-  padding-left: 44px;
+  padding-left: 46px;
   position: relative;
 }
-/* Gradient circle bullet */
 .slide-body ul li::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0.5em;
-  width: 10px;
-  height: 10px;
+  top: 0.42em;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  background: var(--aurora-gradient);
+  box-shadow: 0 0 14px color-mix(in oklab, var(--aurora-a) 55%, transparent);
 }
 .slide-body ol li {
-  padding-left: 56px;
+  padding-left: 60px;
+  position: relative;
 }
-/* Gradient number */
 .slide-body ol li::before {
   content: counter(slide-ol);
   position: absolute;
   left: 0;
   top: 0;
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.35;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  background: var(--aurora-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -428,40 +465,43 @@ em {
 /* ─────────────────────────────────────────────
    LAYOUT: FULL-BLEED IMAGE
    ───────────────────────────────────────────── */
+.slide--full-bleed-image::before { display: none; }
 .slide--full-bleed-image.has-overlay .slide-bg::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.15));
 }
 .slide--full-bleed-image .overlay-title {
   font-family: var(--font-display);
-  font-size: var(--fs-h);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
   color: #fff;
   margin: 0;
-  max-width: 1200px;
+  max-width: 1300px;
   text-wrap: balance;
 }
 
 /* ─────────────────────────────────────────────
-   GENERIC / CONTENT SLIDE
+   CONTENT SLIDE
    ───────────────────────────────────────────── */
 .slide-body h1 {
   font-family: var(--font-display);
-  font-size: var(--fs-h);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+  font-size: 76px;
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
   color: var(--ink);
   margin: 0 0 var(--gap-title) 0;
+  max-width: 1500px;
+  text-wrap: balance;
 }
 .slide-body h2 {
   font-family: var(--font-display);
   font-size: var(--fs-sub);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -478,33 +518,81 @@ em {
 }
 
 /* ─────────────────────────────────────────────
-   CODE BLOCK COMPONENT
+   GLASS — callouts and code as frosted panes with a gradient edge
    ───────────────────────────────────────────── */
+.slide-body .callout {
+  position: relative;
+  isolation: isolate;
+  border: 1.5px solid transparent;
+  border-radius: 22px;
+  background: var(--glass-edge) border-box;
+  padding: 26px 34px 28px;
+  margin: 36px 0 0;
+  max-width: 1300px;
+  box-shadow: 0 18px 50px -24px color-mix(in oklab, var(--aurora-c) 50%, transparent);
+}
+.slide-body .callout::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: color-mix(in oklab, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  z-index: -1;
+}
+.slide-body .callout-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 10px 0;
+}
+.slide-body .callout-title::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+}
+.slide-body .callout p { padding-left: 0; color: var(--ink); font-size: var(--fs-body); }
+.slide-body .callout-tip .callout-title { color: var(--accent); }
+.slide-body .callout-note .callout-title { color: var(--callout-note); }
+.slide-body .callout-important .callout-title { color: var(--callout-important); }
+.slide-body .callout-warning .callout-title { color: var(--callout-warning); }
+.slide-body .callout-caution .callout-title { color: var(--callout-caution); }
+
 .code-block {
-  --code-bg: var(--surface);
-  --code-radius: 12px;
+  --code-bg: color-mix(in oklab, var(--surface) 92%, transparent);
+  --code-radius: 20px;
   --code-size: 30px;
   background: var(--code-bg);
   border-radius: var(--code-radius);
-  border-left: none;
-  padding: 40px 48px 40px calc(48px + 6px);
+  padding: 40px 48px;
   position: relative;
   margin: 0;
   overflow: hidden;
   font-size: var(--code-size);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   line-height: 1.6;
-  border: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid color-mix(in oklab, var(--rule) 70%, transparent);
+  box-shadow: 0 18px 50px -24px color-mix(in oklab, var(--aurora-c) 45%, transparent);
 }
+/* A thin line of light along the top edge. */
 .code-block::before {
   content: '';
   position: absolute;
-  left: 0;
+  left: 28px;
+  right: 28px;
   top: 0;
-  bottom: 0;
-  width: 6px;
-  background: linear-gradient(to bottom, var(--accent), var(--accent-2));
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--aurora-gradient);
 }
 .code-block code {
   font-family: inherit;
@@ -514,51 +602,13 @@ em {
 }
 
 /* ─────────────────────────────────────────────
-   CALLOUTS — card style with colored top accent
+   AUDIENCE QUESTIONS — bars of light, glass cards
    ───────────────────────────────────────────── */
-/* Callout: pill tag + plain body, no card wrapper */
-.callout {
-  background: none;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.callout-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 28px 10px 20px;
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  border: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-  font-family: var(--font-body);
-  font-size: var(--fs-eyebrow);
-  font-weight: 600;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  margin: 0 0 20px 0;
-}
-.callout-title::before {
-  content: '';
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
-}
-.callout-note      .callout-title { color: var(--callout-note); }
-.callout-tip       .callout-title { color: var(--callout-tip); }
-.callout-important .callout-title { color: var(--callout-important); }
-.callout-warning   .callout-title { color: var(--callout-warning); }
-.callout-caution   .callout-title { color: var(--callout-caution); }
+.slide .poll-track, .slide .scale-track { border-radius: 999px; background: color-mix(in oklab, var(--rule) 55%, transparent); }
+.slide .poll-fill { border-radius: 999px; background: var(--aurora-gradient); box-shadow: 0 0 18px color-mix(in oklab, var(--aurora-a) 45%, transparent); }
+.slide .scale-fill { border-radius: 12px 12px 0 0; background: linear-gradient(to top, var(--aurora-a), var(--aurora-b)); }
+.slide .question-cards li { border-radius: 18px; border-left: 0; background: var(--glass); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--rule) 70%, transparent); }
+.slide .poll-join { border-radius: 24px; }
 
 /* ─────────────────────────────────────────────
    MATH (KaTeX)
@@ -569,4 +619,3 @@ em {
   overflow-x: auto;
   overflow-y: hidden;
 }
-

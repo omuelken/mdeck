@@ -17,7 +17,7 @@ If you already have a settings block there, change the existing lines rather tha
 | Name to use | What it looks like |
 |---|---|
 | `neue` | Swiss style: large type, clear lines, chapters in full colour |
-| `aurora` | A modern look with geometric shapes and colour accents |
+| `aurora` | Northern lights: curtains of light, night-sky chapters and glass |
 | `duet` | Two accent colours for contrasting ideas |
 | `editorial` | A book-like look with serif headings |
 | `fhnw` | The FHNW visual identity |

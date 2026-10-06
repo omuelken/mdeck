@@ -2,7 +2,7 @@ schema = 1
 kind = "theme"
 id = "aurora"
 title = "Aurora"
-description = "Geometric shapes with a violet accent and a derived magenta second accent."
+description = "Northern lights: curtains of light in the accent colours, night-sky chapter and statement slides, frosted glass."
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
 palette = "neon"
 fonts = [
