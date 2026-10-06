@@ -4,7 +4,7 @@ id = "terminal"
 title = "Terminal"
 description = "A terminal session: JetBrains Mono, headings at a prompt, a blinking cursor, log-line callouts and a tmux status bar; dark by default."
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
-palette = "forest"
+palette = "phosphor"
 appearance = "dark"
 fonts = [
   "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap",

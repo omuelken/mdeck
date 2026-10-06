@@ -41,7 +41,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | Field | Default | Description |
 |---|---|---|
 | `theme` | `neue` | Theme name |
-| `palette` | _(theme default)_ | Colour palette: `lagoon`, `swiss`, `cobalt`, `nordic`, `graphite`, `terra`, `forest`, `ember`, `neon`, or one of your own |
+| `palette` | _(theme default)_ | Colour palette: `lagoon`, `swiss`, `cobalt`, `nordic`, `graphite`, `terra`, `forest`, `ember`, `neon`, `phosphor`, or one of your own |
 | `appearance` | _(theme default)_ | `light` or `dark`: which variant of the palette the slides use |
 | `meta.title` | — | Deck title (shown in footer) |
 | `meta.author` | — | Author name (shown in footer) |
@@ -123,9 +123,10 @@ Each palette has a light and a dark variant; `appearance:` picks one.
 | `nordic` | Ice grey, navy, steel blue | Polar night, ice blue |
 | `graphite` | Black and white, steel blue | Charcoal, light steel blue |
 | `terra` | Cream, navy, brick red (editorial's default) | Navy, cream, coral |
-| `forest` | Deep green, moss, ochre | Forest night, light green (terminal's default) |
+| `forest` | Deep green, moss, ochre | Forest night, light green |
 | `ember` | Sand, espresso, orange | Dark brown, glowing orange |
 | `neon` | White, violet, magenta (aurora's default) | Black, neon violet and pink |
+| `phosphor` | Paper printout, green, ochre (terminal's default) | Phosphor green on black, amber |
 
 The FHNW theme uses its own palette, `brand`, and no other.
 

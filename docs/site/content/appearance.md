@@ -40,6 +40,7 @@ To use other colours, set `palette` to one of these:
 | `forest` | Deep green with moss and ochre |
 | `ember` | Sand and espresso with orange |
 | `neon` | Violet and magenta, loud |
+| `phosphor` | Green on black, like an old terminal screen |
 
 ```yaml
 ---

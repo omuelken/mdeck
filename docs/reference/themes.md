@@ -21,7 +21,7 @@ theme: neue
 | `duet` | Two voices: heavy slab headings, split slides as two colour fields, diagonal chapters | `cobalt` |
 | `editorial` | Magazine spread: masthead rule, drop caps, pull quotes, Roman chapter numerals | `terra` |
 | `fhnw` | The FHNW corporate design | `brand` (the only one) |
-| `terminal` | A terminal session: prompts, a blinking cursor, a tmux status bar | `forest`, dark |
+| `terminal` | A terminal session: prompts, a blinking cursor, a tmux status bar | `phosphor`, dark |
 
 `mdeck list my-talk.md` lists them with their descriptions.
 
