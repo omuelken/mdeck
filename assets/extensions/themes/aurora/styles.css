@@ -285,14 +285,18 @@ strong { color: var(--ink); font-weight: 700; }
   font-family: var(--font-display);
   font-size: 340px;
   font-weight: 800;
-  line-height: 0.82;
+  /* Gradient text is painted only inside the element's box: a line height
+     below the glyphs' height cut off the bottom of the digits. The full line
+     height, with the spacing taken back by the margins. */
+  line-height: 1.05;
+  padding-right: 0.04em;
   letter-spacing: -0.06em;
   background: var(--aurora-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   filter: drop-shadow(0 0 40px color-mix(in oklab, var(--aurora-c) 45%, transparent));
-  margin: 0 0 24px -12px;
+  margin: -0.12em 0 -0.06em -12px;
 }
 .chapter-meta {
   font-family: var(--font-body);
