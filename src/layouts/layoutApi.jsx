@@ -57,11 +57,28 @@ export function extractContent(markdown, { headingLevels = [], paragraph = false
 
 // ─── Pictures ─────────────────────────────────────────────────────────────
 
-// A picture from the slide's settings. An SVG that uses the theme's colour
-// variables is drawn inline, so it follows the theme, palette and light or
-// dark; `fit: cover` fills its box like a photo, otherwise it fits inside.
+// An SVG picture that uses the theme's colour variables is drawn inline, so it
+// follows the theme, palette and light or dark. The build lists them by the
+// path the deck uses.
+export const themedSvg = src => themedSvgs[src] ?? themedSvgs[String(src ?? '').split(/[?#]/)[0]]
+
+const attribute = (tag, name) => tag.match(new RegExp(`\\s${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, 'i'))?.slice(1).find(v => v != null)
+
+// Pictures in slide text keep the drawing's own size, like an <img>.
+export function inlineThemedPictures(html) {
+  if (!html || !html.includes('<img')) return html
+  return html.replace(/<img\b[^>]*>/gi, tag => {
+    const markup = themedSvg(attribute(tag, 'src'))
+    if (!markup) return tag
+    const alt = attribute(tag, 'alt') ?? ''
+    return `<span class="themed-picture themed-picture--inline" role="img" aria-label="${alt}">${markup}</span>`
+  })
+}
+
+// A picture from the slide's settings; `fit: cover` fills its box like a
+// photo, otherwise the drawing fits inside.
 export function Picture({ src, alt, fit, position, class: className, ...attributes }) {
-  const markup = themedSvgs[src] ?? themedSvgs[String(src ?? '').split(/[?#]/)[0]]
+  const markup = themedSvg(src)
   if (!markup) return <img class={className} src={src} alt={alt} style={{ objectFit: fit, objectPosition: position }} {...attributes} />
   const aspect = fit === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet'
   // The box sets the size; the drawing scales inside it.
@@ -90,7 +107,7 @@ export function HtmlContent({ html, class: className, ...attributes }) {
     return () => mounted.forEach(wrapper => render(null, wrapper))
   }, [html])
 
-  return <div class={className} {...attributes} ref={ref} dangerouslySetInnerHTML={{ __html: html }} />
+  return <div class={className} {...attributes} ref={ref} dangerouslySetInnerHTML={{ __html: inlineThemedPictures(html) }} />
 }
 
 // ─── Header / footer / footnotes rails ────────────────────────────────────

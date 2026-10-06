@@ -89,6 +89,12 @@ and hydrates both built-in and deck-local components. It exposes a `data-region`
 attribute for integrations. Footnotes are numbered across all regions and placed
 in the shared frame.
 
+For a picture from a property, render `<Picture src={props.image} alt={props.alt}
+fit={props.fit} position={props.position} class="…" />` instead of an `<img>`.
+It is an `<img>` for ordinary pictures; an SVG that uses the palette's colours
+(`var(--accent)` …) is drawn inline so it follows the theme. `themedSvg(src)`
+returns that SVG's markup, or nothing, for layouts that place it themselves.
+
 The framework wraps the result in `SlideFrame`; do not add a second `<section>`
 or frame in your renderer. `SlideFrame`, `MarkdownRegion`, and `HtmlContent` are
 also exported from `mdeck/layout` for integrations. The API import resolves

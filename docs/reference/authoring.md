@@ -585,8 +585,10 @@ Reference images with standard Markdown syntax or the `image:` frontmatter field
 ![Alt text](./img/diagram.png)
 ```
 
-An SVG used as the `image` of a `title` or `image-text` slide whose source
-contains `var(--…)` is drawn inline instead of as an `<img>`, so it can use the
+A local SVG whose source contains `var(--…)` is drawn inline instead of as an
+`<img>`, both in slide text (`![…](./img/drawing.svg)` or `<img src>`) and as a
+layout's `image` (`title`, `chapter`, `image-text`, `full-bleed-image`, and
+local layouts that render it with `Picture` from `mdeck/layout`). It can use the
 palette's custom properties (`--bg`, `--surface`, `--ink`, `--ink-soft`,
 `--muted`, `--rule`, `--accent`, `--accent-2`, `--on-accent`) and follows the
 theme, palette and appearance. Give each a fallback (`var(--accent, #1f3fd1)`)
