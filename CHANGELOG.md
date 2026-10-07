@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.0.0 — unreleased
+## 3.1.0 — 2026-10-07
 
 - Packs are gone: every theme and palette is installed on its own. `mdeck themes install duet` installs the theme with its default palette (`cobalt`), and `mdeck palettes install solarized` a palette; both have `search`, `remove`, `update` and `list`. A palette made for one theme (FHNW's `brand`) brings that theme along and goes with it. A palette an installed theme uses by default is not removed while that theme is there. Installs go into `themes/<id>/` and `palettes/<id>/` of the extensions folder, so a theme and a palette may share a name.
 - A theme or palette carries its version, author, licence and the oldest mdeck it needs in its own `extension.toml` (`version`, `author`, `license`, `homepage`, `mdeck`); `pack.toml` is gone. The built-in ones are back in `assets/extensions/themes` and `assets/extensions/palettes`, and are removed and installed again one by one (`theme:aurora` in `~/.mdeck/removed.json`).

@@ -19,7 +19,7 @@ const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-packages-'))
 // default palette is in the repository; a theme and a palette that belong to
 // each other; and a theme that uses a built-in palette.
 const repo = resolve(temp, 'repo')
-const META = 'version = "VERSION"\nauthor = "Test"\nlicense = "MIT"\nmdeck = ">=4.0.0"\n'
+const META = 'version = "VERSION"\nauthor = "Test"\nlicense = "MIT"\nmdeck = ">=3.1.0"\n'
 function write(kind, id, files, version = '1.0.0') {
   const dir = resolve(repo, `${kind}s`, id)
   rmSync(dir, { recursive: true, force: true })

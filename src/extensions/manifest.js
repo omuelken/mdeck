@@ -88,7 +88,7 @@ function validatePackage(raw, fail) {
   if (raw.version != null) { if (typeof raw.version !== 'string' || !VERSION_RE.test(raw.version)) fail('version must look like 1.0.0', 'version'); pkg.version = raw.version }
   for (const key of ['author', 'license']) if (raw[key] != null) { if (typeof raw[key] !== 'string' || !raw[key].trim()) fail(`${key} must be text`, key); pkg[key] = raw[key].trim() }
   if (raw.homepage != null) { if (typeof raw.homepage !== 'string' || !/^https:\/\//.test(raw.homepage)) fail('homepage must be an https:// address', 'homepage'); pkg.homepage = raw.homepage }
-  if (raw.mdeck != null) { if (typeof raw.mdeck !== 'string' || !RANGE_RE.test(raw.mdeck)) fail('mdeck must look like ">=4.0.0"', 'mdeck'); pkg.mdeck = raw.mdeck }
+  if (raw.mdeck != null) { if (typeof raw.mdeck !== 'string' || !RANGE_RE.test(raw.mdeck)) fail('mdeck must look like ">=3.1.0"', 'mdeck'); pkg.mdeck = raw.mdeck }
   return pkg
 }
 

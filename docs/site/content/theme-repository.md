@@ -79,7 +79,7 @@ palettes/
 version = "1.0.0"
 author = "Your Name"
 license = "MIT"
-mdeck = ">=4.0.0"
+mdeck = ">=3.1.0"
 ```
 
    A theme names its default palette (`palette = "harbour-night"`); it must be in the repository or come with mdeck, and is installed along with the theme.
