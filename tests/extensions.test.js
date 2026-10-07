@@ -151,6 +151,9 @@ test('deck checks agree with the registry about themes, palettes and parameters'
   assert.deepEqual(moved.map(d => d.code), ['unknown-theme', 'unknown-palette'])
   assert.match(moved[0].message, /no longer built into mdeck; .*mdeck themes install duet$/)
   assert.match(moved[1].message, /mdeck themes install earth$/)
+  // Palettes removed for a near twin say which one to use.
+  const replaced = validateDeck(parseSlides('---\ntheme: neue\npalette: graphite\n---\n# Hi'), options)
+  assert.match(replaced[0].message, /"graphite" was removed from mdeck; use palette: nordic/)
 })
 
 test('defaults are typed, isolated per slide and support legacy image fields', () => {

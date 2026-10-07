@@ -30,7 +30,7 @@ The presenter view and the reader view switch palette and light or dark without 
 
 Each theme names a default: neue uses `swiss`, academic `nordic`, aurora `neon`.
 
-More palettes are in the [theme repository](https://github.com/tilman-schieber/mdeck-themes). The palettes cobalt, terra, phosphor, pastel, ember and forest, built in before mdeck 3.0, are there: cobalt in the `duet` pack, terra in `editorial`, phosphor in `terminal`, pastel in `sketch`, and ember and forest in `earth`. Install one with `mdeck themes install <pack> my-talk.md`.
+More palettes are in the [theme repository](https://github.com/tilman-schieber/mdeck-themes). The palettes cobalt, terra, phosphor, pastel and forest, built in before mdeck 3.0, are there: cobalt in the `duet` pack, terra in `editorial`, phosphor in `terminal`, pastel in `sketch`, and forest in `earth`. Graphite and ember were removed because the built-in nordic and paper look almost the same; a deck that names them is told which to use. Install one with `mdeck themes install <pack> my-talk.md`.
 
 ## Colours
 

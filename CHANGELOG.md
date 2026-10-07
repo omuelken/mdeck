@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The palettes `graphite` and `ember` are gone from the theme repository: they looked almost the same as the built-in `nordic` and `paper`. A deck that names one is told which to use instead; the `earth` pack keeps `forest`.
 - Fixed: the message for a theme or palette that moved to the theme repository said it would be installed beside the deck, but `mdeck themes install` installs for every deck by default. It now reads, for example, "The theme "duet" is no longer built into mdeck; install it with: mdeck themes install duet".
 
 ## 3.0.0 — 2026-10-07

@@ -132,8 +132,9 @@ Earlier versions of mdeck came with more themes and palettes. They are now packs
 | `fhnw` | The FHNW visual identity, with its own `brand` palette only |
 | `terminal` | The terminal theme (headings typed at a prompt, a status bar) and the `phosphor` palette; it starts dark |
 | `sketch` | The sketch theme (handwriting, marker scribbles, sticky notes) and the `pastel` palette |
-| `earth` | The `ember` and `forest` palettes |
-| `graphite` | The `graphite` palette: black and white with a steel-blue accent |
+| `earth` | The `forest` palette |
+
+The palettes `graphite` and `ember` were removed: use `nordic` or `paper`, which come with mdeck and look almost the same.
 
 A deck that still names one of them stops with a message that tells you what to install, for example:
 

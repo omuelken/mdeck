@@ -128,7 +128,7 @@ Each palette has a light and a dark variant; `appearance:` picks one.
 | `lagoon` | Teal on warm stone | Bright teal on teal-black |
 | `paper` | Off-white, near-black, orange (minimal's default) | Charcoal, soft orange |
 
-More palettes (cobalt, terra, phosphor, pastel, ember, forest, among others)
+More palettes (cobalt, terra, phosphor, pastel, forest, among others)
 are in the theme repository; install them with `mdeck themes install <pack> <deck>.md`.
 
 ---

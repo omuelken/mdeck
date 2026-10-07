@@ -40,7 +40,7 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "test": "node --test",
+    "test": "node --test --import ./tests/isolate-home.js",
     "test:browser": "node tools/browser-check.mjs",
     "test:server": "node tools/server-check.mjs",
     "test:docs": "node tools/docs-check.mjs",
