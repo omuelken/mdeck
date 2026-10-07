@@ -210,18 +210,22 @@ export function deckLookOnly(registry, deckConfig = {}) {
 
 // `editor` keeps the page alive while `mdeck edit` rewrites the deck: deck
 // changes only invalidate the module, validation errors are warnings, and
-// extension changes are announced instead of forcing a reload.
-export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, ink = true, embedFonts: embedThemeFonts = false, deckLook = false } = {}) {
+// extension changes are announced instead of forcing a reload. `source` is
+// the deck's text where there is no file (`mdeck design`, on the sample deck);
+// `slidesPath` then only says where its folder is.
+export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, ink = true, embedFonts: embedThemeFonts = false, deckLook = false, source: given = null } = {}) {
   const abs = resolve(slidesPath)
+  const readDeck = () => given ?? readFileSync(abs, 'utf-8')
+  const watchDeck = context => { if (given === null) context.addWatchFile(abs) }
   const sourceFor = raw => stripNotes ? stripNotesFrom(raw) : raw
   const inkPath = inkFileFor(abs)
   const extensionDirs = extensionRoots(abs).map(root => root.dir)
-  let componentDirs = componentFolders(abs).map(folder => folder.dir)
+  let componentDirs = componentFolders(abs, readDeck()).map(folder => folder.dir)
   const watchDirs = () => [...extensionDirs, ...componentDirs]
   const isWatched = file => watchDirs().some(dir => resolve(file).startsWith(dir + sep))
   // A changed `components:` list takes effect without restarting the server.
   const followComponentFolders = server => {
-    const next = componentFolders(abs).map(folder => folder.dir)
+    const next = componentFolders(abs, readDeck()).map(folder => folder.dir)
     if (next.join('\n') === componentDirs.join('\n')) return false
     componentDirs = next
     server.watcher.add(next)
@@ -265,8 +269,8 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     },
     load(id) {
       if (id === RESOLVED_ID) {
-        this.addWatchFile(abs)
-        const raw = readFileSync(abs, 'utf-8')
+        watchDeck(this)
+        const raw = readDeck()
         const registry = loadRegistry(abs)
         for (const warning of registry.warnings) this.warn(warning)
         const diagnostics = validateDeck(parseSlides(raw), {
@@ -286,7 +290,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         // import. The dev server's watcher notices the file once it appears.
         if (existsSync(inkPath)) this.addWatchFile(inkPath)
         let size = {}
-        try { const config = parseSlides(readFileSync(abs, 'utf-8')).deckConfig ?? {}; size = { width: config.width ?? 1920, height: config.height ?? 1080 } } catch {}
+        try { const config = parseSlides(readDeck()).deckConfig ?? {}; size = { width: config.width ?? 1920, height: config.height ?? 1080 } } catch {}
         let data = emptyInk(size)
         if (ink && existsSync(inkPath)) {
           try { data = normalizeInk(JSON.parse(readFileSync(inkPath, 'utf-8')), size) } catch (error) { this.warn(`${inkPath}: ${error.message}; showing no ink`) }
@@ -294,8 +298,8 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         return `export default ${JSON.stringify(data)}\nexport const inkFileName = ${JSON.stringify(basename(inkPath))}`
       }
       if (id === RESOLVED_SVGS_ID) {
-        this.addWatchFile(abs)
-        const svgs = themedSvgs(abs, sourceFor(readFileSync(abs, 'utf8')))
+        watchDeck(this)
+        const svgs = themedSvgs(abs, sourceFor(readDeck()))
         for (const { file } of Object.values(svgs)) this.addWatchFile(file)
         return `export default ${JSON.stringify(Object.fromEntries(Object.entries(svgs).map(([ref, { markup }]) => [ref, markup])))}`
       }
@@ -304,11 +308,11 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         for (const record of registry.records) this.addWatchFile(record.file)
         if (!deckLook) return generateExtensionsModule(registry)
         let config = {}
-        try { config = parseSlides(readFileSync(abs, 'utf-8')).deckConfig ?? {} } catch {}
+        try { config = parseSlides(readDeck()).deckConfig ?? {} } catch {}
         return generateExtensionsModule(deckLookOnly(registry, config))
       }
       if (id === RESOLVED_COMPONENTS_ID) {
-        const files = componentFiles(abs)
+        const files = componentFiles(abs, componentFolders(abs, readDeck()))
         const imports = files
           .map((f, i) => `import C${i} from ${JSON.stringify(f.file)}`)
           .join('\n')
@@ -324,7 +328,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     async transformIndexHtml(html, context) {
       if (!/(^|[\/])index\.html$/.test(context.filename ?? context.path ?? '')) return html
       let config = {}
-      try { config = parseSlides(readFileSync(abs, 'utf-8')).deckConfig ?? {} } catch {}
+      try { config = parseSlides(readDeck()).deckConfig ?? {} } catch {}
       const lang = config.lang
       if (typeof lang === 'string' && /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(lang)) html = html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`)
       if (embedThemeFonts) {

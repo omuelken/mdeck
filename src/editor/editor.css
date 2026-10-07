@@ -1,6 +1,7 @@
 :root { color-scheme: dark; }
 html, body { margin: 0; height: 100%; background: #111; color: #e6e6e6; font: 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-#editor-root { height: 100%; }
+#editor-root, #design-root { height: 100%; }
+.muted { color: #8e8e8e; }
 button, select, input, textarea { font: inherit; }
 a { color: #8ab4f8; }
 .editor { display: grid; grid-template-rows: 44px 1fr; height: 100vh; }
@@ -95,14 +96,40 @@ details.more > .form { padding: 10px 0 0; }
 .appearance-toggle .btn { flex: 1; }
 .appearance-toggle .btn.is-active { background: #27436a; border-color: #3d6094; color: #fff; }
 .note { margin: 0; padding: 8px 10px; border-left: 3px solid #4a6a8a; background: #1a2230; color: #c8d4e4; font-size: 12px; border-radius: 0 4px 4px 0; }
-.outline-item.is-unoffered { opacity: 0.45; }
 .extensions-tabs { padding: 0 10px 0 4px; align-items: stretch; }
 .extensions-tabs .tabs { flex: 1; padding: 0; border: 0; position: static; background: none; }
 .extensions-tabs .tabs button { padding: 12px 8px 10px; }
 .extensions-tabs > .btn { align-self: center; }
-/* The look being tried in the extensions view: its theme and palette are
-   marked in the list, and named above the preview. */
-.outline-item.is-in-look .thumb { outline: 2px solid #60a5fa; outline-offset: -2px; }
 .preview-bar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid #222; color: #e0e0e0; }
 .preview-bar .spacer { flex: 1; }
 .preview-bar .muted { color: #8e8e8e; }
+.preview-choice { display: inline-flex; align-items: center; gap: 6px; color: #a8a8a8; font-size: 12px; }
+.preview-choice select { max-width: 160px; }
+.appearance-toggle.is-compact { gap: 2px; }
+.appearance-toggle.is-compact .btn { flex: 0 0 auto; }
+.segmented { display: inline-flex; border: 1px solid #3a3a3a; border-radius: 5px; overflow: hidden; }
+.segmented button { appearance: none; border: 0; background: #1b1b1b; color: #c8c8c8; padding: 3px 10px; font-size: 12px; cursor: pointer; }
+.segmented button + button { border-left: 1px solid #3a3a3a; }
+.segmented button.is-active { background: #27436a; color: #fff; }
+/* The deck's theme, chosen from pictures of its first slide. */
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.theme-choice { appearance: none; display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 1px solid #2a2a2a; border-radius: 6px; background: #161616; color: #d6d6d6; cursor: pointer; text-align: left; font-size: 12px; }
+.theme-choice:hover { border-color: #4a6a8a; }
+.theme-choice.is-active { border-color: #60a5fa; background: #1d2b3c; color: #fff; }
+.theme-choice-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+/* The design page: the deck's own extensions first, then built-in ones. */
+.panel-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px 0; }
+.panel-section-head .section-title { margin: 0; }
+.hint-text { margin: 0; color: #9a9a9a; font-size: 12px; }
+.panel-hint { margin: 6px 14px 4px; color: #9a9a9a; font-size: 12px; }
+.design-usage { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid #222; background: #161b22; font-size: 12px; }
+.design-usage > span { flex: 1; display: inline-flex; align-items: center; gap: 6px; }
+.palette-checks { display: grid; gap: 2px; max-height: 220px; overflow: auto; padding: 4px; border: 1px solid #2a2a2a; border-radius: 5px; }
+.field .palette-check { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 4px; cursor: pointer; text-transform: none; letter-spacing: normal; font-size: 13px; color: #d6d6d6; }
+.field .palette-check:hover { background: #1e1e1e; }
+.builtin-title { margin: 0; font-size: 16px; color: #f0f0f0; }
+.builtin-title .muted { font-size: 12px; font-weight: 400; margin-left: 6px; }
+.builtin-description { margin: 0; color: #c0c0c0; }
+.builtin-source summary, .advanced summary { cursor: pointer; color: #a8a8a8; }
+.builtin-source pre { margin: 8px 0 0; padding: 10px; max-height: 360px; overflow: auto; background: #161616; border: 1px solid #2a2a2a; border-radius: 5px; font-size: 11px; white-space: pre-wrap; }
+.advanced[open] summary { margin-bottom: 8px; }

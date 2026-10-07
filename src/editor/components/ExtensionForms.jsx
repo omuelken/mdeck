@@ -1,7 +1,8 @@
-import { h } from 'preact'
+import { h, Fragment } from 'preact'
 import { Icon } from '../../components/Icon.jsx'
-import { CORE_TOKENS, PROPERTY_TYPES, FRAMES } from '../extensions.js'
+import { CORE_TOKENS } from '../extensions.js'
 import { Field, TextArea } from './Field.jsx'
+import { PalettePicker, Swatches } from './PalettePicker.jsx'
 
 const isColor = value => /^#[0-9a-f]{3,8}$/i.test(String(value ?? '').trim())
 const update = (list, index, patch) => list.map((item, i) => i === index ? { ...item, ...patch } : item)
@@ -47,17 +48,74 @@ export function PaletteForm({ model, onChange }) {
   </>
 }
 
-export function ThemeForm({ model, files, onChange, onFile }) {
+// Theme tokens in groups, so fonts, sizes and spacing are found where one
+// looks for them. Each group suggests the tokens themes usually set.
+const TOKEN_GROUPS = [
+  ['Fonts', name => name.startsWith('--font-'), ['--font-display', '--font-body', '--font-mono']],
+  ['Sizes', name => name.startsWith('--fs-'), ['--fs-display', '--fs-title', '--fs-h', '--fs-body', '--fs-small']],
+  ['Spacing', name => name.startsWith('--pad-'), ['--pad-x', '--pad-y']],
+]
+const groupOf = name => TOKEN_GROUPS.findIndex(([, test]) => test(name))
+
+function TokenRow({ token, onChange, onRemove }) {
+  return <div class="field">
+    <div class="row">
+      <input type="text" value={token.name} placeholder="--name" style={{ flex: '0 0 140px', fontFamily: 'ui-monospace, monospace' }} onInput={e => onChange({ name: e.currentTarget.value })} />
+      {isColor(token.value) && <input type="color" value={token.value.length === 4 ? '#' + [...token.value.slice(1)].map(c => c + c).join('') : token.value.slice(0, 7)} style={{ flex: '0 0 auto' }} onInput={e => onChange({ value: e.currentTarget.value })} />}
+      <input type="text" value={token.value ?? ''} style={{ fontFamily: 'ui-monospace, monospace' }} onInput={e => onChange({ value: e.currentTarget.value })} />
+      <button class="btn is-small is-icon" title="Remove token" aria-label="Remove token" onClick={onRemove}><Icon name="close" size={14} /></button>
+    </div>
+  </div>
+}
+
+function ThemeTokens({ tokens, onChange, children }) {
+  const set = (index, patch) => onChange(update(tokens, index, patch))
+  const rows = test => tokens.map((token, index) => [token, index]).filter(([token]) => test(token))
+    .map(([token, index]) => <TokenRow key={index} token={token} onChange={patch => set(index, patch)} onRemove={() => onChange(without(tokens, index))} />)
+  const add = name => onChange([...tokens, { name, value: '' }])
+  return <>
+    {TOKEN_GROUPS.map(([title, , suggested], group) => <Fragment key={title}>
+      <p class="section-title">{title}</p>
+      {group === 0 && children}
+      {rows(token => groupOf(token.name) === group)}
+      <div class="row" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        {suggested.filter(name => !tokens.some(token => token.name === name)).map(name => <button key={name} class="btn is-small" onClick={() => add(name)}>+ {name}</button>)}
+      </div>
+    </Fragment>)}
+    <p class="section-title">Other tokens</p>
+    {rows(token => groupOf(token.name) < 0)}
+    <div><button class="btn is-small" onClick={() => add('')}>+ token</button></div>
+  </>
+}
+
+export function ThemeForm({ model, files, palettes = {}, onChange, onFile }) {
   const tokenNames = model.tokens.map(token => token.name).filter(Boolean)
+  // Palettes this theme may offer: shared ones and its own private ones.
+  const usable = Object.values(palettes).filter(palette => !palette.theme || palette.theme === model.id)
+  const offered = model.palettes?.length ? usable.filter(palette => model.palettes.includes(palette.id)) : usable
+  const appearance = model.appearance ?? 'light'
+  const toggle = (id, on) => onChange({ palettes: on ? [...(model.palettes ?? []), id] : (model.palettes ?? []).filter(other => other !== id) })
   return <>
     <Identity model={model} onChange={onChange} />
+    <p class="section-title">Colours</p>
+    <p class="hint-text">A theme takes all its colours from palettes; the deck can choose another one it offers.</p>
     <div class="grid-2">
-      <Field label="Default palette" hint="colours come only from palettes"><input type="text" value={model.palette} placeholder="lagoon" onInput={e => onChange({ palette: e.currentTarget.value.trim() })} /></Field>
-      <Field label="Starts"><select value={model.appearance} onChange={e => onChange({ appearance: e.currentTarget.value })}><option value="light">Light</option><option value="dark">Dark</option></select></Field>
+      <Field label="Default palette">
+        <PalettePicker offered={offered} selected={palettes[model.palette] ?? null} appearance={appearance} onChoose={id => onChange({ palette: id })} />
+      </Field>
+      <Field label="Starts"><select value={appearance} onChange={e => onChange({ appearance: e.currentTarget.value })}><option value="light">Light</option><option value="dark">Dark</option></select></Field>
     </div>
-    <Field label="Only these palettes" hint="comma-separated; empty offers every palette"><input type="text" value={(model.palettes ?? []).join(', ')} onInput={e => onChange({ palettes: e.currentTarget.value.split(',').map(id => id.trim()).filter(Boolean) })} /></Field>
-    <Field label="Font stylesheets" hint="one URL per line"><TextArea rows={2} value={model.fonts.join('\n')} onInput={text => onChange({ fonts: text.split(/\r?\n/).map(line => line.trim()).filter(Boolean) })} /></Field>
-    <TokenList tokens={model.tokens} onChange={tokens => onChange({ tokens })} suggestions={['--font-display', '--font-body', '--fs-display', '--fs-title', '--fs-h', '--fs-body', '--fs-small', '--pad-x', '--pad-y']} />
+    <Field label="Offers these palettes" hint="none ticked offers every palette">
+      <div class="palette-checks">
+        {usable.map(palette => <label key={palette.id} class="palette-check">
+          <input type="checkbox" checked={(model.palettes ?? []).includes(palette.id)} onChange={e => toggle(palette.id, e.currentTarget.checked)} />
+          <span class="palette-name">{palette.title}</span><Swatches tokens={palette[appearance] ?? {}} />
+        </label>)}
+      </div>
+    </Field>
+    <ThemeTokens tokens={model.tokens} onChange={tokens => onChange({ tokens })}>
+      <Field label="Font stylesheets" hint="one URL per line, e.g. from Google Fonts"><TextArea rows={2} value={model.fonts.join('\n')} onInput={text => onChange({ fonts: text.split(/\r?\n/).map(line => line.trim()).filter(Boolean) })} /></Field>
+    </ThemeTokens>
     <p class="section-title">Author settings (params)</p>
     {model.params.map((param, index) => <div class="field" key={index}>
       <div class="row">
@@ -68,57 +126,9 @@ export function ThemeForm({ model, files, onChange, onFile }) {
       </div>
     </div>)}
     <div><button class="btn is-small" onClick={() => onChange({ params: [...model.params, { name: '', token: tokenNames[0] ?? '', title: '' }] })}>+ setting</button></div>
-    <Field label="styles.css" hint="rules only; token defaults come from the list above"><TextArea tall rows={20} value={files['styles.css'] ?? ''} onInput={text => onFile('styles.css', text)} /></Field>
-  </>
-}
-
-function PropertyRow({ property, onChange, onRemove }) {
-  const set = patch => onChange({ ...property, ...patch })
-  const numeric = ['number', 'integer'].includes(property.type)
-  return <div class="field" style={{ padding: '10px', border: '1px solid #262626', borderRadius: '6px', gap: '8px' }}>
-    <div class="row">
-      <input type="text" value={property.name} placeholder="name" style={{ fontFamily: 'ui-monospace, monospace' }} onInput={e => set({ name: e.currentTarget.value })} />
-      <select value={property.type ?? 'string'} onChange={e => set({ type: e.currentTarget.value, items: e.currentTarget.value === 'array' ? property.items ?? { type: 'string' } : null })}>{PROPERTY_TYPES.map(type => <option key={type} value={type}>{type}</option>)}</select>
-      <button class="btn is-small is-icon" title="Remove property" aria-label="Remove property" onClick={onRemove}><Icon name="close" size={14} /></button>
-    </div>
-    <div class="row">
-      <input type="text" value={property.title ?? ''} placeholder="Title" onInput={e => set({ title: e.currentTarget.value })} />
-      <input type="text" value={property.description ?? ''} placeholder="Description" onInput={e => set({ description: e.currentTarget.value })} />
-    </div>
-    <div class="row">
-      <input type="text" value={(property.enum ?? []).join(', ')} placeholder="choices, comma separated" onInput={e => set({ enum: e.currentTarget.value.split(',').map(v => v.trim()).filter(Boolean) })} />
-      <input type="text" value={property.default === undefined || property.default === null ? '' : typeof property.default === 'string' ? property.default : JSON.stringify(property.default)} placeholder="default (JSON for lists)" onInput={e => { const raw = e.currentTarget.value; let value = raw; if (raw === '') value = undefined; else if (property.type !== 'string') { try { value = JSON.parse(raw) } catch { value = raw } } set({ default: value }) }} />
-      <label class="row" style={{ flex: '0 0 auto', color: '#d0d0d0' }}><input type="checkbox" checked={Boolean(property.required)} onChange={e => set({ required: e.currentTarget.checked })} /> required</label>
-    </div>
-    {(numeric || property.type === 'array') && <div class="row">
-      {numeric && <input type="number" value={property.minimum ?? ''} placeholder="min" onInput={e => set({ minimum: e.currentTarget.value === '' ? undefined : Number(e.currentTarget.value) })} />}
-      {numeric && <input type="number" value={property.maximum ?? ''} placeholder="max" onInput={e => set({ maximum: e.currentTarget.value === '' ? undefined : Number(e.currentTarget.value) })} />}
-      {property.type === 'array' && <input type="number" value={property.minItems ?? ''} placeholder="min items" onInput={e => set({ minItems: e.currentTarget.value === '' ? undefined : Number(e.currentTarget.value) })} />}
-      {property.type === 'array' && <input type="number" value={property.maxItems ?? ''} placeholder="max items" onInput={e => set({ maxItems: e.currentTarget.value === '' ? undefined : Number(e.currentTarget.value) })} />}
-      {property.type === 'array' && <select value={property.items?.type ?? 'string'} onChange={e => set({ items: { ...(property.items ?? {}), type: e.currentTarget.value } })}>{PROPERTY_TYPES.filter(t => !['array', 'object'].includes(t)).map(type => <option key={type} value={type}>items: {type}</option>)}</select>}
-    </div>}
-  </div>
-}
-
-export function TemplateForm({ model, files, onChange, onFile }) {
-  return <>
-    <Identity model={model} onChange={onChange} />
-    <Field label="Frame" hint="header and footer style"><select value={model.frame} onChange={e => onChange({ frame: e.currentTarget.value })}>{FRAMES.map(frame => <option key={frame} value={frame}>{frame}</option>)}</select></Field>
-    <p class="section-title">Content areas (regions)</p>
-    {model.regions.map((region, index) => <div class="field" key={index}>
-      <div class="row">
-        <input type="text" value={region.name} placeholder="name" disabled={region.name === 'body'} style={{ flex: '0 0 120px', fontFamily: 'ui-monospace, monospace' }} onInput={e => onChange({ regions: update(model.regions, index, { name: e.currentTarget.value }) })} />
-        <input type="text" value={region.description ?? ''} placeholder="What goes here" onInput={e => onChange({ regions: update(model.regions, index, { description: e.currentTarget.value }) })} />
-        <label class="row" style={{ flex: '0 0 auto', color: '#d0d0d0' }}><input type="checkbox" checked={Boolean(region.required)} onChange={e => onChange({ regions: update(model.regions, index, { required: e.currentTarget.checked }) })} /> required</label>
-        {region.name !== 'body' && <button class="btn is-small is-icon" title="Remove region" aria-label="Remove region" onClick={() => onChange({ regions: without(model.regions, index) })}><Icon name="close" size={14} /></button>}
-      </div>
-    </div>)}
-    <div><button class="btn is-small" onClick={() => onChange({ regions: [...model.regions, { name: '', description: '', required: false }] })}>+ area</button></div>
-    <p class="section-title">Settings (properties)</p>
-    {model.properties.map((property, index) => <PropertyRow key={index} property={property} onChange={next => onChange({ properties: update(model.properties, index, next) })} onRemove={() => onChange({ properties: without(model.properties, index) })} />)}
-    <div><button class="btn is-small" onClick={() => onChange({ properties: [...model.properties, { name: '', type: 'string', enum: [], items: null }] })}>+ setting</button></div>
-    <Field label="layout.jsx" hint="Preact component; reloads the preview when saved"><TextArea tall rows={18} value={files['layout.jsx'] ?? ''} onInput={text => onFile('layout.jsx', text)} /></Field>
-    <Field label="styles.css"><TextArea rows={8} value={files['styles.css'] ?? ''} onInput={text => onFile('styles.css', text)} /></Field>
-    <Field label="starter.md" hint="what a new slide of this kind starts with"><TextArea rows={8} value={files['starter.md'] ?? ''} onInput={text => onFile('starter.md', text)} /></Field>
+    <details class="advanced">
+      <summary>Advanced: styles.css</summary>
+      <Field label="styles.css" hint="rules only; token defaults come from the lists above"><TextArea tall rows={20} value={files['styles.css'] ?? ''} onInput={text => onFile('styles.css', text)} /></Field>
+    </details>
   </>
 }

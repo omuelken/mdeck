@@ -203,11 +203,13 @@ and the other as `--inverse-*`), the theme's tokens, then deck `params`.
 
 ## Editing in the browser
 
-`mdeck edit my-talk.md` includes editors for all three kinds under
-*Palettes, themes & layouts*. Palettes and themes are forms with live
-preview; theme stylesheets and layouts are text areas. Built-in
-extensions are read-only there; copy one into the deck under a new id to
-change it. The editor writes the same files described above.
+`mdeck design my-talk.md` (also *Design themes* in `mdeck edit`) opens a
+design page for themes and palettes: forms with a live preview on a sample
+deck that has every built-in layout, or on the deck itself. `mdeck design
+<folder>` does the same without a deck and writes to `<folder>/extensions/`.
+Built-in extensions cannot be changed; copy one under a new id to change it.
+New themes always start as a copy. Layouts are not edited there. The page
+writes the same files described above.
 
 ## Listing what is available
 

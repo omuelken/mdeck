@@ -198,8 +198,10 @@ export function editorMiddleware(deckFile, { registryFor, extensions = createExt
       }
       if (pathname === '/deck' && request.method === 'GET') {
         const registry = registryFor()
-        return send(response, 200, { path: deckFile.path, name: basename(deckFile.path), ...deckFile.read(), registry: serializeRegistry(registry), warnings: registry.warnings })
+        const where = deckFile.designOnly ? { path: dirname(deckFile.path), name: basename(dirname(deckFile.path)), designOnly: true } : { path: deckFile.path, name: basename(deckFile.path) }
+        return send(response, 200, { ...where, ...deckFile.read(), registry: serializeRegistry(registry), warnings: registry.warnings })
       }
+      if (pathname === '/source' && request.method === 'POST' && deckFile.designOnly) return send(response, 403, { error: 'There is no deck to save: the design page was started without one' })
       if (pathname === '/source' && request.method === 'POST') {
         const body = await readJson(request)
         if (typeof body?.source !== 'string' || typeof body?.base !== 'string') return send(response, 400, { error: 'Expected { source: string, base: string }' })
@@ -216,13 +218,23 @@ export function editorMiddleware(deckFile, { registryFor, extensions = createExt
   }
 }
 
-export function editorPlugin(slidesPath) {
+// A deck that is only text and is never written: what the design page shows
+// when `mdeck design` starts it without a deck. `abs` places it in the folder
+// whose extensions are edited.
+export function createSampleDeck(abs, source) {
+  return { path: abs, designOnly: true, read: () => ({ source, hash: hashSource(source) }), write: () => ({ ok: false, conflict: true, source, hash: hashSource(source) }), isExternalChange: () => false, backupFile: null }
+}
+
+// `source` is given for `mdeck design` without a deck: the editing API then
+// serves it read-only and only extensions are written.
+export function editorPlugin(slidesPath, { source = null } = {}) {
   const abs = resolve(slidesPath)
-  const deckFile = createDeckFile(abs)
+  const deckFile = source === null ? createDeckFile(abs) : createSampleDeck(abs, source)
   return {
     name: 'vite-plugin-mdeck-editor',
     configureServer(server) {
       server.middlewares.use('/__mdeck', editorMiddleware(deckFile, { registryFor: () => loadRegistry(abs) }))
+      if (source !== null) return
       server.watcher.add(abs)
       let timer
       const changed = file => {

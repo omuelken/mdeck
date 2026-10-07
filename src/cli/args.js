@@ -6,6 +6,7 @@ const commands = {
   new: { max: 0 },
   run: { ...common, '--network': flag, '--server': optional, max: 1 },
   edit: { ...common, max: 1 },
+  design: { ...common, max: 1 },
   build: { ...output, '--single-file': flag, '--launchers': flag, '--reader': flag, '--notes': flag, max: 1 },
   send: { ...output, '--notes': flag, '--no-pdf': flag, max: 1 },
   pdf: { ...output, max: 1 },

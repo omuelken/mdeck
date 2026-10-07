@@ -73,7 +73,10 @@ after the methods slide, and turn "Why it matters" into a big statement.
 The assistant can also make what would otherwise need CSS or JavaScript: a
 colour palette, a theme, a slide layout, or an interactive component. They are
 kept as small folders in `extensions/` or `components/` beside the slide file,
-so they travel with the talk.
+so they travel with the talk. For a theme or palette, it asks you to look at
+the result with `mdeck design <deck>.md`, which shows it on a sample deck with
+every kind of slide, light and dark, and lets you fine-tune colours, fonts and
+sizes yourself.
 
 For a word or a number, it is often faster to edit the file yourself; see
 [Read and adjust your slides](writing.html).

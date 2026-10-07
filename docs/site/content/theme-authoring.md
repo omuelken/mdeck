@@ -12,7 +12,7 @@ rules between sections. Keep it readable on a projector.
 
 The rest of this page is the reference for what it writes, and for anyone comfortable with CSS who prefers to write it by hand.
 
-If you would rather click than type, `mdeck edit my-talk.md` has form-based editors for palettes and themes with a live preview; see [Edit slides in your browser](editing.html). The files it writes are the ones described here.
+To look at the result and fine-tune it, run `mdeck design my-talk.md` (or `mdeck design` in a folder without a deck). It shows the theme or palette on a sample deck with every kind of slide, light and dark, and has forms for colours, fonts, sizes and spacing; see [Edit slides in your browser](editing.html). The files it writes are the ones described here.
 
 Themes and palettes are **extensions**: each one is a folder with an `extension.toml` file that says what it is. Slide layouts use the same idea. Put the folder in `extensions/` beside your slide file and mdeck finds it automatically; there is nothing to register. The [extensions reference](extensions.html) has the complete list of settings.
 

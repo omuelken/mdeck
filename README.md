@@ -120,7 +120,7 @@ mdeck send talk.md           # one file to email, with a PDF inside
 - **Sharing:** a reader view with an outline, a phone-friendly Read mode and a PDF download; speaker notes are stripped from shared builds, and interactive slides appear in their finished state.
 - **Content:** pictures, video, tables, callouts, code with syntax highlighting and live execution, formulas, QR codes, and your own Preact components, kept with one deck or shared between decks.
 - **New designs on request:** ask your assistant for a palette, theme, layout or interactive component; it keeps them as small folders beside the deck.
-- **Editing in the browser:** `mdeck edit talk.md` opens an editor with a live preview and forms for slides, settings, palettes, themes and layouts. It writes back into your text file.
+- **Editing in the browser:** `mdeck edit talk.md` opens an editor with a live preview and forms for slides and settings, and `mdeck design` shows themes and palettes on a sample deck for fine-tuning. It writes back into your text file.
 
 ## Read the docs
 

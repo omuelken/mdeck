@@ -2,7 +2,7 @@ import { validatePageUrl } from '../core/urls.js'
 import { h, render } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { marked } from 'marked'
-import slidesContent from 'virtual:slides'
+import deckFileContent from 'virtual:slides'
 import { parseSlides } from '../core/parseSlides'
 import { validateDeck } from '../core/validateDeck'
 import { loadTheme, setExtensionOverrides, THEME_NAMES, THEME_METAS, PALETTES } from './themeLoader'
@@ -68,6 +68,9 @@ function withConfigOverrides(deckConfig) {
 // The presenter's screen tells phones on the deck's answer link which
 // activity is on the current slide. Decks without activities never call the
 // server.
+// The deck's text: the file's, or on the dev server with ?sample=1 the sample
+// deck, which the design page's pictures show.
+let slidesContent = deckFileContent
 const hasActivities = () => roomsIn(slidesContent).length > 0
 // What the phones show for the activity on a slide: its component's `phone`
 // description, from the tag's attributes and the slide's heading.
@@ -667,8 +670,12 @@ function mountDeck({ deck, deckConfig, selection = null, editor = false }) {
 async function init() {
   // An iPad that opened the launch page's QR code pairs first.
   await claimPairing()
-  const parsed = parseSlides(slidesContent)
   const url = new URL(window.location.href)
+  if (import.meta.env.DEV && url.searchParams.get('sample') === '1') {
+    const { sampleDeck, sampleDataUrl } = await import('../editor/sampleDeck.js')
+    slidesContent = sampleDeck(sampleDataUrl())
+  }
+  const parsed = parseSlides(slidesContent)
   const editorMode = url.searchParams.get('editor') === '1'
   // One switch selects the view: deck, reader, presenter or audience.
   const defaultView = typeof __MDECK_DEFAULT_VIEW__ !== 'undefined' ? __MDECK_DEFAULT_VIEW__ : 'deck'

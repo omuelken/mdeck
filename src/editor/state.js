@@ -16,7 +16,7 @@ export function derive(source, manifests) {
 }
 
 export const initialState = {
-  loaded: false, path: '', name: '', source: '', hash: null, savedSource: '',
+  loaded: false, designOnly: false, path: '', name: '', source: '', hash: null, savedSource: '',
   deck: null, diagnostics: [], registry: null, manifests: { layouts: {}, themes: {}, palettes: {} }, warnings: [],
   selectedIndex: 0, tab: 'slide', inspectorMode: 'form',
   history: { past: [], future: [] },
@@ -32,7 +32,7 @@ export function reduce(state, action) {
     case 'load': {
       const manifests = { layouts: byId(action.registry?.layouts), themes: byId(action.registry?.themes), palettes: byId(action.registry?.palettes) }
       const { deck, diagnostics } = derive(action.source, manifests)
-      return { ...state, loaded: true, path: action.path, name: action.name, source: action.source, savedSource: action.source, hash: action.hash, deck, diagnostics,
+      return { ...state, loaded: true, designOnly: Boolean(action.designOnly), path: action.path, name: action.name, source: action.source, savedSource: action.source, hash: action.hash, deck, diagnostics,
         registry: action.registry ?? null, manifests, warnings: action.warnings ?? [], selectedIndex: clamp(state.selectedIndex, deck), history: { past: [], future: [] }, status: 'saved', conflict: null, error: null }
     }
     case 'edit': {

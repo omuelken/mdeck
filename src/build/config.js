@@ -32,12 +32,12 @@ function preactAliases() {
 }
 
 // ── Vite config ───────────────────────────────────────────────────────────────
-export function baseConfig(slidesPath, { selfContained = false, defaultView = 'deck', server = null, proxyControls = false } = {}) {
+export function baseConfig(slidesPath, { selfContained = false, defaultView = 'deck', server = null, proxyControls = false, source = undefined } = {}) {
   const abs = resolve(slidesPath)
   return {
     configFile: false,
     root: runtimeRoot,
-    plugins: [preact(), slidesPlugin(abs)],
+    plugins: [preact(), slidesPlugin(abs, source === undefined ? {} : { source })],
     // Deck-local components live outside the framework root and have no
     // node_modules of their own, so their preact imports must resolve back to
     // the framework's copy — and to the *same* instance, or hooks break.
@@ -48,7 +48,7 @@ export function baseConfig(slidesPath, { selfContained = false, defaultView = 'd
     server: {
       port: 5173,
       strictPort: false,
-      fs: { allow: [frameworkRoot, dirname(abs), ...componentFolders(abs).map(folder => folder.dir)] },
+      fs: { allow: [frameworkRoot, dirname(abs), ...componentFolders(abs, source).map(folder => folder.dir)] },
     },
     define: {
       __MDECK_SELF_CONTAINED__: JSON.stringify(selfContained),

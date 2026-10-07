@@ -1,6 +1,6 @@
 ---
 name: write-slides
-description: Write a complete mdeck slide deck. Use when the user asks to create slides, a presentation, or a talk using the mdeck framework, including turning existing PowerPoint, PDF, Word documents or notes into a deck.
+description: Write a complete mdeck slide deck. Use when the user asks to create slides, a presentation, or a talk using the mdeck framework, including turning existing PowerPoint, PDF, Word documents or notes into a deck, and when they want a new look for mdeck slides (a theme or colour palette, for example in their institute's colours).
 license: MIT
 compatibility: Best with the mdeck command installed (npm install -g @tilman.schieber/mdeck); works without it using the quick reference.
 allowed-tools: Read Write Bash(mdeck:*) Bash(npm root:*) Bash(ls:*)
@@ -132,3 +132,13 @@ mdeck check <deck>.md
 ```
 
 Fix anything it reports. When you worked from source material, list what you left out or moved to notes, and anything you added that is not in the material. Finish by telling the user the two commands they will want next: `mdeck run <deck>.md` for the launch page (preview, presenting, editor, builds and checks), and `mdeck send <deck>.md` for a file to send around (a reader view with a PDF; notes are removed unless `--notes` is added).
+
+## 5. A new look: themes and palettes
+
+When the user wants a look the built-in themes and palettes do not give (their institute's colours, a font, the style of a poster or picture), make it as an extension in `extensions/` beside the deck, never as styling on single slides. Read `extensions.md` from the reference folder first; it lists every setting.
+
+- **Colours only: a palette.** `extensions/<id>/extension.toml` with `kind = "palette"`, and every colour role (`--bg`, `--surface`, `--ink`, `--ink-soft`, `--muted`, `--rule`, `--accent`, `--accent-2`, `--on-accent`) in both `[light]` and `[dark]`. Text colours must stay readable on `--bg` and `--surface` in both variants, because themes use the other variant for inverted slides.
+- **Fonts, sizes, spacing or arrangement: a theme.** Copy the folder of the closest built-in theme (`assets/extensions/themes/<id>/` in the mdeck repository or in `$(npm root -g)/@tilman.schieber/mdeck/`) to `extensions/<new-id>/`, change `id` and `title`, then its tokens and `styles.css`. A theme takes no colours of its own: it names its default `palette`, and the colours come from palettes.
+- **Use it:** set `theme:` and `palette:` in the deck settings. `mdeck list <deck>.md` must show it as local, and `mdeck check <deck>.md` reports any mistake in its `extension.toml`.
+- **Hand over:** tell the user to run `mdeck design <deck>.md` (or `mdeck design <folder>` when there is no deck yet). It shows the look on a sample deck with every kind of slide, light and dark, and lets them fine-tune colours, fonts and sizes there.
+

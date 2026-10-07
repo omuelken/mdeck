@@ -12,6 +12,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck new` | Make a presentation with guided questions |
 | `mdeck run my-talk.md` | Open the launch page: present, edit, check and send from one place; slides reload when you save |
 | `mdeck edit my-talk.md` | Edit slides, colors and themes in the browser; saves to the file |
+| `mdeck design [my-talk.md or folder]` | Look at themes and palettes on a sample deck and fine-tune them; saves to `extensions/` |
 | `mdeck migrate my-talk.md --dry-run` | Preview the changes needed for API 2.0 |
 | `mdeck check my-talk.md` | Check settings and look for missing local files |
 | `mdeck send my-talk.md` | Make one file to send to readers, with a PDF inside |
@@ -67,6 +68,16 @@ mdeck edit my-talk.md --port 4300
 ```
 
 The editor opens in your browser and writes every change into the slide file. `--no-open` starts it without opening a browser window; `--port` chooses the port. See [Edit slides in your browser](editing.html).
+
+## Design themes and palettes
+
+```sh
+mdeck design my-talk.md
+mdeck design                 # in a folder without a deck
+mdeck design brand/
+```
+
+The design page shows themes and palettes on a sample deck with every kind of slide, light and dark, and lets you copy a built-in one and fine-tune its colours, fonts, sizes and spacing. With a slide file, it saves into the `extensions` folder beside it and can put the result in the deck. With a folder, or nothing, it saves into that folder's `extensions`, where any deck kept there finds them; no slide file is needed. `--no-open` and `--port` work as for `mdeck edit`.
 
 ## Output options
 

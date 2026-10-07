@@ -1,19 +1,19 @@
 import { h } from 'preact'
 import { useState } from 'preact/hooks'
 import { parseManifest, toModel, toToml, MANIFEST } from '../extensions.js'
-import { PaletteForm, ThemeForm, TemplateForm } from './ExtensionForms.jsx'
+import { PaletteForm, ThemeForm } from './ExtensionForms.jsx'
 import { Diagnostics } from './Diagnostics.jsx'
 import { Field, TextArea } from './Field.jsx'
+import { Swatches } from './PalettePicker.jsx'
 
-const KIND_LABEL = { palette: 'Palette', theme: 'Theme', layout: 'Layout' }
+const KIND_LABEL = { palette: 'Palette', theme: 'Theme' }
 
-// Edits one extension. `files` is the source of truth; the form derives its
-// model from extension.toml and writes TOML back.
-export function ExtensionEditor({ extension, status, error, note, onFiles, onDelete, onCopy }) {
+// Edits one of the deck's own extensions. `files` is the source of truth; the
+// form derives its model from extension.toml and writes TOML back.
+export function ExtensionEditor({ extension, palettes = {}, status, error, note, onFiles, onDelete, onCopy }) {
   const [mode, setMode] = useState('form')
   const [confirm, setConfirm] = useState(false)
-  const { kind, id, source, files } = extension
-  const readOnly = source !== 'local'
+  const { kind, id, files } = extension
   const parsed = parseManifest(files[MANIFEST] ?? '')
   const model = parsed.raw ? toModel({ ...parsed.raw, kind }) : null
   const change = patch => onFiles({ [MANIFEST]: toToml({ ...model, ...patch }) })
@@ -27,24 +27,39 @@ export function ExtensionEditor({ extension, status, error, note, onFiles, onDel
       <button class={mode === 'form' ? 'is-active' : ''} onClick={() => setMode('form')}>{KIND_LABEL[kind]}</button>
       <button class={mode === 'raw' ? 'is-active' : ''} onClick={() => setMode('raw')}>extension.toml</button>
       <span style={{ flex: 1 }} />
-      <span class={`editor-status is-${status}`} style={{ alignSelf: 'center' }}>{readOnly ? 'Built in, read only' : { saved: 'Saved', unsaved: 'Unsaved', saving: 'Saving…', error: 'Not saved' }[status]}</span>
+      <span class={`editor-status is-${status}`} style={{ alignSelf: 'center' }}>{{ saved: 'Saved', unsaved: 'Unsaved', saving: 'Saving…', error: 'Not saved' }[status]}</span>
     </div>
-    <div class="form" style={readOnly ? { opacity: 0.85 } : undefined}>
+    <div class="form">
       <Diagnostics items={problems} />
       {note && <p class="note">{note}</p>}
-      {readOnly && <div class="row" style={{ display: 'flex', gap: '8px' }}><button class="btn is-small is-primary" onClick={onCopy}>Copy into this deck to edit</button></div>}
-      <fieldset disabled={readOnly} style={{ border: 0, padding: 0, margin: 0, display: 'contents' }}>
-        {mode === 'raw' || !model
-          ? <Field label="extension.toml"><TextArea tall rows={24} value={files[MANIFEST] ?? ''} onInput={text => file(MANIFEST, text)} /></Field>
-          : kind === 'palette' ? <PaletteForm model={model} onChange={change} />
-          : kind === 'theme' ? <ThemeForm model={model} files={files} onChange={change} onFile={file} />
-          : <TemplateForm model={model} files={files} onChange={change} onFile={file} />}
-      </fieldset>
-      {!readOnly && <div class="row" style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+      {mode === 'raw' || !model
+        ? <Field label="extension.toml"><TextArea tall rows={24} value={files[MANIFEST] ?? ''} onInput={text => file(MANIFEST, text)} /></Field>
+        : kind === 'palette' ? <PaletteForm model={model} onChange={change} />
+        : <ThemeForm model={model} files={files} palettes={palettes} onChange={change} onFile={file} />}
+      <div class="row" style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
         {confirm
           ? <><span style={{ color: '#f28b82' }}>Delete the folder extensions/{id}?</span><button class="btn is-small" onClick={onDelete}>Yes, delete</button><button class="btn is-small" onClick={() => setConfirm(false)}>Keep</button></>
-          : <button class="btn is-small" onClick={() => setConfirm(true)}>Delete this {kind}</button>}
-      </div>}
+          : <><button class="btn is-small" onClick={onCopy}>Make a copy</button><button class="btn is-small" onClick={() => setConfirm(true)}>Delete this {kind}</button></>}
+      </div>
     </div>
   </>
+}
+
+// A built-in extension: what it is, and the one way to change it, a copy in
+// the deck's extensions folder.
+export function BuiltInCard({ extension, manifest, onCopy }) {
+  const { kind, id, files } = extension
+  return <div class="form">
+    <p class="section-title">Built-in {kind}</p>
+    <h2 class="builtin-title">{manifest?.title ?? id} <span class="muted">{id}</span></h2>
+    {manifest?.description && <p class="builtin-description">{manifest.description}</p>}
+    {kind === 'palette' && manifest && ['light', 'dark'].map(mode => <Field key={mode} label={mode === 'light' ? 'Light' : 'Dark'}><Swatches tokens={manifest[mode] ?? {}} /></Field>)}
+    {kind === 'theme' && manifest?.palette && <p class="builtin-description">Its default palette is <code>{manifest.palette}</code>{manifest.palettes?.length ? `; it offers only ${manifest.palettes.join(', ')}` : ''}.</p>}
+    <p class="note">Built-in {kind}s cannot be changed. Copy this one into the deck's <code>extensions</code> folder and change the copy. The preview shows every change as you make it.</p>
+    <div class="row" style={{ display: 'flex', gap: '8px' }}><button class="btn is-primary" onClick={onCopy}>Copy to customise</button></div>
+    <details class="builtin-source">
+      <summary>{MANIFEST}</summary>
+      <pre>{files?.[MANIFEST] ?? ''}</pre>
+    </details>
+  </div>
 }

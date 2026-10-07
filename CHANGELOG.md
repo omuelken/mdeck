@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- New `mdeck design [slides.md | folder]`: a page for looking at themes and palettes and fine-tuning them, instead of the editor's second mode, which both chose and edited them. Its preview shows a sample deck with one slide of every kind, light or dark, in a theme and palette chosen above it, or the deck itself. The pictures in its list show the sample deck too. Without a deck it works on a folder and saves into that folder's `extensions/`, where any deck kept there finds them; no slide file is read or written. In `mdeck edit` it is **Design themes**.
+- The design page lists the deck's own themes and palettes first. A built-in one shows what it is and **Copy to customise**, instead of a form that could not be changed; new themes always start as such a copy, new palettes may also start from plain colours. **Use in my deck** puts a theme or palette in the slide file. The theme form groups its tokens into fonts, sizes and spacing, chooses the default palette from a list with its colours, offers palettes with tick boxes, and keeps `styles.css` under *Advanced*. Layouts are no longer edited in the browser; ask the assistant for one, or write it by hand.
+- Editor: the deck's look is chosen only in the Deck tab, where themes are pictures of the first slide. **Customise theme** and **Customise palette** open the design page on a copy of the deck's, or on the deck's own.
+- The `write-slides` skill also makes themes and palettes: as an extension beside the deck, copied from the closest built-in theme, checked with `mdeck check`, and handed over with `mdeck design` to look at and fine-tune.
+- `npm run test:themes` and the design page use the same sample deck (`src/editor/sampleDeck.js`).
+
 ## 2.2.0 — 2026-10-07
 
 - Lecture blocks look different from each other in every theme, not only academic and sketch: theorems, lemmas and corollaries in the accent with the statement in italics, definitions in the second accent, and a proof without a box, opening with “Proof.” and ending with ∎ right after its last word (terminal writes `[proof]`, like its other log lines). Aurora's callout titles are readable on light glass too.

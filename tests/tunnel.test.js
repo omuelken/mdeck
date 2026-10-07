@@ -30,6 +30,7 @@ test('only what the presenter and audience pages need is shareable', () => {
   // the launch page, the editor, the deck's own files and everything else
   assert.ok(!ok(at('home.html')))
   assert.ok(!ok(at('editor.html')))
+  assert.ok(!ok(at('design.html')))
   assert.ok(!ok(at('__mdeck/home/info')))
   assert.ok(!ok(at('__mdeck/home/action'), 'POST'))
   assert.ok(!ok(at('__mdeck/deck')))

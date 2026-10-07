@@ -1,5 +1,4 @@
 import { h } from 'preact'
-import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon.jsx'
 import { setDeckConfig } from '../../core/editDeck.js'
 import { resolvePalette } from '../../extensions/appearance.js'
@@ -7,40 +6,14 @@ import { palettesFor } from '../../extensions/tokens.js'
 import { deckDiagnostics } from '../model.js'
 import { Field } from './Field.jsx'
 import { Diagnostics } from './Diagnostics.jsx'
+import { PalettePicker } from './PalettePicker.jsx'
+import { LookThumbnail } from './LookThumbnail.jsx'
+import { designUrl, DESIGN_TAB } from '../designLink.js'
 
 // What the `show` setting controls: the label for each choice and its values.
 const SHOW = { organization: ['Organization', ['title', 'all', 'none']], author: ['Author and date', ['title', 'all', 'none']], numbers: ['Slide numbers', ['slides', 'all', 'none']], sections: ['Section labels', ['all', 'none']] }
 const META = [['title', 'Title'], ['author', 'Author'], ['organization', 'Organization'], ['date', 'Date'], ['logo', 'Logo path']]
 const isColor = value => /^#[0-9a-f]{3,8}$/i.test(String(value ?? '').trim())
-
-function Swatches({ tokens = {} }) {
-  return <span class="swatches">{['--bg', '--surface', '--rule', '--accent', '--accent-2', '--ink'].map(key => tokens[key] ? <i key={key} style={{ background: tokens[key] }} /> : null)}</span>
-}
-
-// The palettes a theme offers, each with its colours in the light or dark
-// the deck shows, so they can be compared before choosing.
-function PalettePicker({ offered, selected, defaultId, appearance, onChoose }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  useEffect(() => {
-    if (!open) return
-    const close = event => { if (event.type === 'keydown' ? event.key === 'Escape' : !ref.current?.contains(event.target)) setOpen(false) }
-    document.addEventListener('pointerdown', close)
-    document.addEventListener('keydown', close)
-    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', close) }
-  }, [open])
-  const label = palette => <><span class="palette-name">{palette.title}{palette.id === defaultId && <span class="palette-default"> · theme default</span>}</span><Swatches tokens={palette[appearance] ?? {}} /></>
-  return <div class="palette-picker" ref={ref}>
-    <button type="button" class="palette-current" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(o => !o)}>
-      {selected ? label(selected) : <span class="palette-name" />}
-      <Icon name="dropdown" size={14} />
-    </button>
-    {open && <div class="palette-list" role="listbox" aria-label="Palette">
-      {offered.map(palette => <button type="button" key={palette.id} role="option" aria-selected={palette.id === selected?.id} title={palette.description} class={palette.id === selected?.id ? 'is-active' : ''}
-        onClick={() => { setOpen(false); onChoose(palette.id) }}>{label(palette)}</button>)}
-    </div>}
-  </div>
-}
 
 export function DeckSettings({ state, edit }) {
   const { deck, manifests, diagnostics, warnings } = state
@@ -57,9 +30,9 @@ export function DeckSettings({ state, edit }) {
   const text = (key, value) => patch({ [key]: value === '' ? undefined : value }, `deck:${key}`)
   const themeAppearance = theme?.appearance ?? 'light'
   // A palette the new theme does not offer is dropped, so the deck gets that theme's own.
+  const offers = (next, paletteId) => !paletteId || !next || palettesFor(next, manifests.palettes).some(p => p.id === paletteId)
   const chooseTheme = id => {
-    const next = manifests.themes[id]
-    const keeps = !config.palette || !next || palettesFor(next, manifests.palettes).some(p => p.id === config.palette)
+    const keeps = offers(manifests.themes[id], config.palette)
     patch({ theme: id, ...(keeps ? {} : { palette: undefined }) }, 'deck:theme')
   }
   const meta = (key, value) => { const next = { ...(config.meta ?? {}) }; if (value === '') delete next[key]; else next[key] = value; patch({ meta: Object.keys(next).length ? next : undefined }, `deck:meta:${key}`) }
@@ -70,10 +43,14 @@ export function DeckSettings({ state, edit }) {
     <Diagnostics items={[...warnings.map(message => ({ severity: 'warning', message, code: 'extension' })), ...problems]} />
     <p class="section-title">Look</p>
     <Field label="Theme" hint={theme?.description}>
-      <select value={themeId} onChange={e => chooseTheme(e.currentTarget.value)}>
-        {!theme && <option value={themeId}>{themeId}</option>}
-        {Object.values(manifests.themes).map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
-      </select>
+      <div class="theme-grid" role="radiogroup" aria-label="Theme">
+        {!theme && <button type="button" role="radio" aria-checked="true" class="theme-choice is-active"><span class="theme-choice-name">{themeId} (not found)</span></button>}
+        {Object.values(manifests.themes).map(t => <button type="button" key={t.id} role="radio" aria-checked={t.id === themeId} title={t.description}
+          class={`theme-choice${t.id === themeId ? ' is-active' : ''}`} onClick={() => chooseTheme(t.id)}>
+          <LookThumbnail theme={t.id} palette={offers(t, config.palette) ? config.palette ?? '' : ''} />
+          <span class="theme-choice-name">{t.title}{t.source === 'local' && <span class="palette-default"> · this deck</span>}</span>
+        </button>)}
+      </div>
     </Field>
     <Field label="Palette" hint={palette?.description}>
       <PalettePicker offered={offered} selected={palette} defaultId={theme?.palette} appearance={shown.appearance}
@@ -85,6 +62,12 @@ export function DeckSettings({ state, edit }) {
           onClick={() => text('appearance', mode === themeAppearance ? '' : mode)}>
           <Icon name={mode === 'light' ? 'sun' : 'moon'} size={14} />{mode === 'light' ? 'Light' : 'Dark'}{mode === themeAppearance && <span class="palette-default"> · theme default</span>}
         </button>)}
+      </div>
+    </Field>
+    <Field label="Make it your own" hint="opens the design page; a built-in one is copied into this deck's extensions folder first">
+      <div class="row" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        {theme && <DesignLink kind="theme" item={theme} />}
+        {palette && <DesignLink kind="palette" item={palette} />}
       </div>
     </Field>
     {theme && Object.keys(theme.params).length > 0 && <>
@@ -113,4 +96,13 @@ export function DeckSettings({ state, edit }) {
       <Field label="Language" hint="of the deck, e.g. en, de or de-CH"><input type="text" value={config.lang ?? ''} placeholder="en" onInput={e => text('lang', e.currentTarget.value)} /></Field>
     </div>
   </div>
+}
+
+// Opens the design page on the deck's own theme or palette, or on a new copy
+// of a built-in one.
+function DesignLink({ kind, item }) {
+  const own = item.source === 'local'
+  return <a class="btn is-small" target={DESIGN_TAB} href={designUrl(own ? { open: `${kind}:${item.id}` } : { copy: `${kind}:${item.id}` })}>
+    {own ? `Edit ${kind}` : `Customise ${kind}`} <span class="muted">{item.title}</span>
+  </a>
 }

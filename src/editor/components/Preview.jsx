@@ -6,7 +6,7 @@ const PREVIEW_URL = '/?editor=1&embedded=1'
 
 // Hosts the deck runtime in editor mode and keeps it fed with the current
 // source. Navigation inside the preview reports back so the outline follows.
-export function Preview({ source, selection, config = null, overrides = null, reloadKey = 0, width, height, onState, onRendered, bar = null }) {
+export function Preview({ source, selection, config = null, overrides = null, reloadKey = 0, width, height, onState, onRendered, bar = null, total = 0 }) {
   const frame = useRef(null)
   const [ready, setReady] = useState(false)
   const reported = useRef(null)
@@ -57,7 +57,7 @@ export function Preview({ source, selection, config = null, overrides = null, re
       <button class="btn is-small" onClick={() => control('next')}>Next<Icon name="next" size={14} /></button>
       <button class="btn is-small" onClick={() => control('reset')}>Reset</button>
       <span class="spacer" />
-      <span>Slide {selection.index + 1}</span>
+      <span>Slide {selection.index + 1}{total ? ` of ${total}` : ''}</span>
     </div>
   </section>
 }

@@ -1,5 +1,5 @@
 import { createServer, build, preview } from 'vite'
-import { existsSync, copyFileSync, mkdtempSync, readFileSync } from 'fs'
+import { existsSync, copyFileSync, mkdtempSync, readFileSync, statSync } from 'fs'
 import { chmod, rm, mkdir, writeFile } from 'fs/promises'
 import { resolve, dirname, basename, relative, isAbsolute } from 'path'
 import { tmpdir } from 'os'
@@ -10,7 +10,7 @@ import { collectLocalAssetRefs, slidesPlugin } from '../build/slidesPlugin.js'
 import { formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, manifestsOf, serializeRegistry } from '../extensions/discover.js'
 import { BACKUP_DIR } from '../build/editorPlugin.js'
-import { createEditorServer } from '../build/editorServer.js'
+import { createEditorServer, createDesignServer } from '../build/editorServer.js'
 import { homePlugin } from '../build/homePlugin.js'
 import { checkDeck } from '../build/check.js'
 import { livePlugin, startLiveServer } from '../live/server.js'
@@ -310,6 +310,8 @@ const HELP = `
                               the key in MDECK_SERVER_KEY)
       --no-open   --port <number>
     ${c.green}mdeck edit${c.reset} [slides.md]                    Edit slides in the browser; saves to the file
+    ${c.green}mdeck design${c.reset} [folder | slides.md]         Look at and fine-tune themes and palettes on a sample deck;
+                                              saves to the folder's extensions/ (default: this folder)
 
   ${c.dim}Make something to hand out${c.reset}
     ${c.green}mdeck build${c.reset} [slides.md] [-o dir/index.html]   A folder to host
@@ -605,6 +607,24 @@ if (command === 'new') {
   console.log()
   ok(`Editing ${c.cyan}${abs}${c.reset}`)
   tip(`Changes are saved to the file as you type. Before the first change, a copy goes to ${BACKUP_DIR}/ beside it.\n`)
+
+// ── design ────────────────────────────────────────────────────────────────────
+// The design page: with a deck, beside its editor; with a folder (or nothing),
+// on the sample deck alone, saving into that folder's extensions/.
+} else if (command === 'design') {
+  const input = positionals()[0] ?? '.'
+  if (!existsSync(input)) { err(`Not found: ${input}`); process.exit(1) }
+  const withDeck = /\.md$/i.test(input) && !statSync(input).isDirectory()
+  if (!withDeck && !statSync(input).isDirectory()) { err(`${input} is neither a folder nor a slides file`); process.exit(1) }
+  const abs = resolve(input)
+  registryFor(withDeck ? abs : resolve(abs, 'design.md'))
+  const port = portOption()
+  const options = { port: port ?? 5173, strictPort: !!port, open: hasFlag('--no-open') ? false : '/design.html' }
+  const server = withDeck ? await createEditorServer(abs, options) : await createDesignServer(abs, options)
+  await server.listen()
+  console.log(`\n  ${c.green}➜${c.reset}  Design: ${c.cyan}${new URL('design.html', server.resolvedUrls.local[0]).href}${c.reset}\n`)
+  ok(withDeck ? `Designing for ${c.cyan}${abs}${c.reset}` : `Designing in ${c.cyan}${abs}${c.reset}, on a sample deck`)
+  tip(`Themes, palettes and layouts are saved as you type, in ${resolve(withDeck ? dirname(abs) : abs, 'extensions')}/. Decks in ${withDeck ? 'that' : 'this'} folder find them.\n`)
 
 // ── build and send ────────────────────────────────────────────────────────────
 } else if (command === 'build' || command === 'send') {

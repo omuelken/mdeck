@@ -10,8 +10,6 @@ const STARTER_COLORS = {
   light: { '--bg': '#ffffff', '--surface': '#f2f2f2', '--ink': '#111111', '--ink-soft': '#333333', '--muted': '#666666', '--rule': '#dadada', '--accent': '#0b6bcb', '--accent-2': '#c2410c', '--on-accent': '#ffffff' },
   dark: { '--bg': '#111111', '--surface': '#1e1e1e', '--ink': '#f2f2f2', '--ink-soft': '#cfcfcf', '--muted': '#8f8f8f', '--rule': '#2e2e2e', '--accent': '#6aaeff', '--accent-2': '#fb923c', '--on-accent': '#111111' },
 }
-export const PROPERTY_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object']
-export const FRAMES = ['standard', 'title', 'chapter', 'none']
 
 const entries = table => Object.entries(table ?? {}).map(([name, value]) => ({ name, ...(value && typeof value === 'object' && !Array.isArray(value) ? value : { value }) }))
 const table = (list, pick) => Object.fromEntries(list.filter(item => item.name).map(item => [item.name, pick(item)]))
@@ -74,51 +72,15 @@ export function toRuntimeManifest(model) {
   return shared
 }
 
-// Starting points for new extensions. `from` is a registry manifest to copy.
+// Starting points for new extensions. `from` is a registry manifest to copy;
+// a theme is always a copy, a palette may start from readable plain colours.
 export function starterFiles(kind, id, title, from = null, fromFiles = {}) {
   if (kind === 'palette') {
-    // A copy of another palette, or readable starting colours to change.
     const light = from?.light ? entries(from.light) : entries(STARTER_COLORS.light)
     const dark = from?.dark ? entries(from.dark) : entries(STARTER_COLORS.dark)
     return { [MANIFEST]: toToml({ kind, id, title, description: '', theme: '', light, dark, extra: {} }) }
   }
-  if (kind === 'theme') {
-    const model = from ? { ...toModel({ ...from, kind, params: from.params && Object.fromEntries(Object.entries(from.params).map(([name, param]) => [name, { token: param.token, title: param.title, description: param.description }])) }), id, title, files: {} }
-      : { kind, id, title, description: '', palette: 'lagoon', palettes: [], appearance: 'light', fonts: [], tokens: [{ name: '--font-display', value: 'system-ui, sans-serif' }, { name: '--font-body', value: 'system-ui, sans-serif' }], params: [{ name: 'fontBody', token: '--font-body', title: 'Body font' }], extra: {}, files: {} }
-    return { [MANIFEST]: toToml(model), 'styles.css': fromFiles['styles.css'] ?? DEFAULT_THEME_CSS }
-  }
-  const model = from ? { ...toModel({ ...from, kind }), id, title, files: {} } : { kind, id, title, description: '', frame: 'standard', regions: [{ name: 'body', description: 'Main content' }], properties: [], extra: {}, files: {} }
-  return {
-    [MANIFEST]: toToml(model),
-    'layout.jsx': fromFiles['layout.jsx'] ?? DEFAULT_LAYOUT,
-    'styles.css': fromFiles['styles.css'] ?? `.slide--${id} .slide-body { gap: 32px; }\n`,
-    'starter.md': fromFiles['starter.md']?.replace(/^layout: .*$/m, `layout: ${id}`) ?? `:::meta\nlayout: ${id}\n:::\n# ${title}\n\nYour content here.\n`,
-  }
-}
-
-export const DEFAULT_LAYOUT = `import { h } from 'preact'
-import { MarkdownRegion } from 'mdeck/layout'
-
-// Receives regions, props (typed settings), meta, deckConfig, index and total.
-export default function Layout({ regions, props }) {
-  return <div class="slide-body">
-    <MarkdownRegion region={regions.body} />
-  </div>
-}
-`
-
-export const DEFAULT_THEME_CSS = `/* Slide frame and layout rules. Token defaults live in extension.toml. */
-.slide { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: var(--fs-body, 34px); }
-.slide-body { padding: var(--pad-y, 72px) var(--pad-x, 120px); display: flex; flex-direction: column; gap: 24px; }
-.slide h1, .slide h2 { font-family: var(--font-display); color: var(--ink); margin: 0; }
-.slide h1 { font-size: var(--fs-title, 88px); }
-.slide h2 { font-size: var(--fs-h, 64px); }
-.slide em { color: var(--accent); font-style: normal; }
-.slide-header, .slide-footer { display: flex; justify-content: space-between; padding: 24px var(--pad-x, 120px); color: var(--muted); font-size: var(--fs-small, 24px); }
-`
-
-export function deckHeader(deck) {
-  if (!deck.configSource) return ''
-  const end = deck.source.indexOf('\n', deck.configSource.end)
-  return deck.source.slice(0, end < 0 ? deck.source.length : end + 1)
+  if (kind !== 'theme' || !from) throw new Error('A new theme starts as a copy of another one')
+  const params = from.params && Object.fromEntries(Object.entries(from.params).map(([name, param]) => [name, { token: param.token, title: param.title, description: param.description }]))
+  return { [MANIFEST]: toToml({ ...toModel({ ...from, kind, params }), id, title, files: {} }), 'styles.css': fromFiles['styles.css'] ?? '' }
 }
