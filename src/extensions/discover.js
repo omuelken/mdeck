@@ -3,15 +3,25 @@
 import { palettesFor } from './tokens.js'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve, dirname, relative } from 'node:path'
+import { homedir } from 'node:os'
 import { MANIFEST_FILENAME, ManifestError, KINDS, parseManifestText, validateManifest } from './manifest.js'
 import { builtinExtensionsRoot } from '../paths.js'
 
 const SKIP = name => name.startsWith('.') || name === 'node_modules'
 
-export function extensionRoots(slidesPath, { builtinRoot = builtinExtensionsRoot } = {}) {
+// Extensions installed for one user (`mdeck themes install --global`), for
+// every deck: ~/.mdeck/extensions, or $MDECK_HOME/extensions.
+export function userExtensionsDir() {
+  return resolve(process.env.MDECK_HOME || resolve(homedir(), '.mdeck'), 'extensions')
+}
+
+// Built-in, then the user's, then the deck's own: a deck's extension replaces
+// a user one with the same id.
+export function extensionRoots(slidesPath, { builtinRoot = builtinExtensionsRoot, userRoot = userExtensionsDir() } = {}) {
   const deckDir = dirname(resolve(slidesPath))
   return [
     { dir: builtinRoot, source: 'built-in' },
+    ...(userRoot ? [{ dir: userRoot, source: 'user' }] : []),
     { dir: resolve(deckDir, 'extensions'), source: 'local' },
   ]
 }
@@ -50,8 +60,11 @@ export function discoverExtensions(roots) {
   const add = (record, source) => {
     const key = `${record.kind}:${record.id}`
     const existing = byKey.get(key)
-    if (existing) throw new ManifestError(`Duplicate ${record.kind} "${record.id}" is also defined in ${existing.file}. Extension IDs must be unique within their kind.`, { file: record.file })
     const entry = { ...record, source }
+    if (existing?.source === 'user' && source === 'local') {
+      registry.warnings.push(`The ${record.kind} "${record.id}" in this deck's extensions replaces the one installed in ${dirname(existing.dir)}`)
+      registry.records.splice(registry.records.indexOf(existing), 1)
+    } else if (existing) throw new ManifestError(`Duplicate ${record.kind} "${record.id}" is also defined in ${existing.file}. Extension IDs must be unique within their kind.`, { file: record.file })
     byKey.set(key, entry)
     registry.records.push(entry)
     registry[`${record.kind}s`][record.id] = entry
@@ -81,6 +94,11 @@ function checkPaletteReferences(registry) {
     const owner = palette.manifest.theme
     if (owner && !registry.themes[owner]) throw new ManifestError(`theme "${owner}" does not exist, so nothing could use this palette`, { file: palette.file, path: 'theme' })
   }
+}
+
+// The extensions that come with mdeck, alone.
+export function builtInRegistry() {
+  return discoverExtensions([{ dir: builtinExtensionsRoot, source: 'built-in' }])
 }
 
 export function loadRegistry(slidesPath, options) {

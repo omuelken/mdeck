@@ -1,17 +1,17 @@
 {
-  "name": "@tilman.schieber/mdeck",
-  "version": "2.2.0",
+  "name": "mdeck",
+  "version": "2.3.0",
   "type": "module",
   "description": "Write slides as a plain text file, present them in the browser, share them as one HTML file or PDF.",
   "license": "MIT",
   "author": "Tilman Schieber",
-  "homepage": "https://mdeck-996814.pages.fhnw.ch/",
+  "homepage": "https://gh.tschieber.de/mdeck/",
   "repository": {
     "type": "git",
-    "url": "https://gitlab.fhnw.ch/tilman.schieber/mdeck.git"
+    "url": "git+https://github.com/tilman-schieber/mdeck.git"
   },
   "bugs": {
-    "url": "https://gitlab.fhnw.ch/tilman.schieber/mdeck/-/issues"
+    "url": "https://github.com/tilman-schieber/mdeck/issues"
   },
   "keywords": [
     "markdown",
@@ -39,9 +39,6 @@
     "skills",
     "CHANGELOG.md"
   ],
-  "publishConfig": {
-    "@tilman.schieber:registry": "https://gitlab.fhnw.ch/api/v4/projects/31311/packages/npm/"
-  },
   "scripts": {
     "test": "node --test",
     "test:browser": "node tools/browser-check.mjs",

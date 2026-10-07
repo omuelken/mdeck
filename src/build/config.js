@@ -4,6 +4,7 @@ import preact from '@preact/preset-vite'
 import { slidesPlugin } from './slidesPlugin.js'
 import { frameworkRoot, runtimeRoot } from '../paths.js'
 import { componentFolders } from './components.js'
+import { userExtensionsDir } from '../extensions/discover.js'
 
 // Resolve preact's entry points through Node so the package's `exports` map is
 // honoured — `preact/jsx-dev-runtime` has no directory of its own, so a
@@ -48,7 +49,7 @@ export function baseConfig(slidesPath, { selfContained = false, defaultView = 'd
     server: {
       port: 5173,
       strictPort: false,
-      fs: { allow: [frameworkRoot, dirname(abs), ...componentFolders(abs, source).map(folder => folder.dir)] },
+      fs: { allow: [frameworkRoot, dirname(abs), userExtensionsDir(), ...componentFolders(abs, source).map(folder => folder.dir)] },
     },
     define: {
       __MDECK_SELF_CONTAINED__: JSON.stringify(selfContained),

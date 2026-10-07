@@ -112,10 +112,10 @@ export async function launchChrome({ dir, chrome = findChrome(), timeout = 90000
         },
         // Waits until the deck stage exists, fonts are loaded and images decoded.
         waitForDeck: () => page.waitFor("document.querySelector('deck-stage')?.length > 0 && document.fonts.status === 'loaded' && [...document.images].every(image => image.complete)"),
-        async screenshot({ width = 1600, height = 900, scale = 1 } = {}) {
+        async screenshot({ width = 1600, height = 900, scale = 1, format = 'png' } = {}) {
           await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: scale, mobile: false }, sessionId)
           await delay(150)
-          const { data } = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }, sessionId)
+          const { data } = await send('Page.captureScreenshot', { format, ...(format === 'png' ? {} : { quality: 82 }), captureBeyondViewport: false }, sessionId)
           return Buffer.from(data, 'base64')
         },
         close: () => send('Target.closeTarget', { targetId }),

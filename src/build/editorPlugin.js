@@ -5,8 +5,12 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, unlinkSync } from 'node:fs'
 import { resolve, basename, dirname, relative } from 'node:path'
-import { loadRegistry, serializeRegistry } from '../extensions/discover.js'
+import { builtInRegistry, loadRegistry, serializeRegistry } from '../extensions/discover.js'
+import { fetchIndex, findPack, installedPacks, installFromIndex, PackError } from '../extensions/packs.js'
+import { createRequire } from 'node:module'
 import { ManifestError, KINDS, ID_RE, MANIFEST_FILENAME, parseManifestText, validateManifest } from '../extensions/manifest.js'
+
+const VERSION = createRequire(import.meta.url)('../../package.json').version
 
 const BODY_LIMIT = 32 * 1024 * 1024
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]', '::1'])
@@ -145,7 +149,7 @@ export function createExtensionStore(deckDir, { registryFor }) {
       }
       const registry = registryFor()
       const existing = registry[`${kind}s`][id]
-      if (existing && existing.source !== 'local') throw Object.assign(new Error(`"${id}" is built into mdeck; copy it into this deck under a new id to change it`), { status: 403 })
+      if (existing && existing.source !== 'local') throw Object.assign(new Error(`"${id}" is ${existing.source === 'user' ? 'installed for every deck' : 'built into mdeck'}; copy it into this deck under a new id to change it`), { status: 403 })
       for (const other of KINDS.filter(k => k !== kind)) if (registry[`${other}s`][id]) throw Object.assign(new Error(`"${id}" is already a ${other}`), { status: 409 })
       const dir = folder(id)
       const current = existsSync(dir) ? readFolder(dir) : {}
@@ -168,7 +172,7 @@ export function createExtensionStore(deckDir, { registryFor }) {
       check(kind, id)
       const record = registryFor()[`${kind}s`][id]
       if (!record) throw Object.assign(new Error(`No ${kind} "${id}"`), { status: 404 })
-      if (record.source !== 'local') throw Object.assign(new Error(`"${id}" is built into mdeck and cannot be removed`), { status: 403 })
+      if (record.source !== 'local') throw Object.assign(new Error(`"${id}" is ${record.source === 'user' ? 'installed for every deck; remove it with mdeck themes remove --global' : 'built into mdeck and cannot be removed'}`), { status: 403 })
       rmSync(record.dir, { recursive: true, force: true })
       return { kind, id }
     },
@@ -176,6 +180,7 @@ export function createExtensionStore(deckDir, { registryFor }) {
 }
 
 export function editorMiddleware(deckFile, { registryFor, extensions = createExtensionStore(dirname(deckFile.path), { registryFor }) }) {
+  const extensionsDir = resolve(dirname(deckFile.path), 'extensions')
   return async (request, response, next) => {
     const pathname = new URL(request.url, 'http://localhost').pathname
     if (!isAllowedRequest(request)) return send(response, 403, { error: 'Requests are only accepted from this editor on this computer' })
@@ -196,6 +201,19 @@ export function editorMiddleware(deckFile, { registryFor, extensions = createExt
         response.setHeader('Allow', 'GET, PUT, DELETE')
         return send(response, 405, { error: 'Method not allowed' })
       }
+      // The theme repository: what it offers, and installing a pack into the
+      // deck's extensions folder.
+      if (pathname === '/themes/index' && request.method === 'GET') {
+        const index = await fetchIndex()
+        return send(response, 200, { ...index, installed: installedPacks(extensionsDir) })
+      }
+      if (pathname === '/themes/install' && request.method === 'POST') {
+        const body = await readJson(request)
+        const index = await fetchIndex()
+        const registry = builtInRegistry()
+        const result = await installFromIndex(index, findPack(index, String(body?.id ?? '')), { root: extensionsDir, known: { themes: registry.themes, palettes: registry.palettes }, mdeckVersion: VERSION })
+        return send(response, 200, { ...result, registry: serializeRegistry(registryFor()) })
+      }
       if (pathname === '/deck' && request.method === 'GET') {
         const registry = registryFor()
         const where = deckFile.designOnly ? { path: dirname(deckFile.path), name: basename(dirname(deckFile.path)), designOnly: true } : { path: deckFile.path, name: basename(deckFile.path) }
@@ -212,6 +230,7 @@ export function editorMiddleware(deckFile, { registryFor, extensions = createExt
       if (['/deck', '/source'].includes(pathname)) { response.setHeader('Allow', pathname === '/deck' ? 'GET' : 'POST'); return send(response, 405, { error: 'Method not allowed' }) }
       return next()
     } catch (error) {
+      if (error instanceof PackError) return send(response, 400, { error: error.message })
       if (error instanceof ManifestError) return send(response, 500, { error: error.message })
       return send(response, error.status ?? 500, { error: error.message })
     }

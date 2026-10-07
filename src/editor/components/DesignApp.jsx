@@ -1,7 +1,7 @@
 import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useDeckDocument } from '../useDeckDocument.js'
-import { loadExtension, saveExtension, deleteExtension } from '../api.js'
+import { loadExtension, saveExtension, deleteExtension, installThemePack } from '../api.js'
 import { starterFiles, parseManifest, toModel, toRuntimeManifest, MANIFEST } from '../extensions.js'
 import { sampleDeck, sampleDataUrl } from '../sampleDeck.js'
 import { parseTarget } from '../designLink.js'
@@ -117,6 +117,15 @@ export function DesignApp() {
     } catch (caught) { setError(caught.message) }
   }
 
+  // A pack from the theme repository, installed beside the deck; its first
+  // theme or palette of the kind shown is opened.
+  const installOnline = async (pack, kind) => {
+    const result = await installThemePack(pack.id)
+    dispatch({ type: 'setRegistry', registry: result.registry })
+    const id = pack[`${kind}s`][0]
+    if (id) await select(kind, id)
+  }
+
   const remove = async () => {
     const target = current
     try {
@@ -226,7 +235,7 @@ export function DesignApp() {
     </header>
     {state.status === 'conflict' && <ConflictBanner onReload={() => resolve('reload')} onOverwrite={() => resolve('overwrite')} />}
     <div class="editor-main" style={{ gridTemplateColumns: `290px minmax(0, 1fr) ${inspectorWidth}px` }}>
-      <ExtensionsPanel registry={state.registry} owner={state.designOnly ? "This folder's" : "This deck's"} view={{ appearance, themeFor: id => themeFor(id, themeId), paletteFor: id => offers(themes[id], paletteId) ? paletteId : '' }} selected={current} onSelect={select} onCreate={kind => setDialog({ kind })} />
+      <ExtensionsPanel registry={state.registry} owner={state.designOnly ? "This folder's" : "This deck's"} view={{ appearance, themeFor: id => themeFor(id, themeId), paletteFor: id => offers(themes[id], paletteId) ? paletteId : '' }} selected={current} onSelect={select} onCreate={kind => setDialog({ kind })} onInstall={installOnline} />
       <Preview source={source} selection={{ index, slideId: null }} config={config} overrides={overrides} bar={bar} reloadKey={previewKey} total={slideCount}
         width={deckConfig.width ?? 1920} height={deckConfig.height ?? 1080} onState={setSlide} onRendered={info => dispatch({ type: 'previewRendered', ...info })} />
       <aside class="editor-panel">

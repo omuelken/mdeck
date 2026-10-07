@@ -19,6 +19,7 @@ import { createPairing, pairingPlugin } from '../build/pairing.js'
 import { isAllowedRequest } from '../build/editorPlugin.js'
 import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
 import { installSkill, readSkill, TARGETS } from './skill.js'
+import { runThemes } from './themes.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
 
 import { frameworkRoot } from '../paths.js'
@@ -312,6 +313,9 @@ const HELP = `
     ${c.green}mdeck edit${c.reset} [slides.md]                    Edit slides in the browser; saves to the file
     ${c.green}mdeck design${c.reset} [folder | slides.md]         Look at and fine-tune themes and palettes on a sample deck;
                                               saves to the folder's extensions/ (default: this folder)
+    ${c.green}mdeck themes${c.reset} search [words]               Themes and palettes from the online repository
+      install <pack> [slides.md | folder]   into the deck's extensions/ (--global: for every deck)
+      remove <pack>, update [pack], list    --force replaces files changed by hand
 
   ${c.dim}Make something to hand out${c.reset}
     ${c.green}mdeck build${c.reset} [slides.md] [-o dir/index.html]   A folder to host
@@ -608,6 +612,10 @@ if (command === 'new') {
   ok(`Editing ${c.cyan}${abs}${c.reset}`)
   tip(`Changes are saved to the file as you type. Before the first change, a copy goes to ${BACKUP_DIR}/ beside it.\n`)
 
+// ── themes ────────────────────────────────────────────────────────────────────
+} else if (command === 'themes') {
+  await runThemes({ positionals: positionals(), flag: name => hasFlag(name), output: outputOption, ui: { ok, err, tip, c } })
+
 // ── design ────────────────────────────────────────────────────────────────────
 // The design page: with a deck, beside its editor; with a folder (or nothing),
 // on the sample deck alone, saving into that folder's extensions/.
@@ -624,7 +632,7 @@ if (command === 'new') {
   await server.listen()
   console.log(`\n  ${c.green}➜${c.reset}  Design: ${c.cyan}${new URL('design.html', server.resolvedUrls.local[0]).href}${c.reset}\n`)
   ok(withDeck ? `Designing for ${c.cyan}${abs}${c.reset}` : `Designing in ${c.cyan}${abs}${c.reset}, on a sample deck`)
-  tip(`Themes, palettes and layouts are saved as you type, in ${resolve(withDeck ? dirname(abs) : abs, 'extensions')}/. Decks in ${withDeck ? 'that' : 'this'} folder find them.\n`)
+  tip(`Themes and palettes are saved as you type, in ${resolve(withDeck ? dirname(abs) : abs, 'extensions')}/. Decks in ${withDeck ? 'that' : 'this'} folder find them.\n`)
 
 // ── build and send ────────────────────────────────────────────────────────────
 } else if (command === 'build' || command === 'send') {

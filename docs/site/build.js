@@ -15,8 +15,8 @@ import { loadRegistry, manifestsOf } from '../../src/extensions/discover.js'
 import { palettesFor } from '../../src/extensions/tokens.js'
 import { createRequire } from 'node:module'
 
-const REPO = 'https://gitlab.fhnw.ch/tilman.schieber/mdeck'
-const LINKS = [['Repository', REPO], ['Releases', `${REPO}/-/releases`], ['Package', `${REPO}/-/packages`], ['Issues', `${REPO}/-/issues`]]
+const REPO = 'https://github.com/tilman-schieber/mdeck'
+const LINKS = [['Repository', REPO], ['Releases', `${REPO}/releases`], ['Package', 'https://www.npmjs.com/package/mdeck'], ['Issues', `${REPO}/issues`]]
 const version = createRequire(import.meta.url)('../../package.json').version
 const projectLinks = () => LINKS.map(([label, href]) => `<a href="${href}" rel="noopener">${label}</a>`).join('')
 import { parseSlides } from '../../src/core/parseSlides.js'
@@ -113,8 +113,8 @@ export function renderPage(page, markdown) {
 <a class="skip-link" href="#main">Skip to the guide</a>
 <header class="site-header"><a class="brand" href="index.html" aria-label="mdeck documentation home"><img src="assets/favicon.svg" alt="" width="26" height="26"><span>mdeck</span><span class="brand-guide">Guide</span></a>
 <div class="header-tools"><div class="search-box" role="search"><label for="search" class="sr-only">Search the guides</label><input id="search" type="search" placeholder="Search the guides" autocomplete="off" aria-controls="search-results" aria-expanded="false"><kbd aria-hidden="true">/</kbd><div id="search-results" hidden></div><span id="search-status" class="sr-only" aria-live="polite"></span></div>
-<a class="repo-link" href="https://gitlab.fhnw.ch/tilman.schieber/mdeck" rel="noopener"><img src="assets/gitlab-logo.svg" alt="" width="20" height="18">GitLab</a></div></header>
-<div class="site-layout"><details class="nav-shell" open><summary>Browse the guides</summary><nav aria-label="Documentation">${navigation(page)}<a class="nav-help" href="commands.html">Open these docs: <code>mdeck docs</code></a><div class="nav-group nav-project"><p>mdeck ${escape(version)} on GitLab</p>${projectLinks()}</div></nav></details>
+<a class="repo-link" href="${REPO}" rel="noopener"><img src="assets/github-logo.svg" alt="" width="20" height="20">GitHub</a></div></header>
+<div class="site-layout"><details class="nav-shell" open><summary>Browse the guides</summary><nav aria-label="Documentation">${navigation(page)}<a class="nav-help" href="commands.html">Open these docs: <code>mdeck docs</code></a><div class="nav-group nav-project"><p>mdeck ${escape(version)} on GitHub</p>${projectLinks()}</div></nav></details>
 <main id="main" tabindex="-1"><article><header class="article-header"><p class="breadcrumb">${escape(page.group)}</p><h1>${escape(title)}</h1>${page.group === 'Advanced customization' ? '<p class="advanced-notice">This section is for people comfortable with code. You can make and present slides without it.</p>' : ''}</header>${article}</article><nav class="page-navigation" aria-label="Previous and next guide">${footerLinks}</nav><footer class="article-footer"><span>mdeck ${escape(version)}</span><span class="footer-links">${projectLinks()}</span></footer></main>
 <aside class="page-outline" aria-label="On this page"><p>On this page</p>${headings.map(h => `<a href="#${h.id}">${escape(h.text)}</a>`).join('')}</aside></div></body></html>`
   return { html, headings, search: { title: page.title, href: `${page.slug}.html`, description: page.description, text: plain(article).replace(/\s+/g, ' ').trim() } }
@@ -130,7 +130,7 @@ export async function buildDocs({ outDir = resolve(docsRoot, 'dist'), examples =
     await writeFile(resolve(outDir, `${page.slug}.html`), html)
     search.push(entry)
   }
-  for (const file of ['site.css', 'site.js', 'favicon.svg', 'gitlab-logo.svg']) await copyFile(resolve(docsRoot, 'assets', file), resolve(outDir, 'assets', file))
+  for (const file of ['site.css', 'site.js', 'favicon.svg', 'github-logo.svg']) await copyFile(resolve(docsRoot, 'assets', file), resolve(outDir, 'assets', file))
   await cp(resolve(docsRoot, 'images'), resolve(outDir, 'images'), { recursive: true })
   await writeFile(resolve(outDir, 'search.json'), JSON.stringify(search))
   await copyFile(resolve(projectRoot, 'examples/custom-layouts/slides.md'), resolve(outDir, 'downloads/comparison.md'))

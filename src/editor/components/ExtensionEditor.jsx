@@ -45,17 +45,18 @@ export function ExtensionEditor({ extension, palettes = {}, status, error, note,
   </>
 }
 
-// A built-in extension: what it is, and the one way to change it, a copy in
-// the deck's extensions folder.
+// A built-in or installed extension: what it is, and the one way to change
+// it, a copy in the deck's extensions folder.
 export function BuiltInCard({ extension, manifest, onCopy }) {
   const { kind, id, files } = extension
+  const user = extension.source === 'user'
   return <div class="form">
-    <p class="section-title">Built-in {kind}</p>
+    <p class="section-title">{user ? `Installed ${kind}, for every deck` : `Built-in ${kind}`}</p>
     <h2 class="builtin-title">{manifest?.title ?? id} <span class="muted">{id}</span></h2>
     {manifest?.description && <p class="builtin-description">{manifest.description}</p>}
     {kind === 'palette' && manifest && ['light', 'dark'].map(mode => <Field key={mode} label={mode === 'light' ? 'Light' : 'Dark'}><Swatches tokens={manifest[mode] ?? {}} /></Field>)}
     {kind === 'theme' && manifest?.palette && <p class="builtin-description">Its default palette is <code>{manifest.palette}</code>{manifest.palettes?.length ? `; it offers only ${manifest.palettes.join(', ')}` : ''}.</p>}
-    <p class="note">Built-in {kind}s cannot be changed. Copy this one into the deck's <code>extensions</code> folder and change the copy. The preview shows every change as you make it.</p>
+    <p class="note">{user ? `Installed ${kind}s are changed only by updating them (mdeck themes update --global).` : `Built-in ${kind}s cannot be changed.`} Copy this one into the deck's <code>extensions</code> folder and change the copy. The preview shows every change as you make it.</p>
     <div class="row" style={{ display: 'flex', gap: '8px' }}><button class="btn is-primary" onClick={onCopy}>Copy to customise</button></div>
     <details class="builtin-source">
       <summary>{MANIFEST}</summary>

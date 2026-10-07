@@ -2,11 +2,11 @@
 name: write-slides
 description: Write a complete mdeck slide deck. Use when the user asks to create slides, a presentation, or a talk using the mdeck framework, including turning existing PowerPoint, PDF, Word documents or notes into a deck, and when they want a new look for mdeck slides (a theme or colour palette, for example in their institute's colours).
 license: MIT
-compatibility: Best with the mdeck command installed (npm install -g @tilman.schieber/mdeck); works without it using the quick reference.
+compatibility: Best with the mdeck command installed (npm install -g mdeck); works without it using the quick reference.
 allowed-tools: Read Write Bash(mdeck:*) Bash(npm root:*) Bash(ls:*)
 metadata:
   argument-hint: "[source files, audience, length, language]"
-  homepage: https://mdeck-996814.pages.fhnw.ch/
+  homepage: https://gh.tschieber.de/mdeck/
 ---
 
 You are writing a presentation for mdeck, a slide framework that turns one Markdown file into slides with swappable themes and palettes.
@@ -16,7 +16,7 @@ You are writing a presentation for mdeck, a slide framework that turns one Markd
 The mdeck docs are the source of truth for syntax, layouts and looks. Look for them in this order and read `authoring.md`, `themes.md` and `palettes.md` from the first place that exists:
 
 1. `docs/reference/` in the current folder (you are inside the mdeck repository).
-2. `$(npm root -g)/@tilman.schieber/mdeck/docs/reference/` (mdeck is installed globally).
+2. `$(npm root -g)/mdeck/docs/reference/` (mdeck is installed globally).
 
 Read `examples/showcase/slides.md` from the same place as a complete working deck.
 
@@ -135,10 +135,10 @@ Fix anything it reports. When you worked from source material, list what you lef
 
 ## 5. A new look: themes and palettes
 
-When the user wants a look the built-in themes and palettes do not give (their institute's colours, a font, the style of a poster or picture), make it as an extension in `extensions/` beside the deck, never as styling on single slides. Read `extensions.md` from the reference folder first; it lists every setting.
+When the user wants a look the built-in themes and palettes do not give (their institute's colours, a font, the style of a poster or picture), first run `mdeck themes search` (with a word or two): someone may have shared it, and `mdeck themes install <pack> <deck>.md` puts it beside the deck. Otherwise make it as an extension in `extensions/` beside the deck, never as styling on single slides. Read `extensions.md` from the reference folder first; it lists every setting.
 
 - **Colours only: a palette.** `extensions/<id>/extension.toml` with `kind = "palette"`, and every colour role (`--bg`, `--surface`, `--ink`, `--ink-soft`, `--muted`, `--rule`, `--accent`, `--accent-2`, `--on-accent`) in both `[light]` and `[dark]`. Text colours must stay readable on `--bg` and `--surface` in both variants, because themes use the other variant for inverted slides.
-- **Fonts, sizes, spacing or arrangement: a theme.** Copy the folder of the closest built-in theme (`assets/extensions/themes/<id>/` in the mdeck repository or in `$(npm root -g)/@tilman.schieber/mdeck/`) to `extensions/<new-id>/`, change `id` and `title`, then its tokens and `styles.css`. A theme takes no colours of its own: it names its default `palette`, and the colours come from palettes.
+- **Fonts, sizes, spacing or arrangement: a theme.** Copy the folder of the closest built-in theme (`assets/extensions/themes/<id>/` in the mdeck repository or in `$(npm root -g)/mdeck/`) to `extensions/<new-id>/`, change `id` and `title`, then its tokens and `styles.css`. A theme takes no colours of its own: it names its default `palette`, and the colours come from palettes.
 - **Use it:** set `theme:` and `palette:` in the deck settings. `mdeck list <deck>.md` must show it as local, and `mdeck check <deck>.md` reports any mistake in its `extension.toml`.
 - **Hand over:** tell the user to run `mdeck design <deck>.md` (or `mdeck design <folder>` when there is no deck yet). It shows the look on a sample deck with every kind of slide, light and dark, and lets them fine-tune colours, fonts and sizes there.
 

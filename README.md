@@ -5,8 +5,8 @@
 <p align="center"><b>Hand your slides, papers and notes to an AI assistant. Get a clean deck to present in the browser. Share it as one HTML file or a PDF.</b></p>
 
 <p align="center">
-  <a href="https://mdeck-996814.pages.fhnw.ch/">Docs</a> ·
-  <a href="https://gitlab.fhnw.ch/tilman.schieber/mdeck/-/packages">Package</a> ·
+  <a href="https://gh.tschieber.de/mdeck/">Docs</a> ·
+  <a href="https://www.npmjs.com/package/mdeck">Package</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="LICENSE">MIT license</a>
 </p>
@@ -73,19 +73,20 @@ repaints.
 
 <p align="center"><img src="docs/images/themes.gif" alt="The same slide cycling through the Aurora, Duet, Editorial, FHNW, Neue and Terminal themes" width="800"></p>
 
-Try it yourself: the [docs home page](https://mdeck-996814.pages.fhnw.ch/)
+Try it yourself: the [docs home page](https://gh.tschieber.de/mdeck/)
 embeds a live deck with a theme switcher.
 
 ## Install
 
-You need [Node.js](https://nodejs.org) 22 or newer. mdeck is published in the
-GitLab package registry of this project:
+You need [Node.js](https://nodejs.org) 22 or newer:
 
 ```sh
-npm config set @tilman.schieber:registry https://gitlab.fhnw.ch/api/v4/packages/npm/
-npm install -g @tilman.schieber/mdeck
+npm install -g mdeck
 mdeck --help
 ```
+
+Installed mdeck from the FHNW GitLab registry before? Switch with
+`npm uninstall -g @tilman.schieber/mdeck`, then install as above.
 
 Working from a clone instead? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -128,7 +129,7 @@ The docs are written for people who have never used Markdown or a terminal.
 They start with working alongside an AI assistant and explain the file format
 so you can read and adjust what it writes:
 
-- Online: <https://mdeck-996814.pages.fhnw.ch/>
+- Online: <https://gh.tschieber.de/mdeck/>
 - Offline, from any folder once mdeck is installed: `mdeck docs`
 
 Technical references for layout, theme and tool authors live in
@@ -152,4 +153,4 @@ screenshots above show Neue.
 ## Made at FHNW
 
 mdeck is developed at the School of Life Sciences FHNW for lectures, labs and
-talks. Issues and ideas: <https://gitlab.fhnw.ch/tilman.schieber/mdeck/-/issues>.
+talks. Issues and ideas: <https://github.com/tilman-schieber/mdeck/issues>.

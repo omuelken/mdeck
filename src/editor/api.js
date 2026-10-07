@@ -51,3 +51,17 @@ export async function deleteExtension(kind, id) {
   if (!response.ok) throw await failure(response)
   return response.json()
 }
+
+// The theme repository: its packs, with those installed beside the deck.
+export async function loadThemeIndex() {
+  const response = await fetch('/__mdeck/themes/index', { headers: { Accept: 'application/json' } })
+  if (!response.ok) throw await failure(response)
+  return response.json()
+}
+
+// Installs a pack into the deck's extensions folder. Returns the new registry.
+export async function installThemePack(id) {
+  const response = await fetch('/__mdeck/themes/install', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+  if (!response.ok) throw await failure(response)
+  return response.json()
+}

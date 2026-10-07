@@ -120,6 +120,10 @@ details.more > .form { padding: 10px 0 0; }
 /* The design page: the deck's own extensions first, then built-in ones. */
 .panel-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px 0; }
 .panel-section-head .section-title { margin: 0; }
+.online-pack .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.online-pack { cursor: default; }
+.online-meta { font-size: 11px; color: #9a9a9a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.online-error { color: #f28b82; margin: 6px 0 0; }
 .hint-text { margin: 0; color: #9a9a9a; font-size: 12px; }
 .panel-hint { margin: 6px 14px 4px; color: #9a9a9a; font-size: 12px; }
 .design-usage { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid #222; background: #161b22; font-size: 12px; }

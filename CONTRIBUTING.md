@@ -1,7 +1,7 @@
 # Working on mdeck
 
 ```sh
-git clone git@gitlab.fhnw.ch:tilman.schieber/mdeck.git
+git clone git@github.com:tilman-schieber/mdeck.git
 cd mdeck
 npm install
 npm link          # makes this checkout the `mdeck` command
@@ -79,9 +79,11 @@ writes to `dist/` in the current working folder.
 
 1. Update `CHANGELOG.md` and the version in `package.json`.
 2. Commit, tag `vX.Y.Z`, push the tag.
-3. The pipeline runs the tests, publishes the package to the GitLab package
-   registry of this project, and deploys the documentation to GitLab Pages.
-4. Create a release from the tag on GitLab with the changelog entry.
+3. GitHub Actions runs the tests and publishes the package to npmjs.com
+   (`publish.yml`, trusted publishing with provenance). Every push to `main`
+   deploys the documentation to GitHub Pages (`pages.yml`).
+4. Create a release from the tag on GitHub with the changelog entry:
+   `gh release create vX.Y.Z --notes-file <(…)`.
 
 ## License
 

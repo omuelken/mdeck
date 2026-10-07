@@ -153,6 +153,10 @@ mdeck run my-talk.md
 
 Its theme, palette and light or dark controls, under the notes, let you try other looks (fold them away with the arrow beside them). These changes are a preview: they do not save back to your text file. Once you find a look you like, put its settings in the file and save.
 
+## More themes from other people
+
+The theme repository has themes and palettes others made. `mdeck themes search` lists them, and `mdeck themes install <pack> my-talk.md` puts one beside your slides; see [Install or share a theme](theme-repository.html).
+
 ## Add your name and organization
 
 ```yaml

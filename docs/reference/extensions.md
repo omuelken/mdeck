@@ -211,6 +211,33 @@ Built-in extensions cannot be changed; copy one under a new id to change it.
 New themes always start as a copy. Layouts are not edited there. The page
 writes the same files described above.
 
+## Installed extensions and packs
+
+mdeck looks for extensions in three places, in this order: the built-in ones,
+the user's folder (`~/.mdeck/extensions`, or `$MDECK_HOME/extensions`), and the
+`extensions/` folder beside the deck. An id may appear only once, except that a
+deck's own extension replaces a user one with the same id (with a warning).
+`mdeck check` warns when a deck uses a theme or palette from the user's folder,
+because the slide file then works only on that computer.
+
+`mdeck themes install <pack>` copies a pack from the theme repository into the
+deck's folder, or with `--global` into the user's. A pack is a folder with a
+`pack.toml` (`schema`, `id`, `title`, `description`, `version`, `author`,
+`license`, `homepage`, and `mdeck = ">=X.Y.Z"`, the oldest mdeck it works with)
+and one folder per theme or palette, each holding only `extension.toml` and,
+for a theme, `styles.css`. Theme fonts must come from `https://fonts.googleapis.com/`
+or `https://fonts.bunny.net/`, and `styles.css` may contain neither `@import`
+nor `url()` other than `data:` URLs. Each installed folder gets a
+`.mdeck-pack.json` with the pack, its version, its source and a checksum of
+every file; `update` and `remove` refuse to touch files changed since then
+unless given `--force`.
+
+The repository serves `index.json` (`{ schema: 1, packs: [...] }`, each with
+its ids, `url`, `sha256` and `previews`) and one JSON file per pack version
+holding the text of its files. `mdeck themes build <packs> -o <out> [--check]`
+writes both from a folder of packs; `MDECK_THEMES_URL` points mdeck at another
+index.
+
 ## Listing what is available
 
 ```sh

@@ -8,14 +8,13 @@ mdeck needs Node.js and npm on your computer. Install [Node.js](https://nodejs.o
 
 Open a terminal. A terminal is an app where you type short commands: Terminal on macOS, or PowerShell on Windows. A text editor may also have a Terminal menu.
 
-Run these two commands, one at a time. The first tells npm where FHNW publishes mdeck; the second installs it:
+Run this command to install mdeck:
 
 ```sh
-npm config set @tilman.schieber:registry https://gitlab.fhnw.ch/api/v4/packages/npm/
-npm install -g @tilman.schieber/mdeck
+npm install -g mdeck
 ```
 
-You normally do this only once. To update later, run the second command again.
+You normally do this only once. To update later, run it again.
 
 Check that the command is ready:
 
