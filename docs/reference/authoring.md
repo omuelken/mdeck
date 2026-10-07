@@ -696,6 +696,7 @@ For `play="auto"` the video pauses and resets to the beginning when you navigate
 | `question` | — | Question text; phones fall back to the slide heading |
 | `qr` | `true` | `false` leaves out the QR code (shown earlier with `<qrcode join />`) |
 | `answer` | — | The right answer (several separated by `\|`): a button with a tick outlines its label, bar and count in green, also in the audience window and on paired devices. `--poll-correct` sets the colour |
+| `results` | — | `hidden` starts with the results hidden, e.g. for peer instruction. A button with an eye shows or hides them (bars and counts) at any time, also in the audience window and on paired devices. Hidden, the audience window shows no bars; the presenter's own screens show them faint |
 
 Three more activities take the same `room`, `question` and `qr`:
 
