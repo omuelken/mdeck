@@ -73,6 +73,7 @@
 - The guides start from handing your own slides, documents or notes to an AI assistant, and explain the file format so you can read and adjust what it writes. The `write-slides` skill works from source material: it keeps its content and pictures, and says what it left out, moved to the notes or added.
 - The browser editor is no longer marked experimental.
 - The examples are reworked: the tour has four chapters, more varied layouts and exports to PDF again; the Python lesson gives code more room and something to try on every code slide; each example uses a different theme; the docs home page shows a short talk about lab notebooks. The FHNW example is removed.
+- Fixed: a web video (YouTube, Vimeo, SwitchTube) in `<videoplayer>`'s click mode went on playing, with sound, after leaving its slide. Leaving the slide now stops it; coming back shows it ready to play.
 
 ## 2.1.0 — 2026-10-06
 
