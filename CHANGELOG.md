@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.0 — unreleased
+## 3.0.0 — 2026-10-07
 
 - Every theme and palette now comes in a pack, also those that come with mdeck: `neue`, `academic`, `aurora` and `minimal` (each a theme with its palette) and the palette `lagoon`. `graphite`, close to `nordic`, moved to the theme repository as a pack of its own. They work right away and offline, and can be removed: `mdeck themes remove aurora` hides it from every deck, `mdeck themes install aurora` brings it back without the internet. A newer version from the theme repository replaces the bundled one. A deck without a theme still uses `neue`, and says so when it was removed; the last theme cannot be removed.
 - `mdeck themes install <pack>` installs for every deck by default; a slide file, a folder or `--local` installs beside that deck. Packs can require other packs (`requires = ["lagoon"]` in `pack.toml`) for palettes their themes use: installing one installs those too, and removing a pack another one needs is refused. The design page lists the packs you can install, including removed bundled ones, and removes a pack for every deck.
