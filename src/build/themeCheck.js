@@ -147,15 +147,25 @@ export function checkLooks(looks, { extensions = {} } = {}) {
   })
 }
 
+// The size of a theme's icon in lists, in CSS pixels; drawn at twice that
+// for sharp screens.
+export const ICON = { width: 96, height: 54, scale: 2 }
+
 // Pictures of looks on the sample deck, as WebP: { file, theme, palette,
-// slide } each, slide counting from 1.
+// slide, icon } each, slide counting from 1. `icon`, if given, is a second
+// file with the same slide at icon size: small enough for a list, and still
+// showing the theme's type, colours and shapes.
 export function renderPreviews(shots, { extensions = {}, width = 960, height = 540 } = {}) {
   return withSampleDeck({ extensions }, async ({ open }) => {
-    for (const { file, theme, palette = '', slide = 1 } of shots) {
+    for (const { file, theme, palette = '', slide = 1, icon = null } of shots) {
       const page = await open({ theme, palette })
       if (slide > 1) { await page.evaluate(`document.querySelector('deck-stage').goTo(${slide - 1})`); await settle(page) }
       mkdirSync(resolve(file, '..'), { recursive: true })
       writeFileSync(file, await page.screenshot({ width, height, format: 'webp' }))
+      if (icon) {
+        mkdirSync(resolve(icon, '..'), { recursive: true })
+        writeFileSync(icon, await page.screenshot({ ...ICON, format: 'webp' }))
+      }
       await page.close()
     }
   })

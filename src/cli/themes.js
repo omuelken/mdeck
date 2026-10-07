@@ -25,11 +25,14 @@ const usage = kind => `search [words] | install <${kind}> | remove <${kind}> | u
 function looksOf(registry, catalogue) {
   const builtIn = new Set([...catalogue.themes, ...catalogue.palettes].filter(entry => entry.builtIn).map(entry => entry.id + (catalogue.themes.includes(entry) ? ':t' : ':p')))
   const palettes = manifestsOf(registry, 'palette')
+  // Each theme's icon for the gallery's list (see renderPreviews).
+  const icons = new Map(catalogue.themes.map(entry => [entry.id, entry.icon]))
   const colours = tokens => Object.fromEntries(['--bg', '--surface', '--ink', '--accent', '--accent-2'].map(key => [key, tokens?.[key] ?? null]))
   return {
     mdeck: VERSION,
     themes: Object.values(manifestsOf(registry, 'theme')).map(theme => ({ id: theme.id, title: theme.title, description: theme.description ?? '', builtIn: builtIn.has(theme.id + ':t'),
-      palette: theme.palette, appearance: theme.appearance ?? 'light', palettes: palettesFor(theme, palettes).map(p => p.id) })),
+      palette: theme.palette, appearance: theme.appearance ?? 'light', palettes: palettesFor(theme, palettes).map(p => p.id),
+      ...(icons.get(theme.id) ? { icon: icons.get(theme.id) } : {}) })),
     palettes: Object.values(palettes).map(palette => ({ id: palette.id, title: palette.title, description: palette.description ?? '', builtIn: builtIn.has(palette.id + ':p'),
       ...(palette.theme ? { theme: palette.theme } : {}), light: colours(palette.light), dark: colours(palette.dark) })),
   }
@@ -148,8 +151,11 @@ export async function runPackages({ kind, positionals, flag, output, ui: { ok, e
         ok(`Checked ${catalogue.themes.length} themes and ${catalogue.palettes.length} palettes, light and dark, on every kind of slide`)
       }
       // Themes on the title slide, palettes on the chapter slide (the third).
-      await renderPreviews(looks.map(look => ({ file: resolve(out, 'previews', `${look.key}.webp`), theme: look.theme, palette: look.palette ?? '', slide: look.palette ? 3 : 1 })), { extensions })
-      for (const entry of catalogue.themes) entry.preview = `previews/themes/${entry.id}.webp`
+      // Themes also get an icon of their title slide for lists; a palette's
+      // colours are its icon.
+      await renderPreviews(looks.map(look => ({ file: resolve(out, 'previews', `${look.key}.webp`), theme: look.theme, palette: look.palette ?? '', slide: look.palette ? 3 : 1,
+        ...(look.palette ? {} : { icon: resolve(out, 'previews', `${look.key}-icon.webp`) }) })), { extensions })
+      for (const entry of catalogue.themes) Object.assign(entry, { preview: `previews/themes/${entry.id}.webp`, icon: `previews/themes/${entry.id}-icon.webp` })
       for (const entry of catalogue.palettes) entry.preview = `previews/palettes/${entry.id}.webp`
       writeFileSync(resolve(out, 'catalogue.json'), JSON.stringify(catalogue, null, 2) + '\n')
       // For the repository's theme browser: the sample deck with every theme

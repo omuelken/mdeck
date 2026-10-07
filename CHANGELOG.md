@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `mdeck themes build` also renders an icon for each theme: its title slide at 96×54 (drawn at twice that, about 3 KB), listed as `icon` in `catalogue.json` and `looks.json`. The theme repository's gallery shows it in its list instead of the palette's colours, which said little about a theme.
+
 ## 3.1.0 — 2026-10-07
 
 - Packs are gone: every theme and palette is installed on its own. `mdeck themes install duet` installs the theme with its default palette (`cobalt`), and `mdeck palettes install solarized` a palette; both have `search`, `remove`, `update` and `list`. A palette made for one theme (FHNW's `brand`) brings that theme along and goes with it. A palette an installed theme uses by default is not removed while that theme is there. Installs go into `themes/<id>/` and `palettes/<id>/` of the extensions folder, so a theme and a palette may share a name.

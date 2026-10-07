@@ -246,7 +246,9 @@ touch files changed since then unless given `--force`.
 
 The repository serves `catalogue.json` (`{ schema: 2, themes: [...],
 palettes: [...] }`, each with its id, version, default palette or theme,
-`url`, `sha256`, `preview`, and `builtIn` for those that come with mdeck) and
+`url`, `sha256`, `preview`, for a theme an `icon` (its title slide at
+96×54, drawn at twice that for sharp screens), and `builtIn` for those that
+come with mdeck) and
 one JSON file per version holding the text of its files.
 `mdeck themes build <repository> -o <out> [--check]` writes both from a
 folder with `themes/` and `palettes/`; `MDECK_THEMES_URL` points mdeck at
