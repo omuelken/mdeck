@@ -7,7 +7,7 @@
 // that the pen moves one at a time. Changes show at once in this window and
 // become one change (undo puts the strokes back) when the pen lifts.
 import { slideStrokes, changeInk, onInkChange } from './store.js'
-import { strokesInLasso, strokesBox, translateStroke, hitTest } from '../../core/ink.js'
+import { strokesInLasso, strokesBox, translateStroke, hitTest, snapAngle } from '../../core/ink.js'
 
 const PAD = 14        // design pixels around a selection
 const TAP = 10        // a lasso smaller than this is a tap
@@ -119,6 +119,8 @@ export function createInkSelection(stage, controller) {
 }
 
 // The stroke with one end point moved to `point` (its pressure kept).
-function moveEnd(stroke, index, [x, y]) {
+// The other end stays put, and the moved one snaps to steps of 15° around it.
+function moveEnd(stroke, index, point) {
+  const [x, y] = snapAngle(stroke.points[1 - index], point)
   return { ...stroke, points: stroke.points.map((p, i) => i === index ? [x, y, p[2]] : p) }
 }

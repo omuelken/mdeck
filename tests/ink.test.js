@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { inkFileFor, emptyInk, normalizeInk, validateInk, orphanIds, applyOp, simplify, hitTest, strokePath, inkOrder, translateStroke, insidePolygon, strokesInLasso, strokesBox, inkPaint } from '../src/core/ink.js'
+import { inkFileFor, emptyInk, normalizeInk, validateInk, orphanIds, applyOp, simplify, hitTest, strokePath, inkOrder, translateStroke, insidePolygon, strokesInLasso, strokesBox, inkPaint, snapAngle } from '../src/core/ink.js'
 import { paletteTokens } from '../src/extensions/appearance.js'
 import { slidesPlugin } from '../src/build/slidesPlugin.js'
 import { checkDeck } from '../src/build/check.js'
@@ -102,6 +102,23 @@ test('renaming a slide twice, or onto ink it already has, does not double stroke
   ink = applyOp(ink, { type: 'rename', from: 'old', to: 'new' })
   assert.equal(ink.slides.new.length, 1)
   assert.equal(ink.slides.old, undefined)
+})
+
+test('a straight line snaps to steps of 15 degrees when close to one', () => {
+  // 2° off horizontal: becomes horizontal, same length
+  const end = snapAngle([0, 0], [100, Math.tan(2 * Math.PI / 180) * 100])
+  assert.equal(end[1], 0)
+  assert.ok(Math.abs(end[0] - Math.hypot(100, Math.tan(2 * Math.PI / 180) * 100)) < 0.2)
+  // 43° becomes 45°
+  const diagonal = snapAngle([10, 10], [10 + 100 * Math.cos(43 * Math.PI / 180), 10 + 100 * Math.sin(43 * Math.PI / 180)])
+  assert.ok(Math.abs(Math.atan2(diagonal[1] - 10, diagonal[0] - 10) * 180 / Math.PI - 45) < 0.1)
+  // 7° lies between steps, beyond the tolerance: stays as drawn
+  const free = [100 * Math.cos(7 * Math.PI / 180), 100 * Math.sin(7 * Math.PI / 180)]
+  assert.deepEqual(snapAngle([0, 0], free), free)
+  // straight down (90°) and up-left (-135°) snap too
+  assert.equal(snapAngle([0, 0], [3, 100])[0], 0)
+  const upLeft = snapAngle([0, 0], [-70, -72])
+  assert.ok(Math.abs(upLeft[0] - upLeft[1]) < 0.2)
 })
 
 test('the highlighter is drawn below the pen', () => {

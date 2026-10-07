@@ -179,9 +179,10 @@ try {
   await tabletPen('mousePressed', 300, 120)
   for (let i = 1; i <= 12; i++) await tabletPen('mouseMoved', 300 + i * 20, 120 + (i % 2 ? 30 : -30))
   await delay(800)
-  await tabletPen('mouseReleased', 540, 120)
+  // Released 3.6° below horizontal: the line snaps to 0°, a 15° step.
+  await tabletPen('mouseReleased', 540, 135)
   await until(tablet, "document.querySelectorAll('.slide-ink path').length === 4")
-  assert.ok(await tablet.evaluate(lastPathHeight) < 30, 'the held stroke became a straight line')
+  assert.ok(await tablet.evaluate(lastPathHeight) < 10, 'the held stroke became a straight, horizontal line')
   // A finger's tap selects the straight line; the pen moves one of its ends.
   const lastPathBox = "(() => { const b = [...document.querySelectorAll('.slide-ink path')].at(-1).getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom].map(Math.round) })()"
   await finger('touchStart', 420, 120); await finger('touchEnd'); await delay(200)
@@ -469,7 +470,7 @@ try {
   await until(projector, "[...document.querySelectorAll('[data-deck-active] .word-cloud text')].map(e => e.textContent).join() === 'fun'")
   await projector.evaluate("document.querySelector('deck-stage').goTo(4)")
   await until(projector, "!!document.querySelector('[data-deck-active] .poll-join-slide .poll-join')")
-  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room (also with a standalone server for the polls).')
+  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room (also with a standalone server for the polls).')
 } finally {
   await browser?.close()
   await tablet2?.close()
