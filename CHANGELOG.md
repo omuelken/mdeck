@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Tables have room below them in every theme, so a sentence after a table no longer sits right against it.
 - `mdeck themes build` also renders an icon for each theme: its title slide at 96×54 (drawn at twice that, about 3 KB), listed as `icon` in `catalogue.json` and `looks.json`. The theme repository's gallery shows it in its list instead of the palette's colours, which said little about a theme.
 
 ## 3.1.0 — 2026-10-07

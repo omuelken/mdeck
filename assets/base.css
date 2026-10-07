@@ -167,6 +167,8 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
   border-collapse: collapse;
   width: 100%;
   font-size: var(--fs-body);
+  /* Room before what follows, such as a sentence about the numbers. */
+  margin-bottom: calc(var(--gap-item, 24px) * 1.5);
 }
 .slide-body th,
 .slide-body td {
