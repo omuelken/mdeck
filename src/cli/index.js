@@ -24,7 +24,7 @@ import { ManifestError, KINDS } from '../extensions/manifest.js'
 
 import { frameworkRoot } from '../paths.js'
 import { parseSlides } from '../core/parseSlides.js'
-import { stripNotes as stripNotesFrom } from '../core/editDeck.js'
+import { stripNotes as stripNotesFrom, stripActivities as stripActivitiesFrom } from '../core/editDeck.js'
 import { parseArgs, parseSlideNumbers, validateServerOrigin } from './args.js'
 import { assertDrawings } from '../build/drawings.js'
 import { createRelayAccess } from '../build/relayAccess.js'
@@ -178,12 +178,13 @@ async function runNewWizard() {
   }
 }
 
-async function copyLocalAssets(slidesPath, outDir, { stripNotes = false } = {}) {
+async function copyLocalAssets(slidesPath, outDir, { stripNotes = false, stripActivities = false } = {}) {
   const absSlides = resolve(slidesPath)
   const deckDir = dirname(absSlides)
   const absOutDir = resolve(outDir)
   const raw = readFileSync(absSlides, 'utf-8')
-  const markdown = stripNotes ? stripNotesFrom(raw) : raw
+  let markdown = stripNotes ? stripNotesFrom(raw) : raw
+  if (stripActivities) markdown = stripActivitiesFrom(markdown).source
 
   for (const ref of collectLocalAssetRefs(markdown)) {
     const source = resolve(deckDir, ref)
@@ -320,12 +321,13 @@ const HELP = `
 
   ${c.dim}Make something to hand out${c.reset}
     ${c.green}mdeck build${c.reset} [slides.md] [-o dir/index.html]   A folder to host
-      --reader               reader view, notes removed unless --notes
+      --reader               reader view, notes removed unless --notes, polls kept as a record unless --no-polls
       --single-file          everything inlined into one file instead
       --launchers            add macOS/Linux and Windows launchers (folders only)
     ${c.green}mdeck send${c.reset} [slides.md] [-o talk.html]     One file to send: the reader view, speaker notes removed,
                                               with a PDF inside
       --notes                keep the speaker notes in the file
+      --no-polls             for send, build --reader and pdf: leave out the slides with polls
       --no-pdf               do not render the PDF inside
     ${c.green}mdeck pdf${c.reset} [slides.md] [-o talk.pdf]       A PDF, one page per slide
       --no-drawings          for build, send and pdf: leave out <slides>.drawings.json
@@ -668,6 +670,8 @@ if (command === 'new') {
   const launchers = !sending && hasFlag('--launchers')
   const reader = sending || hasFlag('--reader')
   const stripNotes = reader && !hasFlag('--notes')
+  // Polls show as a record of the talk; --no-polls leaves their slides out.
+  const stripActivities = reader && hasFlag('--no-polls')
   const wantPdf = sending && !hasFlag('--no-pdf')
 
   if (!hasFlag('--no-drawings')) { try { assertDrawings(input) } catch (error) { err(error.message); process.exit(1) } }
@@ -682,7 +686,7 @@ if (command === 'new') {
   try {
     await build({
       ...baseConfig(input, { selfContained, defaultView: reader ? 'reader' : 'deck' }),
-      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: selfContained, inlineMedia: selfContained, embedFonts: selfContained, stripNotes, ink: !hasFlag('--no-drawings'), deckLook: reader }), viteSingleFile()],
+      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: selfContained, inlineMedia: selfContained, embedFonts: selfContained, stripNotes, stripActivities, ink: !hasFlag('--no-drawings'), deckLook: reader }), viteSingleFile()],
       build: {
         outDir,
         emptyOutDir: !tempDir,
@@ -700,7 +704,7 @@ if (command === 'new') {
   await mkdir(finalOutDir, { recursive: true })
 
   if (!selfContained) {
-    await copyLocalAssets(input, finalOutDir, { stripNotes })
+    await copyLocalAssets(input, finalOutDir, { stripNotes, stripActivities })
     if (launchers) await writePresenterLaunchers(finalOutDir, htmlFilename)
   }
 
@@ -724,6 +728,7 @@ if (command === 'new') {
     } finally { await rm(pdfDir, { recursive: true, force: true }) }
   }
   if (stripNotes) tip('Speaker notes were removed from this file (use --notes to keep them).')
+  if (stripActivities && stripActivitiesFrom(readFileSync(resolve(input), 'utf-8')).removed.length) tip('Slides with polls were left out (--no-polls).')
   ok(`${sending ? 'Made' : 'Built'}: ${c.cyan}${htmlFile}${c.reset}${reader ? ' — opens in the reader view' : ''}${selfContained ? ' (single file)' : ' + local assets'}\n`)
 
 // ── skill ─────────────────────────────────────────────────────────────────────
@@ -753,7 +758,7 @@ if (command === 'new') {
   try {
     await build({
       ...baseConfig(input, { selfContained: true }),
-      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true, embedFonts: true, ink: !hasFlag('--no-drawings'), deckLook: true }), viteSingleFile()],
+      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true, embedFonts: true, stripActivities: hasFlag('--no-polls'), ink: !hasFlag('--no-drawings'), deckLook: true }), viteSingleFile()],
       build: { outDir: tempDir, emptyOutDir: true, target: 'esnext', assetsInlineLimit: 100 * 1024 * 1024 },
       logLevel: 'warn',
     })

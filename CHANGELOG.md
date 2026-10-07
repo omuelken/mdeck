@@ -4,6 +4,10 @@
 
 - `mdeck check --render` looks at the deck in Chrome: it builds it, shows every slide with all steps revealed, and reports content that does not fit, text cut off at the slide's edge or hard to read on what is behind it, and errors the page reports, each with the slide's number, heading and line. `mdeck snapshot` saves slides as PNG files (`--slide 3,5-7`, `--dark`, `--light`, `-o`; by default in `.mdeck-snapshots/`), so a person or an assistant can look at them. The slide-writing skill uses both.
 - New view `?view=follow`: people in the room follow the talk on their phone or laptop. It shows the slide the presenter shows, step by step, and their drawing, read from the stage room without sending anything; people can page back and return with **Back to live**, and never see a slide or step before the presenter shows it. `<qrcode follow />` shows its link on a slide, the phones' answer page links to it (**Follow the slides**), and `mdeck run --network` prints it. It works on the same network with `mdeck run --network`, and anywhere for a deck hosted with a `server` setting. Followers count as phones in the presenter's overview of who is connected.
+- Fixed: a web video (YouTube, Vimeo, SwitchTube) in `<videoplayer>`'s click mode went on playing, with sound, after leaving its slide. Leaving the slide now stops it; coming back shows it ready to play.
+- Straight lines snap to steps of 15° (horizontal, vertical, 45° …) when they are within 4° of one, both when a held stroke straightens and when an end point is dragged; further off they stay as drawn.
+- Polls have a button with an eye that shows or hides the results (bars and counts), also in the audience window and on paired devices. `results="hidden"` starts with them hidden, e.g. for peer instruction; the audience then sees no bars, the presenter's own screens show them faint.
+- `--no-polls` leaves slides with a poll, question, word cloud or scale out of `mdeck send`, `mdeck build --reader` and `mdeck pdf`. By default they stay as a record of the talk. Drawings stay on their slides.
 
 ## 3.2.0 — 2026-10-07
 
@@ -73,9 +77,6 @@
 - The guides start from handing your own slides, documents or notes to an AI assistant, and explain the file format so you can read and adjust what it writes. The `write-slides` skill works from source material: it keeps its content and pictures, and says what it left out, moved to the notes or added.
 - The browser editor is no longer marked experimental.
 - The examples are reworked: the tour has four chapters, more varied layouts and exports to PDF again; the Python lesson gives code more room and something to try on every code slide; each example uses a different theme; the docs home page shows a short talk about lab notebooks. The FHNW example is removed.
-- Fixed: a web video (YouTube, Vimeo, SwitchTube) in `<videoplayer>`'s click mode went on playing, with sound, after leaving its slide. Leaving the slide now stops it; coming back shows it ready to play.
-- Straight lines snap to steps of 15° (horizontal, vertical, 45° …) when they are within 4° of one, both when a held stroke straightens and when an end point is dragged; further off they stay as drawn.
-- Polls have a button with an eye that shows or hides the results (bars and counts), also in the audience window and on paired devices. `results="hidden"` starts with them hidden, e.g. for peer instruction; the audience then sees no bars, the presenter's own screens show them faint.
 
 ## 2.1.0 — 2026-10-06
 

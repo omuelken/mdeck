@@ -710,6 +710,8 @@ Three more activities take the same `room`, `question` and `qr`:
 
 The slide shows live bars, the number of answers, a QR code and a short link. Phones never load the deck: they open the server's own answer page at `<server>/<code>`, where the six-digit session code is the same for every poll in the deck. The presenter's screen (the presenter view or a full deck window, never an embedded preview) announces the poll on the current slide with what the phones should show and the deck's look; the server only accepts that from the presenter. Between polls the phones wait. Each device's latest vote counts. The presenter can reset the room (hover over the results).
 
+`--no-polls` leaves slides with an activity out of `mdeck send`, `mdeck build --reader` and `mdeck pdf`; without it they show as a record of the talk. Saved drawings follow the remaining slides.
+
 Rooms run inside `mdeck run` (add `--network` so phones can reach it) or on a server started with `mdeck server`, set in the deck:
 
 ```yaml
