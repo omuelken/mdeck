@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.3.0 — unreleased
+## 2.3.0 — 2026-10-07
 
 - mdeck moved to GitHub (<https://github.com/tilman-schieber/mdeck>) and is published on npmjs.com as `mdeck`: install it with `npm install -g mdeck`. The docs are at <https://gh.tschieber.de/mdeck/>. The GitLab project is archived; remove the old package with `npm uninstall -g @tilman.schieber/mdeck`.
 - New `mdeck themes`: themes and palettes from the theme repository (<https://github.com/tilman-schieber/mdeck-themes>). `search` lists the packs, `install <pack> [slides.md]` copies one into the deck's `extensions/`, or with `--global` into `~/.mdeck/extensions` for every deck; `update`, `remove` and `list` work on what is installed, and refuse to overwrite files changed by hand without `--force`. Packs hold only `extension.toml` and `styles.css`, fonts only from Google Fonts or Bunny Fonts, and are checked against the checksum the repository lists. The design page lists the repository's packs with pictures and an Install button.
