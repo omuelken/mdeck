@@ -413,7 +413,7 @@ try {
   dev = await createServer({ ...config, plugins: [...config.plugins, homePlugin(slides, { services: {} })], server: { ...config.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await dev.listen()
   const home = await open(new URL('home.html', dev.resolvedUrls.local[0]).href)
-  await until(home, "document.querySelectorAll('.home-tile').length === 5 && !!document.querySelector('.home-header h1')?.textContent")
+  await until(home, "document.querySelectorAll('.home-tile').length === 6 && [...document.querySelectorAll('.home-tile')].some(tile => tile.textContent.includes('Theme editor')) && !!document.querySelector('.home-header h1')?.textContent")
   assert.deepEqual(await home.evaluate("[...document.querySelectorAll('.home-tile strong')].slice(0, 3).map(e => e.textContent)"), ['Presenter view', 'Audience window', 'Reader view'])
   assert.equal(await home.evaluate("new URL(document.querySelector('.home-preview-open').href).searchParams.get('view')"), 'audience')
   assert.equal(await home.evaluate("document.querySelectorAll('.home-output').length"), 3)
