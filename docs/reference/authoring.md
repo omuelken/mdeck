@@ -87,7 +87,8 @@ reader:
 ```
 
 Views are chosen with one address parameter: `?view=deck`, `?view=reader`,
-`?view=presenter` or `?view=audience`. `mdeck send` produces a file that opens
+`?view=presenter`, `?view=audience` or `?view=follow` (the presenter's slide and
+ink on another device, read from the stage room; never ahead of the presenter). `mdeck send` produces a file that opens
 in the reader view (outline, Read mode, a light/dark switch, PDF download).
 The file carries only the deck's own theme and palette, with that theme's
 fonts, so readers see the deck as it was made; they can switch between its
@@ -533,6 +534,12 @@ labels:
 | `respond.send` | Send | Senden |
 | `respond.sent` | Sent. Thank you! | Gesendet. Danke! |
 | `join.scan` | Scan to join | Scannen und mitmachen |
+| `follow.scan` | Scan to follow the slides | Scannen und Folien mitverfolgen |
+| `follow.open` | Follow the slides | Folien mitverfolgen |
+| `follow.live` | Live | Live |
+| `follow.back` | Back to live | Zur aktuellen Folie |
+| `follow.waiting` | The talk has not started yet. | Der Vortrag hat noch nicht begonnen. |
+| `follow.tryHere` | Try following here | Mitverfolgen hier ausprobieren |
 | `question.empty` | Answers appear here. | Hier erscheinen die Antworten. |
 | `scale.average` | Average {n} | Durchschnitt {n} |
 
@@ -698,7 +705,7 @@ Three more activities take the same `room`, `question` and `qr`:
 | `<wordcloud>` | `placeholder`, `limit` (60), `height` (520) | Text field, up to 40 characters, repeatable | A packed word cloud (d3-cloud): size by frequency, some words upright, case-insensitive |
 | `<question>` | `placeholder`, `limit` (8) | Text field, up to 200 characters, repeatable | The newest answers as cards |
 
-`<qrcode join />` shows the deck's join code large with its link (`size`, default 420), for a slide that invites everyone once; activities after it can use `qr="false"`. QR codes (`<qrcode>`, activities) are SVG in the slide's `--ink` on a transparent background; `--qr-ink` and `--qr-bg` override the colours.
+`<qrcode follow />` shows the link for following the slides on phones and laptops (`?view=follow`), with `mdeck run --network` or a hosted deck with a `server` setting; the phones' answer page links to it as well. `<qrcode join />` shows the deck's join code large with its link (`size`, default 420), for a slide that invites everyone once; activities after it can use `qr="false"`. QR codes (`<qrcode>`, activities) are SVG in the slide's `--ink` on a transparent background; `--qr-ink` and `--qr-bg` override the colours.
 
 The slide shows live bars, the number of answers, a QR code and a short link. Phones never load the deck: they open the server's own answer page at `<server>/<code>`, where the six-digit session code is the same for every poll in the deck. The presenter's screen (the presenter view or a full deck window, never an embedded preview) announces the poll on the current slide with what the phones should show and the deck's look; the server only accepts that from the presenter. Between polls the phones wait. Each device's latest vote counts. The presenter can reset the room (hover over the results).
 

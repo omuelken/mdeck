@@ -11,12 +11,14 @@ Every build and every preview contains all views. The address picks one with `?v
 | `?view=deck` | Standalone slides with drawing controls | Slides opened from the reader view or a built file |
 | `?view=presenter` | Current and next slide, notes and timer, and a button that opens the audience window | You, while presenting |
 | `?view=audience` | Slides without notes, with navigation synced to the presenter view | The projector |
-| `?view=reader` | The reader view: an outline, **Slides** and **Read** modes, a **Look** menu and a PDF | People you send the talk to |
+| `?view=reader` | The reader view: an outline, **Slides** and **Read** modes, light or dark, and a PDF | People you send the talk to |
+| `?view=follow` | The slide you are showing and your drawing, live; people can page back and return with **Back to live**, but never see a slide before you show it | People in the room, on their phone or laptop |
 
 Ways to switch between them:
 
 - The **Overview** link in the corner of the deck opens the reader view. Its outline is the overview of all slides.
 - **Present** in the reader view opens standalone slides at the current slide.
+- People in the room open the follow view with `<qrcode follow />` on a slide, with the **Follow the slides** link on the phones' answer page, or with the **Follow** address `mdeck run --network` prints. It works where their devices reach both the slides and your stage room: on the same network with `mdeck run --network`, or anywhere for a deck hosted with a `server` setting.
 - The presenter view's audience-window button opens the audience view in a new window. Navigation in either window updates the other, in the same browser or on a paired iPad: see [Draw on your slides](drawing.html#present-from-an-ipad).
 - The launch page of `mdeck run`, at the preview's plain address, offers Presenter, Audience and Reader. Its presenter and audience buttons belong together.
 - Fullscreen is a control inside a view (**F** or its fullscreen button). For a single screen, use the presenter view's slide-only layout.

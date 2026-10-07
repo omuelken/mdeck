@@ -336,6 +336,24 @@ try {
   await drawing.evaluate('location.reload()')
   await until(drawing, "document.querySelectorAll('[data-deck-active] .slide-ink path').length === 1")
 
+  // Following on another device (?view=follow): it goes with the presenter,
+  // never past what the presenter has shown, pages back on its own and comes
+  // back with "Back to live".
+  const followStage = "document.querySelector('deck-stage')"
+  const follower = await open(new URL('?view=follow', inkDev.resolvedUrls.local[0]).href)
+  await until(follower, `${followStage}?.length === 2`)
+  await drawing.evaluate(`${followStage}.goTo(0)`)
+  await until(follower, `${followStage}.state.index === 0 && document.querySelector('.follow-bar')?.textContent === 'Live'`)
+  await follower.evaluate(`${followStage}.next('keyboard')`)
+  await delay(300)
+  assert.equal(await follower.evaluate(`${followStage}.state.index`), 0, 'a follower cannot go past the presenter')
+  await drawing.evaluate(`${followStage}.goTo(1)`)
+  await until(follower, `${followStage}.state.index === 1`)
+  await follower.evaluate(`${followStage}.prev('keyboard')`)
+  await until(follower, `${followStage}.state.index === 0 && !!document.querySelector('button.follow-bar')`)
+  await follower.evaluate("document.querySelector('button.follow-bar').click()")
+  await until(follower, `${followStage}.state.index === 1 && document.querySelector('.follow-bar').textContent === 'Live'`)
+
   // Two devices through the stage room: a presenter view in another browser
   // (the iPad) moves and draws; this browser's audience window follows.
   tablet2 = await launchChrome({ dir: temp, timeout: 45000 })
@@ -451,7 +469,7 @@ try {
   await until(projector, "[...document.querySelectorAll('[data-deck-active] .word-cloud text')].map(e => e.textContent).join() === 'fun'")
   await projector.evaluate("document.querySelector('deck-stage').goTo(4)")
   await until(projector, "!!document.querySelector('[data-deck-active] .poll-join-slide .poll-join')")
-  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines and their end points, select and move, laser, zoom, saving ink in dev, a second device through the stage room (also with a standalone server for the polls).')
+  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room (also with a standalone server for the polls).')
 } finally {
   await browser?.close()
   await tablet2?.close()

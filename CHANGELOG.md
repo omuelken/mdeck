@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- New view `?view=follow`: people in the room follow the talk on their phone or laptop. It shows the slide the presenter shows, step by step, and their drawing, read from the stage room without sending anything; people can page back and return with **Back to live**, and never see a slide or step before the presenter shows it. `<qrcode follow />` shows its link on a slide, the phones' answer page links to it (**Follow the slides**), and `mdeck run --network` prints it. It works on the same network with `mdeck run --network`, and anywhere for a deck hosted with a `server` setting. Followers count as phones in the presenter's overview of who is connected.
+
 ## 3.2.0 — 2026-10-07
 
 - Pictures written in the text fit on the slide in every theme: a paragraph of nothing but pictures shrinks into the room below the heading instead of running off the slide, keeping its proportions (small pictures keep their size), and several pictures in one paragraph sit side by side. Such paragraphs have the class `pictures`, for themes that set them their own way; a picture in a sentence is left alone.

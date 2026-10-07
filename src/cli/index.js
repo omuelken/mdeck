@@ -578,7 +578,8 @@ if (command === 'new') {
   ok(`Launch page: ${c.cyan}${new URL('home.html', local).href}${c.reset}`)
   tip(`Presenter:   ${new URL('?view=presenter', local).href}`)
   tip(`Audience:    ${new URL('?view=audience', local).href}`)
-  if (exposed) for (const url of server.resolvedUrls.network) tip(`On a phone:  ${new URL('?view=reader', url).href}`)
+  // Phones in the room follow the talk (the reader view would show slides ahead).
+  if (exposed) for (const url of server.resolvedUrls.network) tip(`Follow:      ${new URL('?view=follow', url).href}`)
   console.log()
   if (relay) tip(`iPad:        choose "Show pairing code" on the launch page; it opens ${relay.url}`)
   ok(`Watching ${c.cyan}${abs}${c.reset}`)

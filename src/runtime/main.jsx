@@ -18,7 +18,8 @@ import { followActiveRooms } from '../live/follow.js'
 import { createOrder } from './syncOrder.js'
 import { fitDeck } from './fit.js'
 import { attachInk, watchInk } from './ink/attach.js'
-import { roomTransport, followStageRoom, announceStagePosition } from './ink/room.js'
+import { roomTransport, followStageRoom, announceStagePosition, onStagePosition } from './ink/room.js'
+import { startFollowing } from './follow.js'
 import { claimPairing } from '../live/pairing.js'
 import { strokePath } from '../core/ink.js'
 import { inkFileName } from 'virtual:deck-ink'
@@ -33,7 +34,7 @@ import './deck-stage.js'
 
 const PresenterIcon = ({ name, size = 18 }) => <Icon name={name} size={size} style={{ display: 'block' }} />
 
-// One address parameter selects the view: ?view=deck, reader, presenter or audience.
+// One address parameter selects the view: ?view=deck, reader, presenter, audience or follow.
 export function requestedView(url, fallback = 'deck') {
   return url.searchParams.get('view') ?? fallback
 }
@@ -694,11 +695,13 @@ async function init() {
   const { slides } = parsed
   const presenterMode = view === 'presenter'
   const audienceMode  = view === 'audience'
+  // A phone or laptop in the room following the talk: shows, never sends.
+  const followMode = view === 'follow'
   const embedded = url.searchParams.get('embedded') === '1'
   const readerMode = view === 'reader' && !editorMode && !embedded
   // The deck window and the presenter's main frame draw; the audience window
   // and the next-slide preview show what is drawn.
-  const drawHere = !audienceMode && (!embedded || url.searchParams.get('draw') === '1')
+  const drawHere = !audienceMode && !followMode && (!embedded || url.searchParams.get('draw') === '1')
   const inkStorageKey = `mdeck-ink:${inkFileName}:${location.pathname}`
 
   injectSpeakerNotes(slides)
@@ -762,7 +765,7 @@ async function init() {
 
   await loadTheme(deckConfig)
   mountDeck({ deck: parsed, deckConfig })
-  if (!embedded && !audienceMode) {
+  if (!embedded && !audienceMode && !followMode) {
     // A quiet way into the reader view for anyone who opened the file directly.
     const entry = document.createElement('a')
     entry.className = 'reader-entry'
@@ -801,14 +804,20 @@ async function init() {
       }
       window.addEventListener('pointerdown', onPen, true)
     }
+  } else if (inkStage && followMode) {
+    // The presenter's slide and ink, read from the stage room; counted as a phone.
+    inkStage.setAttribute('data-follower', '')
+    startFollowing(inkStage, { onStagePosition, words: { live: t('follow.live'), back: t('follow.back'), waiting: t('follow.waiting') } })
+    watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true, view: 'phone' })] })
   } else if (inkStage && audienceMode) {
     // The audience window shows the presenter's zoom and a poll's answer, without their controls.
     inkStage.setAttribute('data-follower', '')
     watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true, view: 'audience' })] })
   } else if (inkStage) watchInk(inkStage, { storageKey: inkStorageKey })
 
-  // A full deck or audience window is a presenter's screen; previews are embedded.
-  if (!embedded) {
+  // A full deck or audience window is a presenter's screen; previews are
+  // embedded, and a follower only watches.
+  if (!embedded && !followMode) {
     const stage = document.querySelector('deck-stage')
     stage?.addEventListener('slidechange', event => announceSlide(parsed, event.detail.index, { initial: event.detail.reason === 'init' }))
     if (stage) announceSlide(parsed, stage.index, { initial: true })

@@ -109,6 +109,8 @@
         ? el('main', { class: 'answer' }, activity.question && el('h1', {}, activity.question), form(activity, current.room))
         : el('main', { class: 'answer answer--waiting' }, el('p', {}, connected ? words.waiting : words.offline)),
       current?.title ? el('footer', {}, current.title) : null,
+      // The presenter's screen sends the link when other devices can follow the slides.
+      /^https?:\/\//.test(current?.follow ?? '') ? el('a', { class: 'answer-follow', href: current.follow }, words.follow ?? 'Follow the slides') : null,
     )
   }
 

@@ -1,4 +1,4 @@
-const VIEWS = new Set(['deck', 'reader', 'presenter', 'audience'])
+const VIEWS = new Set(['deck', 'reader', 'presenter', 'audience', 'follow'])
 const OLD_VIEWS = { d: 'deck', s: 'reader', p: 'presenter', a: 'audience', share: 'reader' }
 
 // Old URLs must be corrected explicitly: guessing a view can expose notes or
@@ -21,7 +21,7 @@ export function validatePageUrl(url) {
   for (const secret of ['serverkey', 'livekey', 'pair']) corrected.searchParams.delete(secret)
   if (replacements.length) return { message: `This URL uses settings from before API 2.0: ${replacements.join(', ')}. Open the updated address below. If you supplied a server key, add it again as ?serverkey=… on your own computer.`, corrected: corrected.href }
   const view = url.searchParams.get('view')
-  if (view !== null && !VIEWS.has(view)) return { message: `Unknown view "${view}". Choose deck, reader, presenter or audience.` }
+  if (view !== null && !VIEWS.has(view)) return { message: `Unknown view "${view}". Choose deck, reader, presenter, audience or follow.` }
   return null
 }
 

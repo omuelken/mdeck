@@ -114,6 +114,20 @@ function joinUrl(info) {
   return info.network ? new URL(`__mdeck/live/${settings.code}`, info.network).href : null
 }
 const localJoinUrl = () => `${serverBase()}/${settings.code}`
+
+// The link for following the slides on another device (?view=follow): this
+// deck's page, where other devices reach both the page and the stage room
+// that carries the presenter's position. That is `mdeck run --network`'s
+// network address, or a deck hosted with a `server` setting, whose stage room
+// is on that server. null when only this computer could follow; localFollowUrl
+// then opens the follow view here, for trying it out.
+const relayed = () => /^\/t\/[^/]+\/$/.test(devPath(''))
+function followUrl(info) {
+  if (relayed()) return null
+  if (import.meta.env?.DEV || proxyControls) return info.network ? new URL(`${devPath('')}?view=follow`, info.network).href : null
+  return settings.server ? `${window.location.origin}${window.location.pathname}?view=follow` : null
+}
+const localFollowUrl = () => `${window.location.origin}${devPath('')}?view=follow`
 // Until the server has answered or failed, `known` is false and activities
 // show no join code, so a quick capture never shows a passing warning.
 const reach = info => ({ known: info.reachable != null, offline: info.reachable === false })
@@ -164,6 +178,13 @@ export function useJoinLink() {
   return { joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
 }
 
+/** The link for following the slides, for a slide that shows it (<qrcode follow />). */
+export function useFollowLink() {
+  const [info, setInfo] = useState({})
+  useEffect(() => { serverInfo().then(setInfo) }, [])
+  return { joinUrl: followUrl(info), localJoinUrl: localFollowUrl(), code: settings.code, ...reach(info) }
+}
+
 /** The latest answer of each device, e.g. to count votes that can be changed. */
 export function latestByDevice(messages) {
   const latest = new Map()
@@ -197,7 +218,7 @@ export function captureLook(doc = lookSource()) {
 }
 
 // The words the answer page shows, in the deck's language.
-const phoneWords = () => ({ waiting: t('respond.waiting'), pick: t('poll.pick'), thanks: t('poll.thanks'), send: t('respond.send'), sent: t('respond.sent') })
+const phoneWords = () => ({ waiting: t('respond.waiting'), pick: t('poll.pick'), thanks: t('poll.thanks'), send: t('respond.send'), sent: t('respond.sent'), follow: t('follow.open') })
 
 // The presenter's screen announces the activity on the current slide and
 // repeats it every few seconds, so phones that join late and a server
@@ -236,7 +257,9 @@ async function sendCurrent() {
   if (!info.canReset) return report({ ok: false, reason: presenterKey() ? 'wrong-code' : 'no-code' })
   const look = captureLook()
   if (look) lastLook = look
-  const state = { ...current, look: lastLook, lang: deckLanguage(), labels: phoneWords() }
+  // Phones that answer can also follow the slides, where that works.
+  const follow = followUrl(info)
+  const state = { ...current, look: lastLook, lang: deckLanguage(), labels: phoneWords(), ...(follow ? { follow } : {}) }
   try {
     const response = await fetch(`${controlSessionPath()}/state`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state }) })
     const body = response.ok ? await response.json().catch(() => ({})) : {}

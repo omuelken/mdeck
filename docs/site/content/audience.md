@@ -73,6 +73,12 @@ Each question shows the QR code unless you say otherwise. To invite everybody on
 
 The code is drawn in the slide's colours, so it fits the theme; phone cameras also read light codes on dark slides.
 
+### Follow the slides on a phone
+
+`<qrcode follow />` shows a code that opens your slides on people's phones and laptops, following you: the slide you show, step by step, and what you draw. They can page back to read something again and return with **Back to live**; slides you have not shown yet stay hidden. The phones' answer page links to it too (**Follow the slides**), so one join code can do both.
+
+It needs their devices to reach your slides: present with `mdeck run --network` when everyone is on the same Wi-Fi (it prints the **Follow** address), or host the built deck with a `server` setting for people anywhere.
+
 Hover over the results to see **Reset**, which clears the answers, for example before the real session. Only the presenter can reset.
 
 ## How phones and slides meet

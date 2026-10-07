@@ -77,6 +77,14 @@ export function followStageRoom(stage) {
   })
 }
 
+/** Hear the position other devices announce (the follow view decides what to do with it). */
+export function onStagePosition(listener) {
+  stateListeners.add(state => {
+    if (!state || state.screen === stageRoom().screen || !Number.isInteger(state.index)) return
+    listener({ index: state.index, step: state.step ?? -1, slideId: state.slideId })
+  })
+}
+
 /** Publish navigation made here; received positions never echo back. */
 export function announceStagePosition(stage) {
   const room = stageRoom()
