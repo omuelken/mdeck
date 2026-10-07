@@ -75,15 +75,18 @@ async function openService(action, page = '') {
   }
 }
 
-function ServiceTile({ icon, title, text, action, url, onError, onStarted }) {
+// `page` opens another page of the same service, such as the editor's
+// design page.
+function ServiceTile({ icon, title, text, action, page = '', url, onError, onStarted }) {
   const [starting, setStarting] = useState(false)
   const launch = async () => {
     setStarting(true)
-    try { await openService(action); onStarted() } catch (error) { onError(error.message) } finally { setStarting(false) }
+    try { await openService(action, page); onStarted() } catch (error) { onError(error.message) } finally { setStarting(false) }
   }
+  const shown = url && new URL(page, url).href
   return <button class="home-tile" onClick={launch} disabled={starting}>
     <span class="home-tile-icon"><HomeIcon name={icon} size={22} /></span>
-    <span class="home-tile-body"><strong>{title}</strong><span>{starting ? 'Starting…' : url ? url.replace(/^https?:\/\//, '') : text}</span></span>
+    <span class="home-tile-body"><strong>{title}</strong><span>{starting ? 'Starting…' : shown ? shown.replace(/^https?:\/\//, '') : text}</span></span>
     <HomeIcon name="external" size={16} />
   </button>
 }
@@ -335,6 +338,7 @@ export function Home() {
         <h2>Write and learn</h2>
         <div class="home-tiles">
           <ServiceTile icon="editor" title="Visual editor" text="Forms and a live preview; saves into the file and keeps a backup." action="editor" url={info.services.editor} onError={setError} onStarted={load} />
+          <ServiceTile icon="look" title="Theme editor" text="Try and fine-tune themes and palettes on a sample deck; install more." action="editor" page="design.html" url={info.services.editor} onError={setError} onStarted={load} />
           <ServiceTile icon="guides" title="Guides" text="How to write slides, layouts, presenting, sharing and more." action="docs" url={info.services.docs} onError={setError} onStarted={load} />
         </div>
       </section>

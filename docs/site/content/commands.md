@@ -31,7 +31,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 
 - **Preview:** a small live copy of the deck to flip through; click it to open the audience window at that slide.
 - **Present:** the presenter view, audience window and reader view, each in a new tab. The presenter view has notes, drawing controls, a timer and next-slide preview; switch to its slide-only layout for a single screen. The audience window shows slides without notes. Fullscreen is a control inside either view, not a separate view.
-- **Write and learn:** the visual editor and these guides. Each starts the first time you click it.
+- **Write and learn:** the visual editor, the theme editor (themes and palettes on a sample deck, see [Install or share a theme](theme-repository.html)) and these guides. Each starts the first time you click it.
 - **Send:** buttons that make the `dist` folder, one file to send, or a PDF, next to your slide file, and show them in your file manager.
 - **Polls:** for a deck with polls: the server (built in, or the `server` setting and whether it answers), the join link and session code for phones, and for a server of your own the key that lets your browser move the phones along and reset polls (see below).
 - **Check:** the same problems `mdeck check` reports, such as missing pictures.
