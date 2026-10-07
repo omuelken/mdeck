@@ -1,8 +1,0 @@
-schema = 1
-id = "lagoon"
-title = "Lagoon"
-description = "Teal on warm stone, with an orange second accent."
-version = "1.0.0"
-author = "Tilman Schieber"
-license = "MIT"
-mdeck = ">=3.0.0"

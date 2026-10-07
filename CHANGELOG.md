@@ -1,9 +1,14 @@
 # Changelog
 
-## Unreleased
+## 4.0.0 — unreleased
 
-- The palettes `graphite` and `ember` are gone from the theme repository: they looked almost the same as the built-in `nordic` and `paper`. A deck that names one is told which to use instead; the `earth` pack keeps `forest`.
-- Fixed: the message for a theme or palette that moved to the theme repository said it would be installed beside the deck, but `mdeck themes install` installs for every deck by default. It now reads, for example, "The theme "duet" is no longer built into mdeck; install it with: mdeck themes install duet".
+- Packs are gone: every theme and palette is installed on its own. `mdeck themes install duet` installs the theme with its default palette (`cobalt`), and `mdeck palettes install solarized` a palette; both have `search`, `remove`, `update` and `list`. A palette made for one theme (FHNW's `brand`) brings that theme along and goes with it. A palette an installed theme uses by default is not removed while that theme is there. Installs go into `themes/<id>/` and `palettes/<id>/` of the extensions folder, so a theme and a palette may share a name.
+- A theme or palette carries its version, author, licence and the oldest mdeck it needs in its own `extension.toml` (`version`, `author`, `license`, `homepage`, `mdeck`); `pack.toml` is gone. The built-in ones are back in `assets/extensions/themes` and `assets/extensions/palettes`, and are removed and installed again one by one (`theme:aurora` in `~/.mdeck/removed.json`).
+- The theme repository has a folder per theme and per palette (`themes/<id>`, `palettes/<id>`) and serves `catalogue.json`; mdeck 3.0 cannot read it. The design page lists themes and palettes to install one by one.
+- The palette `candy` works with every theme: raspberry and blue accents that can be read as text; `pop` takes its pastel fills from the palette (`--pop-fill-1`, `--pop-fill-2`, `--pop-line`, `--pop-shadow`, `--pop-ink`), with black shadows in the dark.
+- The palettes `graphite` and `ember` are gone from the theme repository: they looked almost the same as the built-in `nordic` and `paper`. A deck that names one is told which to use instead.
+- A deck that names a theme or palette that left mdeck in 3.0 is told the command for it, `mdeck themes install duet` or `mdeck palettes install forest`, not "beside the deck".
+- Tests run with an empty `MDECK_HOME`, so what is installed on the computer does not change their results.
 
 ## 3.0.0 — 2026-10-07
 

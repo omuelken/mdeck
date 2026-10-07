@@ -3,6 +3,9 @@ kind = "palette"
 id = "paper"
 title = "Paper"
 description = "Off-white paper and near-black ink, with one orange accent; charcoal and a softer orange in the dark."
+version = "1.0.0"
+author = "Tilman Schieber"
+license = "MIT"
 
 [light]
 "--bg" = "#fbfaf7"

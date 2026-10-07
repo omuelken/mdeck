@@ -89,7 +89,8 @@ export function buildSampleDeck({ extensions = {}, outDir }) {
   try {
     writeFileSync(resolve(temp, 'slides.md'), sampleDeck())
     writeFileSync(resolve(temp, 'picture.svg'), SAMPLE_PICTURE)
-    for (const [id, dir] of Object.entries(extensions)) cpSync(dir, resolve(temp, 'extensions', id), { recursive: true })
+    // Keyed by id, or by "kind:id" to keep a theme and a palette of one name apart.
+    for (const [key, dir] of Object.entries(extensions)) cpSync(dir, resolve(temp, 'extensions', ...key.split(':').map((part, i, all) => all.length > 1 && i === 0 ? `${part}s` : part)), { recursive: true })
     mkdirSync(resolve(temp, 'home'))
     execFileSync(process.execPath, [resolve(frameworkRoot, 'bin/mdeck.js'), 'build', resolve(temp, 'slides.md'), '-o', resolve(outDir, 'index.html')],
       { cwd: temp, stdio: 'pipe', env: { ...process.env, MDECK_HOME: resolve(temp, 'home') } })

@@ -45,30 +45,29 @@ export function ExtensionEditor({ extension, palettes = {}, status, error, note,
   </>
 }
 
-// A built-in or installed extension: what it is, and the one way to change
-// it, a copy in the deck's extensions folder.
-export function BuiltInCard({ extension, manifest, onCopy, onRemovePack }) {
+// A built-in or installed theme or palette: what it is, the one way to
+// change it (a copy in the deck's extensions folder), and removing it.
+export function BuiltInCard({ extension, manifest, onCopy, onRemove }) {
   const { kind, id, files } = extension
   const user = extension.source === 'user'
-  const pack = manifest?.pack ?? null
   const [removing, setRemoving] = useState(null)
   return <div class="form">
-    <p class="section-title">{user ? `Installed for every deck` : `Comes with mdeck`}{pack ? ` · pack ${pack}` : ''}</p>
+    <p class="section-title">{user ? `Installed for every deck` : `Comes with mdeck`}{manifest?.version ? ` · ${manifest.version}` : ''}</p>
     <h2 class="builtin-title">{manifest?.title ?? id} <span class="muted">{id}</span></h2>
     {manifest?.description && <p class="builtin-description">{manifest.description}</p>}
     {kind === 'palette' && manifest && ['light', 'dark'].map(mode => <Field key={mode} label={mode === 'light' ? 'Light' : 'Dark'}><Swatches tokens={manifest[mode] ?? {}} /></Field>)}
     {kind === 'theme' && manifest?.palette && <p class="builtin-description">Its default palette is <code>{manifest.palette}</code>{manifest.palettes?.length ? `; it offers only ${manifest.palettes.join(', ')}` : ''}.</p>}
-    <p class="note">{user ? `Installed ${kind}s change only when they are updated (mdeck themes update).` : `This ${kind} cannot be changed where it is.`} Copy this one into the deck's <code>extensions</code> folder and change the copy. The preview shows every change as you make it.</p>
+    <p class="note">{user ? `Installed ${kind}s change only when they are updated (mdeck ${kind}s update).` : `This ${kind} cannot be changed where it is.`} Copy this one into the deck's <code>extensions</code> folder and change the copy. The preview shows every change as you make it.</p>
     <div class="row" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
       <button class="btn is-primary" onClick={onCopy}>Copy to customise</button>
-      {pack && onRemovePack && (removing === 'confirm'
-        ? <><span class="muted" style={{ alignSelf: 'center' }}>Remove the pack {pack} for every deck?</span>
-          <button class="btn" onClick={async () => { setRemoving('busy'); try { await onRemovePack(pack); setRemoving(null) } catch (error) { setRemoving({ error: error.message }) } }}>Remove</button>
+      {onRemove && (removing === 'confirm'
+        ? <><span class="muted" style={{ alignSelf: 'center' }}>Remove the {kind} {id} for every deck?</span>
+          <button class="btn" onClick={async () => { setRemoving('busy'); try { await onRemove(kind, id); setRemoving(null) } catch (error) { setRemoving({ error: error.message }) } }}>Remove</button>
           <button class="btn" onClick={() => setRemoving(null)}>Keep</button></>
-        : <button class="btn" disabled={removing === 'busy'} onClick={() => setRemoving('confirm')}>Remove pack</button>)}
+        : <button class="btn" disabled={removing === 'busy'} onClick={() => setRemoving('confirm')}>Remove {kind}</button>)}
     </div>
     {removing?.error && <p class="online-error">{removing.error}</p>}
-    {pack && !user && <p class="hint-text">Removing a pack that comes with mdeck hides it; install it again from “More to install”.</p>}
+    {!user && <p class="hint-text">Removing a {kind} that comes with mdeck hides it; install it again from “More to install”.</p>}
     <details class="builtin-source">
       <summary>{MANIFEST}</summary>
       <pre>{files?.[MANIFEST] ?? ''}</pre>

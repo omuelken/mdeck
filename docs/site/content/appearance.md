@@ -119,20 +119,21 @@ Its theme, palette and light or dark controls, under the notes, let you try othe
 
 ## More themes from other people
 
-The themes above come with mdeck as packs. The theme repository has more: `mdeck themes search` lists them, and `mdeck themes install <pack>` installs one for all your decks. You can also remove the ones you never use; see [Install, remove or share a theme](theme-repository.html).
+The themes above come with mdeck. The theme repository has more: `mdeck themes search` and `mdeck palettes search` list them, and `mdeck themes install <theme>` installs one for all your decks, with its palette. You can also remove the ones you never use; see [Install, remove or share a theme](theme-repository.html).
 
 ### Themes that moved to the repository
 
-Earlier versions of mdeck came with more themes and palettes. They are now packs in the theme repository:
+Earlier versions of mdeck came with more themes and palettes. They are now in the theme repository:
 
-| Pack | What it holds |
+| Theme | What it looks like (its palette) |
 |---|---|
-| `duet` | The duet theme (two accent colours that take turns, slab headings) and the `cobalt` palette |
-| `editorial` | The editorial theme (a magazine spread with serif headlines and pull quotes) and the `terra` palette |
+| `duet` | Two accent colours that take turns, slab headings (`cobalt`) |
+| `editorial` | A magazine spread with serif headlines and pull quotes (`terra`) |
 | `fhnw` | The FHNW visual identity, with its own `brand` palette only |
-| `terminal` | The terminal theme (headings typed at a prompt, a status bar) and the `phosphor` palette; it starts dark |
-| `sketch` | The sketch theme (handwriting, marker scribbles, sticky notes) and the `pastel` palette |
-| `earth` | The `forest` palette |
+| `terminal` | Headings typed at a prompt, a status bar; it starts dark (`phosphor`) |
+| `sketch` | Handwriting, marker scribbles, sticky notes (`pastel`) |
+
+The palette `forest` is there too: `mdeck palettes install forest`.
 
 The palettes `graphite` and `ember` were removed: use `nordic` or `paper`, which come with mdeck and look almost the same.
 

@@ -19,7 +19,7 @@ import { createPairing, pairingPlugin } from '../build/pairing.js'
 import { isAllowedRequest } from '../build/editorPlugin.js'
 import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
 import { installSkill, readSkill, TARGETS } from './skill.js'
-import { runThemes } from './themes.js'
+import { runPackages } from './themes.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
 
 import { frameworkRoot } from '../paths.js'
@@ -313,9 +313,10 @@ const HELP = `
     ${c.green}mdeck edit${c.reset} [slides.md]                    Edit slides in the browser; saves to the file
     ${c.green}mdeck design${c.reset} [folder | slides.md]         Look at and fine-tune themes and palettes on a sample deck;
                                               saves to the folder's extensions/ (default: this folder)
-    ${c.green}mdeck themes${c.reset} search [words]               Themes and palettes: those that come with mdeck and the online repository
-      install <pack>, remove <pack>         for every deck; add slides.md or --local for one deck only
-      update [pack], list                   --force replaces files changed by hand
+    ${c.green}mdeck themes${c.reset} search [words]               Themes from mdeck and the theme repository; install <theme>
+      install <theme>, remove <theme>       brings its default palette along; for every deck, or add
+      update [theme], list                  slides.md or --local for one deck; --force replaces edited files
+    ${c.green}mdeck palettes${c.reset} search | install | remove | update | list   The same for palettes
 
   ${c.dim}Make something to hand out${c.reset}
     ${c.green}mdeck build${c.reset} [slides.md] [-o dir/index.html]   A folder to host
@@ -613,8 +614,8 @@ if (command === 'new') {
   tip(`Changes are saved to the file as you type. Before the first change, a copy goes to ${BACKUP_DIR}/ beside it.\n`)
 
 // ── themes ────────────────────────────────────────────────────────────────────
-} else if (command === 'themes') {
-  await runThemes({ positionals: positionals(), flag: name => hasFlag(name), output: outputOption, ui: { ok, err, tip, c } })
+} else if (command === 'themes' || command === 'palettes') {
+  await runPackages({ kind: command.slice(0, -1), positionals: positionals(), flag: name => hasFlag(name), output: outputOption, ui: { ok, err, tip, c } })
 
 // ── design ────────────────────────────────────────────────────────────────────
 // The design page: with a deck, beside its editor; with a folder (or nothing),

@@ -112,7 +112,7 @@ test('the generated runtime module imports every layout and lazily loads theme s
   const code = generateExtensionsModule(registry)
   assert.match(code, /import L\d+ from ".*\/extensions\/comparison\/layout\.jsx"/)
   assert.match(code, /import ".*\/comparison\/styles\.css"/)
-  assert.match(code, /"neue": \{ manifest: \{.*"tokens".*load: \(\) => Promise\.all\(\[import\(".*\/packs\/neue\/neue\/styles\.css\?inline"\)\]\)/)
+  assert.match(code, /"neue": \{ manifest: \{.*"tokens".*load: \(\) => Promise\.all\(\[import\(".*\/themes\/neue\/styles\.css\?inline"\)\]\)/)
   assert.match(code, /export const palettes = \{\n"lagoon"/)
 })
 
@@ -150,7 +150,7 @@ test('deck checks agree with the registry about themes, palettes and parameters'
   const moved = validateDeck(parseSlides('---\ntheme: duet\npalette: forest\n---\n# Hi'), options)
   assert.deepEqual(moved.map(d => d.code), ['unknown-theme', 'unknown-palette'])
   assert.match(moved[0].message, /no longer built into mdeck; .*mdeck themes install duet$/)
-  assert.match(moved[1].message, /mdeck themes install earth$/)
+  assert.match(moved[1].message, /mdeck palettes install forest$/)
   // Palettes removed for a near twin say which one to use.
   const replaced = validateDeck(parseSlides('---\ntheme: neue\npalette: graphite\n---\n# Hi'), options)
   assert.match(replaced[0].message, /"graphite" was removed from mdeck; use palette: nordic/)

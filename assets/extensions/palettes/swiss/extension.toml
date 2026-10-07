@@ -3,6 +3,9 @@ kind = "palette"
 id = "swiss"
 title = "Swiss"
 description = "White, black and signal red, like a Swiss poster."
+version = "1.0.0"
+author = "Tilman Schieber"
+license = "MIT"
 
 [light]
 "--bg" = "#ffffff"

@@ -3,6 +3,9 @@ kind = "theme"
 id = "neue"
 title = "Neue"
 description = "Swiss typography: large flush-left type, rules instead of boxes, signal red on white."
+version = "1.0.0"
+author = "Tilman Schieber"
+license = "MIT"
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
 palette = "swiss"
 fonts = [

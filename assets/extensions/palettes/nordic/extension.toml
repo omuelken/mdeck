@@ -3,6 +3,9 @@ kind = "palette"
 id = "nordic"
 title = "Nordic"
 description = "Ice grey, deep navy and a cool steel blue; calm."
+version = "1.0.0"
+author = "Tilman Schieber"
+license = "MIT"
 
 [light]
 "--bg" = "#f3f6f8"

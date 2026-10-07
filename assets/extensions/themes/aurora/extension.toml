@@ -3,6 +3,9 @@ kind = "theme"
 id = "aurora"
 title = "Aurora"
 description = "Northern lights: curtains of light in the accent colours, night-sky chapter and statement slides, frosted glass."
+version = "1.0.0"
+author = "Tilman Schieber"
+license = "MIT"
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
 palette = "neon"
 fonts = [

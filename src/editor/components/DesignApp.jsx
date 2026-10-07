@@ -1,7 +1,7 @@
 import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useDeckDocument } from '../useDeckDocument.js'
-import { loadExtension, saveExtension, deleteExtension, installThemePack, removeThemePack } from '../api.js'
+import { loadExtension, saveExtension, deleteExtension, installPackage, removePackage } from '../api.js'
 import { starterFiles, parseManifest, toModel, toRuntimeManifest, MANIFEST } from '../extensions.js'
 import { sampleDeck, sampleDataUrl } from '../sampleDeck.js'
 import { parseTarget, launchPageUrl } from '../designLink.js'
@@ -118,18 +118,16 @@ export function DesignApp() {
     } catch (caught) { setError(caught.message) }
   }
 
-  // A pack from the theme repository, installed beside the deck; its first
-  // theme or palette of the kind shown is opened.
-  const installOnline = async (pack, kind) => {
-    const result = await installThemePack(pack.id)
+  // A theme or palette installed for every deck, then opened.
+  const installOnline = async (kind, id) => {
+    const result = await installPackage(kind, id)
     dispatch({ type: 'setRegistry', registry: result.registry })
-    const id = pack[`${kind}s`][0]
-    if (id) await select(kind, id)
+    await select(kind, id)
   }
 
-  // Removes a pack for every deck; the deck's look is not changed.
-  const removeOnline = async pack => {
-    const result = await removeThemePack(pack)
+  // Removes a theme or palette for every deck; the deck's look is not changed.
+  const removeOnline = async (kind, id) => {
+    const result = await removePackage(kind, id)
     dispatch({ type: 'setRegistry', registry: result.registry })
     setCurrent(null)
   }
@@ -253,7 +251,7 @@ export function DesignApp() {
           ? <div class="form"><p class="empty">Choose one of {state.designOnly ? "this folder's" : "this deck's"} themes and palettes on the left to change it, or start from a built-in one. What you change is saved as you type, in the <code>extensions</code> folder {state.designOnly ? 'of this folder, where decks in it find them' : "beside the deck. The deck's look is chosen in the editor's Deck settings"}.{error ? ` ${error}` : ''}</p></div>
           : current.source === 'local'
             ? <>{usage}<ExtensionEditor extension={current} palettes={manifests.palettes} status={status} error={error} note={note} onFiles={onFiles} onDelete={remove} onCopy={() => copyDialog(current.kind, current.id)} /></>
-            : <BuiltInCard extension={current} manifest={manifests[`${current.kind}s`][current.id]} onCopy={() => copyDialog(current.kind, current.id)} onRemovePack={removeOnline} />}
+            : <BuiltInCard extension={current} manifest={manifests[`${current.kind}s`][current.id]} onCopy={() => copyDialog(current.kind, current.id)} onRemove={removeOnline} />}
       </aside>
     </div>
     {dialog && <NewExtensionDialog kind={dialog.kind} initial={dialog.initial ?? null} registry={state.registry} existing={existing} onCreate={create} onClose={() => setDialog(null)} />}

@@ -1,8 +1,0 @@
-schema = 1
-id = "aurora"
-title = "Aurora"
-description = "Northern lights: curtains of light in the accent colours, night-sky chapter and statement slides, frosted glass."
-version = "1.0.0"
-author = "Tilman Schieber"
-license = "MIT"
-mdeck = ">=3.0.0"

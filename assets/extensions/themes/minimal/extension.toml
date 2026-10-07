@@ -3,6 +3,9 @@ kind = "theme"
 id = "minimal"
 title = "Minimal"
 description = "Nothing but the content: system fonts, calm type, plenty of space, no decoration. Works offline."
+version = "1.0.0"
+author = "Tilman Schieber"
+license = "MIT"
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
 palette = "paper"
 # System fonts only: nothing to download, the same on every computer that has them.

@@ -3,13 +3,13 @@ import { useEffect, useState } from 'preact/hooks'
 import { ID_RE } from '../extensions.js'
 import { Icon } from '../../components/Icon.jsx'
 import { LookThumbnail } from './LookThumbnail.jsx'
-import { loadThemeIndex } from '../api.js'
+import { loadCatalogue } from '../api.js'
 
 const KINDS = [['theme', 'Themes'], ['palette', 'Palettes']]
 
 // The deck's own themes or palettes, to change; those installed for every
-// deck; packs from the theme repository; and the built-in ones to start
-// from. A new theme always starts as a copy; a palette can also start from
+// deck; the built-in ones; and those to install from the theme repository.
+// A new theme always starts as a copy; a palette can also start from
 // readable plain colours. The pictures show the sample deck as `view` says:
 // palettes in the preview's theme where it offers them, themes with its
 // palette where they offer it, both in its light or dark.
@@ -44,24 +44,24 @@ export function ExtensionsPanel({ registry, view = {}, owner = "This deck's", se
     </>}
     <div class="panel-section-head"><p class="section-title">Come with mdeck</p></div>
     <ol class="outline-list">{builtIn.map(row)}</ol>
-    <OnlinePacks key="online" kind={kind} onInstall={onInstall} />
+    <OnlinePackages key="online" kind={kind} onInstall={onInstall} />
   </aside>
 }
 
-// Packs not installed yet that have this kind of extension: from the theme
-// repository, and those that come with mdeck but were removed. Loaded on
-// request, since it needs the network. Installing makes a pack available to
-// every deck.
-function OnlinePacks({ kind, onInstall }) {
+// Themes or palettes not available yet: from the theme repository, and
+// built-in ones that were removed. Loaded on request, since it needs the
+// network. Installing makes one available to every deck; a theme brings its
+// default palette along.
+function OnlinePackages({ kind, onInstall }) {
   const [state, setState] = useState({ status: 'idle' })
   const [busy, setBusy] = useState(null)
   const load = () => {
-    setState(prev => ({ ...prev, status: prev.index ? 'ready' : 'loading' }))
-    loadThemeIndex().then(index => setState({ status: 'ready', index }), error => setState({ status: 'error', error: error.message }))
+    setState(prev => ({ ...prev, status: prev.catalogue ? 'ready' : 'loading' }))
+    loadCatalogue().then(catalogue => setState({ status: 'ready', catalogue }), error => setState({ status: 'error', error: error.message }))
   }
-  const install = async pack => {
-    setBusy(pack.id)
-    try { await onInstall(pack, kind); load() } catch (error) { setState(prev => ({ ...prev, error: error.message })) }
+  const install = async entry => {
+    setBusy(entry.id)
+    try { await onInstall(entry.kind, entry.id); load() } catch (error) { setState(prev => ({ ...prev, error: error.message })) }
     setBusy(null)
   }
   const head = <div class="panel-section-head"><p class="section-title">More to install</p></div>
@@ -69,22 +69,18 @@ function OnlinePacks({ kind, onInstall }) {
     {state.status === 'loading' ? 'Loading…' : <button class="btn is-small" onClick={load}>Show what you can install</button>}
     {state.error && <p class="online-error">{state.error}</p>}
   </div></>
-  const { index } = state
-  const packs = index.packs.filter(pack => pack[`${kind}s`].length && !index.installed?.[pack.id])
+  const { catalogue } = state
+  const entries = catalogue.entries.filter(entry => entry.kind === kind && !entry.available)
   return <>{head}
     {state.error && <p class="panel-hint online-error">{state.error}</p>}
-    {index.offline && <p class="panel-hint">The theme repository could not be reached; showing what comes with mdeck.</p>}
-    {!packs.length && <p class="panel-hint">Every {kind} there is, is installed.</p>}
-    <ol class="outline-list">{packs.map(pack => {
-      const id = pack[`${kind}s`][0]
-      const previews = pack.previews ?? pack.repository?.previews
-      return <li key={pack.id} class="outline-item has-thumb online-pack">
-        {previews?.[id] && <div class="thumb"><img src={new URL(previews[id], index.url).href} alt="" loading="lazy" /></div>}
-        <span><span class="title" style={{ display: 'block' }}>{pack.title} <span class="muted">{pack.version}</span></span>
-          <span class="online-meta">{[...pack.themes, ...pack.palettes].join(', ')}{pack.removed ? ' · comes with mdeck, removed' : ` · ${pack.author}`}{pack.requires?.length ? ` · needs ${pack.requires.join(', ')}` : ''}</span></span>
-        <button class="btn is-small" disabled={busy === pack.id} onClick={() => install(pack)}>{busy === pack.id ? 'Installing…' : 'Install'}</button>
-      </li>
-    })}</ol>
+    {catalogue.offline && <p class="panel-hint">The theme repository could not be reached; showing what comes with mdeck.</p>}
+    {!entries.length && <p class="panel-hint">Every {kind} there is, is installed.</p>}
+    <ol class="outline-list">{entries.map(entry => <li key={entry.id} class="outline-item has-thumb online-pack">
+      {entry.preview && <div class="thumb"><img src={entry.preview} alt="" loading="lazy" /></div>}
+      <span><span class="title" style={{ display: 'block' }}>{entry.title} <span class="muted">{entry.version}</span></span>
+        <span class="online-meta">{entry.removed ? 'comes with mdeck, removed' : entry.author}{kind === 'theme' ? ` · with ${entry.palette}` : entry.theme ? ` · for ${entry.theme}` : ''}</span></span>
+      <button class="btn is-small" disabled={busy === entry.id} onClick={() => install(entry)}>{busy === entry.id ? 'Installing…' : 'Install'}</button>
+    </li>)}</ol>
   </>
 }
 

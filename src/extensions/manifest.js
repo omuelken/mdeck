@@ -15,11 +15,16 @@ export const MANIFEST_FILENAME = 'extension.toml'
 const FRAMES = ['standard', 'title', 'chapter', 'none']
 const PROPERTY_TYPES = ['string', 'number', 'integer', 'boolean', 'array', 'object']
 const SHARED_KEYS = ['schema', 'kind', 'id', 'title', 'description']
+// A theme or palette is also a package that can be installed: its version,
+// who made it, its licence, a web page and the oldest mdeck it works with.
+const PACKAGE_KEYS = ['version', 'author', 'license', 'homepage', 'mdeck']
 const KEYS = {
   layout: [...SHARED_KEYS, 'frame', 'files', 'regions', 'properties'],
-  theme: [...SHARED_KEYS, 'palette', 'palettes', 'appearance', 'fonts', 'files', 'tokens', 'params'],
-  palette: [...SHARED_KEYS, 'theme', 'light', 'dark'],
+  theme: [...SHARED_KEYS, ...PACKAGE_KEYS, 'palette', 'palettes', 'appearance', 'fonts', 'files', 'tokens', 'params'],
+  palette: [...SHARED_KEYS, ...PACKAGE_KEYS, 'theme', 'light', 'dark'],
 }
+export const VERSION_RE = /^\d+\.\d+\.\d+$/
+export const RANGE_RE = /^>=\s*(\d+\.\d+\.\d+)$/
 const SCHEMA_KEYS = ['type', 'title', 'description', 'enum', 'required', 'default', 'minimum', 'maximum', 'minItems', 'maxItems', 'items']
 const RESERVED_NAMES = ['constructor', 'prototype', '__proto__']
 
@@ -72,7 +77,19 @@ export function validateManifest(raw, { file, dir, folderName, fileExists = exis
   const manifest = kind === 'layout' ? validateLayout(raw, shared, fail)
     : kind === 'theme' ? validateTheme(raw, shared, fail)
     : validatePalette(raw, shared, fail)
-  return { kind, id: raw.id, title: shared.title, description: shared.description, dir, file, manifest, files }
+  const pkg = kind === 'layout' ? null : validatePackage(raw, fail)
+  return { kind, id: raw.id, title: shared.title, description: shared.description, dir, file, manifest, files, ...(pkg ? { package: pkg } : {}) }
+}
+
+// The package settings, all optional for a theme or palette of one's own;
+// the theme repository requires version, author and license.
+function validatePackage(raw, fail) {
+  const pkg = {}
+  if (raw.version != null) { if (typeof raw.version !== 'string' || !VERSION_RE.test(raw.version)) fail('version must look like 1.0.0', 'version'); pkg.version = raw.version }
+  for (const key of ['author', 'license']) if (raw[key] != null) { if (typeof raw[key] !== 'string' || !raw[key].trim()) fail(`${key} must be text`, key); pkg[key] = raw[key].trim() }
+  if (raw.homepage != null) { if (typeof raw.homepage !== 'string' || !/^https:\/\//.test(raw.homepage)) fail('homepage must be an https:// address', 'homepage'); pkg.homepage = raw.homepage }
+  if (raw.mdeck != null) { if (typeof raw.mdeck !== 'string' || !RANGE_RE.test(raw.mdeck)) fail('mdeck must look like ">=4.0.0"', 'mdeck'); pkg.mdeck = raw.mdeck }
+  return pkg
 }
 
 const FILE_KEYS = { layout: ['layout', 'styles', 'starter'], theme: ['styles'], palette: [] }

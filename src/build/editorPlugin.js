@@ -5,9 +5,9 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, unlinkSync } from 'node:fs'
 import { resolve, basename, dirname, relative } from 'node:path'
-import { bundledPacks, loadRegistry, removedPacks, serializeRegistry } from '../extensions/discover.js'
-import { findPack, loadCatalogue, PackError } from '../extensions/packs.js'
-import { installHere, packsAt, removeHere, target } from '../extensions/installed.js'
+import { loadRegistry, removedBuiltIns, serializeRegistry, userExtensionsDir } from '../extensions/discover.js'
+import { findEntry, installedPackages, keyOf, loadCatalogue, PackageError } from '../extensions/packages.js'
+import { installHere, removeHere, target } from '../extensions/installed.js'
 import { createRequire } from 'node:module'
 import { ManifestError, KINDS, ID_RE, MANIFEST_FILENAME, parseManifestText, validateManifest } from '../extensions/manifest.js'
 
@@ -201,26 +201,31 @@ export function editorMiddleware(deckFile, { registryFor, extensions = createExt
         response.setHeader('Allow', 'GET, PUT, DELETE')
         return send(response, 405, { error: 'Method not allowed' })
       }
-      // Packs: what the repository and mdeck offer, and installing one for
-      // every deck (as mdeck themes install does).
-      if (pathname === '/themes/index' && request.method === 'GET') {
-        const catalogue = await loadCatalogue({ bundled: bundledPacks({ all: true }) })
-        const removed = removedPacks()
-        const installed = Object.fromEntries(Object.entries(packsAt(target(null, false))).map(([id, pack]) => [id, { version: pack.version ?? null, bundled: Boolean(pack.bundled) }]))
-        return send(response, 200, { url: catalogue.url, offline: catalogue.offline, packs: catalogue.packs.map(({ dir, ...pack }) => ({ ...pack, removed: removed.includes(pack.id) })), installed })
+      // Themes and palettes: what mdeck and the repository offer, and
+      // installing or removing one for every deck (as mdeck themes does).
+      if (pathname === '/themes/catalogue' && request.method === 'GET') {
+        const catalogue = await loadCatalogue()
+        const hidden = removedBuiltIns()
+        const installed = installedPackages(userExtensionsDir())
+        const entries = catalogue.entries.map(({ dir, ...entry }) => {
+          const key = keyOf(entry.kind, entry.id)
+          const removed = entry.builtIn && hidden.includes(key)
+          return { ...entry, removed, available: Boolean(installed[key]) || (entry.builtIn && !removed), ...(entry.preview ? { preview: new URL(entry.preview, catalogue.url).href } : {}) }
+        })
+        return send(response, 200, { url: catalogue.url, offline: catalogue.offline, entries })
       }
       if (pathname === '/themes/install' && request.method === 'POST') {
         const body = await readJson(request)
-        const catalogue = await loadCatalogue({ bundled: bundledPacks({ all: true }) })
-        findPack(catalogue, String(body?.id ?? ''))
-        const steps = await installHere(catalogue, String(body.id), target(null, false), { mdeckVersion: VERSION })
+        const kind = String(body?.kind ?? ''), id = String(body?.id ?? '')
+        const catalogue = await loadCatalogue()
+        findEntry(catalogue, kind, id)
+        const steps = await installHere(catalogue, kind, id, target(null, false), { mdeckVersion: VERSION })
         return send(response, 200, { steps, registry: serializeRegistry(registryFor()) })
       }
       if (pathname === '/themes/remove' && request.method === 'POST') {
         const body = await readJson(request)
-        const catalogue = await loadCatalogue({ bundled: bundledPacks({ all: true }), online: false })
-        const removed = removeHere(catalogue, String(body?.id ?? ''), target(null, false))
-        return send(response, 200, { ...removed, registry: serializeRegistry(registryFor()) })
+        const removed = removeHere(String(body?.kind ?? ''), String(body?.id ?? ''), target(null, false))
+        return send(response, 200, { removed, registry: serializeRegistry(registryFor()) })
       }
       if (pathname === '/deck' && request.method === 'GET') {
         const registry = registryFor()
@@ -238,7 +243,7 @@ export function editorMiddleware(deckFile, { registryFor, extensions = createExt
       if (['/deck', '/source'].includes(pathname)) { response.setHeader('Allow', pathname === '/deck' ? 'GET' : 'POST'); return send(response, 405, { error: 'Method not allowed' }) }
       return next()
     } catch (error) {
-      if (error instanceof PackError) return send(response, 400, { error: error.message })
+      if (error instanceof PackageError) return send(response, 400, { error: error.message })
       if (error instanceof ManifestError) return send(response, 500, { error: error.message })
       return send(response, error.status ?? 500, { error: error.message })
     }

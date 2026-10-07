@@ -52,24 +52,25 @@ export async function deleteExtension(kind, id) {
   return response.json()
 }
 
-// The theme repository: its packs, with those installed beside the deck.
-export async function loadThemeIndex() {
-  const response = await fetch('/__mdeck/themes/index', { headers: { Accept: 'application/json' } })
+// Every theme and palette mdeck and the theme repository offer, each marked
+// whether it is available to every deck already.
+export async function loadCatalogue() {
+  const response = await fetch('/__mdeck/themes/catalogue', { headers: { Accept: 'application/json' } })
   if (!response.ok) throw await failure(response)
   return response.json()
 }
 
-// Installs a pack for every deck, with the packs it requires. Returns the
-// new registry.
-export async function installThemePack(id) {
-  const response = await fetch('/__mdeck/themes/install', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+// Installs a theme (with its default palette) or a palette for every deck.
+// Returns the steps and the new registry.
+export async function installPackage(kind, id) {
+  const response = await fetch('/__mdeck/themes/install', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, id }) })
   if (!response.ok) throw await failure(response)
   return response.json()
 }
 
-// Removes a pack for every deck (one that comes with mdeck is hidden).
-export async function removeThemePack(id) {
-  const response = await fetch('/__mdeck/themes/remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+// Removes a theme or palette for every deck (a built-in one is hidden).
+export async function removePackage(kind, id) {
+  const response = await fetch('/__mdeck/themes/remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, id }) })
   if (!response.ok) throw await failure(response)
   return response.json()
 }

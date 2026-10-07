@@ -3,6 +3,9 @@ kind = "palette"
 id = "neon"
 title = "Neon"
 description = "Violet and magenta; loud, for workshops."
+version = "1.0.0"
+author = "Tilman Schieber"
+license = "MIT"
 
 [light]
 "--bg" = "#ffffff"

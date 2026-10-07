@@ -3,6 +3,9 @@ kind = "palette"
 id = "lagoon"
 title = "Lagoon"
 description = "Teal on warm stone, with an orange second accent."
+version = "1.0.0"
+author = "Tilman Schieber"
+license = "MIT"
 
 [light]
 "--bg" = "#f8f8f6"

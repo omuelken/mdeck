@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { resolve, dirname, relative } from 'node:path'
 import { homedir } from 'node:os'
 import { MANIFEST_FILENAME, ManifestError, KINDS, parseManifestText, validateManifest } from './manifest.js'
-import { builtinExtensionsRoot, bundledPacksRoot } from '../paths.js'
+import { builtinExtensionsRoot } from '../paths.js'
 
 const SKIP = name => name.startsWith('.') || name === 'node_modules'
 
@@ -20,36 +20,31 @@ export function userExtensionsDir() {
   return resolve(mdeckHome(), 'extensions')
 }
 
-// The bundled packs this user removed (`mdeck themes remove <pack> --global`):
-// they stay in mdeck's folder but are not offered.
+// The built-in themes and palettes this user removed (`mdeck themes remove
+// aurora`): they stay in mdeck's folder but are not offered. Kept as
+// "theme:aurora" and "palette:neon".
 const removedFile = () => resolve(mdeckHome(), 'removed.json')
-export function removedPacks() {
-  try { const packs = JSON.parse(readFileSync(removedFile(), 'utf8')).packs; return Array.isArray(packs) ? packs : [] } catch { return [] }
+export function removedBuiltIns() {
+  let saved = {}
+  try { saved = JSON.parse(readFileSync(removedFile(), 'utf8')) } catch {}
+  return (Array.isArray(saved.hidden) ? saved.hidden : []).filter(key => /^(theme|palette):[a-z][a-z0-9-]*$/.test(key))
 }
-export function setRemovedPacks(packs) {
+export function setRemovedBuiltIns(keys) {
   mkdirSync(mdeckHome(), { recursive: true })
-  writeFileSync(removedFile(), JSON.stringify({ packs: [...new Set(packs)].sort() }, null, 2) + '\n')
+  writeFileSync(removedFile(), JSON.stringify({ hidden: [...new Set(keys)].sort() }, null, 2) + '\n')
 }
 
-// The packs that come with mdeck: { id: folder }, all or only those offered
-// (not `hidden`, by default those this user removed).
-export function bundledPacks({ root = bundledPacksRoot, all = false, hidden = all ? [] : removedPacks() } = {}) {
-  if (!existsSync(root)) return {}
-  const removed = hidden
-  return Object.fromEntries(sortedEntries(root).map(entry => entry.name).filter(id => !removed.includes(id)).map(id => [id, resolve(root, id)]))
-}
-
-// Built-in layouts and the bundled packs, then the user's, then the deck's
+// mdeck's own layouts, themes and palettes, then the user's, then the deck's
 // own. For themes and palettes a later place replaces an earlier one with the
-// same id: an installed newer version replaces the bundled one, and a deck's
-// copy replaces both.
-// `userRoot: null` leaves out what this user installed and removed, for
-// results that must not depend on the computer (checks, the repository).
-export function extensionRoots(slidesPath, { builtinRoot = builtinExtensionsRoot, packsRoot = bundledPacksRoot, userRoot = userExtensionsDir() } = {}) {
+// same id: an installed newer version replaces the built-in one, and a
+// deck's copy replaces both. Built-in themes and palettes this user removed
+// are left out. `userRoot: null` leaves out what this user installed and
+// removed, for results that must not depend on the computer (checks, the
+// repository).
+export function extensionRoots(slidesPath, { builtinRoot = builtinExtensionsRoot, userRoot = userExtensionsDir() } = {}) {
   const deckDir = dirname(resolve(slidesPath))
   return [
-    { dir: builtinRoot, source: 'built-in' },
-    ...Object.entries(bundledPacks({ root: packsRoot, hidden: userRoot ? removedPacks() : [] })).map(([pack, dir]) => ({ dir, source: 'built-in', pack })),
+    { dir: builtinRoot, source: 'built-in', hidden: userRoot ? removedBuiltIns() : [] },
     ...(userRoot ? [{ dir: userRoot, source: 'user' }] : []),
     { dir: resolve(deckDir, 'extensions'), source: 'local' },
   ]
@@ -80,21 +75,17 @@ function readLayout(record) {
 function loadManifest({ dir, file, folderName }) {
   const raw = parseManifestText(readFileSync(file, 'utf8'), file)
   const record = validateManifest(raw, { file, dir, folderName })
-  // An installed pack leaves a note in each folder saying which pack it is.
-  let pack = null
-  try { pack = JSON.parse(readFileSync(resolve(dir, '.mdeck-pack.json'), 'utf8')).pack ?? null } catch {}
-  const withPack = pack ? { ...record, pack } : record
-  return record.kind === 'layout' ? readLayout(withPack) : withPack
+  return record.kind === 'layout' ? readLayout(record) : record
 }
 
 export function discoverExtensions(roots) {
   const registry = { layouts: {}, themes: {}, palettes: {}, records: [], warnings: [] }
   const byKey = new Map()
   const RANK = { 'built-in': 0, user: 1, local: 2 }
-  const add = (record, source, pack) => {
+  const add = (record, source) => {
     const key = `${record.kind}:${record.id}`
     const existing = byKey.get(key)
-    const entry = { ...record, source, ...(pack ? { pack } : {}) }
+    const entry = { ...record, source }
     // Themes and palettes may be replaced from a later place; layouts and two
     // with one id in the same place may not.
     const replaces = existing && record.kind !== 'layout' && RANK[source] > RANK[existing.source]
@@ -108,7 +99,10 @@ export function discoverExtensions(roots) {
   }
   for (const root of roots) {
     if (!existsSync(root.dir) || !statSync(root.dir).isDirectory()) continue
-    for (const found of walk(root.dir)) { const record = loadManifest(found); add(record, root.source, root.pack ?? record.pack) }
+    for (const found of walk(root.dir)) {
+      const record = loadManifest(found)
+      if (!root.hidden?.includes(`${record.kind}:${record.id}`)) add(record, root.source)
+    }
   }
   // Themes and palettes in name order, wherever they come from.
   for (const kind of ['themes', 'palettes']) registry[kind] = Object.fromEntries(Object.entries(registry[kind]).sort(([a], [b]) => a.localeCompare(b, 'en')))
@@ -135,10 +129,9 @@ function checkPaletteReferences(registry) {
   }
 }
 
-// The extensions that come with mdeck, alone: layouts and every bundled pack,
-// removed or not.
+// The extensions that come with mdeck, alone, removed or not.
 export function builtInRegistry() {
-  return discoverExtensions([{ dir: builtinExtensionsRoot, source: 'built-in' }, ...Object.entries(bundledPacks({ all: true })).map(([pack, dir]) => ({ dir, source: 'built-in', pack }))])
+  return discoverExtensions([{ dir: builtinExtensionsRoot, source: 'built-in' }])
 }
 
 export function loadRegistry(slidesPath, options) {
@@ -158,7 +151,7 @@ export function serializeRegistry(registry, { relativeTo } = {}) {
   const out = { schema: 2, warnings: registry.warnings }
   for (const kind of KINDS) {
     out[`${kind}s`] = Object.values(registry[`${kind}s`]).map(record => ({
-      ...record.manifest, kind, source: record.source, ...(record.pack ? { pack: record.pack } : {}),
+      ...record.manifest, kind, source: record.source, ...(record.package?.version ? { version: record.package.version } : {}),
       file: relativeTo ? relative(relativeTo, record.file) : record.file,
     }))
   }

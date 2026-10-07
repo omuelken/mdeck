@@ -109,7 +109,7 @@ view is reachable in any build through `?view=reader`.
 
 More themes (duet, editorial, fhnw, terminal, sketch) are in the theme
 repository: `mdeck themes search` lists them, and
-`mdeck themes install <pack> <deck>.md` puts one beside the deck.
+`mdeck themes install <theme> <deck>.md` puts one beside the deck.
 
 `mdeck list <deck>.md` lists the built-in themes together with any themes kept
 beside the deck.
@@ -129,7 +129,7 @@ Each palette has a light and a dark variant; `appearance:` picks one.
 | `paper` | Off-white, near-black, orange (minimal's default) | Charcoal, soft orange |
 
 More palettes (cobalt, terra, phosphor, pastel, forest, among others)
-are in the theme repository; install them with `mdeck themes install <pack> <deck>.md`.
+are in the theme repository; install them with `mdeck palettes install <palette> <deck>.md`.
 
 ---
 

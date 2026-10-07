@@ -1,8 +1,0 @@
-schema = 1
-id = "neue"
-title = "Neue"
-description = "Swiss typography: large flush-left type, rules instead of boxes, signal red on white."
-version = "1.0.0"
-author = "Tilman Schieber"
-license = "MIT"
-mdeck = ">=3.0.0"

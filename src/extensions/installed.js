@@ -1,63 +1,88 @@
-// Where packs are installed: for every deck (the user's folder, where the
-// bundled packs are offered too) or beside one deck. Shared by mdeck themes
-// and the design page.
-import { existsSync, statSync } from 'node:fs'
+// Where themes and palettes are installed: for every deck (the user's
+// folder, where the built-in ones are offered too) or beside one deck.
+// Shared by mdeck themes / mdeck palettes and the design page.
+import { existsSync, rmSync, statSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
-import { bundledPacks, loadRegistry, mdeckHome, removedPacks, setRemovedPacks, userExtensionsDir } from './discover.js'
-import { installedPacks, installWithRequirements, PackError, removePack } from './packs.js'
+import { loadRegistry, mdeckHome, removedBuiltIns, setRemovedBuiltIns, userExtensionsDir } from './discover.js'
+import { installedPackages, installPackage, keyOf, obtainPackage, PackageError, removePackage, satisfies, withDependencies } from './packages.js'
+
+const fail = message => { throw new PackageError(message) }
 
 // Where a command works: for every deck (the user's folder), or beside a
 // deck when one is named or --local is given.
 export function target(where, local) {
-  if (!where && !local) return { user: true, root: userExtensionsDir(), deck: resolve('slides.md'), label: 'for every deck' }
+  if (!where && !local) return { user: true, root: userExtensionsDir(), deck: resolve(mdeckHome(), 'no-deck', 'slides.md'), label: 'for every deck' }
   const given = resolve(where ?? '.')
-  if (!existsSync(given) && !/\.md$/i.test(given)) throw new PackError(`${where} does not exist; name a slides file or the folder it is in`)
+  if (!existsSync(given) && !/\.md$/i.test(given)) fail(`${where} does not exist; name a slides file or the folder it is in`)
   const folder = existsSync(given) && statSync(given).isDirectory() ? given : dirname(given)
   return { user: false, root: resolve(folder, 'extensions'), deck: existsSync(given) && !statSync(given).isDirectory() ? given : resolve(folder, 'slides.md'), label: `in ${resolve(folder, 'extensions')}` }
 }
 
-// The packs that `where` has: installed there, and for the user's folder
-// also the bundled packs that are offered.
-export function packsAt(where) {
-  const installed = installedPacks(where.root)
-  if (!where.user) return installed
-  const offered = Object.fromEntries(Object.keys(bundledPacks()).map(id => [id, { bundled: true, requires: [] }]))
-  return { ...offered, ...installed }
-}
+// The themes and palettes `where` sees, as a registry: for every deck what
+// this user has, beside a deck also what that deck has.
+const registryAt = where => loadRegistry(where.deck)
 
-// The packs at `where` that require `id`.
-export function requiredBy(id, where, catalogue) {
-  return Object.entries(packsAt(where)).filter(([other, pack]) => {
-    if (other === id) return false
-    const requires = pack.bundled ? catalogue.packs.find(p => p.id === other)?.requires ?? [] : pack.requires
-    return requires.includes(id)
-  }).map(([other]) => other)
-}
-
-// Installs a pack with what it requires. For every deck, a bundled pack is
-// offered again instead of copied.
-export async function installHere(catalogue, id, where, { mdeckVersion, force = false }) {
-  const removed = removedPacks()
-  const has = pack => Object.hasOwn(packsAt(where), pack)
-  const bundledHere = where.user ? entry => { setRemovedPacks(removedPacks().filter(other => other !== entry.id)); return true } : null
-  const done = await installWithRequirements(catalogue, id, { root: where.root, mdeckVersion, force, has, bundledHere })
-  return done.map(step => ({ ...step, wasRemoved: step.bundled && removed.includes(step.id) }))
-}
-
-// Removes a pack. For every deck, a bundled pack is hidden (and a newer
-// version installed over it removed too); install brings it back.
-export function removeHere(catalogue, id, where, { force = false } = {}) {
-  const needed = requiredBy(id, where, catalogue)
-  if (needed.length && !force) throw new PackError(`${needed.join(', ')} ${needed.length > 1 ? 'require' : 'requires'} ${id}; remove ${needed.length > 1 ? 'them' : 'it'} first, or add --force`)
-  const installed = installedPacks(where.root)[id]
-  const isBundled = Object.hasOwn(bundledPacks({ all: true }), id)
-  if (!installed && !(where.user && isBundled)) throw new PackError(`The pack ${id} is not installed ${where.label}`)
-  // Every deck needs a theme: the last one stays, even with --force.
-  if (where.user) {
-    const themes = Object.values(loadRegistry(resolve(mdeckHome(), 'no-deck', 'slides.md')).themes)
-    if (themes.length && themes.every(theme => theme.pack === id)) throw new PackError(`${id} has the last theme installed for every deck (${themes.map(theme => theme.id).join(', ')}); install another theme first, for example mdeck themes install neue`)
+// Installs a theme or palette with what it needs. What `where` has already
+// stays as it is. A built-in one is not copied: for every deck it is offered
+// again if it was removed. A theme and its own palette may need each other,
+// so the registry is checked before anything is written and once all is
+// there; if anything fails, what this call installed is taken out again.
+export async function installHere(catalogue, kind, id, where, { mdeckVersion, force = false }) {
+  const before = registryAt(where)
+  const plan = withDependencies(catalogue, kind, id)
+  const done = [], written = []
+  try {
+    for (const entry of plan) {
+      const key = keyOf(entry.kind, entry.id)
+      const requested = entry.kind === kind && entry.id === id
+      if (entry.builtIn) {
+        const hidden = removedBuiltIns()
+        const wasRemoved = hidden.includes(key)
+        if (wasRemoved) setRemovedBuiltIns(hidden.filter(other => other !== key))
+        done.push({ kind: entry.kind, id: entry.id, version: entry.version, builtIn: true, wasRemoved, requested })
+        continue
+      }
+      const have = installedPackages(where.root)[key]
+      // Beside a deck, what is installed only for every deck is copied too,
+      // so the slide folder carries it.
+      const there = before[`${entry.kind}s`][entry.id]
+      if (!requested && (have || (there && (where.user || there.source !== 'user')))) { done.push({ kind: entry.kind, id: entry.id, version: have?.version ?? null, kept: true, requested }); continue }
+      if (!satisfies(entry.mdeck, mdeckVersion)) fail(`The ${entry.kind} ${entry.id} ${entry.version} needs mdeck ${entry.mdeck}; this is ${mdeckVersion}. Update mdeck first: npm install -g mdeck`)
+      const { bundle, url, digest } = await obtainPackage(catalogue, entry)
+      const result = installPackage(bundle, { root: where.root, url, digest, force })
+      if (!result.replaced) written.push(result.dir)
+      done.push({ kind: entry.kind, id: entry.id, version: entry.version, replaced: result.replaced, requested })
+    }
+    registryAt(where)
+  } catch (error) {
+    for (const dir of written) rmSync(dir, { recursive: true, force: true })
+    throw error
   }
-  const pack = installed ? removePack(id, { root: where.root, force }) : null
-  if (where.user && isBundled) setRemovedPacks([...removedPacks(), id])
-  return { folders: pack?.folders ?? [], hidden: where.user && isBundled }
+  return done
+}
+
+// Removes a theme or palette. A built-in one is hidden instead, for every
+// deck; installing it brings it back. A palette a theme here uses by default
+// stays; a theme takes the palettes that belong only to it along; the last
+// theme stays.
+export function removeHere(kind, id, where, { force = false } = {}) {
+  const registry = registryAt(where)
+  const record = registry[`${kind}s`][id]
+  const installed = installedPackages(where.root)
+  const key = keyOf(kind, id)
+  if (!installed[key] && !(where.user && record?.source === 'built-in')) fail(`The ${kind} ${id} is not installed ${where.label}`)
+  if (kind === 'palette') {
+    const users = Object.values(registry.themes).filter(theme => theme.manifest.palette === id).map(theme => theme.id)
+    if (users.length) fail(`${users.join(', ')} ${users.length > 1 ? 'use' : 'uses'} the palette ${id} by default; remove ${users.length > 1 ? 'those themes' : 'that theme'} first`)
+  }
+  if (kind === 'theme' && Object.keys(registry.themes).length === 1) fail(`${id} is the last theme ${where.label}; install another theme first (mdeck themes search lists them)`)
+  const removed = []
+  const take = (k, i) => {
+    const r = registry[`${k}s`][i]
+    if (installedPackages(where.root)[keyOf(k, i)]) { removePackage(k, i, { root: where.root, force }); removed.push({ kind: k, id: i }) }
+    else if (where.user && r?.source === 'built-in') { setRemovedBuiltIns([...removedBuiltIns(), keyOf(k, i)]); removed.push({ kind: k, id: i, hidden: true }) }
+  }
+  take(kind, id)
+  if (kind === 'theme') for (const palette of Object.values(registry.palettes)) if (palette.manifest.theme === id) take('palette', palette.id)
+  return removed
 }

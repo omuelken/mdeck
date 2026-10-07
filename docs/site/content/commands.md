@@ -12,7 +12,8 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck new` | Make a presentation with guided questions |
 | `mdeck run my-talk.md` | Open the launch page: present, edit, check and send from one place; slides reload when you save |
 | `mdeck edit my-talk.md` | Edit slides, colors and themes in the browser; saves to the file |
-| `mdeck themes search`, `install <pack>`, `remove`, `update`, `list` | Themes and palettes: install more, remove the ones you do not use; see [Install, remove or share a theme](theme-repository.html) |
+| `mdeck themes search`, `install <theme>`, `remove`, `update`, `list` | Themes: install more (each with its palette), remove the ones you do not use; see [Install, remove or share a theme](theme-repository.html) |
+| `mdeck palettes search`, `install <palette>`, … | The same for palettes |
 | `mdeck design [my-talk.md or folder]` | Look at themes and palettes on a sample deck and fine-tune them; saves to `extensions/` |
 | `mdeck migrate my-talk.md --dry-run` | Preview the changes needed for API 2.0 |
 | `mdeck check my-talk.md` | Check settings and look for missing local files |

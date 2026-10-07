@@ -1,8 +1,0 @@
-schema = 1
-id = "academic"
-title = "Academic"
-description = "A lecture: Source Sans and Source Serif, compact slides with the heading in a fixed place, theorem and definition blocks, booktabs tables and a footnote rule."
-version = "1.0.0"
-author = "Tilman Schieber"
-license = "MIT"
-mdeck = ">=3.0.0"

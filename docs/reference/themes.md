@@ -24,9 +24,9 @@ theme: neue
 `mdeck list my-talk.md` lists them with their descriptions.
 
 More themes are in the [theme repository](https://github.com/tilman-schieber/mdeck-themes):
-`mdeck themes search` lists them, and `mdeck themes install <pack> my-talk.md`
-puts one beside the deck. The themes duet, editorial, fhnw, terminal and sketch,
-built in before mdeck 3.0, are there as packs of the same name.
+`mdeck themes search` lists them, and `mdeck themes install <theme> my-talk.md`
+puts one beside the deck, with its default palette. The themes duet, editorial,
+fhnw, terminal and sketch, built in before mdeck 3.0, are there.
 
 ## Theme structure
 
