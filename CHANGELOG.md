@@ -2,7 +2,9 @@
 
 ## 3.0.0 — unreleased
 
-- Fewer built-in looks: mdeck now comes with the themes `neue`, `academic` and `aurora` and the palettes `swiss`, `nordic`, `neon`, `lagoon` and `graphite`. The others moved to the theme repository as packs of the same name: `duet` (with `cobalt`), `editorial` (with `terra`), `fhnw` (with `brand`), `terminal` (with `phosphor`) and `sketch` (with `pastel`), and the palettes `ember` and `forest` as `earth`. A deck that uses one gets an error that says what to run, for example `mdeck themes install duet my-talk.md`; files made with `mdeck send` or `mdeck build` keep working, because they carry their theme.
+- Fewer built-in looks: mdeck now comes with the themes `neue`, `academic`, `aurora` and the new `minimal` and the palettes `swiss`, `nordic`, `neon`, `lagoon` and `graphite`. The others moved to the theme repository as packs of the same name: `duet` (with `cobalt`), `editorial` (with `terra`), `fhnw` (with `brand`), `terminal` (with `phosphor`) and `sketch` (with `pastel`), and the palettes `ember` and `forest` as `earth`. A deck that uses one gets an error that says what to run, for example `mdeck themes install duet my-talk.md`; files made with `mdeck send` or `mdeck build` keep working, because they carry their theme.
+- New theme `minimal`: nothing but the content, in the computer's own fonts (no web fonts, so it works offline), with medium weights, space instead of rules and boxes, and "Chapter 2" as a quiet label above chapter titles. Its default palette is `graphite`.
+- The sample deck's picture is a drawing in the palette's colours, and an SVG data URL that uses theme colours is drawn inline like an SVG file. A drawing in a picture's place now takes the space the layout gives it, like a photo, instead of pushing headings aside.
 - The examples use built-in themes: the Python lesson `academic`, the poll and custom-layout examples `neue`, the docs home page talk `academic`.
 
 ## 2.3.0 — 2026-10-07

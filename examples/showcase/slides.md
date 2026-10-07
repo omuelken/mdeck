@@ -392,7 +392,7 @@ To try them without changing the file, open the **reader view** and choose **Loo
 :::
 
 :::notes
-mdeck has three built-in themes and five palettes, each light or dark. `mdeck list` shows them all, including any kept in an `extensions` folder beside the deck. `mdeck themes search` finds more in the theme repository.
+mdeck has four built-in themes and five palettes, each light or dark. `mdeck list` shows them all, including any kept in an `extensions` folder beside the deck. `mdeck themes search` finds more in the theme repository.
 :::
 
 ---

@@ -89,7 +89,7 @@ test('common manifest mistakes fail with the file, setting path and reason', () 
 })
 
 test('built-in and deck-local extensions load through one registry', () => {
-  assert.deepEqual(Object.keys(registry.themes), ['academic', 'aurora', 'neue'])
+  assert.deepEqual(Object.keys(registry.themes), ['academic', 'aurora', 'minimal', 'neue'])
   assert.deepEqual(Object.keys(registry.palettes), ['graphite', 'lagoon', 'neon', 'nordic', 'swiss'])
   assert.equal(registry.layouts.comparison.source, 'local')
   assert.equal(registry.layouts.title.source, 'built-in')

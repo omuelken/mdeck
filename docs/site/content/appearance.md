@@ -27,6 +27,7 @@ If you already have a settings block there, change the existing lines rather tha
 |---|---|
 | `neue` | Swiss style: large type, clear lines, red on white |
 | `aurora` | Northern lights: curtains of light, night-sky chapters and glass |
+| `minimal` | Nothing but the content: system fonts, calm type, no decoration; works offline |
 | `academic` | A lecture: compact slides, theorem and definition boxes, tables like in a paper |
 
 Each theme comes with colours that suit it, so you do not have to choose any. More themes are in the theme repository (see “Themes that moved to the repository” below).
@@ -52,6 +53,12 @@ Default colours: `neon`.
 [![The tour's title slide in the Academic theme](images/themes/academic.webp)](images/themes/academic.webp)
 
 Default colours: `nordic`.
+
+### Minimal
+
+[![The tour's title slide in the Minimal theme](images/themes/minimal.webp)](images/themes/minimal.webp)
+
+Default colours: `graphite`. It uses the fonts already on the computer, so it needs no internet connection and looks plain on purpose.
 
 ## Choose colours
 

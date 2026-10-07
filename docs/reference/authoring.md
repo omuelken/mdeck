@@ -104,6 +104,7 @@ view is reachable in any build through `?view=reader`.
 |---|---|
 | `neue` | Swiss style: Inter Tight and Inter, large flush-left type, a rule across the top, square accent markers, red on white |
 | `aurora` | Northern lights: Plus Jakarta Sans, curtains of light in the palette's accents, night-sky chapter slides, frosted glass |
+| `minimal` | Nothing but the content: the system's own fonts (no web fonts, works offline), medium weights, space instead of rules and boxes |
 | `academic` | A lecture: Source Sans and Source Serif, compact type with the heading fixed at the top and the content centred below, theorem and definition blocks, booktabs tables, a footnote rule |
 
 More themes (duet, editorial, fhnw, terminal, sketch) are in the theme

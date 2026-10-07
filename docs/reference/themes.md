@@ -18,6 +18,7 @@ theme: neue
 |---|---|---|
 | `neue` | Swiss style: large flush-left type, rules, red on white | `swiss` |
 | `aurora` | Northern lights: curtains of light, night-sky chapters, frosted glass | `neon` |
+| `minimal` | Nothing but the content: system fonts, calm type, no decoration; works offline | `graphite` |
 | `academic` | A lecture: compact type, the heading fixed at the top and the content centred below, theorem and definition blocks, booktabs tables, a footnote rule | `nordic` |
 
 `mdeck list my-talk.md` lists them with their descriptions.

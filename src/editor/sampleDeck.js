@@ -2,7 +2,9 @@
 // ordinary amounts. The design page previews themes and palettes on it, and
 // `npm run test:themes` checks every theme against it.
 
-export const SAMPLE_PICTURE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#6b7f99"/><circle cx="140" cy="150" r="80" fill="#e0c068"/><rect x="220" y="80" width="120" height="140" fill="#2d3e50"/></svg>'
+// A drawing in the palette's colours (with plain colours elsewhere): a chart
+// over hills under a sun, for every layout that shows a picture.
+export const SAMPLE_PICTURE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"><rect width="800" height="500" fill="var(--surface, #eef1f4)"/><g stroke="var(--rule, #d5dbe1)" stroke-width="2"><path d="M0 100H800M0 200H800M0 300H800M0 400H800M100 0V500M200 0V500M300 0V500M400 0V500M500 0V500M600 0V500M700 0V500"/></g><circle cx="580" cy="165" r="128" fill="none" stroke="var(--accent, #3d5a73)" stroke-width="4" opacity="0.35"/><circle cx="580" cy="165" r="88" fill="var(--accent, #3d5a73)"/><path d="M0 360C140 292 262 300 384 338S628 424 800 330V500H0Z" fill="var(--accent-2, #c2410c)"/><path d="M0 418C168 366 330 392 470 422S690 474 800 434V500H0Z" fill="var(--accent, #3d5a73)" opacity="0.6"/><polyline points="80,262 170,214 260,236 350,170 440,196" fill="none" stroke="var(--ink, #1b2733)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><g fill="var(--bg, #ffffff)" stroke="var(--ink, #1b2733)" stroke-width="5"><circle cx="80" cy="262" r="10"/><circle cx="170" cy="214" r="10"/><circle cx="260" cy="236" r="10"/><circle cx="350" cy="170" r="10"/><circle cx="440" cy="196" r="10"/></g></svg>'
 
 // `picture` is where the slides find the picture: a file beside the deck, or
 // a data URL where there is no such file.

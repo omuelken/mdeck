@@ -62,8 +62,16 @@ export function extractContent(markdown, { headingLevels = [], paragraph = false
 
 // An SVG picture that uses the theme's colour variables is drawn inline, so it
 // follows the theme, palette and light or dark. The build lists them by the
-// path the deck uses.
-export const themedSvg = src => themedSvgs[src] ?? themedSvgs[String(src ?? '').split(/[?#]/)[0]]
+// path the deck uses; an SVG data URL carries its drawing itself.
+export const themedSvg = src => themedSvgs[src] ?? themedSvgs[String(src ?? '').split(/[?#]/)[0]] ?? themedDataSvg(src)
+
+function themedDataSvg(src) {
+  const match = /^data:image\/svg\+xml(;base64)?,(.*)$/s.exec(String(src ?? ''))
+  if (!match) return null
+  let markup
+  try { markup = match[1] ? atob(match[2]) : decodeURIComponent(match[2]) } catch { return null }
+  return /var\(--/.test(markup) && /^\s*<svg\b/.test(markup) ? markup : null
+}
 
 const attribute = (tag, name) => tag.match(new RegExp(`\\s${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, 'i'))?.slice(1).find(v => v != null)
 
