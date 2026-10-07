@@ -5,7 +5,7 @@ meta:
   author: "Tilman Schieber"
   organization: "FHNW"
   date: "2026-05-19"
-palette: graphite
+palette: paper
 ---
 
 ---

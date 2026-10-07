@@ -58,7 +58,7 @@ Default colours: `nordic`.
 
 [![The tour's title slide in the Minimal theme](images/themes/minimal.webp)](images/themes/minimal.webp)
 
-Default colours: `graphite`. It uses the fonts already on the computer, so it needs no internet connection and looks plain on purpose.
+Default colours: `paper`. It uses the fonts already on the computer, so it needs no internet connection and looks plain on purpose.
 
 ## Choose colours
 
@@ -70,12 +70,12 @@ To use other colours, set `palette` to one of these:
 | `nordic` | Ice grey, deep navy and a cool steel blue (academic's own) |
 | `neon` | Violet and magenta, loud (aurora's own) |
 | `lagoon` | Teal on warm stone |
-| `graphite` | Black and white with a steel-blue accent |
+| `paper` | Off-white and near-black with one orange accent (minimal's own) |
 
 ```yaml
 ---
 theme: neue
-palette: graphite
+palette: paper
 ---
 ```
 
@@ -133,6 +133,7 @@ Earlier versions of mdeck came with more themes and palettes. They are now packs
 | `terminal` | The terminal theme (headings typed at a prompt, a status bar) and the `phosphor` palette; it starts dark |
 | `sketch` | The sketch theme (handwriting, marker scribbles, sticky notes) and the `pastel` palette |
 | `earth` | The `ember` and `forest` palettes |
+| `graphite` | The `graphite` palette: black and white with a steel-blue accent |
 
 A deck that still names one of them stops with a message that tells you what to install, for example:
 

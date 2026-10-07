@@ -24,7 +24,7 @@ The presenter view and the reader view switch palette and light or dark without 
 | `nordic` | ice grey, deep navy and a cool steel blue | polar night with ice blue |
 | `neon` | white with violet and magenta | black with neon violet and pink |
 | `lagoon` | teal on warm stone, orange second accent | deep teal-black, bright teal |
-| `graphite` | black and white with a steel-blue accent | charcoal with light steel blue |
+| `paper` | off-white paper and near-black ink with one orange accent | charcoal with a softer orange |
 
 `mdeck list palettes` lists them, with any of your own.
 

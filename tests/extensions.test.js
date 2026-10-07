@@ -90,7 +90,7 @@ test('common manifest mistakes fail with the file, setting path and reason', () 
 
 test('built-in and deck-local extensions load through one registry', () => {
   assert.deepEqual(Object.keys(registry.themes), ['academic', 'aurora', 'minimal', 'neue'])
-  assert.deepEqual(Object.keys(registry.palettes), ['graphite', 'lagoon', 'neon', 'nordic', 'swiss'])
+  assert.deepEqual(Object.keys(registry.palettes), ['lagoon', 'neon', 'nordic', 'paper', 'swiss'])
   assert.equal(registry.layouts.comparison.source, 'local')
   assert.equal(registry.layouts.title.source, 'built-in')
   assert.deepEqual(registry.warnings, [])
@@ -113,7 +113,7 @@ test('the generated runtime module imports every layout and lazily loads theme s
   assert.match(code, /import L\d+ from ".*\/extensions\/comparison\/layout\.jsx"/)
   assert.match(code, /import ".*\/comparison\/styles\.css"/)
   assert.match(code, /"neue": \{ manifest: \{.*"tokens".*load: \(\) => Promise\.all\(\[import\(".*\/packs\/neue\/neue\/styles\.css\?inline"\)\]\)/)
-  assert.match(code, /export const palettes = \{\n"graphite"/)
+  assert.match(code, /export const palettes = \{\n"lagoon"/)
 })
 
 test('a file for readers carries only the deck theme and the palette it shows', () => {
@@ -145,7 +145,7 @@ test('deck checks agree with the registry about themes, palettes and parameters'
   assert.match(foreign[0].message, /The theme "house" does not offer the palette "lagoon"; available: house-colours/)
   const warnings = validateDeck(parseSlides('---\ntheme: night\nparams:\n  fontBody: serif\n---\n# Hi'), houseOptions)
   assert.deepEqual(warnings.map(d => [d.code, d.severity]), [['unknown-param', 'warning']])
-  assert.deepEqual(validateDeck(parseSlides('---\ntheme: aurora\npalette: graphite\nappearance: dark\n---\n# Hi'), options), [])
+  assert.deepEqual(validateDeck(parseSlides('---\ntheme: aurora\npalette: paper\nappearance: dark\n---\n# Hi'), options), [])
   // Themes and palettes that moved to the theme repository say how to get them.
   const moved = validateDeck(parseSlides('---\ntheme: duet\npalette: forest\n---\n# Hi'), options)
   assert.deepEqual(moved.map(d => d.code), ['unknown-theme', 'unknown-palette'])
@@ -203,8 +203,8 @@ test('appearance: the theme default palette, the deck palette and appearance, th
   assert.match(base.paletteCss, /--inverse-accent: #7cc4ea;/)
   assert.equal(base.overridesCss, '')
   assert.deepEqual(base.fonts, theme.fonts)
-  const full = buildAppearance({ theme, palettes, palette: 'graphite', appearance: 'dark', params: { fontBody: 'serif', bogus: 1 }, meta: { title: 'T "q"' }, offline: true })
-  assert.match(full.paletteCss, /--accent: #9fc2e0;/)
+  const full = buildAppearance({ theme, palettes, palette: 'paper', appearance: 'dark', params: { fontBody: 'serif', bogus: 1 }, meta: { title: 'T "q"' }, offline: true })
+  assert.match(full.paletteCss, /--accent: #fb8c4a;/)
   assert.ok(Object.keys(DARK_TOKENS).every(token => full.paletteCss.includes(token)), 'dark code colours and logo filter')
   assert.equal(full.overridesCss, ':root {\n  --font-body: serif;\n  --meta-title: "T \\"q\\"";\n}')
   assert.deepEqual(full.fonts, [])
@@ -213,7 +213,7 @@ test('appearance: the theme default palette, the deck palette and appearance, th
   assert.match(buildAppearance({ theme, palettes, palette: 'missing' }).warnings[0], /^Unknown palette "missing"/)
 
   assert.equal(paletteColor('--accent', { theme, palettes }), '#1f6f9f')
-  assert.equal(paletteColor('--accent', { theme, palettes, palette: 'graphite', appearance: 'dark' }), '#9fc2e0')
+  assert.equal(paletteColor('--accent', { theme, palettes, palette: 'paper', appearance: 'dark' }), '#fb8c4a')
 })
 
 test('mdeck check warns about a misspelled callout type, but not about known blocks or the deck\'s own', () => {

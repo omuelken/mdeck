@@ -41,7 +41,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | Field | Default | Description |
 |---|---|---|
 | `theme` | `neue` | Theme name |
-| `palette` | _(theme default)_ | Colour palette: `swiss`, `nordic`, `neon`, `lagoon`, `graphite`, one installed from the theme repository, or one of your own |
+| `palette` | _(theme default)_ | Colour palette: `swiss`, `nordic`, `neon`, `lagoon`, `paper`, one installed from the theme repository, or one of your own |
 | `appearance` | _(theme default)_ | `light` or `dark`: which variant of the palette the slides use |
 | `meta.title` | — | Deck title (shown in footer) |
 | `meta.author` | — | Author name (shown in footer) |
@@ -126,7 +126,7 @@ Each palette has a light and a dark variant; `appearance:` picks one.
 | `nordic` | Ice grey, navy, steel blue (academic's default) | Polar night, ice blue |
 | `neon` | White, violet, magenta (aurora's default) | Black, neon violet and pink |
 | `lagoon` | Teal on warm stone | Bright teal on teal-black |
-| `graphite` | Black and white, steel blue | Charcoal, light steel blue |
+| `paper` | Off-white, near-black, orange (minimal's default) | Charcoal, soft orange |
 
 More palettes (cobalt, terra, phosphor, pastel, ember, forest, among others)
 are in the theme repository; install them with `mdeck themes install <pack> <deck>.md`.

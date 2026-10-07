@@ -1,0 +1,27 @@
+schema = 1
+kind = "palette"
+id = "paper"
+title = "Paper"
+description = "Off-white paper and near-black ink, with one orange accent; charcoal and a softer orange in the dark."
+
+[light]
+"--bg" = "#fbfaf7"
+"--surface" = "#f0eee9"
+"--ink" = "#161616"
+"--ink-soft" = "#333333"
+"--muted" = "#6b6a66"
+"--rule" = "#e0ddd6"
+"--accent" = "#c2410c"
+"--accent-2" = "#1f2937"
+"--on-accent" = "#ffffff"
+
+[dark]
+"--bg" = "#151515"
+"--surface" = "#202020"
+"--ink" = "#f1efea"
+"--ink-soft" = "#d6d3cc"
+"--muted" = "#97948c"
+"--rule" = "#2e2e2c"
+"--accent" = "#fb8c4a"
+"--accent-2" = "#e7e5e0"
+"--on-accent" = "#151515"

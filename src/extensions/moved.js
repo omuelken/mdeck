@@ -3,7 +3,7 @@
 // how to install it instead of being told the name is unknown.
 export const MOVED = {
   themes: { duet: 'duet', editorial: 'editorial', fhnw: 'fhnw', terminal: 'terminal', sketch: 'sketch' },
-  palettes: { cobalt: 'duet', terra: 'editorial', brand: 'fhnw', phosphor: 'terminal', pastel: 'sketch', ember: 'earth', forest: 'earth' },
+  palettes: { cobalt: 'duet', terra: 'editorial', brand: 'fhnw', phosphor: 'terminal', pastel: 'sketch', ember: 'earth', forest: 'earth', graphite: 'graphite' },
 }
 
 // "The theme "duet" is no longer built in: mdeck themes install duet", or null.
