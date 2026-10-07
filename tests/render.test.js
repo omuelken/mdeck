@@ -80,3 +80,10 @@ test("a chapter slide's label is in the deck's language, and a regional code use
   } finally { setDeckLanguage(); setCalloutLabels() }
   assert.ok(chapter().includes('Chapter'))
 })
+
+test('a paragraph of only pictures is marked, a sentence with a picture is not', () => {
+  assert.match(marked.parse('![A](a.jpg) ![B](b.jpg)'), /<p class="pictures"><img[^>]*> <img/)
+  assert.match(marked.parse('![Logo](logo.png)'), /<p class="pictures">/)
+  assert.doesNotMatch(marked.parse('Press ![stop](stop.png) to stop.'), /pictures/)
+  assert.doesNotMatch(marked.parse('Just words.'), /pictures/)
+})

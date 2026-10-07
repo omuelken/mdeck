@@ -594,6 +594,19 @@ Reference images with standard Markdown syntax or the `image:` frontmatter field
 ![Alt text](./img/diagram.png)
 ```
 
+A paragraph of nothing but pictures fits into the room the slide has left: a
+large picture shrinks, keeping its proportions, and a small one keeps its
+size. Several pictures in one paragraph sit side by side:
+
+```markdown
+# Three mornings
+
+![Fjord](./img/fjord.jpg) ![Mountains](./img/mountains.jpg) ![Snow](./img/snow.jpg)
+```
+
+A picture inside a sentence stays in the sentence. Themes may set picture
+paragraphs their own way (Lightbox fills a grid edge to edge).
+
 A local SVG whose source contains `var(--…)` is drawn inline instead of as an
 `<img>`, both in slide text (`![…](./img/drawing.svg)` or `<img src>`) and as a
 layout's `image` (`title`, `chapter`, `image-text`, `full-bleed-image`, and

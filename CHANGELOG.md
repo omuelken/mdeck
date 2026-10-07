@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Pictures written in the text fit on the slide in every theme: a paragraph of nothing but pictures shrinks into the room below the heading instead of running off the slide, keeping its proportions (small pictures keep their size), and several pictures in one paragraph sit side by side. Such paragraphs have the class `pictures`, for themes that set them their own way; a picture in a sentence is left alone.
 - Tables have room below them in every theme, so a sentence after a table no longer sits right against it.
 - `mdeck themes build` also renders an icon for each theme: its title slide at 96×54 (drawn at twice that, about 3 KB), listed as `icon` in `catalogue.json` and `looks.json`. The theme repository's gallery shows it in its list instead of the palette's colours, which said little about a theme.
 

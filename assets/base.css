@@ -162,6 +162,28 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 /* ── Code blocks ─────────────────────────────────────────────────────────── */
 .code-block { white-space: pre-wrap; overflow-x: hidden; }
 
+/* ── Pictures written in the text ───────────────────────────────────────── */
+/* A paragraph of nothing but pictures (marked in markedSetup.js) fits into
+   the room the slide has left: a large picture shrinks, keeping its
+   proportions, and never runs off the slide; a small one keeps its size.
+   Several sit side by side. Themes may set them differently (a grid, cropped
+   to fill); a picture in a sentence is left alone. */
+.slide-body p.pictures {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+.slide-body p.pictures > :is(img, .themed-picture) {
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 /* ── Tables ──────────────────────────────────────────────────────────────── */
 .slide-body table {
   border-collapse: collapse;

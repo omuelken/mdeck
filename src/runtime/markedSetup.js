@@ -143,5 +143,12 @@ marked.use({
         .replace(/>/g, '&gt;')
       return `<codeblock lang="${lang}"${attrs ? ' ' + attrs : ''}>${encoded}</codeblock>`
     },
+    // A paragraph of nothing but pictures (one, or several side by side) is
+    // marked, so themes can fit it into the slide or set it as a row; a
+    // sentence with an icon in it stays a sentence.
+    paragraph({ tokens }) {
+      const pictures = tokens.some(t => t.type === 'image') && tokens.every(t => t.type === 'image' || t.type === 'br' || (t.type === 'text' && !t.raw.trim()))
+      return `<p${pictures ? ' class="pictures"' : ''}>${this.parser.parseInline(tokens)}</p>\n`
+    },
   },
 })
