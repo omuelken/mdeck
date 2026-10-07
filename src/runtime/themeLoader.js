@@ -49,8 +49,10 @@ function syncThemeFonts(urls) {
 }
 
 export async function loadTheme({ theme = 'neue', palette, appearance, params = {}, meta = {} } = {}) {
-  const entry = themeEntry(theme)
-  if (!entry) throw new Error(movedHint('theme', theme) ?? `Unknown theme: "${theme}". Available: ${THEME_NAMES.join(', ')}`)
+  // A deck without a theme gets neue, or the first installed theme when neue
+  // was removed.
+  const entry = themeEntry(theme) ?? (theme === 'neue' && THEME_NAMES.length ? themeEntry(THEME_NAMES[0]) : null)
+  if (!entry) throw new Error(movedHint('theme', theme) ?? `Unknown theme: "${theme}". Available: ${THEME_NAMES.join(', ') || 'none; install one with mdeck themes install'}`)
 
   const styles = await entry.load()
   const look = buildAppearance({

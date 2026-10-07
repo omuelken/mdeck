@@ -112,7 +112,7 @@ test('the generated runtime module imports every layout and lazily loads theme s
   const code = generateExtensionsModule(registry)
   assert.match(code, /import L\d+ from ".*\/extensions\/comparison\/layout\.jsx"/)
   assert.match(code, /import ".*\/comparison\/styles\.css"/)
-  assert.match(code, /"neue": \{ manifest: \{.*"tokens".*load: \(\) => Promise\.all\(\[import\(".*\/themes\/neue\/styles\.css\?inline"\)\]\)/)
+  assert.match(code, /"neue": \{ manifest: \{.*"tokens".*load: \(\) => Promise\.all\(\[import\(".*\/packs\/neue\/neue\/styles\.css\?inline"\)\]\)/)
   assert.match(code, /export const palettes = \{\n"graphite"/)
 })
 
@@ -124,7 +124,7 @@ test('a file for readers carries only the deck theme and the palette it shows', 
   assert.deepEqual(pick({}), [['neue'], ['swiss']], 'neue without a theme')
   assert.deepEqual(pickHouse({ theme: 'house', palette: 'lagoon' }), [['house'], ['house-colours']], 'a palette the theme does not offer falls back')
   assert.equal(Object.keys(deckLookOnly(registry, { theme: 'academic' }).layouts).length, Object.keys(registry.layouts).length, 'layouts stay')
-  assert.doesNotMatch(generateExtensionsModule(deckLookOnly(registry, { theme: 'academic' })), /themes\/neue\/styles\.css/)
+  assert.doesNotMatch(generateExtensionsModule(deckLookOnly(registry, { theme: 'academic' })), /neue\/neue\/styles\.css/)
 })
 
 test('template validation rejects missing regions, unknown props and incorrect values', () => {
@@ -176,11 +176,21 @@ test('deck-local extensions may be grouped in folders and add themes and palette
   } finally { fx.remove() }
 })
 
-test('duplicate identifiers are rejected across discovery roots instead of overriding', () => {
-  const fx = fixture({ 'extensions/swiss/extension.toml': PALETTE.replace('ocean', 'swiss').replace('Ocean', 'Swiss') })
+test("a deck's own theme or palette replaces the one that comes with mdeck; layouts and one place may not repeat an id", () => {
+  const fx = fixture({ 'extensions/swiss/extension.toml': PALETTE.replace('ocean', 'swiss').replace('Ocean', 'My swiss') })
   try {
-    assert.throws(() => loadRegistry(fx.slides), /Duplicate palette "swiss" is also defined in .*assets\/extensions\/palettes\/swiss\/extension\.toml/)
+    const local = loadRegistry(fx.slides, { userRoot: null })
+    assert.equal(local.palettes.swiss.source, 'local')
+    assert.equal(local.palettes.swiss.title, 'My swiss')
   } finally { fx.remove() }
+  const twice = fixture({ 'extensions/a/swiss/extension.toml': PALETTE.replace('ocean', 'swiss'), 'extensions/b/swiss/extension.toml': PALETTE.replace('ocean', 'swiss') })
+  try {
+    assert.throws(() => loadRegistry(twice.slides, { userRoot: null }), /Duplicate palette "swiss" is also defined in .*extensions\/a\/swiss\/extension\.toml/)
+  } finally { twice.remove() }
+  const layout = fixture({ 'extensions/title/extension.toml': LAYOUT_TOML.replace('id = "box"', 'id = "title"'), 'extensions/title/layout.jsx': LAYOUT })
+  try {
+    assert.throws(() => loadRegistry(layout.slides, { userRoot: null }), /Duplicate layout "title"/)
+  } finally { layout.remove() }
 })
 
 test('appearance: the theme default palette, the deck palette and appearance, then params', () => {

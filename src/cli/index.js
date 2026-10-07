@@ -313,9 +313,9 @@ const HELP = `
     ${c.green}mdeck edit${c.reset} [slides.md]                    Edit slides in the browser; saves to the file
     ${c.green}mdeck design${c.reset} [folder | slides.md]         Look at and fine-tune themes and palettes on a sample deck;
                                               saves to the folder's extensions/ (default: this folder)
-    ${c.green}mdeck themes${c.reset} search [words]               Themes and palettes from the online repository
-      install <pack> [slides.md | folder]   into the deck's extensions/ (--global: for every deck)
-      remove <pack>, update [pack], list    --force replaces files changed by hand
+    ${c.green}mdeck themes${c.reset} search [words]               Themes and palettes: those that come with mdeck and the online repository
+      install <pack>, remove <pack>         for every deck; add slides.md or --local for one deck only
+      update [pack], list                   --force replaces files changed by hand
 
   ${c.dim}Make something to hand out${c.reset}
     ${c.green}mdeck build${c.reset} [slides.md] [-o dir/index.html]   A folder to host

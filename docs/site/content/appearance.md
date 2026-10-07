@@ -119,7 +119,7 @@ Its theme, palette and light or dark controls, under the notes, let you try othe
 
 ## More themes from other people
 
-The theme repository has themes and palettes others made. `mdeck themes search` lists them, and `mdeck themes install <pack> my-talk.md` puts one beside your slides; see [Install or share a theme](theme-repository.html).
+The themes above come with mdeck as packs. The theme repository has more: `mdeck themes search` lists them, and `mdeck themes install <pack>` installs one for all your decks. You can also remove the ones you never use; see [Install, remove or share a theme](theme-repository.html).
 
 ### Themes that moved to the repository
 
@@ -134,10 +134,10 @@ Earlier versions of mdeck came with more themes and palettes. They are now packs
 | `sketch` | The sketch theme (handwriting, marker scribbles, sticky notes) and the `pastel` palette |
 | `earth` | The `ember` and `forest` palettes |
 
-A deck that still names one of them stops with a message that tells you what to install. Install the pack beside your slides, for example:
+A deck that still names one of them stops with a message that tells you what to install, for example:
 
 ```sh
-mdeck themes install duet my-talk.md
+mdeck themes install duet
 ```
 
 ## Add your name and organization

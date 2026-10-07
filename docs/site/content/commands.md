@@ -12,7 +12,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck new` | Make a presentation with guided questions |
 | `mdeck run my-talk.md` | Open the launch page: present, edit, check and send from one place; slides reload when you save |
 | `mdeck edit my-talk.md` | Edit slides, colors and themes in the browser; saves to the file |
-| `mdeck themes search`, `install <pack>`, `remove`, `update`, `list` | Themes and palettes from the theme repository; see [Install or share a theme](theme-repository.html) |
+| `mdeck themes search`, `install <pack>`, `remove`, `update`, `list` | Themes and palettes: install more, remove the ones you do not use; see [Install, remove or share a theme](theme-repository.html) |
 | `mdeck design [my-talk.md or folder]` | Look at themes and palettes on a sample deck and fine-tune them; saves to `extensions/` |
 | `mdeck migrate my-talk.md --dry-run` | Preview the changes needed for API 2.0 |
 | `mdeck check my-talk.md` | Check settings and look for missing local files |
@@ -31,7 +31,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 
 - **Preview:** a small live copy of the deck to flip through; click it to open the audience window at that slide.
 - **Present:** the presenter view, audience window and reader view, each in a new tab. The presenter view has notes, drawing controls, a timer and next-slide preview; switch to its slide-only layout for a single screen. The audience window shows slides without notes. Fullscreen is a control inside either view, not a separate view.
-- **Write and learn:** the visual editor, the theme editor (themes and palettes on a sample deck, see [Install or share a theme](theme-repository.html)) and these guides. Each starts the first time you click it.
+- **Write and learn:** the visual editor, the theme editor (themes and palettes on a sample deck, see [Install, remove or share a theme](theme-repository.html)) and these guides. Each starts the first time you click it.
 - **Send:** buttons that make the `dist` folder, one file to send, or a PDF, next to your slide file, and show them in your file manager.
 - **Polls:** for a deck with polls: the server (built in, or the `server` setting and whether it answers), the join link and session code for phones, and for a server of your own the key that lets your browser move the phones along and reset polls (see below).
 - **Check:** the same problems `mdeck check` reports, such as missing pictures.

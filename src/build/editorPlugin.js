@@ -5,8 +5,9 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, unlinkSync } from 'node:fs'
 import { resolve, basename, dirname, relative } from 'node:path'
-import { builtInRegistry, loadRegistry, serializeRegistry } from '../extensions/discover.js'
-import { fetchIndex, findPack, installedPacks, installFromIndex, PackError } from '../extensions/packs.js'
+import { bundledPacks, loadRegistry, removedPacks, serializeRegistry } from '../extensions/discover.js'
+import { findPack, loadCatalogue, PackError } from '../extensions/packs.js'
+import { installHere, packsAt, removeHere, target } from '../extensions/installed.js'
 import { createRequire } from 'node:module'
 import { ManifestError, KINDS, ID_RE, MANIFEST_FILENAME, parseManifestText, validateManifest } from '../extensions/manifest.js'
 
@@ -180,7 +181,6 @@ export function createExtensionStore(deckDir, { registryFor }) {
 }
 
 export function editorMiddleware(deckFile, { registryFor, extensions = createExtensionStore(dirname(deckFile.path), { registryFor }) }) {
-  const extensionsDir = resolve(dirname(deckFile.path), 'extensions')
   return async (request, response, next) => {
     const pathname = new URL(request.url, 'http://localhost').pathname
     if (!isAllowedRequest(request)) return send(response, 403, { error: 'Requests are only accepted from this editor on this computer' })
@@ -201,18 +201,26 @@ export function editorMiddleware(deckFile, { registryFor, extensions = createExt
         response.setHeader('Allow', 'GET, PUT, DELETE')
         return send(response, 405, { error: 'Method not allowed' })
       }
-      // The theme repository: what it offers, and installing a pack into the
-      // deck's extensions folder.
+      // Packs: what the repository and mdeck offer, and installing one for
+      // every deck (as mdeck themes install does).
       if (pathname === '/themes/index' && request.method === 'GET') {
-        const index = await fetchIndex()
-        return send(response, 200, { ...index, installed: installedPacks(extensionsDir) })
+        const catalogue = await loadCatalogue({ bundled: bundledPacks({ all: true }) })
+        const removed = removedPacks()
+        const installed = Object.fromEntries(Object.entries(packsAt(target(null, false))).map(([id, pack]) => [id, { version: pack.version ?? null, bundled: Boolean(pack.bundled) }]))
+        return send(response, 200, { url: catalogue.url, offline: catalogue.offline, packs: catalogue.packs.map(({ dir, ...pack }) => ({ ...pack, removed: removed.includes(pack.id) })), installed })
       }
       if (pathname === '/themes/install' && request.method === 'POST') {
         const body = await readJson(request)
-        const index = await fetchIndex()
-        const registry = builtInRegistry()
-        const result = await installFromIndex(index, findPack(index, String(body?.id ?? '')), { root: extensionsDir, known: { themes: registry.themes, palettes: registry.palettes }, mdeckVersion: VERSION })
-        return send(response, 200, { ...result, registry: serializeRegistry(registryFor()) })
+        const catalogue = await loadCatalogue({ bundled: bundledPacks({ all: true }) })
+        findPack(catalogue, String(body?.id ?? ''))
+        const steps = await installHere(catalogue, String(body.id), target(null, false), { mdeckVersion: VERSION })
+        return send(response, 200, { steps, registry: serializeRegistry(registryFor()) })
+      }
+      if (pathname === '/themes/remove' && request.method === 'POST') {
+        const body = await readJson(request)
+        const catalogue = await loadCatalogue({ bundled: bundledPacks({ all: true }), online: false })
+        const removed = removeHere(catalogue, String(body?.id ?? ''), target(null, false))
+        return send(response, 200, { ...removed, registry: serializeRegistry(registryFor()) })
       }
       if (pathname === '/deck' && request.method === 'GET') {
         const registry = registryFor()

@@ -37,54 +37,52 @@ export function ExtensionsPanel({ registry, view = {}, owner = "This deck's", se
     </div>
     {own.length
       ? <ol class="outline-list">{own.map(row)}</ol>
-      : <p class="panel-hint">None yet. Start from a built-in one below{kind === 'palette' ? ', or with + from plain colours' : ''}.</p>}
+      : <p class="panel-hint">None yet. Copy one below to start{kind === 'palette' ? ', or with + from plain colours' : ''}.</p>}
     {installed.length > 0 && <>
       <div class="panel-section-head"><p class="section-title">Installed for every deck</p></div>
       <ol class="outline-list">{installed.map(row)}</ol>
     </>}
-    <OnlinePacks key="online" kind={kind} owner={owner} onInstall={onInstall} />
-    <div class="panel-section-head"><p class="section-title">Built in, to start from</p></div>
+    <div class="panel-section-head"><p class="section-title">Come with mdeck</p></div>
     <ol class="outline-list">{builtIn.map(row)}</ol>
+    <OnlinePacks key="online" kind={kind} onInstall={onInstall} />
   </aside>
 }
 
-// Packs from the theme repository with this kind of extension, loaded on
-// request since it needs the network. Installing puts a pack beside the deck.
-function OnlinePacks({ kind, owner, onInstall }) {
+// Packs not installed yet that have this kind of extension: from the theme
+// repository, and those that come with mdeck but were removed. Loaded on
+// request, since it needs the network. Installing makes a pack available to
+// every deck.
+function OnlinePacks({ kind, onInstall }) {
   const [state, setState] = useState({ status: 'idle' })
   const [busy, setBusy] = useState(null)
   const load = () => {
-    setState({ status: 'loading' })
+    setState(prev => ({ ...prev, status: prev.index ? 'ready' : 'loading' }))
     loadThemeIndex().then(index => setState({ status: 'ready', index }), error => setState({ status: 'error', error: error.message }))
   }
   const install = async pack => {
     setBusy(pack.id)
-    try {
-      await onInstall(pack, kind)
-      setState(prev => ({ ...prev, index: { ...prev.index, installed: { ...prev.index.installed, [pack.id]: { version: pack.version } } } }))
-    } catch (error) { setState(prev => ({ ...prev, error: error.message })) }
+    try { await onInstall(pack, kind); load() } catch (error) { setState(prev => ({ ...prev, error: error.message })) }
     setBusy(null)
   }
-  const head = <div class="panel-section-head"><p class="section-title">From the theme repository</p></div>
+  const head = <div class="panel-section-head"><p class="section-title">More to install</p></div>
   if (state.status !== 'ready') return <>{head}<div class="panel-hint">
-    {state.status === 'loading' ? 'Loading…' : <button class="btn is-small" onClick={load}>Show what others made</button>}
+    {state.status === 'loading' ? 'Loading…' : <button class="btn is-small" onClick={load}>Show what you can install</button>}
     {state.error && <p class="online-error">{state.error}</p>}
   </div></>
   const { index } = state
-  const packs = index.packs.filter(pack => pack[`${kind}s`].length)
+  const packs = index.packs.filter(pack => pack[`${kind}s`].length && !index.installed?.[pack.id])
   return <>{head}
     {state.error && <p class="panel-hint online-error">{state.error}</p>}
-    {!packs.length && <p class="panel-hint">No {kind}s there yet.</p>}
+    {index.offline && <p class="panel-hint">The theme repository could not be reached; showing what comes with mdeck.</p>}
+    {!packs.length && <p class="panel-hint">Every {kind} there is, is installed.</p>}
     <ol class="outline-list">{packs.map(pack => {
       const id = pack[`${kind}s`][0]
-      const have = index.installed?.[pack.id]
+      const previews = pack.previews ?? pack.repository?.previews
       return <li key={pack.id} class="outline-item has-thumb online-pack">
-        {pack.previews?.[id] && <div class="thumb"><img src={new URL(pack.previews[id], index.url).href} alt="" loading="lazy" /></div>}
+        {previews?.[id] && <div class="thumb"><img src={new URL(previews[id], index.url).href} alt="" loading="lazy" /></div>}
         <span><span class="title" style={{ display: 'block' }}>{pack.title} <span class="muted">{pack.version}</span></span>
-          <span class="online-meta">{[...pack.themes, ...pack.palettes].join(', ')} · {pack.author}</span></span>
-        {have
-          ? <span class="muted">{`Installed${have.version !== pack.version ? ` (${have.version})` : ''} in ${owner === "This folder's" ? 'this folder' : 'this deck'}`}</span>
-          : <button class="btn is-small" disabled={busy === pack.id} onClick={() => install(pack)}>{busy === pack.id ? 'Installing…' : 'Install'}</button>}
+          <span class="online-meta">{[...pack.themes, ...pack.palettes].join(', ')}{pack.removed ? ' · comes with mdeck, removed' : ` · ${pack.author}`}{pack.requires?.length ? ` · needs ${pack.requires.join(', ')}` : ''}</span></span>
+        <button class="btn is-small" disabled={busy === pack.id} onClick={() => install(pack)}>{busy === pack.id ? 'Installing…' : 'Install'}</button>
       </li>
     })}</ol>
   </>

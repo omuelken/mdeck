@@ -1,8 +1,11 @@
-// Packs: themes and palettes shared through the theme repository
-// (https://gh.tschieber.de/mdeck-themes/). A pack is a folder with pack.toml
-// and one folder per theme or palette; it travels as one JSON file of text
-// files, so installing it is checking it and writing those files. Only
-// extension.toml and styles.css are allowed: a pack never carries code.
+// Packs: every theme and palette comes in one. A pack is a folder with
+// pack.toml and one folder per theme or palette; it travels as one JSON file
+// of text files, so installing it is checking it and writing those files.
+// Only extension.toml and styles.css are allowed: a pack never carries code.
+// A pack may require others (`requires = ["lagoon"]`) for palettes its
+// themes name. Packs come from two places: the starter set bundled with
+// mdeck (assets/packs), and the theme repository
+// (https://gh.tschieber.de/mdeck-themes/).
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { resolve, relative } from 'node:path'
@@ -47,6 +50,7 @@ function checkMeta(meta, where) {
   if (typeof meta.id !== 'string' || !ID_RE.test(meta.id)) fail(`${where}: id must use lowercase letters, digits and hyphens, starting with a letter`)
   if (typeof meta.version !== 'string' || !VERSION_RE.test(meta.version)) fail(`${where}: version must look like 1.0.0`)
   if (meta.mdeck != null && (typeof meta.mdeck !== 'string' || !RANGE_RE.test(meta.mdeck))) fail(`${where}: mdeck must look like ">=2.3.0"`)
+  if (meta.requires != null && (!Array.isArray(meta.requires) || meta.requires.some(id => typeof id !== 'string' || !ID_RE.test(id) || id === meta.id))) fail(`${where}: requires must be a list of other packs' ids`)
 }
 
 // pack.toml and the files of each theme or palette in a pack folder.
@@ -75,7 +79,7 @@ export function readPackDir(dir) {
 // The published form of a pack folder: one JSON text and its checksum.
 export function bundlePack(dir) {
   const { meta, files } = readPackDir(dir)
-  const bundle = { schema: 1, id: meta.id, version: meta.version, ...(meta.mdeck ? { mdeck: meta.mdeck } : {}), files }
+  const bundle = { schema: 1, id: meta.id, version: meta.version, ...(meta.mdeck ? { mdeck: meta.mdeck } : {}), ...(meta.requires?.length ? { requires: meta.requires } : {}), files }
   const text = JSON.stringify(bundle, null, 1) + '\n'
   return { meta, bundle, text, sha256: sha256(text) }
 }
@@ -87,10 +91,11 @@ function checkCss(text, where) {
   }
 }
 
-// Checks a pack before it is published or installed. `known` is the registry
-// it will join (built-in extensions at least), for palettes a theme names.
-// Returns the ids it holds, as { themes, palettes }.
-export function checkPack(bundle, { known = { themes: {}, palettes: {} } } = {}) {
+// Checks a pack before it is published or installed. `provided` holds the
+// themes and palettes of the packs it requires ({ themes, palettes } by id),
+// for those its themes name; `owners` maps ids to the packs that have them,
+// so no pack takes another's id. Returns the ids and manifests it holds.
+export function checkPack(bundle, { provided = { themes: {}, palettes: {} }, owners = {} } = {}) {
   if (!bundle || typeof bundle !== 'object' || typeof bundle.files !== 'object' || !bundle.files) fail('Not a pack')
   checkMeta(bundle, `Pack ${bundle.id ?? '?'}`)
   const byId = {}
@@ -119,18 +124,19 @@ export function checkPack(bundle, { known = { themes: {}, palettes: {} } } = {})
       for (const url of record.manifest.fonts) if (!FONT_HOSTS.some(host => url.startsWith(host))) fail(`${bundle.id}: ${id} loads fonts from ${url}; allowed are ${FONT_HOSTS.join(', ')}`)
       checkCss(files['styles.css'] ?? '', `${bundle.id}: ${id}/styles.css`)
     }
-    if (known.themes[id] || known.palettes[id]) fail(`${bundle.id}: ${id} is the id of a built-in ${known.themes[id] ? 'theme' : 'palette'}`)
+    if (owners[id] && owners[id] !== bundle.id) fail(`${bundle.id}: ${id} is already the id of a theme or palette in the pack ${owners[id]}`)
     records.push(record)
   }
-  const themes = records.filter(r => r.kind === 'theme').map(r => r.id)
-  const palettes = records.filter(r => r.kind === 'palette').map(r => r.id)
-  const hasPalette = id => palettes.includes(id) || Boolean(known.palettes[id])
-  const hasTheme = id => themes.includes(id) || Boolean(known.themes[id])
+  const mine = kind => Object.fromEntries(records.filter(r => r.kind === kind).map(r => [r.id, r.manifest]))
+  const themes = mine('theme'), palettes = mine('palette')
+  const requires = bundle.requires?.length ? ` or in ${bundle.requires.join(', ')}` : ''
   for (const record of records) {
-    if (record.kind === 'theme') for (const id of [record.manifest.palette, ...(record.manifest.palettes ?? [])]) if (!hasPalette(id)) fail(`${bundle.id}: the theme ${record.id} names the palette "${id}", which is neither in the pack nor built in`)
-    if (record.kind === 'palette' && record.manifest.theme && !hasTheme(record.manifest.theme)) fail(`${bundle.id}: the palette ${record.id} belongs to the theme "${record.manifest.theme}", which is neither in the pack nor built in`)
+    if (record.kind === 'theme') for (const id of [record.manifest.palette, ...(record.manifest.palettes ?? [])]) {
+      if (!palettes[id] && !provided.palettes[id]) fail(`${bundle.id}: the theme ${record.id} names the palette "${id}", which is not in the pack${requires}; add the pack that has it to requires`)
+    }
+    if (record.kind === 'palette' && record.manifest.theme && !themes[record.manifest.theme] && !provided.themes[record.manifest.theme]) fail(`${bundle.id}: the palette ${record.id} belongs to the theme "${record.manifest.theme}", which is not in the pack${requires}`)
   }
-  return { themes, palettes }
+  return { themes: Object.keys(themes), palettes: Object.keys(palettes), manifests: { themes, palettes } }
 }
 
 function readMarker(dir) {
@@ -152,7 +158,7 @@ export function installedPacks(root) {
   for (const entry of readdirSync(root).sort()) {
     const marker = readMarker(resolve(root, entry))
     if (!marker?.pack) continue
-    const pack = packs[marker.pack] ??= { version: marker.version, url: marker.url, folders: [] }
+    const pack = packs[marker.pack] ??= { version: marker.version, url: marker.url, requires: marker.requires ?? [], folders: [] }
     pack.folders.push(entry)
   }
   return packs
@@ -166,8 +172,8 @@ const refuseChanged = (root, folder, marker) => {
 // Writes a checked pack into an extensions folder (a deck's, or the user's).
 // A folder of another pack or of the deck itself is never touched; a folder
 // of this pack is replaced unless it was changed by hand.
-export function installPack(bundle, { root, known, url = null, digest = null, force = false } = {}) {
-  const { themes, palettes } = checkPack(bundle, { known })
+export function installPack(bundle, { root, provided, owners, url = null, digest = null, force = false } = {}) {
+  const { themes, palettes } = checkPack(bundle, { provided, owners })
   const ids = [...themes, ...palettes]
   const before = installedPacks(root)[bundle.id]
   for (const id of ids) {
@@ -193,7 +199,7 @@ export function installPack(bundle, { root, known, url = null, digest = null, fo
       hashes[name] = sha256(content)
     }
     for (const name of readdirSync(dir)) if (name !== MARKER && !Object.hasOwn(hashes, name)) rmSync(resolve(dir, name), { recursive: true, force: true })
-    writeFileSync(resolve(dir, MARKER), JSON.stringify({ pack: bundle.id, version: bundle.version, url, sha256: digest, files: hashes }, null, 2) + '\n')
+    writeFileSync(resolve(dir, MARKER), JSON.stringify({ pack: bundle.id, version: bundle.version, ...(bundle.requires?.length ? { requires: bundle.requires } : {}), url, sha256: digest, files: hashes }, null, 2) + '\n')
   }
   return { themes, palettes, replaced: before?.version ?? null }
 }
@@ -230,38 +236,121 @@ export async function fetchPack(index, entry) {
   return { bundle, url, digest: entry.sha256 }
 }
 
-// Installs a pack listed in the index: refused when this mdeck is too old.
-export async function installFromIndex(index, entry, { root, known, mdeckVersion, force = false }) {
-  if (!satisfies(entry.mdeck, mdeckVersion)) fail(`${entry.id} ${entry.version} needs mdeck ${entry.mdeck}; this is ${mdeckVersion}. Update mdeck first: npm install -g mdeck`)
-  const { bundle, url, digest } = await fetchPack(index, entry)
-  return installPack(bundle, { root, known, url, digest, force })
+// ─── The catalogue: bundled packs and the repository ──────────────────────
+
+// A bundled pack as the catalogue lists it.
+function bundledEntry(id, dir) {
+  const { meta, bundle, sha256: digest } = bundlePack(dir)
+  const { themes, palettes } = checkPack(bundle)
+  return { id, title: meta.title, description: meta.description ?? '', version: meta.version, author: meta.author, license: meta.license,
+    ...(meta.mdeck ? { mdeck: meta.mdeck } : {}), requires: meta.requires ?? [], themes, palettes, sha256: digest, bundled: true, dir }
 }
 
-export function findPack(index, id) {
-  return index.packs.find(pack => pack.id === id) ?? fail(`There is no pack "${id}" in ${index.url}; mdeck themes search lists them`)
+// Every pack mdeck can install: the bundled ones, and the repository's when
+// it answers. Of two versions of one pack the newer is offered; the bundled
+// one on a tie, since it needs no download. `offline` says why the
+// repository is missing.
+export async function loadCatalogue({ bundled = {}, url = indexUrl(), online = true } = {}) {
+  const packs = new Map(Object.entries(bundled).map(([id, dir]) => [id, bundledEntry(id, dir)]))
+  let offline = null, index = { url, packs: [] }
+  if (online) { try { index = await fetchIndex(url) } catch (error) { offline = error.message } }
+  for (const entry of index.packs) {
+    const have = packs.get(entry.id)
+    if (!have || compareVersions(entry.version, have.version) > 0) packs.set(entry.id, { ...entry, requires: entry.requires ?? [], bundled: false, bundledVersion: have?.version })
+    else if (have.bundled) have.repository = entry
+  }
+  return { url, offline, packs: [...packs.values()].sort((a, b) => a.id.localeCompare(b.id, 'en')) }
 }
+
+export function findPack(catalogue, id) {
+  return catalogue.packs.find(pack => pack.id === id) ?? fail(`There is no pack "${id}"${catalogue.offline ? ` among those that come with mdeck, and the theme repository could not be reached (${catalogue.offline})` : `; mdeck themes search lists them`}`)
+}
+
+// The ids every pack in the catalogue has, so packs do not take each other's.
+export const ownersIn = catalogue => Object.fromEntries(catalogue.packs.flatMap(pack => [...pack.themes, ...pack.palettes].map(id => [id, pack.id])))
+
+// A pack's files: read from mdeck's folder, or downloaded and checked
+// against the repository's checksum.
+export async function obtainPack(catalogue, entry) {
+  if (entry.bundled) { const { bundle, sha256: digest } = bundlePack(entry.dir); return { bundle, url: null, digest } }
+  return fetchPack({ url: catalogue.url }, entry)
+}
+
+// A pack and the packs it requires, in the order to install them; the pack
+// itself last.
+export function withRequirements(catalogue, id, seen = []) {
+  if (seen.includes(id)) fail(`The packs ${[...seen, id].join(' → ')} require each other in a circle`)
+  const entry = findPack(catalogue, id)
+  const order = []
+  for (const required of entry.requires ?? []) for (const pack of withRequirements(catalogue, required, [...seen, id])) if (!order.includes(pack)) order.push(pack)
+  return [...order, entry]
+}
+
+// Installs a pack and what it requires into an extensions folder. A required
+// pack that `has(id)` says is there already is left as it is. `bundledHere`
+// handles a bundled pack without writing it (for the user's folder, where the
+// bundled one is offered anyway); it returns true when it did.
+export async function installWithRequirements(catalogue, id, { root, mdeckVersion, force = false, has = () => false, bundledHere = null }) {
+  const owners = ownersIn(catalogue)
+  const provided = { themes: {}, palettes: {} }
+  const done = []
+  for (const entry of withRequirements(catalogue, id)) {
+    if (!satisfies(entry.mdeck, mdeckVersion)) fail(`${entry.id} ${entry.version} needs mdeck ${entry.mdeck}; this is ${mdeckVersion}. Update mdeck first: npm install -g mdeck`)
+    const { bundle, url, digest } = await obtainPack(catalogue, entry)
+    const { manifests } = checkPack(bundle, { provided, owners })
+    const target = entry.id === id
+    if (!target && has(entry.id)) done.push({ id: entry.id, version: entry.version, kept: true })
+    else if (entry.bundled && bundledHere?.(entry)) done.push({ id: entry.id, version: entry.version, bundled: true, themes: Object.keys(manifests.themes), palettes: Object.keys(manifests.palettes) })
+    else done.push({ id: entry.id, version: entry.version, ...installPack(bundle, { root, provided, owners, url, digest, force }) })
+    Object.assign(provided.themes, manifests.themes)
+    Object.assign(provided.palettes, manifests.palettes)
+  }
+  return done
+}
+
+// ─── The repository itself ────────────────────────────────────────────────
 
 // The theme repository as served: index.json and packs/<id>-<version>.json,
-// from a folder of pack folders. Each pack is checked on its own against the
-// built-in extensions, since it is installed alone, and no two packs may
-// share an id. Previews are added by the caller.
-export function buildRepository(packsDir, outDir, { known }) {
-  const entries = []
-  const owner = {}
-  const dirs = readdirSync(packsDir).filter(name => !name.startsWith('.') && statSync(resolve(packsDir, name)).isDirectory()).sort()
-  mkdirSync(resolve(outDir, 'packs'), { recursive: true })
-  for (const name of dirs) {
-    const { meta, bundle, text, sha256: digest } = bundlePack(resolve(packsDir, name))
-    const { themes, palettes } = checkPack(bundle, { known })
-    for (const id of [...themes, ...palettes]) {
-      if (owner[id]) fail(`${id} is in both ${owner[id]} and ${meta.id}`)
-      owner[id] = meta.id
+// from a folder of pack folders and mdeck's bundled packs (marked bundled).
+// Each pack is checked with only the packs it requires, as it is installed;
+// no two packs may share an id. Previews are added by the caller.
+export function buildRepository(packsDir, outDir, { bundled = {} } = {}) {
+  const dirs = { ...Object.fromEntries(readdirSync(packsDir).filter(name => !name.startsWith('.') && statSync(resolve(packsDir, name)).isDirectory()).map(name => [name, resolve(packsDir, name)])) }
+  for (const [id, dir] of Object.entries(bundled)) {
+    if (dirs[id]) fail(`${id} comes with mdeck; change it there instead of in ${packsDir}`)
+    dirs[id] = dir
+  }
+  const read = Object.fromEntries(Object.entries(dirs).map(([id, dir]) => [id, bundlePack(dir)]))
+  const owners = {}
+  for (const [id, { bundle }] of Object.entries(read)) {
+    for (const ext of Object.keys(bundle.files).map(path => path.split('/')[0])) {
+      if (owners[ext] && owners[ext] !== id) fail(`${ext} is in both ${owners[ext]} and ${id}`)
+      owners[ext] = id
     }
+  }
+  const checked = {}
+  const check = (id, seen = []) => {
+    if (checked[id]) return checked[id]
+    if (!read[id]) fail(`${seen.at(-1)} requires ${id}, which is not in the repository`)
+    if (seen.includes(id)) fail(`The packs ${[...seen, id].join(' → ')} require each other in a circle`)
+    const provided = { themes: {}, palettes: {} }
+    for (const required of read[id].bundle.requires ?? []) {
+      const result = check(required, [...seen, id])
+      Object.assign(provided.themes, result.provides.themes); Object.assign(provided.palettes, result.provides.palettes)
+    }
+    const result = checkPack(read[id].bundle, { provided, owners })
+    return checked[id] = { ...result, provides: { themes: { ...provided.themes, ...result.manifests.themes }, palettes: { ...provided.palettes, ...result.manifests.palettes } } }
+  }
+  mkdirSync(resolve(outDir, 'packs'), { recursive: true })
+  const entries = Object.keys(read).sort((a, b) => a.localeCompare(b, 'en')).map(id => {
+    const { meta, text, sha256: digest } = read[id]
+    const { themes, palettes } = check(id)
     const file = `packs/${meta.id}-${meta.version}.json`
     writeFileSync(resolve(outDir, file), text)
-    entries.push({ id: meta.id, title: meta.title, description: meta.description ?? '', version: meta.version, author: meta.author, license: meta.license,
-      ...(meta.homepage ? { homepage: meta.homepage } : {}), ...(meta.mdeck ? { mdeck: meta.mdeck } : {}), themes, palettes, url: file, sha256: digest })
-  }
+    return { id: meta.id, title: meta.title, description: meta.description ?? '', version: meta.version, author: meta.author, license: meta.license,
+      ...(meta.homepage ? { homepage: meta.homepage } : {}), ...(meta.mdeck ? { mdeck: meta.mdeck } : {}), ...(meta.requires?.length ? { requires: meta.requires } : {}),
+      ...(bundled[id] ? { bundled: true } : {}), themes, palettes, url: file, sha256: digest }
+  })
   const index = { schema: 1, packs: entries }
   writeFileSync(resolve(outDir, 'index.json'), JSON.stringify(index, null, 2) + '\n')
   return index

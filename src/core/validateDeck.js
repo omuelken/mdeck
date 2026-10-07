@@ -50,7 +50,8 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
       if (config.show[key] != null && !values.includes(config.show[key])) add('invalid-config', `show.${key} must be one of: ${values.join(', ')}`, deck.configSource?.start)
     }
   }
-  if (themes && config.theme != null && !Object.hasOwn(themes, config.theme)) add('unknown-theme', movedHint('theme', config.theme) ?? `Unknown theme "${config.theme}"; available: ${Object.keys(themes).join(', ')}`, deck.configSource?.start)
+  if (themes && config.theme != null && !Object.hasOwn(themes, config.theme)) add('unknown-theme', movedHint('theme', config.theme) ?? `Unknown theme "${config.theme}"; available: ${Object.keys(themes).join(', ') || 'none'}. mdeck themes search lists more to install`, deck.configSource?.start)
+  if (themes && config.theme == null && !Object.hasOwn(themes, 'neue')) add('unknown-theme', `This deck sets no theme, so it uses neue, which is not installed: run mdeck themes install neue, or set a theme${Object.keys(themes).length ? ` (${Object.keys(themes).join(', ')})` : ''}`, deck.configSource?.start ?? 0)
   if (palettes && themes && config.palette != null) {
     const theme = themes[config.theme ?? 'neue']
     const offered = theme ? palettesFor(theme, palettes).map(palette => palette.id) : Object.keys(palettes)

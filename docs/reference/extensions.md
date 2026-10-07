@@ -213,30 +213,39 @@ writes the same files described above.
 
 ## Installed extensions and packs
 
-mdeck looks for extensions in three places, in this order: the built-in ones,
-the user's folder (`~/.mdeck/extensions`, or `$MDECK_HOME/extensions`), and the
-`extensions/` folder beside the deck. An id may appear only once, except that a
-deck's own extension replaces a user one with the same id (with a warning).
-`mdeck check` warns when a deck uses a theme or palette from the user's folder,
-because the slide file then works only on that computer.
+Every theme and palette comes in a **pack**. mdeck looks for them in this
+order: the packs that come with mdeck (`assets/packs/`, minus those removed
+with `mdeck themes remove`, listed in `~/.mdeck/removed.json`), the user's
+folder (`~/.mdeck/extensions`, or `$MDECK_HOME/extensions`), and the
+`extensions/` folder beside the deck. For themes and palettes a later place
+replaces an earlier one with the same id: an installed newer version replaces
+the bundled one, and a deck's own copy replaces both (with a warning when it
+replaces one installed for every deck). Layouts are built in and may not be
+replaced; within one place an id may appear only once.
 
-`mdeck themes install <pack>` copies a pack from the theme repository into the
-deck's folder, or with `--global` into the user's. A pack is a folder with a
+`mdeck themes install <pack>` installs a pack for every deck, into the user's
+folder; given a slide file, a folder or `--local`, it installs into the
+`extensions/` folder beside the deck. Installing a bundled pack for every deck
+offers it again; beside a deck it is copied. A pack is a folder with a
 `pack.toml` (`schema`, `id`, `title`, `description`, `version`, `author`,
-`license`, `homepage`, and `mdeck = ">=X.Y.Z"`, the oldest mdeck it works with)
-and one folder per theme or palette, each holding only `extension.toml` and,
-for a theme, `styles.css`. Theme fonts must come from `https://fonts.googleapis.com/`
-or `https://fonts.bunny.net/`, and `styles.css` may contain neither `@import`
+`license`, `homepage`, `mdeck = ">=X.Y.Z"`, the oldest mdeck it works with,
+and `requires = [...]`, the packs it needs) and one folder per theme or
+palette, each holding only `extension.toml` and, for a theme, `styles.css`. A
+theme's palettes must be in its pack or in a pack it requires; installing a
+pack installs those too, and `remove` refuses while another installed pack
+needs one. Theme fonts must come from `https://fonts.googleapis.com/` or
+`https://fonts.bunny.net/`, and `styles.css` may contain neither `@import`
 nor `url()` other than `data:` URLs. Each installed folder gets a
-`.mdeck-pack.json` with the pack, its version, its source and a checksum of
-every file; `update` and `remove` refuse to touch files changed since then
-unless given `--force`.
+`.mdeck-pack.json` with the pack, its version, its requirements, its source
+and a checksum of every file; `update` and `remove` refuse to touch files
+changed since then unless given `--force`.
 
 The repository serves `index.json` (`{ schema: 1, packs: [...] }`, each with
-its ids, `url`, `sha256` and `previews`) and one JSON file per pack version
-holding the text of its files. `mdeck themes build <packs> -o <out> [--check]`
-writes both from a folder of packs; `MDECK_THEMES_URL` points mdeck at another
-index.
+its ids, `requires`, `url`, `sha256`, `previews`, and `bundled` for the packs
+that come with mdeck) and one JSON file per pack version holding the text of
+its files. `mdeck themes build <packs> -o <out> [--check]` writes both from a
+folder of packs and mdeck's bundled packs; `MDECK_THEMES_URL` points mdeck at
+another index. Without a connection, mdeck offers its bundled packs.
 
 ## Listing what is available
 

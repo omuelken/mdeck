@@ -7,3 +7,5 @@ export const runtimeRoot = resolve(frameworkRoot, 'src/runtime')
 export const assetsRoot = resolve(frameworkRoot, 'assets')
 export const docsRoot = resolve(frameworkRoot, 'docs/site')
 export const builtinExtensionsRoot = resolve(assetsRoot, 'extensions')
+// The packs of themes and palettes that come with mdeck (the starter set).
+export const bundledPacksRoot = resolve(assetsRoot, 'packs')

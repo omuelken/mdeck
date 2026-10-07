@@ -1,7 +1,7 @@
 import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useDeckDocument } from '../useDeckDocument.js'
-import { loadExtension, saveExtension, deleteExtension, installThemePack } from '../api.js'
+import { loadExtension, saveExtension, deleteExtension, installThemePack, removeThemePack } from '../api.js'
 import { starterFiles, parseManifest, toModel, toRuntimeManifest, MANIFEST } from '../extensions.js'
 import { sampleDeck, sampleDataUrl } from '../sampleDeck.js'
 import { parseTarget, launchPageUrl } from '../designLink.js'
@@ -127,6 +127,13 @@ export function DesignApp() {
     if (id) await select(kind, id)
   }
 
+  // Removes a pack for every deck; the deck's look is not changed.
+  const removeOnline = async pack => {
+    const result = await removeThemePack(pack)
+    dispatch({ type: 'setRegistry', registry: result.registry })
+    setCurrent(null)
+  }
+
   const remove = async () => {
     const target = current
     try {
@@ -246,7 +253,7 @@ export function DesignApp() {
           ? <div class="form"><p class="empty">Choose one of {state.designOnly ? "this folder's" : "this deck's"} themes and palettes on the left to change it, or start from a built-in one. What you change is saved as you type, in the <code>extensions</code> folder {state.designOnly ? 'of this folder, where decks in it find them' : "beside the deck. The deck's look is chosen in the editor's Deck settings"}.{error ? ` ${error}` : ''}</p></div>
           : current.source === 'local'
             ? <>{usage}<ExtensionEditor extension={current} palettes={manifests.palettes} status={status} error={error} note={note} onFiles={onFiles} onDelete={remove} onCopy={() => copyDialog(current.kind, current.id)} /></>
-            : <BuiltInCard extension={current} manifest={manifests[`${current.kind}s`][current.id]} onCopy={() => copyDialog(current.kind, current.id)} />}
+            : <BuiltInCard extension={current} manifest={manifests[`${current.kind}s`][current.id]} onCopy={() => copyDialog(current.kind, current.id)} onRemovePack={removeOnline} />}
       </aside>
     </div>
     {dialog && <NewExtensionDialog kind={dialog.kind} initial={dialog.initial ?? null} registry={state.registry} existing={existing} onCreate={create} onClose={() => setDialog(null)} />}

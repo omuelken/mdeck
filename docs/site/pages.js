@@ -7,7 +7,7 @@ export const pages = [
   { slug: 'layouts', title: 'Choose a slide layout', group: 'Make your presentation', file: 'layouts.md', description: 'Choose a title slide, a big statement, a picture, or two columns.', preview: 'first-talk' },
   { slug: 'pictures-and-video', title: 'Add pictures and video', group: 'Make your presentation', file: 'media.md', description: 'Put an image or a video into your talk and keep its files together.' },
   { slug: 'appearance', title: 'Change the look', group: 'Make your presentation', file: 'appearance.md', description: 'Choose fonts and colors with themes and palettes.' },
-  { slug: 'theme-repository', title: 'Install or share a theme', group: 'Make your presentation', file: 'theme-repository.md', description: 'Themes and palettes other people made, installed with one command, and how to share your own.' },
+  { slug: 'theme-repository', title: 'Install, remove or share a theme', group: 'Make your presentation', file: 'theme-repository.md', description: 'Packs of themes and palettes: those that come with mdeck, more from the theme repository, and how to share your own.' },
   { slug: 'notes-and-presenting', title: 'Add notes and present', group: 'Present and share', file: 'presenting.md', description: 'See your notes, reveal points one at a time, and open the audience screen.' },
   { slug: 'audience', title: 'Ask your audience', group: 'Present and share', file: 'audience.md', description: 'Polls that people answer on their phones, with live results on the slide.' },
   { slug: 'drawing', title: 'Draw on your slides', group: 'Present and share', file: 'drawing.md', description: 'Mark up slides with a pen or an iPad, live or ahead of time, and keep the drawings with the talk.' },

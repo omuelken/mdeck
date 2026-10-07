@@ -1,26 +1,55 @@
 // One discovery layer for layouts, themes and palettes. The same registry
 // backs `mdeck check`, CLI listings, the dev server and builds.
 import { palettesFor } from './tokens.js'
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { resolve, dirname, relative } from 'node:path'
 import { homedir } from 'node:os'
 import { MANIFEST_FILENAME, ManifestError, KINDS, parseManifestText, validateManifest } from './manifest.js'
-import { builtinExtensionsRoot } from '../paths.js'
+import { builtinExtensionsRoot, bundledPacksRoot } from '../paths.js'
 
 const SKIP = name => name.startsWith('.') || name === 'node_modules'
 
-// Extensions installed for one user (`mdeck themes install --global`), for
-// every deck: ~/.mdeck/extensions, or $MDECK_HOME/extensions.
-export function userExtensionsDir() {
-  return resolve(process.env.MDECK_HOME || resolve(homedir(), '.mdeck'), 'extensions')
+// mdeck's own folder for this user: ~/.mdeck, or $MDECK_HOME.
+export function mdeckHome() {
+  return process.env.MDECK_HOME || resolve(homedir(), '.mdeck')
 }
 
-// Built-in, then the user's, then the deck's own: a deck's extension replaces
-// a user one with the same id.
-export function extensionRoots(slidesPath, { builtinRoot = builtinExtensionsRoot, userRoot = userExtensionsDir() } = {}) {
+// Extensions installed for one user (`mdeck themes install --global`), for
+// every deck: ~/.mdeck/extensions.
+export function userExtensionsDir() {
+  return resolve(mdeckHome(), 'extensions')
+}
+
+// The bundled packs this user removed (`mdeck themes remove <pack> --global`):
+// they stay in mdeck's folder but are not offered.
+const removedFile = () => resolve(mdeckHome(), 'removed.json')
+export function removedPacks() {
+  try { const packs = JSON.parse(readFileSync(removedFile(), 'utf8')).packs; return Array.isArray(packs) ? packs : [] } catch { return [] }
+}
+export function setRemovedPacks(packs) {
+  mkdirSync(mdeckHome(), { recursive: true })
+  writeFileSync(removedFile(), JSON.stringify({ packs: [...new Set(packs)].sort() }, null, 2) + '\n')
+}
+
+// The packs that come with mdeck: { id: folder }, all or only those offered
+// (not `hidden`, by default those this user removed).
+export function bundledPacks({ root = bundledPacksRoot, all = false, hidden = all ? [] : removedPacks() } = {}) {
+  if (!existsSync(root)) return {}
+  const removed = hidden
+  return Object.fromEntries(sortedEntries(root).map(entry => entry.name).filter(id => !removed.includes(id)).map(id => [id, resolve(root, id)]))
+}
+
+// Built-in layouts and the bundled packs, then the user's, then the deck's
+// own. For themes and palettes a later place replaces an earlier one with the
+// same id: an installed newer version replaces the bundled one, and a deck's
+// copy replaces both.
+// `userRoot: null` leaves out what this user installed and removed, for
+// results that must not depend on the computer (checks, the repository).
+export function extensionRoots(slidesPath, { builtinRoot = builtinExtensionsRoot, packsRoot = bundledPacksRoot, userRoot = userExtensionsDir() } = {}) {
   const deckDir = dirname(resolve(slidesPath))
   return [
     { dir: builtinRoot, source: 'built-in' },
+    ...Object.entries(bundledPacks({ root: packsRoot, hidden: userRoot ? removedPacks() : [] })).map(([pack, dir]) => ({ dir, source: 'built-in', pack })),
     ...(userRoot ? [{ dir: userRoot, source: 'user' }] : []),
     { dir: resolve(deckDir, 'extensions'), source: 'local' },
   ]
@@ -51,18 +80,26 @@ function readLayout(record) {
 function loadManifest({ dir, file, folderName }) {
   const raw = parseManifestText(readFileSync(file, 'utf8'), file)
   const record = validateManifest(raw, { file, dir, folderName })
-  return record.kind === 'layout' ? readLayout(record) : record
+  // An installed pack leaves a note in each folder saying which pack it is.
+  let pack = null
+  try { pack = JSON.parse(readFileSync(resolve(dir, '.mdeck-pack.json'), 'utf8')).pack ?? null } catch {}
+  const withPack = pack ? { ...record, pack } : record
+  return record.kind === 'layout' ? readLayout(withPack) : withPack
 }
 
 export function discoverExtensions(roots) {
   const registry = { layouts: {}, themes: {}, palettes: {}, records: [], warnings: [] }
   const byKey = new Map()
-  const add = (record, source) => {
+  const RANK = { 'built-in': 0, user: 1, local: 2 }
+  const add = (record, source, pack) => {
     const key = `${record.kind}:${record.id}`
     const existing = byKey.get(key)
-    const entry = { ...record, source }
-    if (existing?.source === 'user' && source === 'local') {
-      registry.warnings.push(`The ${record.kind} "${record.id}" in this deck's extensions replaces the one installed in ${dirname(existing.dir)}`)
+    const entry = { ...record, source, ...(pack ? { pack } : {}) }
+    // Themes and palettes may be replaced from a later place; layouts and two
+    // with one id in the same place may not.
+    const replaces = existing && record.kind !== 'layout' && RANK[source] > RANK[existing.source]
+    if (replaces) {
+      if (existing.source === 'user') registry.warnings.push(`The ${record.kind} "${record.id}" in this deck's extensions replaces the one installed in ${dirname(existing.dir)}`)
       registry.records.splice(registry.records.indexOf(existing), 1)
     } else if (existing) throw new ManifestError(`Duplicate ${record.kind} "${record.id}" is also defined in ${existing.file}. Extension IDs must be unique within their kind.`, { file: record.file })
     byKey.set(key, entry)
@@ -71,8 +108,10 @@ export function discoverExtensions(roots) {
   }
   for (const root of roots) {
     if (!existsSync(root.dir) || !statSync(root.dir).isDirectory()) continue
-    for (const found of walk(root.dir)) add(loadManifest(found), root.source)
+    for (const found of walk(root.dir)) { const record = loadManifest(found); add(record, root.source, root.pack ?? record.pack) }
   }
+  // Themes and palettes in name order, wherever they come from.
+  for (const kind of ['themes', 'palettes']) registry[kind] = Object.fromEntries(Object.entries(registry[kind]).sort(([a], [b]) => a.localeCompare(b, 'en')))
   checkPaletteReferences(registry)
   return registry
 }
@@ -96,9 +135,10 @@ function checkPaletteReferences(registry) {
   }
 }
 
-// The extensions that come with mdeck, alone.
+// The extensions that come with mdeck, alone: layouts and every bundled pack,
+// removed or not.
 export function builtInRegistry() {
-  return discoverExtensions([{ dir: builtinExtensionsRoot, source: 'built-in' }])
+  return discoverExtensions([{ dir: builtinExtensionsRoot, source: 'built-in' }, ...Object.entries(bundledPacks({ all: true })).map(([pack, dir]) => ({ dir, source: 'built-in', pack }))])
 }
 
 export function loadRegistry(slidesPath, options) {
@@ -118,7 +158,7 @@ export function serializeRegistry(registry, { relativeTo } = {}) {
   const out = { schema: 2, warnings: registry.warnings }
   for (const kind of KINDS) {
     out[`${kind}s`] = Object.values(registry[`${kind}s`]).map(record => ({
-      ...record.manifest, kind, source: record.source,
+      ...record.manifest, kind, source: record.source, ...(record.pack ? { pack: record.pack } : {}),
       file: relativeTo ? relative(relativeTo, record.file) : record.file,
     }))
   }

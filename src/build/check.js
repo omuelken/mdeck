@@ -26,13 +26,6 @@ export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath
     if (record.source !== 'local') continue
     for (const problem of paletteProblems(record.manifest)) diagnostics.push({ severity: 'warning', code: 'palette-contrast', message: `Palette "${record.id}", ${problem}`, line: 1, column: 1 })
   }
-  // A theme or palette installed for this user only: the slide file needs it
-  // beside it to work on another computer.
-  const config = deck.deckConfig ?? {}
-  for (const [kind, id] of [['theme', config.theme], ['palette', config.palette]]) {
-    const record = id && registry[`${kind}s`][id]
-    if (record?.source === 'user') diagnostics.push({ severity: 'warning', code: 'user-extension', message: `The ${kind} "${id}" is installed only on this computer (${dirname(record.dir)}); copy it into the deck's extensions folder, for example with mdeck themes install, so the slide file works elsewhere`, line: 1, column: 1 })
-  }
   // The deck's drawings file: readable, and only for slides that still exist.
   const inkPath = inkFileFor(resolve(slidesPath))
   const renamed = drawingsDiagnostic(slidesPath)

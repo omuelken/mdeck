@@ -14,7 +14,7 @@ The rest of this page is the reference for what it writes, and for anyone comfor
 
 To look at the result and fine-tune it, run `mdeck design my-talk.md` (or `mdeck design` in a folder without a deck). It shows the theme or palette on a sample deck with every kind of slide, light and dark, and has forms for colours, fonts, sizes and spacing; see [Edit slides in your browser](editing.html). The files it writes are the ones described here.
 
-Someone may already have made what you need: `mdeck themes search` lists the theme repository, and [Install or share a theme](theme-repository.html) explains how to install a pack or share yours.
+Someone may already have made what you need: `mdeck themes search` lists the theme repository, and [Install, remove or share a theme](theme-repository.html) explains how to install a pack or share yours.
 
 Themes and palettes are **extensions**: each one is a folder with an `extension.toml` file that says what it is. Slide layouts use the same idea. Put the folder in `extensions/` beside your slide file and mdeck finds it automatically; there is nothing to register. The [extensions reference](extensions.html) has the complete list of settings.
 

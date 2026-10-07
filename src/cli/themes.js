@@ -1,119 +1,129 @@
-// `mdeck themes`: themes and palettes from the theme repository. Installs go
-// into a deck's extensions/ folder, or with --global into the user's
-// (~/.mdeck/extensions), where every deck finds them. `build` is for the
-// repository itself: it checks the packs and writes what is served.
+// `mdeck themes`: every theme and palette comes in a pack. Some packs come
+// with mdeck (the starter set), the others from the theme repository.
+// Packs are installed for every deck (~/.mdeck/extensions) unless a deck or
+// folder is named, or --local is given: then into the extensions folder
+// beside it, so the slide folder carries them. A pack that comes with mdeck
+// is removed by hiding it, and installed again from mdeck's own copy, so
+// that works offline. `build` is for the repository itself.
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
-import { builtInRegistry, loadRegistry, manifestsOf, userExtensionsDir } from '../extensions/discover.js'
+import { bundledPacks, loadRegistry, manifestsOf, removedPacks, userExtensionsDir } from '../extensions/discover.js'
+import { target, packsAt, installHere, removeHere } from '../extensions/installed.js'
 import { palettesFor } from '../extensions/tokens.js'
 import { ManifestError } from '../extensions/manifest.js'
-import { buildRepository, compareVersions, fetchIndex, findPack, installedPacks, installFromIndex, PackError, removePack } from '../extensions/packs.js'
+import { buildRepository, compareVersions, findPack, installedPacks, installWithRequirements, loadCatalogue, PackError } from '../extensions/packs.js'
 
 const VERSION = createRequire(import.meta.url)('../../package.json').version
 
-const USAGE = 'search [words] | install <pack> | remove <pack> | update [pack] | list, each with [slides.md or folder] and --global; build <packs> -o <out> [--check]'
-
-// The built-in themes and palettes a pack may name and must not reuse the ids of.
-const builtIns = () => {
-  const registry = builtInRegistry()
-  return { themes: registry.themes, palettes: registry.palettes }
-}
-
-// The extensions folder a command works on, and a slides path to load the
-// registry with: the user's with --global, else beside the deck or in the folder.
-function target(where, global) {
-  if (global) return { root: userExtensionsDir(), deck: resolve('slides.md'), label: 'for every deck' }
-  const given = resolve(where ?? '.')
-  const folder = existsSync(given) && statSync(given).isDirectory() ? given : dirname(given)
-  return { root: resolve(folder, 'extensions'), deck: existsSync(given) && !statSync(given).isDirectory() ? given : resolve(folder, 'slides.md'), label: `in ${resolve(folder, 'extensions')}` }
-}
-
-const install = (index, entry, { root, force }) => installFromIndex(index, entry, { root, known: builtIns(), mdeckVersion: VERSION, force })
+const USAGE = 'search [words] | install <pack> | remove <pack> | update [pack] | list — for every deck, or beside a deck with [slides.md or folder] or --local; build <packs> -o <out> [--check]'
 
 // Every theme with the palettes it offers, and every palette's colours, each
-// marked with the pack it comes from (null for mdeck's own).
+// marked with its pack and whether it comes with mdeck.
 function looksOf(registry, index) {
-  const pack = Object.fromEntries(index.packs.flatMap(p => [...p.themes, ...p.palettes].map(id => [id, p.id])))
+  const packOf = Object.fromEntries(index.packs.flatMap(p => [...p.themes, ...p.palettes].map(id => [id, p])))
   const palettes = manifestsOf(registry, 'palette')
   const colours = tokens => Object.fromEntries(['--bg', '--surface', '--ink', '--accent', '--accent-2'].map(key => [key, tokens?.[key] ?? null]))
+  const origin = id => ({ pack: packOf[id]?.id ?? null, bundled: Boolean(packOf[id]?.bundled) })
   return {
     mdeck: VERSION,
-    themes: Object.values(manifestsOf(registry, 'theme')).map(theme => ({ id: theme.id, title: theme.title, description: theme.description ?? '', pack: pack[theme.id] ?? null,
+    themes: Object.values(manifestsOf(registry, 'theme')).map(theme => ({ id: theme.id, title: theme.title, description: theme.description ?? '', ...origin(theme.id),
       palette: theme.palette, appearance: theme.appearance ?? 'light', palettes: palettesFor(theme, palettes).map(p => p.id) })),
-    palettes: Object.values(palettes).map(palette => ({ id: palette.id, title: palette.title, description: palette.description ?? '', pack: pack[palette.id] ?? null,
+    palettes: Object.values(palettes).map(palette => ({ id: palette.id, title: palette.title, description: palette.description ?? '', ...origin(palette.id),
       light: colours(palette.light), dark: colours(palette.dark) })),
   }
 }
 
 export async function runThemes({ positionals, flag, output, ui: { ok, err, tip, c } }) {
   const [sub = 'search', ...rest] = positionals
-  const global = flag('--global'), force = flag('--force')
+  const local = flag('--local'), force = flag('--force')
+  const warnOffline = catalogue => { if (catalogue.offline) tip(`The theme repository could not be reached (${catalogue.offline}); showing the packs that come with mdeck.`) }
+  const what = step => [step.themes?.length ? `themes ${step.themes.join(', ')}` : '', step.palettes?.length ? `palettes ${step.palettes.join(', ')}` : ''].filter(Boolean).join('; ')
   try {
     if (sub === 'search') {
-      const index = await fetchIndex()
+      const catalogue = await loadCatalogue({ bundled: bundledPacks({ all: true }) })
+      warnOffline(catalogue)
       const words = rest.map(word => word.toLowerCase())
-      const local = installedPacks(target(null, false).root), mine = installedPacks(userExtensionsDir())
-      const found = index.packs.filter(pack => words.every(word => [pack.id, pack.title, pack.description, ...pack.themes, ...pack.palettes].join(' ').toLowerCase().includes(word)))
-      if (!found.length) return tip(`No pack matches${words.length ? ` "${words.join(' ')}"` : ''} in ${index.url}`)
+      const mine = packsAt(target(null, false)), here = installedPacks(target('.', true).root), hidden = removedPacks()
+      const found = catalogue.packs.filter(pack => words.every(word => [pack.id, pack.title, pack.description, ...pack.themes, ...pack.palettes].join(' ').toLowerCase().includes(word)))
+      if (!found.length) return tip(`No pack matches${words.length ? ` "${words.join(' ')}"` : ''}`)
       for (const pack of found) {
-        const have = local[pack.id] ?? mine[pack.id]
-        const state = !have ? '' : compareVersions(pack.version, have.version) > 0 ? ` ${c.yellow}(${have.version} installed, update available)${c.reset}` : ` ${c.green}(installed)${c.reset}`
+        const have = here[pack.id] ?? mine[pack.id]
+        const state = hidden.includes(pack.id) && !have ? ` ${c.dim}(comes with mdeck, removed)${c.reset}`
+          : !have ? (pack.bundled || pack.bundledVersion ? ` ${c.dim}(comes with mdeck)${c.reset}` : '')
+          : have.bundled ? (pack.bundled ? ` ${c.green}(comes with mdeck)${c.reset}` : ` ${c.yellow}(comes with mdeck as ${pack.bundledVersion}, update available)${c.reset}`)
+          : compareVersions(pack.version, have.version) > 0 ? ` ${c.yellow}(${have.version} installed, update available)${c.reset}` : ` ${c.green}(installed)${c.reset}`
         console.log(`\n  ${c.cyan}${pack.id}${c.reset} ${pack.version} — ${pack.title}${state}`)
         if (pack.description) console.log(`    ${pack.description}`)
-        console.log(`    ${c.dim}${[pack.themes.length ? `themes: ${pack.themes.join(', ')}` : '', pack.palettes.length ? `palettes: ${pack.palettes.join(', ')}` : ''].filter(Boolean).join(' · ')} · by ${pack.author}, ${pack.license}${c.reset}`)
+        console.log(`    ${c.dim}${[pack.themes.length ? `themes: ${pack.themes.join(', ')}` : '', pack.palettes.length ? `palettes: ${pack.palettes.join(', ')}` : '', pack.requires?.length ? `requires: ${pack.requires.join(', ')}` : ''].filter(Boolean).join(' · ')} · by ${pack.author}, ${pack.license}${c.reset}`)
       }
       console.log()
-      return tip('Install one with: mdeck themes install <pack> [slides.md]   (--global for every deck)')
+      return tip('Install one for every deck with: mdeck themes install <pack>   (beside a deck: add slides.md or --local)')
     }
 
     if (sub === 'install') {
       const [id, where] = rest
-      if (!id) { err('Name a pack.'); return tip('Usage: mdeck themes install <pack> [slides.md or folder] [--global]; mdeck themes search lists them.') }
-      const { root, deck, label } = target(where, global)
-      const index = await fetchIndex()
-      const result = await install(index, findPack(index, id), { root, force })
-      loadRegistry(deck)
-      ok(`${result.replaced ? `Updated ${id} from ${result.replaced}` : `Installed ${id}`} ${label}`)
-      if (result.themes.length) tip(`Themes: ${result.themes.join(', ')}. Use one with "theme: ${result.themes[0]}" in the deck settings.`)
-      if (result.palettes.length) tip(`Palettes: ${result.palettes.join(', ')}. Use one with "palette: ${result.palettes[0]}".`)
+      if (!id) { err('Name a pack.'); return tip('Usage: mdeck themes install <pack> [slides.md or folder] [--local]; mdeck themes search lists them.') }
+      const at = target(where, local)
+      const catalogue = await loadCatalogue({ bundled: bundledPacks({ all: true }) })
+      warnOffline(catalogue)
+      findPack(catalogue, id)
+      for (const step of await installHere(catalogue, id, at, { mdeckVersion: VERSION, force })) {
+        if (step.kept) tip(`${step.id} ${step.version} is there already`)
+        else if (step.bundled) (step.wasRemoved ? ok(`${step.id} comes with mdeck and is offered again ${at.label}`) : tip(`${step.id} comes with mdeck and is installed ${at.label} already`))
+        else ok(`${step.replaced ? `Updated ${step.id} from ${step.replaced} to ${step.version}` : `Installed ${step.id} ${step.version}`} ${at.label}${what(step) ? `: ${what(step)}` : ''}`)
+      }
+      loadRegistry(at.deck)
+      const pack = findPack(catalogue, id)
+      if (pack.themes.length) tip(`Use it with "theme: ${pack.themes[0]}" at the top of a slide file.`)
+      else if (pack.palettes.length) tip(`Use it with "palette: ${pack.palettes[0]}" at the top of a slide file.`)
       return tip('Look at it on a sample deck: mdeck design')
     }
 
     if (sub === 'remove') {
       const [id, where] = rest
-      if (!id) { err('Name a pack.'); return tip('Usage: mdeck themes remove <pack> [slides.md or folder] [--global]') }
-      const { root, label } = target(where, global)
-      const pack = removePack(id, { root, force })
-      return ok(`Removed ${id} ${label} (${pack.folders.join(', ')})`)
+      if (!id) { err('Name a pack.'); return tip('Usage: mdeck themes remove <pack> [slides.md or folder] [--local]') }
+      const at = target(where, local)
+      const catalogue = await loadCatalogue({ bundled: bundledPacks({ all: true }), online: false })
+      const removed = removeHere(catalogue, id, at, { force })
+      if (removed.folders.length) ok(`Removed ${id} ${at.label} (${removed.folders.join(', ')})`)
+      if (removed.hidden) ok(`${id} comes with mdeck and is no longer offered; mdeck themes install ${id} brings it back`)
+      return
     }
 
     if (sub === 'update') {
       const [first, second] = rest
       const named = first && !/\.md$/i.test(first) && !(existsSync(first) && statSync(first).isDirectory()) ? first : null
-      const { root, deck, label } = target(named ? second : first, global)
-      const installed = installedPacks(root)
+      const at = target(named ? second : first, local)
+      const catalogue = await loadCatalogue({ bundled: bundledPacks({ all: true }) })
+      warnOffline(catalogue)
+      const installed = packsAt(at)
       const ids = named ? [named] : Object.keys(installed)
-      if (!ids.length) return tip(`No packs installed ${label}`)
-      const index = await fetchIndex()
+      if (!ids.length) return tip(`No packs installed ${at.label}`)
       for (const id of ids) {
-        if (!installed[id]) throw new PackError(`The pack ${id} is not installed ${label}`)
-        const entry = findPack(index, id)
-        if (compareVersions(entry.version, installed[id].version) <= 0) { tip(`${id} ${installed[id].version} is up to date`); continue }
-        await install(index, entry, { root, force })
-        ok(`Updated ${id} ${installed[id].version} → ${entry.version}`)
+        const have = installed[id]
+        if (!have) throw new PackError(`The pack ${id} is not installed ${at.label}`)
+        const entry = findPack(catalogue, id)
+        // A bundled pack is up to date until the repository has a newer one.
+        if (have.bundled ? entry.bundled : compareVersions(entry.version, have.version) <= 0) { tip(`${id} ${have.version ?? entry.version} is up to date`); continue }
+        const steps = await installWithRequirements(catalogue, id, { root: at.root, mdeckVersion: VERSION, force, has: pack => pack !== id && Object.hasOwn(packsAt(at), pack) })
+        ok(`Updated ${id} ${have.version ?? entry.bundledVersion} → ${steps.at(-1).version}`)
       }
-      loadRegistry(deck)
+      loadRegistry(at.deck)
       return
     }
 
     if (sub === 'list') {
       const [where] = rest
-      for (const [label, root] of [['This folder', target(where, false).root], ['Every deck (--global)', userExtensionsDir()]]) {
+      const hidden = removedPacks()
+      console.log(`\n  ${c.bold}Come with mdeck${c.reset}`)
+      for (const id of Object.keys(bundledPacks({ all: true }))) console.log(`    ${c.cyan}${id}${c.reset}${hidden.includes(id) ? ` ${c.dim}(removed; mdeck themes install ${id} brings it back)${c.reset}` : ''}`)
+      const sections = [['For every deck', userExtensionsDir()], ...(where || local ? [['Beside the deck', target(where, true).root]] : [])]
+      for (const [label, root] of sections) {
         const packs = installedPacks(root)
         console.log(`\n  ${c.bold}${label}${c.reset} ${c.dim}${root}${c.reset}`)
         if (!Object.keys(packs).length) console.log(`    ${c.dim}none${c.reset}`)
-        for (const [id, pack] of Object.entries(packs)) console.log(`    ${c.cyan}${id}${c.reset} ${pack.version} — ${pack.folders.join(', ')}`)
+        for (const [id, pack] of Object.entries(packs)) console.log(`    ${c.cyan}${id}${c.reset} ${pack.version} — ${pack.folders.join(', ')}${pack.requires.length ? ` ${c.dim}(requires ${pack.requires.join(', ')})${c.reset}` : ''}`)
       }
       console.log()
       return
@@ -123,13 +133,13 @@ export async function runThemes({ positionals, flag, output, ui: { ok, err, tip,
       const [packsDir] = rest
       const out = output()
       if (!packsDir || !out) { err('Name the packs folder and the output folder.'); return tip('Usage: mdeck themes build <packs folder> -o <output folder> [--check]') }
-      const index = buildRepository(resolve(packsDir), resolve(out), { known: builtIns() })
-      // Every theme and palette of every pack, from the pack folders.
-      const extensions = Object.fromEntries(index.packs.flatMap(pack => [...pack.themes, ...pack.palettes].map(id => [id, resolve(packsDir, pack.id, id)])))
-      const paletteTheme = id => {
-        const text = readFileSync(resolve(extensions[id], 'extension.toml'), 'utf8')
-        return /^theme\s*=\s*"([^"]+)"/m.exec(text)?.[1] ?? 'neue'
-      }
+      const bundled = bundledPacks({ all: true })
+      const index = buildRepository(resolve(packsDir), resolve(out), { bundled })
+      // The repository's own themes and palettes go beside the sample deck;
+      // the bundled ones are in it already.
+      const extensions = Object.fromEntries(index.packs.filter(pack => !pack.bundled).flatMap(pack => [...pack.themes, ...pack.palettes].map(id => [id, resolve(packsDir, pack.id, id)])))
+      const dirOf = id => extensions[id] ?? resolve(bundled[index.packs.find(pack => [...pack.themes, ...pack.palettes].includes(id)).id], id)
+      const paletteTheme = id => /^theme\s*=\s*"([^"]+)"/m.exec(readFileSync(resolve(dirOf(id), 'extension.toml'), 'utf8'))?.[1] ?? 'neue'
       const { checkLooks, renderPreviews, buildSampleDeck } = await import('../build/themeCheck.js')
       const looks = index.packs.flatMap(pack => [...pack.themes.map(theme => ({ id: theme, theme })), ...pack.palettes.map(palette => ({ id: palette, theme: paletteTheme(palette), palette }))])
       if (flag('--check')) {
@@ -142,7 +152,7 @@ export async function runThemes({ positionals, flag, output, ui: { ok, err, tip,
       for (const pack of index.packs) pack.previews = Object.fromEntries([...pack.themes, ...pack.palettes].map(id => [id, `previews/${id}.webp`]))
       writeFileSync(resolve(out, 'index.json'), JSON.stringify(index, null, 2) + '\n')
       // For the repository's theme browser: the sample deck with every theme
-      // and palette, built in or from a pack, and what each theme offers.
+      // and palette, and what each theme offers.
       const registry = buildSampleDeck({ extensions, outDir: resolve(out, 'preview') })
       writeFileSync(resolve(out, 'looks.json'), JSON.stringify(looksOf(registry, index), null, 2) + '\n')
       return ok(`Built ${index.packs.length} pack(s) into ${resolve(out)}`)
@@ -157,4 +167,3 @@ export async function runThemes({ positionals, flag, output, ui: { ok, err, tip,
     process.exitCode = 1
   }
 }
-
