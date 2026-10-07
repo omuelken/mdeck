@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.2.0 — 2026-10-07
 
 - Pictures written in the text fit on the slide in every theme: a paragraph of nothing but pictures shrinks into the room below the heading instead of running off the slide, keeping its proportions (small pictures keep their size), and several pictures in one paragraph sit side by side. Such paragraphs have the class `pictures`, for themes that set them their own way; a picture in a sentence is left alone.
 - Tables have room below them in every theme, so a sentence after a table no longer sits right against it.
