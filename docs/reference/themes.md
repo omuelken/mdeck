@@ -18,14 +18,14 @@ theme: neue
 |---|---|---|
 | `neue` | Swiss style: large flush-left type, rules, red on white | `swiss` |
 | `aurora` | Northern lights: curtains of light, night-sky chapters, frosted glass | `neon` |
-| `duet` | Two voices: heavy slab headings, split slides as two colour fields, diagonal chapters | `cobalt` |
-| `editorial` | Magazine spread: masthead rule, drop caps, pull quotes, Roman chapter numerals | `terra` |
-| `fhnw` | The FHNW corporate design | `brand` (the only one) |
-| `terminal` | A terminal session: prompts, a blinking cursor, a tmux status bar | `phosphor`, dark |
 | `academic` | A lecture: compact type, the heading fixed at the top and the content centred below, theorem and definition blocks, booktabs tables, a footnote rule | `nordic` |
-| `sketch` | A sketchbook: handwriting on dotted paper, marker scribbles, sticky-note callouts, taped photos | `pastel` |
 
 `mdeck list my-talk.md` lists them with their descriptions.
+
+More themes are in the [theme repository](https://github.com/tilman-schieber/mdeck-themes):
+`mdeck themes search` lists them, and `mdeck themes install <pack> my-talk.md`
+puts one beside the deck. The themes duet, editorial, fhnw, terminal and sketch,
+built in before mdeck 3.0, are there as packs of the same name.
 
 ## Theme structure
 
@@ -78,8 +78,8 @@ A parameter's default is its token's value. Unknown parameter names are
 reported by `mdeck check`.
 
 Optional settings: `description`, `appearance = "dark"` for a theme that starts
-dark, and `palettes = [...]` to offer only those palettes (the FHNW theme offers
-only `brand`). `[files] styles` may name one stylesheet or a list.
+dark, and `palettes = [...]` to offer only those palettes (a corporate design
+theme can offer only its own palette). `[files] styles` may name one stylesheet or a list.
 
 ### `styles.css`
 

@@ -1,5 +1,5 @@
 ---
-theme: duet
+theme: neue
 meta:
   title: "Ask the room"
   author: "Tilman Schieber"

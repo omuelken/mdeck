@@ -1,5 +1,5 @@
 ---
-theme: sketch
+theme: academic
 meta:
   title: "Introduction to Python"
   author: "Tilman Schieber"

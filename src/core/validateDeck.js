@@ -3,6 +3,7 @@ import { isPlainObject, RENAMED_DECK_KEYS } from './parseSlides.js'
 import { palettesFor } from '../extensions/tokens.js'
 import { LABEL_KEYS, CALLOUT_TYPES } from './labels.js'
 import { resolveLayoutProps, propertyErrors } from '../layouts/layoutProps.js'
+import { movedHint } from '../extensions/moved.js'
 
 // `layouts`, `themes` and `palettes` are manifest maps from the extension
 // registry (see src/extensions/discover.js). Checks for a kind are skipped when
@@ -49,11 +50,11 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
       if (config.show[key] != null && !values.includes(config.show[key])) add('invalid-config', `show.${key} must be one of: ${values.join(', ')}`, deck.configSource?.start)
     }
   }
-  if (themes && config.theme != null && !Object.hasOwn(themes, config.theme)) add('unknown-theme', `Unknown theme "${config.theme}"; available: ${Object.keys(themes).join(', ')}`, deck.configSource?.start)
+  if (themes && config.theme != null && !Object.hasOwn(themes, config.theme)) add('unknown-theme', movedHint('theme', config.theme) ?? `Unknown theme "${config.theme}"; available: ${Object.keys(themes).join(', ')}`, deck.configSource?.start)
   if (palettes && themes && config.palette != null) {
     const theme = themes[config.theme ?? 'neue']
     const offered = theme ? palettesFor(theme, palettes).map(palette => palette.id) : Object.keys(palettes)
-    if (!Object.hasOwn(palettes, config.palette)) add('unknown-palette', `Unknown palette "${config.palette}"; available: ${offered.join(', ')}`, deck.configSource?.start)
+    if (!Object.hasOwn(palettes, config.palette)) add('unknown-palette', movedHint('palette', config.palette) ?? `Unknown palette "${config.palette}"; available: ${offered.join(', ')}`, deck.configSource?.start)
     else if (theme && !offered.includes(config.palette)) add('unknown-palette', `The theme "${theme.id}" does not offer the palette "${config.palette}"; available: ${offered.join(', ')}`, deck.configSource?.start)
   }
   if (themes && config.params != null && isPlainObject(config.params) && Object.hasOwn(themes, config.theme ?? 'neue')) {

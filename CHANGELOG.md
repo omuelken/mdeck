@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.0 — unreleased
+
+- Fewer built-in looks: mdeck now comes with the themes `neue`, `academic` and `aurora` and the palettes `swiss`, `nordic`, `neon`, `lagoon` and `graphite`. The others moved to the theme repository as packs of the same name: `duet` (with `cobalt`), `editorial` (with `terra`), `fhnw` (with `brand`), `terminal` (with `phosphor`) and `sketch` (with `pastel`), and the palettes `ember` and `forest` as `earth`. A deck that uses one gets an error that says what to run, for example `mdeck themes install duet my-talk.md`; files made with `mdeck send` or `mdeck build` keep working, because they carry their theme.
+- The examples use built-in themes: the Python lesson `academic`, the poll and custom-layout examples `neue`, the docs home page talk `academic`.
+
 ## 2.3.0 — 2026-10-07
 
 - mdeck moved to GitHub (<https://github.com/tilman-schieber/mdeck>) and is published on npmjs.com as `mdeck`: install it with `npm install -g mdeck`. The docs are at <https://gh.tschieber.de/mdeck/>. The GitLab project is archived; remove the old package with `npm uninstall -g @tilman.schieber/mdeck`.

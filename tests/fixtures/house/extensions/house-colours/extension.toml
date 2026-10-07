@@ -1,0 +1,28 @@
+schema = 1
+kind = "palette"
+id = "house-colours"
+title = "House colours"
+theme = "house"
+description = "Only for the house theme."
+
+[light]
+"--bg" = "#f3f6f8"
+"--surface" = "#e4eaef"
+"--ink" = "#0f2233"
+"--ink-soft" = "#2b4052"
+"--muted" = "#566b7c"
+"--rule" = "#cdd8e1"
+"--accent" = "#1f6f9f"
+"--accent-2" = "#7a5c9e"
+"--on-accent" = "#ffffff"
+
+[dark]
+"--bg" = "#0e1a24"
+"--surface" = "#16252f"
+"--ink" = "#e8f0f5"
+"--ink-soft" = "#c3d2dc"
+"--muted" = "#8aa1b1"
+"--rule" = "#22343f"
+"--accent" = "#7cc4ea"
+"--accent-2" = "#c3a8e6"
+"--on-accent" = "#0e1a24"

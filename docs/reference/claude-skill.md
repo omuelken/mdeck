@@ -40,7 +40,7 @@ to keep to the original.
 
 ```prompt
 /write-slides Rebuild kinetics-2023.pptx as a 45-minute lecture for
-second-year biology students, in German, FHNW theme. Keep the order
+second-year biology students, in German, academic theme. Keep the order
 and the figures, split the crowded slides, and add what is new in
 notes/2026-changes.md.
 ```

@@ -67,11 +67,12 @@ whenever you or the assistant change the file.
 
 ## One file, any look
 
-The same slide file rendered with each of the six built-in themes. Change one
-line in the settings, or pick from the presenter view, and the whole deck
+The same slide file rendered with built-in themes and themes from the
+[theme repository](https://github.com/tilman-schieber/mdeck-themes). Change
+one line in the settings, or pick from the presenter view, and the whole deck
 repaints.
 
-<p align="center"><img src="docs/images/themes.gif" alt="The same slide cycling through the Aurora, Duet, Editorial, FHNW, Neue and Terminal themes" width="800"></p>
+<p align="center"><img src="docs/images/themes.gif" alt="The same slide cycling through six themes, built in and from the theme repository" width="800"></p>
 
 Try it yourself: the [docs home page](https://gh.tschieber.de/mdeck/)
 embeds a live deck with a theme switcher.
@@ -113,7 +114,7 @@ mdeck send talk.md           # one file to email, with a PDF inside
 ## What you get
 
 - **Layouts:** title, chapter, big statement, image and text, split, full-bleed image, and plain content slides, with points that appear one at a time.
-- **Looks:** six themes and ten colour palettes, each light or dark, changeable without touching the slides. Make your own as small `extension.toml` folders beside the deck.
+- **Looks:** three built-in themes and five colour palettes, each light or dark, changeable without touching the slides. Install more from the [theme repository](https://gh.tschieber.de/mdeck-themes/) with `mdeck themes install`, or make your own as small `extension.toml` folders beside the deck.
 - **One launch page:** `mdeck run` opens a page with a live preview, the presenter and audience views, the deck and reader views, the editor, the guides, one-click builds and PDF, the deck's check results, and for decks with a server its health and the presenter code.
 - **Presenting:** a presenter view with notes and timer, and an audience window that stays in sync.
 - **Drawing on slides:** pen with pressure, highlighter and a fading marker, with a mouse, a finger or an iPad pencil (`D`). Drawings are saved in `<deck>.drawings.json` beside the deck and appear in every view, build and PDF. An iPad can present on its own, or pair with the laptop through a QR code on the launch page while the laptop's audience window follows it.
@@ -143,12 +144,11 @@ complete folder.
 | Example | Theme | What it demonstrates |
 |---|---|---|
 | [Tour](examples/showcase/slides.md) | Aurora | Start here: each slide shows the Markdown beside what it becomes, from headings to layouts, live code, notes, drawing, a poll and sharing |
-| [Python](examples/python/slides.md) | FHNW | A real lesson: live code to try out, points revealed step by step, notes on every slide, a poll to check understanding |
-| [Poll](examples/poll/slides.md) | Duet | A join slide, then a poll, a scale, a word cloud and open questions; start it with `mdeck run slides.md --network` |
-| [Custom layouts](examples/custom-layouts/slides.md) | Terminal | A deck-local comparison design and named regions |
+| [Python](examples/python/slides.md) | Academic | A real lesson: live code to try out, points revealed step by step, notes on every slide, a poll to check understanding |
+| [Poll](examples/poll/slides.md) | Neue | A join slide, then a poll, a scale, a word cloud and open questions; start it with `mdeck run slides.md --network` |
+| [Custom layouts](examples/custom-layouts/slides.md) | Neue | A deck-local comparison design and named regions |
 
-The docs home page embeds a short talk in the Editorial theme, and the
-screenshots above show Neue.
+The docs home page embeds a short talk, and the screenshots above show Neue.
 
 ## Made at FHNW
 

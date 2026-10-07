@@ -1,0 +1,11 @@
+# A theme that starts dark and has no parameters.
+schema = 1
+kind = "theme"
+id = "night"
+title = "Night"
+palette = "lagoon"
+appearance = "dark"
+fonts = []
+
+[tokens]
+"--font-body" = "system-ui, sans-serif"

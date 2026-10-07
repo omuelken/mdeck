@@ -24,13 +24,13 @@ test('every built-in manifest round-trips through the editor model', () => {
 })
 
 test('starter files for new extensions validate', () => {
-  for (const [kind, from] of [['palette', null], ['palette', registry.palettes.forest.manifest], ['theme', registry.themes.duet.manifest]]) {
+  for (const [kind, from] of [['palette', null], ['palette', registry.palettes.graphite.manifest], ['theme', registry.themes.aurora.manifest]]) {
     const files = starterFiles(kind, 'fresh', 'Fresh', from, { 'styles.css': '.slide {}' })
     const record = validateManifest(parseManifest(files['extension.toml']).raw, { file: 'x', dir: '/x/fresh', folderName: 'fresh', fileExists: path => Object.hasOwn(files, path.slice('/x/fresh/'.length)) })
     assert.equal(record.kind, kind)
     assert.equal(record.title, 'Fresh')
-    if (kind === 'theme') assert.equal(record.manifest.palette, 'cobalt', 'a copy keeps the default palette')
-    if (kind === 'palette' && from) assert.equal(record.manifest.dark['--accent'], '#7bd389', 'a copy keeps both variants')
+    if (kind === 'theme') assert.equal(record.manifest.palette, 'neon', 'a copy keeps the default palette')
+    if (kind === 'palette' && from) assert.equal(record.manifest.dark['--accent'], '#9fc2e0', 'a copy keeps both variants')
   }
   assert.throws(() => starterFiles('theme', 'fresh', 'Fresh'), /copy/)
   assert.match(parseManifest('id = \n').error, /value expected|invalid value/)

@@ -6,6 +6,7 @@
 // one is available to inverted slides as --inverse-bg, --inverse-ink, …
 // Theme tokens (type, spacing, fonts) and theme parameters come on top.
 import { tokensToCss, COLOR_ROLES, APPEARANCES, palettesFor } from './tokens.js'
+import { movedHint } from './moved.js'
 
 // Code highlighting and logos on dark slides, unless the palette says otherwise.
 export const DARK_TOKENS = {
@@ -34,7 +35,7 @@ export function resolvePalette({ theme, palettes = {}, palette: requested, appea
   const warnings = []
   const offered = palettesFor(theme, palettes)
   let palette = requested ? palettes[requested] : null
-  if (requested && !palette) warnings.push(`Unknown palette "${requested}". Available: ${offered.map(p => p.id).join(', ')}`)
+  if (requested && !palette) warnings.push(movedHint('palette', requested) ?? `Unknown palette "${requested}". Available: ${offered.map(p => p.id).join(', ')}`)
   else if (palette && !offered.includes(palette)) { warnings.push(`The theme "${theme.id}" does not offer the palette "${requested}". Available: ${offered.map(p => p.id).join(', ')}`); palette = null }
   palette ??= palettes[theme.palette] ?? offered[0] ?? null
   let appearance = requestedAppearance || theme.appearance || 'light'

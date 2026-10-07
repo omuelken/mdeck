@@ -1,5 +1,5 @@
 ---
-theme: editorial
+theme: academic
 show:
   organization: none
   author: none

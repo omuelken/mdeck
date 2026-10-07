@@ -11,6 +11,7 @@ import { resolve } from 'node:path'
 import { launchChrome } from './chrome.js'
 import { frameworkRoot } from '../paths.js'
 import { sampleDeck, SAMPLE_PICTURE } from '../editor/sampleDeck.js'
+import { loadRegistry } from '../extensions/discover.js'
 
 // Runs in the page before the deck: keeps what the page reports.
 const RECORDER = `window.__report = [];
@@ -80,18 +81,27 @@ const MEASURE = `(() => {
   return problems
 })()`
 
-// Builds the sample deck with `extensions` ({ id: folder }) beside it and
-// opens it in Chrome for `use({ open, ids })`. Installed user extensions are
-// left out, so the result depends only on what is given.
-export async function withSampleDeck({ extensions = {} } = {}, use) {
+// Builds the sample deck with `extensions` ({ id: folder }) beside it into
+// `outDir`, as a folder to host. Installed user extensions are left out, so
+// the result depends only on what is given. Returns the registry it used.
+export function buildSampleDeck({ extensions = {}, outDir }) {
   const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-sample-'))
   try {
     writeFileSync(resolve(temp, 'slides.md'), sampleDeck())
     writeFileSync(resolve(temp, 'picture.svg'), SAMPLE_PICTURE)
     for (const [id, dir] of Object.entries(extensions)) cpSync(dir, resolve(temp, 'extensions', id), { recursive: true })
     mkdirSync(resolve(temp, 'home'))
-    execFileSync(process.execPath, [resolve(frameworkRoot, 'bin/mdeck.js'), 'build', resolve(temp, 'slides.md'), '-o', resolve(temp, 'out/index.html')],
+    execFileSync(process.execPath, [resolve(frameworkRoot, 'bin/mdeck.js'), 'build', resolve(temp, 'slides.md'), '-o', resolve(outDir, 'index.html')],
       { cwd: temp, stdio: 'pipe', env: { ...process.env, MDECK_HOME: resolve(temp, 'home') } })
+    return loadRegistry(resolve(temp, 'slides.md'), { userRoot: null })
+  } finally { rmSync(temp, { recursive: true, force: true }) }
+}
+
+// The sample deck built with `extensions`, opened in Chrome for `use({ open })`.
+export async function withSampleDeck({ extensions = {} } = {}, use) {
+  const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-sample-'))
+  try {
+    buildSampleDeck({ extensions, outDir: resolve(temp, 'out') })
     const browser = await launchChrome({ dir: resolve(temp, 'out') })
     try {
       // A page with the deck in a look, recording what it reports.

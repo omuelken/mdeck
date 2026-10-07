@@ -41,7 +41,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | Field | Default | Description |
 |---|---|---|
 | `theme` | `neue` | Theme name |
-| `palette` | _(theme default)_ | Colour palette: `lagoon`, `swiss`, `cobalt`, `nordic`, `graphite`, `terra`, `forest`, `ember`, `neon`, `phosphor`, `pastel`, or one of your own |
+| `palette` | _(theme default)_ | Colour palette: `swiss`, `nordic`, `neon`, `lagoon`, `graphite`, one installed from the theme repository, or one of your own |
 | `appearance` | _(theme default)_ | `light` or `dark`: which variant of the palette the slides use |
 | `meta.title` | — | Deck title (shown in footer) |
 | `meta.author` | — | Author name (shown in footer) |
@@ -104,15 +104,14 @@ view is reachable in any build through `?view=reader`.
 |---|---|
 | `neue` | Swiss style: Inter Tight and Inter, large flush-left type, a rule across the top, square accent markers, red on white |
 | `aurora` | Northern lights: Plus Jakarta Sans, curtains of light in the palette's accents, night-sky chapter slides, frosted glass |
-| `duet` | Two voices: heavy Zilla Slab headings, DM Sans body; the two accents take turns (split fields, diagonal chapters, alternating markers) |
-| `editorial` | Magazine spread: Newsreader headlines, Lora body, drop caps and pull quotes |
-| `fhnw` | The FHNW corporate design: Inter, black on white, yellow accent areas |
-| `terminal` | A terminal session: JetBrains Mono, headings at a prompt, a blinking cursor on the title, log-line callouts, a tmux status bar; dark by default |
 | `academic` | A lecture: Source Sans and Source Serif, compact type with the heading fixed at the top and the content centred below, theorem and definition blocks, booktabs tables, a footnote rule |
-| `sketch` | A sketchbook: Caveat and Patrick Hand on dotted paper, marker scribbles, circled numbers, sticky-note callouts, taped photos; a chalkboard in the dark |
 
-`mdeck list <deck>.md` lists these together with any themes kept beside
-the deck.
+More themes (duet, editorial, fhnw, terminal, sketch) are in the theme
+repository: `mdeck themes search` lists them, and
+`mdeck themes install <pack> <deck>.md` puts one beside the deck.
+
+`mdeck list <deck>.md` lists the built-in themes together with any themes kept
+beside the deck.
 
 ---
 
@@ -122,19 +121,14 @@ Each palette has a light and a dark variant; `appearance:` picks one.
 
 | Key | Light | Dark |
 |---|---|---|
-| `lagoon` | Teal on warm stone | Bright teal on teal-black |
 | `swiss` | White, black, signal red (neue's default) | Black, white, red |
-| `cobalt` | White, ultramarine, orange (duet's default) | Deep navy, luminous blue |
-| `nordic` | Ice grey, navy, steel blue | Polar night, ice blue |
-| `graphite` | Black and white, steel blue | Charcoal, light steel blue |
-| `terra` | Cream, navy, brick red (editorial's default) | Navy, cream, coral |
-| `forest` | Deep green, moss, ochre | Forest night, light green |
-| `ember` | Sand, espresso, orange | Dark brown, glowing orange |
+| `nordic` | Ice grey, navy, steel blue (academic's default) | Polar night, ice blue |
 | `neon` | White, violet, magenta (aurora's default) | Black, neon violet and pink |
-| `phosphor` | Paper printout, green, ochre (terminal's default) | Phosphor green on black, amber |
-| `pastel` | Catppuccin Latte: mauve and peach (sketch's default) | Catppuccin Mocha: pastel mauve and peach |
+| `lagoon` | Teal on warm stone | Bright teal on teal-black |
+| `graphite` | Black and white, steel blue | Charcoal, light steel blue |
 
-The FHNW theme uses its own palette, `brand`, and no other.
+More palettes (cobalt, terra, phosphor, pastel, ember, forest, among others)
+are in the theme repository; install them with `mdeck themes install <pack> <deck>.md`.
 
 ---
 

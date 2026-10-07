@@ -1,0 +1,11 @@
+# A corporate design: only its own palette.
+schema = 1
+kind = "theme"
+id = "house"
+title = "House"
+palette = "house-colours"
+palettes = ["house-colours"]
+fonts = []
+
+[tokens]
+"--font-body" = "system-ui, sans-serif"

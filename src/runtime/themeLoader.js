@@ -1,6 +1,7 @@
 import baseCSS from '../../assets/base.css?inline'
 import { themes, palettes } from 'virtual:mdeck-extensions'
 import { buildAppearance } from '../extensions/appearance.js'
+import { movedHint } from '../extensions/moved.js'
 
 const SELF_CONTAINED = typeof __MDECK_SELF_CONTAINED__ !== 'undefined'
   && __MDECK_SELF_CONTAINED__
@@ -49,7 +50,7 @@ function syncThemeFonts(urls) {
 
 export async function loadTheme({ theme = 'neue', palette, appearance, params = {}, meta = {} } = {}) {
   const entry = themeEntry(theme)
-  if (!entry) throw new Error(`Unknown theme: "${theme}". Available: ${THEME_NAMES.join(', ')}`)
+  if (!entry) throw new Error(movedHint('theme', theme) ?? `Unknown theme: "${theme}". Available: ${THEME_NAMES.join(', ')}`)
 
   const styles = await entry.load()
   const look = buildAppearance({

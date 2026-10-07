@@ -27,14 +27,9 @@ If you already have a settings block there, change the existing lines rather tha
 |---|---|
 | `neue` | Swiss style: large type, clear lines, red on white |
 | `aurora` | Northern lights: curtains of light, night-sky chapters and glass |
-| `duet` | Two voices: two accent colours that take turns, slab headings |
-| `editorial` | A magazine spread: serif headlines, drop caps, pull quotes |
-| `fhnw` | The FHNW visual identity |
-| `terminal` | A terminal session: headings typed at a prompt, a blinking cursor, a status bar |
 | `academic` | A lecture: compact slides, theorem and definition boxes, tables like in a paper |
-| `sketch` | A sketchbook: handwriting, marker scribbles, sticky notes; a chalkboard in the dark |
 
-Each theme comes with colours that suit it, so you do not have to choose any.
+Each theme comes with colours that suit it, so you do not have to choose any. More themes are in the theme repository (see “Themes that moved to the repository” below).
 
 ## See the themes
 
@@ -52,41 +47,11 @@ Default colours: `swiss`.
 
 Default colours: `neon`.
 
-### Duet
-
-[![The tour's title slide in the Duet theme](images/themes/duet.webp)](images/themes/duet.webp)
-
-Default colours: `cobalt`.
-
-### Editorial
-
-[![The tour's title slide in the Editorial theme](images/themes/editorial.webp)](images/themes/editorial.webp)
-
-Default colours: `terra`.
-
-### FHNW
-
-[![The tour's title slide in the FHNW theme](images/themes/fhnw.webp)](images/themes/fhnw.webp)
-
-Default colours: its own FHNW colours.
-
-### Terminal
-
-[![The tour's title slide in the Terminal theme](images/themes/terminal.webp)](images/themes/terminal.webp)
-
-Default colours: `phosphor`, dark.
-
 ### Academic
 
 [![The tour's title slide in the Academic theme](images/themes/academic.webp)](images/themes/academic.webp)
 
 Default colours: `nordic`.
-
-### Sketch
-
-[![The tour's title slide in the Sketch theme](images/themes/sketch.webp)](images/themes/sketch.webp)
-
-Default colours: `pastel`.
 
 ## Choose colours
 
@@ -94,26 +59,18 @@ To use other colours, set `palette` to one of these:
 
 | Name to use | Colours |
 |---|---|
-| `lagoon` | Teal on warm stone |
 | `swiss` | White, black and signal red (neue's own) |
-| `cobalt` | Strong ultramarine on white |
-| `nordic` | Ice grey, deep navy and a cool steel blue |
+| `nordic` | Ice grey, deep navy and a cool steel blue (academic's own) |
+| `neon` | Violet and magenta, loud (aurora's own) |
+| `lagoon` | Teal on warm stone |
 | `graphite` | Black and white with a steel-blue accent |
-| `terra` | Cream, deep navy and brick red |
-| `forest` | Deep green with moss and ochre |
-| `ember` | Sand and espresso with orange |
-| `neon` | Violet and magenta, loud |
-| `phosphor` | Green on black, like an old terminal screen |
-| `pastel` | Soft pastels, mauve and peach (in the style of Catppuccin) |
 
 ```yaml
 ---
 theme: neue
-palette: terra
+palette: graphite
 ---
 ```
-
-The FHNW theme always uses the FHNW colours.
 
 ## Light or dark
 
@@ -122,7 +79,7 @@ Every palette has a light and a dark version. Choose dark for a dark lecture hal
 ```yaml
 ---
 theme: neue
-palette: terra
+palette: nordic
 appearance: dark
 ---
 ```
@@ -131,7 +88,7 @@ Some slides use the other version on purpose: neue's statement slides are dark i
 
 ## Every theme in every palette
 
-The first chapter slide of the tour in each palette a theme offers. Choose a theme above the pictures; click a sheet to see it larger. The FHNW theme has only its own colours, so it is not shown here.
+The first chapter slide of the tour in each palette a theme offers. Choose a theme above the pictures; click a sheet to see it larger. A theme that offers only its own colours is not shown here.
 
 Some themes turn their chapter slides around on purpose: aurora's are a night sky in a light talk, and light in a dark one.
 
@@ -156,6 +113,25 @@ Its theme, palette and light or dark controls, under the notes, let you try othe
 ## More themes from other people
 
 The theme repository has themes and palettes others made. `mdeck themes search` lists them, and `mdeck themes install <pack> my-talk.md` puts one beside your slides; see [Install or share a theme](theme-repository.html).
+
+### Themes that moved to the repository
+
+Earlier versions of mdeck came with more themes and palettes. They are now packs in the theme repository:
+
+| Pack | What it holds |
+|---|---|
+| `duet` | The duet theme (two accent colours that take turns, slab headings) and the `cobalt` palette |
+| `editorial` | The editorial theme (a magazine spread with serif headlines and pull quotes) and the `terra` palette |
+| `fhnw` | The FHNW visual identity, with its own `brand` palette only |
+| `terminal` | The terminal theme (headings typed at a prompt, a status bar) and the `phosphor` palette; it starts dark |
+| `sketch` | The sketch theme (handwriting, marker scribbles, sticky notes) and the `pastel` palette |
+| `earth` | The `ember` and `forest` palettes |
+
+A deck that still names one of them stops with a message that tells you what to install. Install the pack beside your slides, for example:
+
+```sh
+mdeck themes install duet my-talk.md
+```
 
 ## Add your name and organization
 

@@ -1,5 +1,5 @@
 ---
-theme: terminal
+theme: neue
 meta:
   title: Deck-local layouts
 ---

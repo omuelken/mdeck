@@ -9,7 +9,7 @@ Every palette is a family with two variants, **light** and **dark**. A deck choo
 ```yaml
 ---
 theme: neue
-palette: terra        # optional; without it the theme's default palette
+palette: nordic       # optional; without it the theme's default palette
 appearance: dark      # optional: light or dark; without it the theme's default
 ---
 ```
@@ -20,21 +20,17 @@ The presenter view and the reader view switch palette and light or dark without 
 
 | Palette | Light | Dark |
 |---|---|---|
-| `lagoon` | teal on warm stone, orange second accent | deep teal-black, bright teal |
 | `swiss` | white, black and signal red | black, white and red |
-| `cobalt` | ultramarine on white, vivid orange second accent | deep navy with a luminous blue |
 | `nordic` | ice grey, deep navy and a cool steel blue | polar night with ice blue |
-| `graphite` | black and white with a steel-blue accent | charcoal with light steel blue |
-| `terra` | cream, deep navy and brick red | deep navy, cream and coral |
-| `forest` | deep green with moss and ochre | forest night with light green |
-| `ember` | sand and espresso with orange | dark brown with glowing orange |
 | `neon` | white with violet and magenta | black with neon violet and pink |
-| `phosphor` | a printout: near-black on paper, green and ochre | a terminal screen: phosphor green on black, amber |
-| `pastel` | Catppuccin Latte: soft grey-blue paper, mauve and peach | Catppuccin Mocha: dusk blue with pastel mauve and peach |
+| `lagoon` | teal on warm stone, orange second accent | deep teal-black, bright teal |
+| `graphite` | black and white with a steel-blue accent | charcoal with light steel blue |
 
 `mdeck list palettes` lists them, with any of your own.
 
-Each theme names a default: neue uses `swiss`, editorial `terra`, duet `cobalt`, aurora `neon`, terminal `phosphor` (dark), academic `nordic`, sketch `pastel`. The FHNW theme uses its own palette `brand` (FHNW yellow, black and white) and offers no other.
+Each theme names a default: neue uses `swiss`, academic `nordic`, aurora `neon`.
+
+More palettes are in the [theme repository](https://github.com/tilman-schieber/mdeck-themes). The palettes cobalt, terra, phosphor, pastel, ember and forest, built in before mdeck 3.0, are there: cobalt in the `duet` pack, terra in `editorial`, phosphor in `terminal`, pastel in `sketch`, and ember and forest in `earth`. Install one with `mdeck themes install <pack> my-talk.md`.
 
 ## Colours
 
@@ -90,7 +86,7 @@ description = "Sea blue and rust on chalk white."
 
 Colour names start with dashes, so quote them as TOML keys. A dark variant also gets dark code colours and an inverted logo; set `--logo-filter` or the `--token-*` code colours in `[dark]` to change that.
 
-`theme = "my-theme"` makes a palette private: only that theme offers it, as FHNW does with `brand`.
+`theme = "my-theme"` makes a palette private: only that theme offers it, as a corporate design theme does with its own colours.
 
 ## Readability
 
@@ -103,4 +99,4 @@ Colour names start with dashes, so quote them as TOML keys. A dark variant also 
 | both accents on the background | 3 : 1 (large type) |
 | text on the accent | 3 : 1 |
 
-The built-in palettes meet these in both variants. A private palette may use its accent only as a surface (FHNW's yellow), so its accents are not checked as text.
+The built-in palettes meet these in both variants. A private palette may use its accent only as a surface (a corporate yellow, say), so its accents are not checked as text.

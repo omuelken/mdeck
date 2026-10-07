@@ -34,7 +34,7 @@ If `mdeck` is not installed, rely on the quick reference below.
 ```markdown
 ---
 theme: neue            # theme id from `mdeck list themes`
-palette: terra          # optional: lagoon, swiss, cobalt, nordic, graphite, terra, forest, ember, neon, phosphor, pastel
+palette: nordic         # optional: swiss, nordic, neon, lagoon, graphite, or one installed from the theme repository (`mdeck themes search`)
 appearance: light       # optional: light or dark
 meta:
   title: "Talk title"

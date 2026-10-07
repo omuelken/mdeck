@@ -5,7 +5,8 @@
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
-import { builtInRegistry, loadRegistry, userExtensionsDir } from '../extensions/discover.js'
+import { builtInRegistry, loadRegistry, manifestsOf, userExtensionsDir } from '../extensions/discover.js'
+import { palettesFor } from '../extensions/tokens.js'
 import { ManifestError } from '../extensions/manifest.js'
 import { buildRepository, compareVersions, fetchIndex, findPack, installedPacks, installFromIndex, PackError, removePack } from '../extensions/packs.js'
 
@@ -29,6 +30,21 @@ function target(where, global) {
 }
 
 const install = (index, entry, { root, force }) => installFromIndex(index, entry, { root, known: builtIns(), mdeckVersion: VERSION, force })
+
+// Every theme with the palettes it offers, and every palette's colours, each
+// marked with the pack it comes from (null for mdeck's own).
+function looksOf(registry, index) {
+  const pack = Object.fromEntries(index.packs.flatMap(p => [...p.themes, ...p.palettes].map(id => [id, p.id])))
+  const palettes = manifestsOf(registry, 'palette')
+  const colours = tokens => Object.fromEntries(['--bg', '--surface', '--ink', '--accent', '--accent-2'].map(key => [key, tokens?.[key] ?? null]))
+  return {
+    mdeck: VERSION,
+    themes: Object.values(manifestsOf(registry, 'theme')).map(theme => ({ id: theme.id, title: theme.title, description: theme.description ?? '', pack: pack[theme.id] ?? null,
+      palette: theme.palette, appearance: theme.appearance ?? 'light', palettes: palettesFor(theme, palettes).map(p => p.id) })),
+    palettes: Object.values(palettes).map(palette => ({ id: palette.id, title: palette.title, description: palette.description ?? '', pack: pack[palette.id] ?? null,
+      light: colours(palette.light), dark: colours(palette.dark) })),
+  }
+}
 
 export async function runThemes({ positionals, flag, output, ui: { ok, err, tip, c } }) {
   const [sub = 'search', ...rest] = positionals
@@ -114,7 +130,7 @@ export async function runThemes({ positionals, flag, output, ui: { ok, err, tip,
         const text = readFileSync(resolve(extensions[id], 'extension.toml'), 'utf8')
         return /^theme\s*=\s*"([^"]+)"/m.exec(text)?.[1] ?? 'neue'
       }
-      const { checkLooks, renderPreviews } = await import('../build/themeCheck.js')
+      const { checkLooks, renderPreviews, buildSampleDeck } = await import('../build/themeCheck.js')
       const looks = index.packs.flatMap(pack => [...pack.themes.map(theme => ({ id: theme, theme })), ...pack.palettes.map(palette => ({ id: palette, theme: paletteTheme(palette), palette }))])
       if (flag('--check')) {
         const failures = await checkLooks(looks, { extensions })
@@ -125,6 +141,10 @@ export async function runThemes({ positionals, flag, output, ui: { ok, err, tip,
       await renderPreviews(looks.map(look => ({ file: resolve(out, 'previews', `${look.id}.webp`), theme: look.theme, palette: look.palette ?? '', slide: look.palette ? 3 : 1 })), { extensions })
       for (const pack of index.packs) pack.previews = Object.fromEntries([...pack.themes, ...pack.palettes].map(id => [id, `previews/${id}.webp`]))
       writeFileSync(resolve(out, 'index.json'), JSON.stringify(index, null, 2) + '\n')
+      // For the repository's theme browser: the sample deck with every theme
+      // and palette, built in or from a pack, and what each theme offers.
+      const registry = buildSampleDeck({ extensions, outDir: resolve(out, 'preview') })
+      writeFileSync(resolve(out, 'looks.json'), JSON.stringify(looksOf(registry, index), null, 2) + '\n')
       return ok(`Built ${index.packs.length} pack(s) into ${resolve(out)}`)
     }
 
