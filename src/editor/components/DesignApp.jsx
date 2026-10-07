@@ -4,7 +4,7 @@ import { useDeckDocument } from '../useDeckDocument.js'
 import { loadExtension, saveExtension, deleteExtension, installThemePack } from '../api.js'
 import { starterFiles, parseManifest, toModel, toRuntimeManifest, MANIFEST } from '../extensions.js'
 import { sampleDeck, sampleDataUrl } from '../sampleDeck.js'
-import { parseTarget } from '../designLink.js'
+import { parseTarget, launchPageUrl } from '../designLink.js'
 import { palettesFor } from '../../extensions/tokens.js'
 import { parseSlides } from '../../core/parseSlides.js'
 import { setDeckConfig } from '../../core/editDeck.js'
@@ -36,6 +36,7 @@ export function DesignApp() {
   const [slide, setSlide] = useState(0)
   const [inspectorWidth, setInspectorWidth] = useState(readInspectorWidth)
   const resize = width => { setInspectorWidth(width); storeInspectorWidth(width) }
+  const [home] = useState(launchPageUrl)
   const timer = useRef(null)
   const currentRef = useRef(current)
   currentRef.current = current
@@ -232,6 +233,7 @@ export function DesignApp() {
       {state.designOnly
         ? <span class="muted" title={`${state.path}/extensions`}>Saved in {state.name}/extensions</span>
         : <a class="btn is-small" href="/editor.html">Back to the slides</a>}
+      {home && <a class="btn is-small" href={home}>Launch page</a>}
     </header>
     {state.status === 'conflict' && <ConflictBanner onReload={() => resolve('reload')} onOverwrite={() => resolve('overwrite')} />}
     <div class="editor-main" style={{ gridTemplateColumns: `290px minmax(0, 1fr) ${inspectorWidth}px` }}>

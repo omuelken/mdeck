@@ -66,9 +66,11 @@ async function openService(action, page = '') {
   const tab = window.open('about:blank', '_blank')
   try {
     const { url } = await api('/action', { action })
-    const target = new URL(page, url).href
-    if (tab) tab.location = target
-    else window.open(target, '_blank')
+    const target = new URL(page, url)
+    // The editors link back here.
+    if (action === 'editor') target.searchParams.set('home', location.href.split('#')[0])
+    if (tab) tab.location = target.href
+    else window.open(target.href, '_blank')
   } catch (error) {
     tab?.close()
     throw error

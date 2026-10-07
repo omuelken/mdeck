@@ -10,7 +10,7 @@ import { DeckSettings } from './DeckSettings.jsx'
 import { LayoutPicker } from './LayoutPicker.jsx'
 import { ConflictBanner } from './ConflictBanner.jsx'
 import { Resizer, readInspectorWidth, storeInspectorWidth } from './Resizer.jsx'
-import { DESIGN_URL, DESIGN_TAB } from '../designLink.js'
+import { designUrl, DESIGN_TAB, launchPageUrl } from '../designLink.js'
 import markUrl from '../../../assets/logo/mark.svg'
 
 const STATUS = { saved: 'Saved', unsaved: 'Unsaved changes', saving: 'Saving…', conflict: 'Conflict', error: 'Could not save' }
@@ -20,6 +20,7 @@ export function App() {
   const [picker, setPicker] = useState(false)
   const [inspectorWidth, setInspectorWidth] = useState(readInspectorWidth)
   const resize = width => { setInspectorWidth(width); storeInspectorWidth(width) }
+  const [home] = useState(launchPageUrl)
 
   const select = index => dispatch({ type: 'select', index })
   const actions = {
@@ -50,7 +51,8 @@ export function App() {
       <span class="spacer" />
       <button class="btn is-small" onClick={actions.undo} disabled={!state.history.past.length} title="Undo (⌘Z)">Undo</button>
       <button class="btn is-small" onClick={actions.redo} disabled={!state.history.future.length} title="Redo (⇧⌘Z)">Redo</button>
-      <a class="btn is-small" href={DESIGN_URL} target={DESIGN_TAB} title="Make and change themes, palettes and layouts, on a sample deck">Design themes</a>
+      {home && <a class="btn is-small" href={home}>Launch page</a>}
+      <a class="btn is-small" href={designUrl()} target={DESIGN_TAB} title="Make and change themes, palettes and layouts, on a sample deck">Design themes</a>
       <a class="btn is-small" href="/?view=presenter" target="_blank" rel="noopener">Present</a>
       <a class="btn is-small" href="/" target="_blank" rel="noopener">Open deck</a>
     </header>
