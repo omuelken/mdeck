@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed: the message for a theme or palette that moved to the theme repository said it would be installed beside the deck, but `mdeck themes install` installs for every deck by default. It now reads, for example, "The theme "duet" is no longer built into mdeck; install it with: mdeck themes install duet".
+
 ## 3.0.0 — 2026-10-07
 
 - Every theme and palette now comes in a pack, also those that come with mdeck: `neue`, `academic`, `aurora` and `minimal` (each a theme with its palette) and the palette `lagoon`. `graphite`, close to `nordic`, moved to the theme repository as a pack of its own. They work right away and offline, and can be removed: `mdeck themes remove aurora` hides it from every deck, `mdeck themes install aurora` brings it back without the internet. A newer version from the theme repository replaces the bundled one. A deck without a theme still uses `neue`, and says so when it was removed; the last theme cannot be removed.

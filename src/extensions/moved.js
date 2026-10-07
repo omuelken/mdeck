@@ -6,8 +6,9 @@ export const MOVED = {
   palettes: { cobalt: 'duet', terra: 'editorial', brand: 'fhnw', phosphor: 'terminal', pastel: 'sketch', ember: 'earth', forest: 'earth', graphite: 'graphite' },
 }
 
-// "The theme "duet" is no longer built in: mdeck themes install duet", or null.
+// "The theme "duet" is no longer built into mdeck; install it with: mdeck
+// themes install duet", or null. Installing goes to every deck by default.
 export function movedHint(kind, id) {
   const pack = MOVED[`${kind}s`]?.[id]
-  return pack ? `The ${kind} "${id}" is no longer built into mdeck; install it beside the deck with: mdeck themes install ${pack}` : null
+  return pack ? `The ${kind} "${id}" is no longer built into mdeck; install it with: mdeck themes install ${pack}` : null
 }
