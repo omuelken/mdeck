@@ -3,6 +3,8 @@
 ## Unreleased
 
 - What follows a list has room above it in every theme, so a sentence after a list no longer sits right against its last item.
+- Fixed: a bullet list inside a numbered list took numbers too, and in some themes the number sat on top of the bullet; it also pushed the numbering of the items after it. Every built-in theme now styles only a list's own items.
+- Links and quotations look the part in every theme: links take the palette's accent colour instead of the browser's blue, and a `> quotation` has a rule in the accent colour at its side instead of a bare indent. Themes that style them their own way keep their look.
 
 ## 3.3.0 — 2026-10-08
 

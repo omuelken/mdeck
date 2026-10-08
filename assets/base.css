@@ -118,7 +118,7 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
   flex-direction: column;
   gap: var(--gap-item);
 }
-.slide-body ul li { position: relative; }
+.slide-body ul > li { position: relative; }
 .slide-body ol {
   list-style: none;
   padding: 0;
@@ -128,7 +128,7 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
   flex-direction: column;
   gap: var(--gap-item);
 }
-.slide-body ol li { counter-increment: slide-ol; position: relative; }
+.slide-body ol > li { counter-increment: slide-ol; position: relative; }
 
 /* ── Full-bleed image ────────────────────────────────────────────────────── */
 .slide--full-bleed-image { padding: 0; }
@@ -161,6 +161,18 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 .slide-footnotes li { line-height: 1.4; }
 .slide-footnotes p { margin: 0; }
 .slide-footnotes .footnote-backref { display: none; }
+
+/* ── Links and quotations ───────────────────────────────────────────────── */
+/* Defaults in the palette's colours instead of the browser's blue and a bare
+   indent. :where keeps them weaker than any rule of the theme's own. */
+:where(.slide) a { color: var(--accent); text-underline-offset: 0.15em; text-decoration-thickness: 0.06em; }
+:where(.slide) blockquote {
+  margin: 0;
+  padding-left: 0.9em;
+  border-left: 4px solid var(--accent);
+  color: var(--ink-soft);
+}
+:where(.slide) blockquote > p:last-child { margin-bottom: 0; }
 
 /* ── Code blocks ─────────────────────────────────────────────────────────── */
 .code-block { white-space: pre-wrap; overflow-x: hidden; }

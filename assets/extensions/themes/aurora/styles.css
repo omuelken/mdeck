@@ -66,13 +66,13 @@ deck-stage[data-deck-static] .slide::before { animation: none; }
 /* Print and PDF: gradient text prints with a hairline box around it, and
    glows print as dark halos; solid colours instead. */
 @media print {
-  em, .slide-footer > span:last-child:not(:first-child), .chapter-num, .slide-body ol li::before {
+  em, .slide-footer > span:last-child:not(:first-child), .chapter-num, .slide-body ol > li::before {
     background: none !important;
     -webkit-text-fill-color: currentColor !important;
     color: var(--aurora-a) !important;
     filter: none !important;
   }
-  .slide-body ul li::before, .focus-eyebrow::before, .slide-header > span:last-child:not(:empty)::after { box-shadow: none !important; }
+  .slide-body ul > li::before, .focus-eyebrow::before, .slide-header > span:last-child:not(:empty)::after { box-shadow: none !important; }
   /* Frosted glass blurs what lies behind it, which prints as an image. */
   .slide *, .slide *::before { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 }
@@ -457,13 +457,13 @@ strong { color: var(--ink); font-weight: 700; }
 /* ─────────────────────────────────────────────
    LISTS — glowing dots, gradient numbers
    ───────────────────────────────────────────── */
-.slide-body ul li {
+.slide-body ul > li {
   font-weight: 400;
   line-height: 1.35;
   padding-left: 46px;
   position: relative;
 }
-.slide-body ul li::before {
+.slide-body ul > li::before {
   content: '';
   position: absolute;
   left: 0;
@@ -474,11 +474,11 @@ strong { color: var(--ink); font-weight: 700; }
   background: var(--aurora-gradient);
   box-shadow: 0 0 14px color-mix(in oklab, var(--aurora-a) 55%, transparent);
 }
-.slide-body ol li {
+.slide-body ol > li {
   padding-left: 60px;
   position: relative;
 }
-.slide-body ol li::before {
+.slide-body ol > li::before {
   content: counter(slide-ol);
   position: absolute;
   left: 0;

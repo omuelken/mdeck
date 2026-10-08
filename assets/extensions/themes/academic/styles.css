@@ -180,12 +180,12 @@ strong { color: var(--ink); font-weight: 700; }
    the text size, so long lists stay compact
    ───────────────────────────────────────────── */
 .slide-body ul, .slide-body ol { max-width: 1560px; }
-.slide-body ul li,
-.slide-body ol li {
+.slide-body ul > li,
+.slide-body ol > li {
   line-height: 1.45;
   padding-left: 44px;
 }
-.slide-body ul li::before {
+.slide-body ul > li::before {
   content: '';
   position: absolute;
   left: 4px;
@@ -195,7 +195,7 @@ strong { color: var(--ink); font-weight: 700; }
   background: var(--accent);
   clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
-.slide-body ol li::before {
+.slide-body ol > li::before {
   content: counter(slide-ol) '.';
   position: absolute;
   left: 0;
@@ -206,7 +206,7 @@ strong { color: var(--ink); font-weight: 700; }
 }
 /* Second level: an en dash, a little smaller */
 .slide-body li :is(ul, ol) { margin-top: 8px; gap: 6px; font-size: 0.88em; }
-.slide-body li ul li::before {
+.slide-body li ul > li::before {
   width: 0.5em;
   height: 2px;
   top: 0.72em;

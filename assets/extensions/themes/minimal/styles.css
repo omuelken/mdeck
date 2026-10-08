@@ -215,8 +215,8 @@ strong { color: var(--ink); font-weight: 600; }
 /* ─────────────────────────────────────────────
    LISTS — a short dash, plain numbers
    ───────────────────────────────────────────── */
-.slide-body ul li { line-height: 1.4; padding-left: 40px; position: relative; }
-.slide-body ul li::before {
+.slide-body ul > li { line-height: 1.4; padding-left: 40px; position: relative; }
+.slide-body ul > li::before {
   content: '';
   position: absolute;
   left: 0;
@@ -225,8 +225,8 @@ strong { color: var(--ink); font-weight: 600; }
   height: 2px;
   background: var(--muted);
 }
-.slide-body ol li { padding-left: 52px; position: relative; }
-.slide-body ol li::before {
+.slide-body ol > li { padding-left: 52px; position: relative; }
+.slide-body ol > li::before {
   content: counter(slide-ol) '.';
   position: absolute;
   left: 0;

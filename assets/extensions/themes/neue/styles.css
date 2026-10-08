@@ -336,13 +336,13 @@ strong { color: var(--ink); font-weight: 600; }
 /* ─────────────────────────────────────────────
    LISTS — square markers in the accent, numbers in the display face
    ───────────────────────────────────────────── */
-.slide-body ul li {
+.slide-body ul > li {
   font-weight: 400;
   line-height: 1.32;
   padding-left: 44px;
   position: relative;
 }
-.slide-body ul li::before {
+.slide-body ul > li::before {
   content: '';
   position: absolute;
   left: 0;
@@ -351,12 +351,12 @@ strong { color: var(--ink); font-weight: 600; }
   height: 14px;
   background: var(--accent);
 }
-.slide-body ol li {
+.slide-body ol > li {
   counter-increment: slide-ol;
   padding-left: 64px;
   position: relative;
 }
-.slide-body ol li::before {
+.slide-body ol > li::before {
   content: counter(slide-ol, decimal-leading-zero);
   position: absolute;
   left: 0;
