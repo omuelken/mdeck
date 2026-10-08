@@ -87,14 +87,15 @@ The design page shows themes and palettes on a sample deck with every kind of sl
 | Command | Result |
 |---|---|
 | `mdeck build my-talk.md` | A folder in `dist` with every view, to host or copy |
-| `mdeck build my-talk.md --reader` | A hosted reader folder with speaker notes removed; add `--notes` to retain them |
+| `mdeck build my-talk.md --reader` | A hosted reader folder with speaker notes removed; add `--notes` to retain them, `--no-polls` to leave out the slides with polls and their join codes |
 | `mdeck build my-talk.md -o talk.html` | Choose the output filename; local media stays alongside it |
 | `mdeck build my-talk.md --single-file -o talk.html` | Embed local images and media in one HTML file of the presentation |
 | `mdeck build my-talk.md --launchers` | Include presenter launchers in the folder build |
 | `mdeck send my-talk.md` | One file for readers: the reader view, speaker notes removed, a PDF inside |
 | `mdeck send my-talk.md --notes` | The same, keeping the speaker notes |
+| `mdeck send my-talk.md --no-polls` | The same, leaving out the slides with polls and their join codes |
 | `mdeck send my-talk.md --no-pdf` | The same, without rendering the PDF |
-| `mdeck pdf my-talk.md -o talk.pdf` | Render the slides to a PDF file |
+| `mdeck pdf my-talk.md -o talk.pdf` | Render the slides to a PDF file (`--no-polls` leaves out the slides with polls) |
 | `--no-drawings` | Leave out the drawings from `my-talk.drawings.json`, for `build`, `send` and `pdf` |
 
 See [Send, host or print your slides](sharing.html) for help choosing between them. Unknown options, missing option values and extra filenames stop the command before it changes any output. `--output=path` and `-o path` are both accepted. `mdeck preview --no-open --port 4200` previews without opening a browser and chooses a port.

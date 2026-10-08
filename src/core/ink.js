@@ -188,6 +188,22 @@ export const inkPaint = color => PEN_PAINT[color] ?? color
 /** Strokes in drawing order: highlighter below the pen, as on paper. */
 export const inkOrder = strokes => [...strokes.filter(s => s.tool === 'highlighter'), ...strokes.filter(s => s.tool !== 'highlighter')]
 
+/**
+ * The end of a straight line from `from` to `to`, turned onto the nearest
+ * multiple of `step` degrees when it lies within `tolerance` of it (0°, 15°,
+ * 30° … by default); its length stays. Further off, the end stays as drawn.
+ */
+export function snapAngle([x0, y0], [x, y], { step = 15, tolerance = 4 } = {}) {
+  const dx = x - x0, dy = y - y0
+  const length = Math.hypot(dx, dy)
+  if (!length) return [x, y]
+  const angle = Math.atan2(dy, dx) * 180 / Math.PI
+  const snapped = Math.round(angle / step) * step
+  if (Math.abs(angle - snapped) > tolerance) return [x, y]
+  const rad = snapped * Math.PI / 180
+  return [Math.round((x0 + Math.cos(rad) * length) * 10) / 10, Math.round((y0 + Math.sin(rad) * length) * 10) / 10]
+}
+
 /** The stroke moved by dx, dy design pixels; the same id, so it replaces the original. */
 export const translateStroke = (stroke, dx, dy) => ({ ...stroke, points: stroke.points.map(([x, y, p]) => [x + dx, y + dy, p]) })
 

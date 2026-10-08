@@ -13,6 +13,7 @@
 //   { type: 'zoom', key, slideId, scale, x, y }  the part of the slide this
 //       window shows (stage zoom), at most every ~50 ms
 //   { type: 'reveal', key, room, shown }  a poll's right answer shown or hidden
+//   { type: 'results', key, room, shown }  a poll's results shown or hidden
 //   { type: 'op', op }                  a change of the saved ink (applyOp)
 // Keys start with the sending window's id, so strokes never mix.
 import { changeInk, renameSlide } from './store.js'
@@ -51,6 +52,8 @@ export function createInkBus(stage, transports) {
       stage.liveStroke(message.key, known)
     } else if (message.type === 'reveal') {
       stage.dispatchEvent(new CustomEvent('pollreveal', { detail: { room: message.room, shown: !!message.shown } }))
+    } else if (message.type === 'results') {
+      stage.dispatchEvent(new CustomEvent('pollresults', { detail: { room: message.room, shown: !!message.shown } }))
     } else if (message.type === 'zoom') {
       if (message.slideId && message.slideId === stage._inkSlideId()) stage.setZoom(message.scale > 1 ? message : null, 'remote', { announce: false })
     } else if (message.type === 'dot') {
@@ -102,6 +105,10 @@ export function createInkBus(stage, transports) {
   // A poll's right answer, shown here: the others show it too.
   stage.addEventListener('pollreveal', ({ detail }) => {
     if (detail?.local) send({ type: 'reveal', key: `${me}:reveal`, room: detail.room, shown: !!detail.shown })
+  })
+  // A poll's results shown or hidden here: the others follow.
+  stage.addEventListener('pollresults', ({ detail }) => {
+    if (detail?.local) send({ type: 'results', key: `${me}:results`, room: detail.room, shown: !!detail.shown })
   })
 
   // The zoom: the latest view, not every step of a pinch.

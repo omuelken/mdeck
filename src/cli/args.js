@@ -9,9 +9,9 @@ const commands = {
   design: { ...common, max: 1 },
   themes: { '--local': flag, '--force': flag, '--check': flag, '--output': value, '-o': '--output', max: 4 },
   palettes: { '--local': flag, '--force': flag, max: 4 },
-  build: { ...output, '--single-file': flag, '--launchers': flag, '--reader': flag, '--notes': flag, max: 1 },
-  send: { ...output, '--notes': flag, '--no-pdf': flag, max: 1 },
-  pdf: { ...output, max: 1 },
+  build: { ...output, '--single-file': flag, '--launchers': flag, '--reader': flag, '--notes': flag, '--no-polls': flag, max: 1 },
+  send: { ...output, '--notes': flag, '--no-polls': flag, '--no-pdf': flag, max: 1 },
+  pdf: { ...output, '--no-polls': flag, max: 1 },
   preview: { ...common, max: 1 },
   check: { '--strict': flag, '--render': flag, max: 1 },
   snapshot: { '--output': value, '-o': '--output', '--slide': value, '--dark': flag, '--light': flag, max: 1 },
@@ -84,6 +84,7 @@ export function parseArgs(command, argv) {
     validateServerOrigin(options['--server'])
   }
   if (command === 'build' && options['--notes'] && !options['--reader']) throw new Error('--notes requires --reader for mdeck build')
+  if (command === 'build' && options['--no-polls'] && !options['--reader']) throw new Error('--no-polls requires --reader for mdeck build')
   if (command === 'build' && options['--launchers'] && options['--single-file']) throw new Error('--launchers is only available for folders, not with --single-file.')
   if (command === 'list' && positionals.length === 2 && !['layouts', 'themes', 'palettes'].includes(positionals[0])) throw new Error('Use mdeck list [layouts|themes|palettes] [slides.md]')
   if (command === 'snapshot' && options['--dark'] && options['--light']) throw new Error('Choose --dark or --light')

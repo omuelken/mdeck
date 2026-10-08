@@ -77,6 +77,22 @@ export default function VideoPlayer({ src, url, play = 'click', aspect, muted })
     return () => stage.removeEventListener('slidechange', onSlideChange)
   }, [play, url])
 
+  // Web video click mode: slides stay mounted, so a playing video would go on
+  // (with sound) on the next slide. Leaving the slide unloads the player;
+  // coming back shows it ready to play again.
+  useEffect(() => {
+    if (play !== 'click' || !url) return
+    const stage = document.querySelector('deck-stage')
+    if (!stage) return
+    const embedUrl = getEmbedUrl(url, false)
+    function onSlideChange(e) {
+      const active = e.detail.slide?.contains(containerRef.current)
+      setIframeSrc(current => active ? (current ?? embedUrl) : null)
+    }
+    stage.addEventListener('slidechange', onSlideChange)
+    return () => stage.removeEventListener('slidechange', onSlideChange)
+  }, [play, url])
+
   const fixedAspect = typeof aspect === 'string' && aspect.trim() !== ''
 
   return (

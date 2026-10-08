@@ -4,6 +4,7 @@
 // identical; callers reparse the result.
 import { parseSlides, SLIDE_KEYS, DECK_KEYS } from './parseSlides.js'
 import { applySourceEdits, replaceRegion, normalizeBlock, detectNewline, patchYamlMapping, firstYamlKey } from './source.js'
+import { maskCode } from '../live/roomTag.js'
 
 const REGION_RE = /^[a-z][a-z0-9-]*$/
 
@@ -227,4 +228,46 @@ export function stripNotes(source) {
     .filter(block => block.type === 'notes')
     .map(block => blockRemoval(deck, block)))
   return edit(deck, edits)
+}
+
+// The live activities, and the code to join them (<qrcode join />): a slide
+// with one of them is left out of shared builds. <qrcode follow /> and other
+// QR codes stay.
+const ACTIVITY_RE = /<(poll|question|wordcloud|scale)\b/i
+const JOIN_RE = /<qrcode\b[^>]*?\sjoin(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|\{?([^\s/>}]*)\}?))?(?=[\s/>])/i
+const joins = text => { const m = JOIN_RE.exec(text); return !!m && !/^(false|no|off|0)$/i.test(m[1] ?? m[2] ?? m[3] ?? '') }
+export function hasActivity(slide) {
+  return [slide.content ?? '', ...Object.values(slide.regions ?? {}).map(region => region.content ?? '')]
+    .some(text => { const masked = maskCode(text); return ACTIVITY_RE.test(masked) || joins(masked) })
+}
+
+// Removes every slide with a live activity (<poll>, <question>, <wordcloud>,
+// <scale>) for shared builds: a reader cannot vote, and the results belong to
+// the talk. Returns { source, ids, removed }: `ids` maps each kept slide's id
+// to its id afterwards (an automatic `slide-N` moves up), `removed` the ids
+// that are gone, so saved drawings can follow their slides.
+export function stripActivities(source) {
+  const deck = parseSlides(source)
+  const dropped = deck.slides.filter(hasActivity)
+  const same = () => ({ source, ids: Object.fromEntries(deck.slides.map(slide => [slide.id, slide.id])), removed: [] })
+  // A deck of nothing but activities stays as it is rather than becoming empty.
+  if (!dropped.length || dropped.length === deck.slides.length) return same()
+  const ranges = dropped.map(slide => {
+    const bounds = slideBounds(deck, slide.id)
+    const next = deck.slides[deck.slides.indexOf(slide) + 1]
+    return bounds.delimiterStart != null
+      ? { start: bounds.delimiterStart, end: bounds.end }
+      : { start: bounds.start, end: next ? next.source.start : deck.source.length }
+  }).sort((a, b) => a.start - b.start)
+  // Neighbouring slides can share a delimiter: join ranges that touch.
+  const merged = []
+  for (const range of ranges) {
+    const last = merged.at(-1)
+    if (last && range.start <= last.end) last.end = Math.max(last.end, range.end)
+    else merged.push({ ...range })
+  }
+  const next = edit(deck, merged.map(range => ({ ...range, text: '', expected: expectedText(deck, range) })))
+  const after = parseSlides(next).slides
+  const kept = deck.slides.filter(slide => !dropped.includes(slide))
+  return { source: next, ids: Object.fromEntries(kept.map((slide, i) => [slide.id, after[i]?.id ?? slide.id])), removed: dropped.map(slide => slide.id) }
 }

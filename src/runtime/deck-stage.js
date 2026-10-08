@@ -64,7 +64,7 @@
  */
 
 import { iconSvg } from '../core/icons.js'
-import { inkPaint } from '../core/ink.js'
+import { inkPaint, snapAngle } from '../core/ink.js'
 
 (() => {
   const DESIGN_W_DEFAULT = 1920;
@@ -1025,8 +1025,11 @@ import { inkPaint } from '../core/ink.js'
       this._drawStraight(drawing, drawing.points[drawing.points.length - 1]);
     }
 
-    _drawStraight(drawing, [x, y]) {
+    // The line's end snaps to steps of 15° (horizontal, vertical, 45° …)
+    // when it is close to one, see snapAngle in core/ink.js.
+    _drawStraight(drawing, end) {
       const [x0, y0] = drawing.points[0];
+      const [x, y] = snapAngle([x0, y0], end);
       drawing.points = [[x0, y0, drawing.straight], [x, y, drawing.straight]];
       drawing.restart = true;
       this._drawLive(drawing.path, drawing.points, drawing.tool);

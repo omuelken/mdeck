@@ -20,6 +20,7 @@ Send `my-talk.html` by email. It opens in a **reader view**: an outline of all s
 
 - Drawings from `my-talk.drawings.json` are part of every build and PDF; `--no-drawings` leaves them out. See [Draw on your slides](drawing.html).
 - Your speaker notes are removed. Add `--notes` to keep them in the file, for example when you also present from the same file. Readers only see notes if you put `reader:` with `notes: true` in the settings at the top of your slide file.
+- Slides with a poll, question, word cloud or scale stay as a record of the talk: the question and its options, marked as answered live. Add `--no-polls` to leave them out of the file and its PDF, together with slides showing the join code (`<qrcode join />`).
 - The PDF is made while sending, using Chrome or Chromium on your computer. If neither is found, the button offers the browser's own "Save as PDF" dialog instead. Set `MDECK_CHROME` to the browser's path if it is installed somewhere unusual. `--no-pdf` skips it.
 - `-o` chooses the name: `mdeck send my-talk.md -o handout.html`.
 - The file keeps your theme and colours; readers can only switch between light and dark. To keep that fixed too, put `reader:` with `themes: false` in the settings at the top of your slide file.
