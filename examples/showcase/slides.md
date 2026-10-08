@@ -1,5 +1,5 @@
 ---
-theme: aurora
+theme: glass
 meta:
   title: "A tour of mdeck"
   author: "Tilman Schieber"
@@ -380,7 +380,7 @@ layout: split
 :::slot left
 ```markdown
 ---
-theme: aurora
+theme: work
 palette: lagoon
 ---
 ```

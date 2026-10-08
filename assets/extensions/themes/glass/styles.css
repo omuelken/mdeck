@@ -1,0 +1,754 @@
+/* Glass — liquid glass.
+   Soft pools of light in the palette's accents lie behind every slide, so
+   the slide itself reads as a sheet of glass, and content stands on it
+   without frames. Only a title gets a raised pane of frosted glass: it
+   blurs and brightens what lies behind it, catches light along its upper
+   edge and has a bright rim that fades round its sides. Labels are glass
+   capsules, list markers glass beads, a chapter number sits in a round glass
+   lens. Quiet by design: the light is a tint, not a picture.
+   Dark by default; in light the glass is milky. All colours are the
+   palette's: light-dark() picks the bright side of the palette (--bg in
+   light, --ink in dark) for highlights. */
+
+/* The light drifts while presenting (title, chapter and statement slides). */
+@property --dx { syntax: '<length>'; inherits: true; initial-value: 0px; }
+@property --dy { syntax: '<length>'; inherits: true; initial-value: 0px; }
+
+.slide {
+  /* The bright and the dark side of the palette, whichever appearance. */
+  --hi: light-dark(var(--bg), var(--ink));
+  --lo: light-dark(var(--ink), var(--bg));
+  --canvas: light-dark(color-mix(in oklab, var(--surface) 75%, var(--bg)), var(--bg));
+  /* A hairline that shows on glass in both appearances. */
+  --edge: light-dark(color-mix(in oklab, var(--ink) 13%, transparent), color-mix(in oklab, var(--ink) 22%, transparent));
+  --hairline: color-mix(in oklab, var(--ink) 16%, transparent);
+
+  /* Pools of light: the accents, barely there, mixed into the background. */
+  --wash-a: light-dark(color-mix(in oklab, var(--accent) 26%, var(--bg)), color-mix(in oklab, var(--accent) 30%, var(--bg)));
+  --wash-b: light-dark(color-mix(in oklab, var(--accent-2) 22%, var(--bg)), color-mix(in oklab, var(--accent-2) 24%, var(--bg)));
+  --wash-c: light-dark(color-mix(in oklab, var(--bg) 70%, transparent), color-mix(in oklab, var(--ink) 9%, transparent));
+
+  /* The glass itself. */
+  --glass-fill: light-dark(color-mix(in oklab, var(--bg) 54%, transparent), color-mix(in oklab, var(--bg) 42%, transparent));
+  --glass-sheen: linear-gradient(170deg, color-mix(in oklab, var(--hi) 14%, transparent) 0%, transparent 34%, transparent 72%, color-mix(in oklab, var(--hi) 5%, transparent) 100%);
+  --glass-filter: blur(var(--glass-blur)) saturate(170%);
+  --glass-rim:
+    inset 0 1.5px 0 0 color-mix(in oklab, var(--hi) 55%, transparent),
+    inset 0 0 0 1px var(--edge),
+    inset 0 -1px 0 0 color-mix(in oklab, var(--lo) 14%, transparent),
+    inset 0 0 36px 0 color-mix(in oklab, var(--hi) 6%, transparent);
+  --glass-drop: 0 40px 80px -40px color-mix(in oklab, var(--lo) 50%, transparent);
+  /* A picture in a glass bezel: a see-through ring and a hairline round it. */
+  --bezel: 0 0 0 10px color-mix(in oklab, var(--hi) 10%, transparent), 0 0 0 11px var(--edge), var(--glass-drop);
+
+  --em: light-dark(var(--accent), color-mix(in oklab, var(--accent) 72%, var(--ink)));
+  --shine: linear-gradient(100deg, var(--accent) 10%, color-mix(in oklab, var(--accent) 50%, var(--accent-2)) 55%, var(--accent-2) 95%);
+
+  /* Where the light falls (per layout and slide below). */
+  --a-x: 90%; --a-y: 20%; --a-r: 300px;
+  --b-x: 5%;  --b-y: 80%; --b-r: 260px;
+  --c-x: 45%; --c-y: 0%;  --c-r: 220px;
+
+  /* Large, soft pools of light with no edge: something quiet for the glass
+     to tint. Radial gradients only (no blur filter): they stay vector in a
+     PDF and are cheap to draw. */
+  background:
+    radial-gradient(circle max(var(--a-r) * 2.8, 720px) at calc(var(--a-x) + var(--dx)) calc(var(--a-y) + var(--dy)), var(--wash-a) 0%, color-mix(in oklab, var(--wash-a) 55%, transparent) 40%, transparent 100%),
+    radial-gradient(circle max(var(--b-r) * 2.8, 640px) at calc(var(--b-x) - var(--dx)) calc(var(--b-y) - var(--dy)), var(--wash-b) 0%, color-mix(in oklab, var(--wash-b) 55%, transparent) 40%, transparent 100%),
+    radial-gradient(circle max(var(--c-r) * 2.6, 520px) at calc(var(--c-x) + var(--dy)) calc(var(--c-y) + var(--dx)), var(--wash-c) 0%, transparent 100%),
+    var(--canvas);
+}
+
+/* Every other slide and every third one moves the light a little, so a
+   talk moves through one lit space. */
+/* :where keeps these as weak as a layout's own placement below. */
+.slide:where(:nth-of-type(even)) {
+  --a-x: 8%;  --a-y: 30%; --a-r: 280px;
+  --b-x: 94%; --b-y: 72%; --b-r: 200px;
+  --c-x: 40%; --c-y: 4%;  --c-r: 120px;
+}
+.slide:where(:nth-of-type(3n)) {
+  --a-x: 96%; --a-y: 84%; --a-r: 260px;
+  --b-x: 12%; --b-y: 16%; --b-r: 210px;
+  --c-x: 78%; --c-y: 6%;  --c-r: 100px;
+}
+
+/* ─────────────────────────────────────────────
+   THE GLASS — the title pane, capsules, a lens
+   ───────────────────────────────────────────── */
+.slide--title .title-text,
+.slide-header > span:not(:empty),
+.slide-footer > span:not(:empty),
+.focus-eyebrow,
+.chapter-num {
+  position: relative;
+  background: var(--glass-sheen), var(--glass-fill);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: var(--glass-rim), var(--glass-drop);
+}
+
+/* The panes: a rim of light, bright at the upper left and lower right,
+   fading along the sides, as light runs round the edge of thick glass. */
+.slide--title .title-text,
+.chapter-num {
+  border-radius: var(--glass-radius);
+}
+.slide--title .title-text::before,
+.chapter-num::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(135deg,
+    color-mix(in oklab, var(--hi) 90%, transparent) 0%,
+    color-mix(in oklab, var(--hi) 12%, transparent) 28%,
+    transparent 50%,
+    color-mix(in oklab, var(--hi) 10%, transparent) 72%,
+    color-mix(in oklab, var(--hi) 55%, transparent) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────
+   HEADER / FOOTER — glass capsules
+   ───────────────────────────────────────────── */
+.slide-header, .slide-footer {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  min-height: 44px;
+}
+.slide-header { margin-bottom: 20px; }
+.slide-footer { margin-top: 20px; font-variant-numeric: tabular-nums; }
+.slide-header > span:not(:empty),
+.slide-footer > span:not(:empty) {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+.slide-header .brand { color: var(--ink); font-weight: 600; }
+/* The section capsule carries a droplet of the accent. */
+.slide-header > span:last-child:not(:empty):not(.brand)::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--accent) 70%, transparent);
+}
+.slide-footer > span:last-child:not(:first-child):not(:empty) { font-weight: 650; color: var(--ink); min-width: 1.6em; justify-content: center; }
+
+.slide-logo {
+  position: absolute;
+  top: var(--pad-y);
+  right: var(--pad-x);
+  height: 80px;
+  width: auto;
+  max-width: 320px;
+  object-fit: contain;
+  filter: var(--logo-filter, none);
+}
+
+/* ─────────────────────────────────────────────
+   TYPOGRAPHY
+   ───────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.display {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+.title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+.subtitle {
+  font-family: var(--font-body);
+  font-size: var(--fs-sub);
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--ink-soft);
+  margin: 0;
+  text-wrap: pretty;
+}
+.body-text {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0;
+  text-wrap: pretty;
+}
+.meta { font-family: var(--font-body); font-size: var(--fs-small); color: var(--muted); }
+
+em { font-style: normal; font-weight: 600; color: var(--em); }
+/* In headings, emphasis shines in both accents. */
+:is(.display, .title, .chapter-title, .focus-content, .slide-body h1) em {
+  font-weight: inherit;
+  background: var(--shine);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--accent);
+  padding-right: 0.04em;
+}
+strong { font-weight: 650; color: var(--ink); }
+
+/* ─────────────────────────────────────────────
+   CONTENT SLIDE — straight on the slide, which is the glass
+   ───────────────────────────────────────────── */
+.slide-body h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  margin: 0 0 var(--gap-title) 0;
+  max-width: 1500px;
+  text-wrap: balance;
+}
+.slide-body h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-sub);
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 var(--gap-item) 0;
+}
+.slide-body p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0 0 var(--gap-item) 0;
+  text-wrap: pretty;
+}
+.slide-body :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  padding: 0.08em 0.4em;
+  border-radius: 0.5em;
+  background: color-mix(in oklab, var(--hi) 10%, transparent);
+  box-shadow: inset 0 0 0 1px var(--edge);
+  color: var(--ink);
+}
+
+/* ─────────────────────────────────────────────
+   LISTS — glass beads: a clear bead tinted with the accent, a catch of
+   light at the top, light gathering at the bottom, a fine rim
+   ───────────────────────────────────────────── */
+.slide-body li::before {
+  --tint: var(--accent);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 16%, color-mix(in oklab, var(--hi) 60%, transparent) 0, transparent 42%),
+    radial-gradient(circle at 50% 115%, color-mix(in oklab, var(--tint) 50%, transparent), transparent 68%),
+    color-mix(in oklab, var(--tint) 14%, transparent);
+  -webkit-backdrop-filter: blur(6px) saturate(160%);
+  backdrop-filter: blur(6px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in oklab, var(--hi) 70%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, var(--tint) 42%, transparent),
+    0 3px 8px -3px color-mix(in oklab, var(--lo) 45%, transparent);
+}
+.slide-body ul > li { line-height: 1.38; padding-left: 48px; }
+.slide-body ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: calc(0.69em - 11px);
+  width: 22px;
+  height: 22px;
+}
+/* A point inside a point: a smaller bead in the second accent. */
+.slide-body li ul > li { padding-left: 38px; }
+.slide-body li ul > li::before {
+  --tint: var(--accent-2);
+  width: 14px;
+  height: 14px;
+  top: calc(0.69em - 7px);
+}
+.slide-body ol > li { line-height: 1.38; padding-left: 66px; }
+.slide-body ol > li::before {
+  content: counter(slide-ol);
+  position: absolute;
+  left: 0;
+  top: calc(0.69em - 20px);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--em);
+  /* The catch of light flattened to the top edge, clear of the number. */
+  background:
+    radial-gradient(64% 26% at 50% 4%, color-mix(in oklab, var(--hi) 55%, transparent), transparent 100%),
+    radial-gradient(circle at 50% 115%, color-mix(in oklab, var(--tint) 42%, transparent), transparent 66%),
+    color-mix(in oklab, var(--tint) 14%, transparent);
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: TITLE — a lens in front of the light
+   ───────────────────────────────────────────── */
+.slide--title { --a-x: 24%; --a-y: 30%; --a-r: 270px; --b-x: 80%; --b-y: 76%; --b-r: 210px; --c-x: 88%; --c-y: 16%; --c-r: 90px; }
+.slide--title .slide-body {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.slide--title .title-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 1560px;
+  padding: 72px 104px 80px;
+  border-radius: calc(var(--glass-radius) * 1.4);
+}
+/* The title is an h1: as large as .display, not a content heading. */
+.slide--title .display { font-size: var(--fs-display); margin: 0; max-width: 1400px; }
+.slide--title .subtitle { margin-top: 32px; max-width: 1100px; }
+
+/* With a picture: the picture in a bezel at the right, the pane at the left. */
+.slide--title.has-image { --a-x: 50%; --a-y: 20%; --a-r: 220px; --b-x: 4%; --b-y: 90%; --b-r: 170px; }
+.slide--title.has-image .slide-body {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  column-gap: 72px;
+  align-items: center;
+  text-align: left;
+  padding: 13px;
+}
+.slide--title.has-image .title-text {
+  align-items: flex-start;
+  padding: 56px 64px 64px;
+  border-radius: var(--glass-radius);
+  min-width: 0;
+}
+.slide--title.has-image .display { font-size: calc(var(--fs-display) * 0.6); }
+.slide--title.has-image .subtitle { margin-top: 24px; }
+.slide--title.has-image .title-image {
+  align-self: stretch;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  border-radius: var(--glass-radius);
+  box-shadow: var(--bezel);
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: CHAPTER — the number in a glass lens, a glow behind it
+   ───────────────────────────────────────────── */
+.slide--chapter { --a-x: 94%; --a-y: 10%; --a-r: 230px; --b-x: 72%; --b-y: 104%; --b-r: 220px; --c-x: 4%; --c-y: 92%; --c-r: 80px; }
+.slide--chapter .slide-body { justify-content: center; }
+.slide--chapter .chapter-content {
+  --disc: 340px;
+  position: relative;
+  isolation: isolate;
+}
+.slide--chapter .chapter-content:has(> .chapter-num) {
+  display: grid;
+  grid-template-columns: var(--disc) minmax(0, 1fr);
+  column-gap: 88px;
+  align-items: center;
+  align-content: center;
+}
+.slide--chapter .chapter-content:has(> .chapter-num) > :not(.chapter-num) { grid-column: 2; }
+/* A glow behind the lens, up and to the right of it. */
+.slide--chapter .chapter-content:has(> .chapter-num)::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: calc(var(--disc) * 0.3);
+  top: calc(50% - var(--disc) * 0.95);
+  width: calc(var(--disc) * 1.3);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle closest-side, color-mix(in oklab, var(--accent-2) 34%, transparent), color-mix(in oklab, var(--accent-2) 12%, transparent) 55%, transparent 100%);
+}
+.chapter-num {
+  grid-column: 1;
+  grid-row: 1 / span 9;
+  align-self: center;
+  width: var(--disc);
+  height: var(--disc);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: calc(var(--disc) * 0.46);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.chapter-meta {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 20px 0;
+}
+.slide--chapter .chapter-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  margin: 0 0 32px 0;
+  max-width: 1200px;
+  text-wrap: balance;
+}
+.slide--chapter .chapter-desc {
+  font-family: var(--font-body);
+  font-size: var(--fs-sub);
+  line-height: 1.35;
+  color: var(--ink-soft);
+  max-width: 1000px;
+  margin: 0;
+}
+/* With a picture: the lens above the title, the picture in a bezel at the right. */
+.slide--chapter.has-image .slide-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 72px;
+  align-items: stretch;
+  padding: 13px;
+}
+.slide--chapter.has-image .chapter-content { --disc: 210px; align-self: center; }
+.slide--chapter.has-image .chapter-content:has(> .chapter-num) { display: flex; flex-direction: column; align-items: flex-start; }
+.slide--chapter.has-image .chapter-content:has(> .chapter-num)::before { top: calc(var(--disc) * -0.45); left: calc(var(--disc) * 0.3); }
+.slide--chapter.has-image .chapter-num { align-self: flex-start; margin-bottom: 44px; }
+.slide--chapter.has-image .chapter-title { font-size: calc(var(--fs-title) * 0.78); }
+.slide--chapter.has-image .chapter-image {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  border-radius: var(--glass-radius);
+  box-shadow: var(--bezel);
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: FOCUS — the statement in the open, the light round it
+   ───────────────────────────────────────────── */
+.slide--focus { --a-x: 8%; --a-y: 14%; --a-r: 230px; --b-x: 93%; --b-y: 88%; --b-r: 250px; --c-x: 86%; --c-y: 12%; --c-r: 80px; }
+.slide--focus .slide-body {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.focus-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 28px 11px 22px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 52px 0;
+}
+.focus-eyebrow::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--accent-2) 70%, transparent);
+}
+.focus-content { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.focus-statement,
+.slide--focus .focus-content h1,
+.slide--focus .focus-content p {
+  font-family: var(--font-display);
+  font-size: var(--fs-focus);
+  font-weight: 650;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+  max-width: 1500px;
+  margin: 0;
+  text-wrap: balance;
+  text-align: center;
+}
+.focus-attribution {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 52px 0 0 0;
+}
+
+/* The light drifts slowly while presenting; never in print or for people
+   who prefer less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .slide:is(.slide--title, .slide--chapter, .slide--focus) { animation: glass-drift 22s ease-in-out infinite alternate; }
+}
+@keyframes glass-drift {
+  from { --dx: -24px; --dy: 10px; }
+  to { --dx: 28px; --dy: -14px; }
+}
+deck-stage[data-deck-static] .slide { animation: none; }
+
+/* ─────────────────────────────────────────────
+   LAYOUT: IMAGE + TEXT — a picture in a bezel, the words beside it
+   ───────────────────────────────────────────── */
+.slide--image-text .slide-body { gap: 88px; padding: 13px; }
+.image-pane {
+  flex: 1.1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  border-radius: var(--glass-radius);
+  background: var(--surface);
+  box-shadow: var(--bezel);
+}
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(135deg, var(--surface) 0 22px, var(--bg) 22px 44px);
+}
+.image-placeholder span {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--bg);
+  padding: 14px 22px;
+  border-radius: 999px;
+}
+.text-pane .title { font-size: var(--fs-h); }
+.text-pane .body-text + .body-text { margin-top: 8px; }
+
+/* ─────────────────────────────────────────────
+   LAYOUT: SPLIT — two columns, no frames
+   ───────────────────────────────────────────── */
+/* The heading stands in the open, the light away from it. */
+.slide--split { --a-x: 94%; --a-y: 34%; --a-r: 280px; --b-x: 6%; --b-y: 94%; --b-r: 190px; --c-x: 62%; --c-y: 100%; --c-r: 110px; }
+.split-columns { gap: 88px; }
+.slide--split .split-heading { margin-bottom: 32px; }
+
+/* ─────────────────────────────────────────────
+   LAYOUT: FULL-BLEED IMAGE — the title on smoked glass over the picture
+   ───────────────────────────────────────────── */
+.slide--full-bleed-image .slide-body { align-items: flex-start; }
+.slide--full-bleed-image.has-overlay .slide-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, color-mix(in oklab, var(--lo) 45%, transparent), transparent 55%);
+}
+.slide--full-bleed-image .overlay-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: var(--hi);
+  margin: 0;
+  max-width: 1300px;
+  text-wrap: balance;
+  padding: 36px 52px 40px;
+  border-radius: var(--glass-radius);
+  background: var(--glass-sheen), color-mix(in oklab, var(--lo) 36%, transparent);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, var(--hi) 45%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--hi) 20%, transparent), var(--glass-drop);
+}
+.slide--full-bleed-image .overlay-title em { color: inherit; -webkit-text-fill-color: currentColor; background: none; }
+
+/* ─────────────────────────────────────────────
+   CALLOUTS — tinted glass
+   ───────────────────────────────────────────── */
+.slide-body .callout {
+  --tint: var(--accent);
+  border: 0;
+  border-radius: 26px;
+  padding: 22px 32px 24px;
+  margin: 18px 0 0;
+  max-width: 1400px;
+  background: radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--tint) 18%, transparent), transparent 70%), color-mix(in oklab, var(--hi) 6%, transparent);
+  box-shadow: inset 0 1px 0 0 color-mix(in oklab, var(--hi) 40%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--tint) 30%, transparent);
+}
+.slide-body .callout-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 8px 0;
+}
+.slide-body .callout-title::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+}
+.slide-body .callout p { padding-left: 0; margin: 0; color: var(--ink); }
+.slide-body .callout-note { --tint: var(--callout-note); }
+.slide-body .callout-tip { --tint: var(--callout-tip); }
+.slide-body .callout-important { --tint: var(--callout-important); }
+.slide-body .callout-warning { --tint: var(--callout-warning); }
+.slide-body .callout-caution { --tint: var(--callout-caution); }
+.slide-body .callout-definition { --tint: var(--accent-2); }
+.slide-body .callout-tip .callout-title { color: color-mix(in oklab, var(--callout-tip) 60%, var(--ink)); }
+.slide-body :is(.callout-theorem, .callout-lemma, .callout-corollary) .callout-title { color: var(--em); }
+.slide-body .callout-definition .callout-title { color: light-dark(color-mix(in oklab, var(--accent-2) 80%, var(--ink)), var(--accent-2)); }
+
+/* ─────────────────────────────────────────────
+   CODE — smoked glass
+   ───────────────────────────────────────────── */
+.code-block {
+  --code-bg: light-dark(color-mix(in oklab, var(--surface) 82%, transparent), color-mix(in oklab, var(--bg) 74%, transparent));
+  --code-radius: 26px;
+  --code-size: 26px;
+  background: var(--code-bg);
+  border-radius: var(--code-radius);
+  padding: 32px 40px;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--code-size);
+  line-height: 1.6;
+  box-shadow: inset 0 1px 0 0 color-mix(in oklab, var(--hi) 22%, transparent), inset 0 0 0 1px var(--edge);
+}
+.code-block code { font-family: inherit; font-size: inherit; background: none; padding: 0; box-shadow: none; }
+.slide-body .code-block-wrapper { margin: 28px 0; }
+
+/* ─────────────────────────────────────────────
+   TABLES, QUOTES, FOOTNOTES, MATH
+   ───────────────────────────────────────────── */
+.slide-body table { font-variant-numeric: tabular-nums; }
+.slide-body th {
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom: 1.5px solid color-mix(in oklab, var(--ink) 40%, transparent);
+  background: color-mix(in oklab, var(--hi) 7%, transparent);
+}
+.slide-body th:first-child { border-top-left-radius: 16px; }
+.slide-body th:last-child { border-top-right-radius: 16px; }
+.slide-body td { border-bottom: 1px solid var(--hairline); }
+.slide-body tr:last-child td { border-bottom: 0; }
+
+/* A quote hangs from a rod of light in both accents. */
+.slide-body blockquote {
+  position: relative;
+  border: 0;
+  padding: 4px 0 4px 40px;
+  margin: 0 0 var(--gap-item);
+  color: var(--ink);
+}
+.slide-body blockquote::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, var(--accent), var(--accent-2));
+  box-shadow: 0 0 14px color-mix(in oklab, var(--accent) 40%, transparent);
+}
+
+.slide-footnotes, .slide-citations {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-body);
+  border: 0;
+  border-top: 1px solid var(--hairline);
+  padding: 14px 0 0;
+  margin-top: 18px;
+  font-size: var(--fs-small);
+  color: var(--ink-soft);
+}
+
+.slide .katex-display { font-size: var(--fs-sub); margin: 36px 0; overflow-x: auto; overflow-y: hidden; }
+
+/* ─────────────────────────────────────────────
+   AUDIENCE QUESTIONS — glass tracks, bars of light
+   ───────────────────────────────────────────── */
+.slide .poll-track, .slide .scale-track { border-radius: 999px; background: color-mix(in oklab, var(--hi) 8%, transparent); box-shadow: inset 0 0 0 1px var(--edge); }
+.slide .poll-fill { border-radius: 999px; background: var(--shine); box-shadow: 0 0 18px color-mix(in oklab, var(--accent) 40%, transparent); }
+.slide .scale-fill { border-radius: 14px 14px 0 0; background: linear-gradient(to top, var(--accent), var(--accent-2)); }
+.slide .question-cards li { border-radius: 22px; border-left: 0; background: var(--glass-sheen), var(--glass-fill); box-shadow: var(--glass-rim); }
+.slide .poll-join { border-radius: 28px; }
+
+/* ─────────────────────────────────────────────
+   PRINT AND PDF — glass that prints
+   A blur prints as a huge picture, so does a mask, and see-through
+   gradients do too: the panes become plain tinted glass, and only the title,
+   chapter and statement slides keep their light.
+   ───────────────────────────────────────────── */
+@media print {
+  .slide { animation: none !important; --dx: 0px; --dy: 0px; }
+  .slide *, .slide *::before { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .slide :is(.title-text, .chapter-num)::before { -webkit-mask: none !important; mask: none !important; display: none; }
+  .slide--chapter .chapter-content::before { display: block !important; }
+  .slide:not(.slide--title, .slide--chapter, .slide--focus) { background: var(--canvas); }
+  .slide {
+    --glass-fill: light-dark(color-mix(in oklab, var(--bg) 82%, var(--surface)), color-mix(in oklab, var(--surface) 70%, var(--bg)));
+    --glass-sheen: linear-gradient(transparent, transparent);
+    --glass-drop: 0 0 0 0 transparent;
+  }
+  :is(.display, .title, .chapter-title, .focus-content, .slide-body h1) em {
+    background: none !important;
+    -webkit-text-fill-color: currentColor !important;
+    color: var(--em) !important;
+  }
+  .slide-header > span::before, .focus-eyebrow::before, .slide-body .callout-title::before, .slide-body blockquote::before, .slide .poll-fill { box-shadow: none !important; }
+}

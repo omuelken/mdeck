@@ -89,8 +89,8 @@ test('common manifest mistakes fail with the file, setting path and reason', () 
 })
 
 test('built-in and deck-local extensions load through one registry', () => {
-  assert.deepEqual(Object.keys(registry.themes), ['academic', 'aurora', 'minimal', 'neue'])
-  assert.deepEqual(Object.keys(registry.palettes), ['lagoon', 'neon', 'nordic', 'paper', 'swiss'])
+  assert.deepEqual(Object.keys(registry.themes), ['academic', 'glass', 'minimal', 'neue', 'plain', 'work'])
+  assert.deepEqual(Object.keys(registry.palettes), ['cobalt', 'greyscale', 'lagoon', 'nordic', 'paper', 'swiss'])
   assert.equal(registry.layouts.comparison.source, 'local')
   assert.equal(registry.layouts.title.source, 'built-in')
   assert.deepEqual(registry.warnings, [])
@@ -113,14 +113,14 @@ test('the generated runtime module imports every layout and lazily loads theme s
   assert.match(code, /import L\d+ from ".*\/extensions\/comparison\/layout\.jsx"/)
   assert.match(code, /import ".*\/comparison\/styles\.css"/)
   assert.match(code, /"neue": \{ manifest: \{.*"tokens".*load: \(\) => Promise\.all\(\[import\(".*\/themes\/neue\/styles\.css\?inline"\)\]\)/)
-  assert.match(code, /export const palettes = \{\n"lagoon"/)
+  assert.match(code, /export const palettes = \{\n"cobalt"/)
 })
 
 test('a file for readers carries only the deck theme and the palette it shows', () => {
   const pick = config => { const only = deckLookOnly(registry, config); return [Object.keys(only.themes), Object.keys(only.palettes)] }
   const pickHouse = config => { const only = deckLookOnly(house, config); return [Object.keys(only.themes), Object.keys(only.palettes)] }
   assert.deepEqual(pick({ theme: 'academic' }), [['academic'], ['nordic']], "the theme's default palette")
-  assert.deepEqual(pick({ theme: 'aurora', palette: 'lagoon' }), [['aurora'], ['lagoon']], "the deck's own palette")
+  assert.deepEqual(pick({ theme: 'glass', palette: 'lagoon' }), [['glass'], ['lagoon']], "the deck's own palette")
   assert.deepEqual(pick({}), [['neue'], ['swiss']], 'neue without a theme')
   assert.deepEqual(pickHouse({ theme: 'house', palette: 'lagoon' }), [['house'], ['house-colours']], 'a palette the theme does not offer falls back')
   assert.equal(Object.keys(deckLookOnly(registry, { theme: 'academic' }).layouts).length, Object.keys(registry.layouts).length, 'layouts stay')
@@ -145,12 +145,13 @@ test('deck checks agree with the registry about themes, palettes and parameters'
   assert.match(foreign[0].message, /The theme "house" does not offer the palette "lagoon"; available: house-colours/)
   const warnings = validateDeck(parseSlides('---\ntheme: night\nparams:\n  fontBody: serif\n---\n# Hi'), houseOptions)
   assert.deepEqual(warnings.map(d => [d.code, d.severity]), [['unknown-param', 'warning']])
-  assert.deepEqual(validateDeck(parseSlides('---\ntheme: aurora\npalette: paper\nappearance: dark\n---\n# Hi'), options), [])
+  assert.deepEqual(validateDeck(parseSlides('---\ntheme: glass\npalette: paper\nappearance: dark\n---\n# Hi'), options), [])
   // Themes and palettes that moved to the theme repository say how to get them.
   const moved = validateDeck(parseSlides('---\ntheme: duet\npalette: forest\n---\n# Hi'), options)
   assert.deepEqual(moved.map(d => d.code), ['unknown-theme', 'unknown-palette'])
   assert.match(moved[0].message, /no longer built into mdeck; .*mdeck themes install duet$/)
   assert.match(moved[1].message, /mdeck palettes install forest$/)
+  assert.match(validateDeck(parseSlides('---\ntheme: aurora\n---\n# Hi'), options)[0].message, /mdeck themes install aurora$/)
   // Palettes removed for a near twin say which one to use.
   const replaced = validateDeck(parseSlides('---\ntheme: neue\npalette: graphite\n---\n# Hi'), options)
   assert.match(replaced[0].message, /"graphite" was removed from mdeck; use palette: nordic/)

@@ -31,8 +31,8 @@ const neue = readFileSync(resolve(builtinExtensionsRoot, 'themes/neue/extension.
 const theme = (id, paletteId, extra = '') => neue.replace(/^id = .*$/m, `id = "${id}"\n${META}${extra}`).replace(/^title = .*$/m, `title = "${id}"`).replace(/^palette = .*$/m, `palette = "${paletteId}"`)
 write('palette', 'solar-light', { 'extension.toml': palette('solar-light', '#268bd2') })
 write('palette', 'solar-warm', { 'extension.toml': palette('solar-warm', '#cb4b16') })
-write('theme', 'plain', { 'extension.toml': theme('plain', 'plain-ink'), 'styles.css': '.slide { color: var(--ink); }\n' })
-write('palette', 'plain-ink', { 'extension.toml': palette('plain-ink', '#0b6bcb') })
+write('theme', 'bare', { 'extension.toml': theme('bare', 'bare-ink'), 'styles.css': '.slide { color: var(--ink); }\n' })
+write('palette', 'bare-ink', { 'extension.toml': palette('bare-ink', '#0b6bcb') })
 write('theme', 'sunny', { 'extension.toml': theme('sunny', 'solar-warm'), 'styles.css': '' })
 write('theme', 'house', { 'extension.toml': theme('house', 'house-colours', 'palettes = ["house-colours"]\n'), 'styles.css': '' })
 write('palette', 'house-colours', { 'extension.toml': palette('house-colours', '#0b6bcb', 'theme = "house"\n') })
@@ -70,34 +70,34 @@ test('versions and ranges compare by number', () => {
 test('the catalogue lists every theme and palette, the built-in ones marked, each with its checksum', () => {
   const catalogue = JSON.parse(readFileSync(resolve(site, 'catalogue.json'), 'utf8'))
   assert.equal(catalogue.schema, 2)
-  const plain = catalogue.themes.find(t => t.id === 'plain')
-  assert.equal(plain.palette, 'plain-ink')
-  assert.equal(plain.url, 'themes/plain-1.0.0.json')
-  assert.match(plain.sha256, /^[0-9a-f]{64}$/)
+  const bare = catalogue.themes.find(t => t.id === 'bare')
+  assert.equal(bare.palette, 'bare-ink')
+  assert.equal(bare.url, 'themes/bare-1.0.0.json')
+  assert.match(bare.sha256, /^[0-9a-f]{64}$/)
   assert.equal(catalogue.palettes.find(p => p.id === 'house-colours').theme, 'house')
   assert.ok(catalogue.themes.find(t => t.id === 'neue').builtIn)
   assert.ok(catalogue.palettes.find(p => p.id === 'lagoon').builtIn)
 })
 
 test('installing a theme brings its default palette; both land where every deck finds them', async () => {
-  const installed = await mdeck('themes', 'install', 'plain')
-  assert.match(installed.stdout, /Installed the palette plain-ink 1\.0\.0 for every deck[\s\S]*Installed the theme plain 1\.0\.0 for every deck/)
-  assert.ok(existsSync(resolve(userRoot, 'themes/plain/.mdeck-package.json')))
-  assert.ok(existsSync(resolve(userRoot, 'palettes/plain-ink/extension.toml')))
+  const installed = await mdeck('themes', 'install', 'bare')
+  assert.match(installed.stdout, /Installed the palette bare-ink 1\.0\.0 for every deck[\s\S]*Installed the theme bare 1\.0\.0 for every deck/)
+  assert.ok(existsSync(resolve(userRoot, 'themes/bare/.mdeck-package.json')))
+  assert.ok(existsSync(resolve(userRoot, 'palettes/bare-ink/extension.toml')))
   const registry = registryOf(deck)
-  assert.equal(registry.themes.plain.source, 'user')
-  assert.equal(registry.palettes['plain-ink'].source, 'user')
+  assert.equal(registry.themes.bare.source, 'user')
+  assert.equal(registry.palettes['bare-ink'].source, 'user')
   // A built-in default palette is not copied.
   assert.match((await mdeck('themes', 'install', 'calm')).stdout, /Installed the theme calm/)
   assert.ok(!existsSync(resolve(userRoot, 'palettes/lagoon')))
 })
 
 test('a palette in use as a default stays; removing its theme lets it go', async () => {
-  const refused = await mdeck('palettes', 'remove', 'plain-ink')
+  const refused = await mdeck('palettes', 'remove', 'bare-ink')
   assert.equal(refused.code, 1)
-  assert.match(refused.stderr, /plain uses the palette plain-ink by default; remove that theme first/)
-  assert.match((await mdeck('themes', 'remove', 'plain')).stdout, /Removed the theme plain for every deck/)
-  assert.match((await mdeck('palettes', 'remove', 'plain-ink')).stdout, /Removed the palette plain-ink for every deck/)
+  assert.match(refused.stderr, /bare uses the palette bare-ink by default; remove that theme first/)
+  assert.match((await mdeck('themes', 'remove', 'bare')).stdout, /Removed the theme bare for every deck/)
+  assert.match((await mdeck('palettes', 'remove', 'bare-ink')).stdout, /Removed the palette bare-ink for every deck/)
 })
 
 test('a theme and the palette made for it come and go together', async () => {
@@ -121,15 +121,15 @@ test('beside a deck, a theme comes with its palette even if every deck has that 
 })
 
 test('a built-in theme is removed for every deck and comes back without the internet', async () => {
-  assert.match((await mdeckOffline('themes', 'remove', 'aurora')).stdout, /comes with mdeck and is no longer offered/)
-  assert.ok(!registryOf(deck).themes.aurora)
-  assert.match((await mdeckOffline('themes', 'list')).stdout, /aurora \(removed; mdeck themes install aurora brings it back\)/)
-  assert.match((await mdeckOffline('themes', 'install', 'aurora')).stdout, /comes with mdeck and is offered again/)
-  assert.ok(registryOf(deck).themes.aurora)
+  assert.match((await mdeckOffline('themes', 'remove', 'glass')).stdout, /comes with mdeck and is no longer offered/)
+  assert.ok(!registryOf(deck).themes.glass)
+  assert.match((await mdeckOffline('themes', 'list')).stdout, /glass \(removed; mdeck themes install glass brings it back\)/)
+  assert.match((await mdeckOffline('themes', 'install', 'glass')).stdout, /comes with mdeck and is offered again/)
+  assert.ok(registryOf(deck).themes.glass)
 })
 
 test('the last theme cannot be removed, and a deck without a theme says so when neue is gone', async () => {
-  for (const id of ['academic', 'aurora', 'minimal', 'calm']) await mdeckOffline('themes', 'remove', id)
+  for (const id of ['academic', 'glass', 'minimal', 'plain', 'work', 'calm']) await mdeckOffline('themes', 'remove', id)
   const refused = await mdeckOffline('themes', 'remove', 'neue', '--force')
   assert.equal(refused.code, 1)
   assert.match(refused.stderr, /neue is the last theme for every deck; install another theme first/)
@@ -138,7 +138,7 @@ test('the last theme cannot be removed, and a deck without a theme says so when 
   const registry = registryOf(resolve(temp, 'plain.md'))
   const diagnostics = validateDeck(parseSlides('# Hello\n'), { themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette') })
   assert.match(diagnostics.map(d => d.message).join('\n'), /uses neue, which is not installed: run mdeck themes install neue/)
-  for (const id of ['neue', 'aurora', 'minimal']) await mdeckOffline('themes', 'install', id)
+  for (const id of ['neue', 'glass', 'minimal', 'plain', 'work']) await mdeckOffline('themes', 'install', id)
 })
 
 test('a folder of the deck\'s own is never overwritten', async () => {
@@ -175,15 +175,15 @@ test('a package that does not match its checksum is not installed', async () => 
 })
 
 test('packages hold only theme and palette text, with fonts from font hosts', () => {
-  const files = { 'extension.toml': theme('plain', 'plain-ink').replace('VERSION', '1.0.0'), 'styles.css': '.slide {}' }
+  const files = { 'extension.toml': theme('bare', 'bare-ink').replace('VERSION', '1.0.0'), 'styles.css': '.slide {}' }
   const reject = (kind, id, changes, pattern) => assert.throws(() => checkPackage({ kind, id, files: { ...files, ...changes } }), error => error instanceof PackageError && pattern.test(error.message))
-  assert.equal(checkPackage({ kind: 'theme', id: 'plain', files }).id, 'plain')
-  reject('theme', 'plain', { 'layout.jsx': 'export default () => null' }, /"layout\.jsx" is not allowed/)
-  reject('theme', 'plain', { 'styles.css': '@import "https://example.org/x.css";' }, /@import is not allowed/)
-  reject('theme', 'plain', { 'styles.css': '.slide { background: url(https://example.org/track.png) }' }, /only data: URLs/)
-  reject('theme', 'plain', { 'extension.toml': files['extension.toml'].replace(/^fonts = \[[\s\S]*?\]$/m, 'fonts = ["https://example.org/font.css"]') }, /loads fonts from https:\/\/example\.org/)
-  reject('palette', 'plain', {}, /says kind = "theme", but it is in the palettes|"styles\.css" is not allowed/)
-  assert.throws(() => checkPackage({ kind: 'theme', id: 'plain', files: { ...files, 'extension.toml': files['extension.toml'].replace(/^author = .*\n/m, '') } }, { published: true }), /author is required/)
+  assert.equal(checkPackage({ kind: 'theme', id: 'bare', files }).id, 'bare')
+  reject('theme', 'bare', { 'layout.jsx': 'export default () => null' }, /"layout\.jsx" is not allowed/)
+  reject('theme', 'bare', { 'styles.css': '@import "https://example.org/x.css";' }, /@import is not allowed/)
+  reject('theme', 'bare', { 'styles.css': '.slide { background: url(https://example.org/track.png) }' }, /only data: URLs/)
+  reject('theme', 'bare', { 'extension.toml': files['extension.toml'].replace(/^fonts = \[[\s\S]*?\]$/m, 'fonts = ["https://example.org/font.css"]') }, /loads fonts from https:\/\/example\.org/)
+  reject('palette', 'bare', {}, /says kind = "theme", but it is in the palettes|"styles\.css" is not allowed/)
+  assert.throws(() => checkPackage({ kind: 'theme', id: 'bare', files: { ...files, 'extension.toml': files['extension.toml'].replace(/^author = .*\n/m, '') } }, { published: true }), /author is required/)
 })
 
 test('the repository refuses a theme whose palette is nowhere, and two of one id', () => {

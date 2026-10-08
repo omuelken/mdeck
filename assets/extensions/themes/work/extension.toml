@@ -1,0 +1,57 @@
+schema = 1
+kind = "theme"
+id = "work"
+title = "Work"
+description = "An everyday company template: IBM Plex Sans, an accent band along the top, the logo top left, headings in a fixed place, section dividers with a large number in the accent, a quiet footer with the page number."
+version = "0.1.0"
+author = "Tilman Schieber"
+license = "MIT"
+# The palette this theme uses unless the deck sets one; colours come only from palettes.
+# A company blue with an orange second accent; any palette makes it your company's.
+palette = "cobalt"
+fonts = [
+  "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap",
+]
+
+[files]
+styles = "styles.css"
+
+# Type, spacing and fonts used by styles.css; colours come from the palette.
+# Deck settings (params) override these.
+[tokens]
+
+# Type scale (px) — projection-appropriate at 1920×1080
+"--fs-display" = "116px"
+"--fs-title" = "100px"
+"--fs-focus" = "72px"
+"--fs-h" = "60px"
+"--fs-sub" = "38px"
+"--fs-body" = "31px"
+"--fs-small" = "22px"
+"--fs-eyebrow" = "22px"
+
+# Spacing
+"--pad-x" = "112px"
+"--pad-y" = "64px"
+"--gap-title" = "44px"
+"--gap-item" = "20px"
+
+# The accent band along the top of every slide.
+"--band" = "14px"
+
+# Type families
+"--font-display" = "\"IBM Plex Sans\", \"Helvetica Neue\", Arial, sans-serif"
+"--font-body" = "\"IBM Plex Sans\", \"Helvetica Neue\", Arial, sans-serif"
+"--font-mono" = "\"IBM Plex Mono\", ui-monospace, Menlo, Consolas, monospace"
+
+[params.fontDisplay]
+token = "--font-display"
+title = "Display font"
+
+[params.fontBody]
+token = "--font-body"
+title = "Body font"
+
+[params.band]
+token = "--band"
+title = "Height of the band along the top (0px for none)"

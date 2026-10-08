@@ -22,15 +22,16 @@ The presenter view and the reader view switch palette and light or dark without 
 |---|---|---|
 | `swiss` | white, black and signal red | black, white and red |
 | `nordic` | ice grey, deep navy and a cool steel blue | polar night with ice blue |
-| `neon` | white with violet and magenta | black with neon violet and pink |
+| `cobalt` | strong ultramarine on white, vivid orange | midnight blue, bright blue and orange |
+| `greyscale` | black, white and greys only, code and callouts too | the same, inverted |
 | `lagoon` | teal on warm stone, orange second accent | deep teal-black, bright teal |
 | `paper` | off-white paper and near-black ink with one orange accent | charcoal with a softer orange |
 
 `mdeck list palettes` lists them, with any of your own.
 
-Each theme names a default: neue uses `swiss`, academic `nordic`, aurora `neon`.
+Each theme names a default: neue uses `swiss`, academic and glass `nordic`, minimal `paper`, plain `greyscale`, work `cobalt`.
 
-More palettes are in the [theme repository](https://github.com/tilman-schieber/mdeck-themes). The palettes cobalt, terra, phosphor, pastel and forest, built in before mdeck 3.0, are there; installing the theme duet, editorial, terminal or sketch brings its palette along. Graphite and ember were removed because the built-in nordic and paper look almost the same; a deck that names them is told which to use. Install one with `mdeck palettes install <palette> my-talk.md`.
+More palettes are in the [theme repository](https://github.com/tilman-schieber/mdeck-themes). The palettes that used to come with mdeck are there: terra, phosphor, pastel, forest and neon; installing the theme editorial, terminal, sketch or aurora brings its palette along. Graphite and ember were removed because the built-in nordic and paper look almost the same; a deck that names them is told which to use. Install one with `mdeck palettes install <palette> my-talk.md`.
 
 ## Colours
 

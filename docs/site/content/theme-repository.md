@@ -1,6 +1,6 @@
 # Install, remove or share a theme
 
-mdeck comes with four themes, `neue`, `academic`, `aurora` and `minimal`, and five palettes, `swiss`, `nordic`, `neon`, `paper` and `lagoon`. They work right away, also without an internet connection. More themes and palettes are in the **theme repository**; try every one on a sample deck, light and dark, at <https://gh.tschieber.de/mdeck-themes/>.
+mdeck comes with six themes, `neue`, `plain`, `academic`, `minimal`, `work` and `glass`, and six palettes, `swiss`, `nordic`, `cobalt`, `greyscale`, `paper` and `lagoon`. They work right away, also without an internet connection. More themes and palettes are in the **theme repository**; try every one on a sample deck, light and dark, at <https://gh.tschieber.de/mdeck-themes/>.
 
 ## Find and install one
 
@@ -15,16 +15,16 @@ mdeck palettes search
 Install a theme:
 
 ```sh
-mdeck themes install duet
+mdeck themes install terminal
 ```
 
-A theme comes with its default palette, so this installs the palette `cobalt` too. A palette installs on its own:
+A theme comes with its default palette, so this installs the palette `phosphor` too. A palette installs on its own:
 
 ```sh
 mdeck palettes install solarized
 ```
 
-They are installed for every deck on this computer, in a folder in your home folder (`~/.mdeck/extensions`). Then choose one at the top of a slide file (`theme: duet`, `palette: solarized`) or in the editor's **Deck** tab.
+They are installed for every deck on this computer, in a folder in your home folder (`~/.mdeck/extensions`). Then choose one at the top of a slide file (`theme: terminal`, `palette: solarized`) or in the editor's **Deck** tab.
 
 The design page has the same: open it with `mdeck design`, choose **Show what you can install**, and press **Install** beside a theme or palette.
 
@@ -44,15 +44,15 @@ The slide folder then carries the theme and its palette, so it works on a comput
 mdeck themes list                  # what comes with mdeck, and what is installed
 mdeck themes update                # newer versions of the installed themes
 mdeck palettes update
-mdeck themes remove duet
-mdeck palettes remove cobalt
+mdeck themes remove terminal
+mdeck palettes remove phosphor
 ```
 
 Add a slide file, or `--local`, to work beside that deck. If you changed an installed file by hand, `update` and `remove` stop and tell you which one, so your change is not lost; add `--force` to go ahead anyway.
 
 A palette that an installed theme uses by default stays until that theme is removed. A palette made for one theme only (like FHNW's `brand`) comes and goes with that theme.
 
-The themes and palettes that come with mdeck can be removed too: `mdeck themes remove aurora` hides it from every deck and from the lists, and `mdeck themes install aurora` brings it back, without the internet. The last theme always stays. A deck without a `theme:` setting uses `neue`; if you removed it, `mdeck check` tells you.
+The themes and palettes that come with mdeck can be removed too: `mdeck themes remove glass` hides it from every deck and from the lists, and `mdeck themes install glass` brings it back, without the internet. The last theme always stays. A deck without a `theme:` setting uses `neue`; if you removed it, `mdeck check` tells you.
 
 ## What may be in one
 

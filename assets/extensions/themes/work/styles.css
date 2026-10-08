@@ -1,0 +1,512 @@
+/* Work — an everyday company template.
+   What a good office template does, and nothing more: an accent band along
+   the top of every slide, the logo (or the organisation's name) at the top
+   left of the title slide, every heading in the same place at the top with
+   the content below it, section dividers with a large number in the
+   accent, and a quiet footer with a hairline, the author and the page
+   number. IBM Plex
+   Sans throughout, square bullets, striped tables. Any palette turns it
+   into a company's own template; all colours are the palette's. */
+
+/* ─────────────────────────────────────────────
+   THE BAND — along the top of every slide
+   ───────────────────────────────────────────── */
+.slide::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--band);
+  background: var(--accent);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────
+   HEADER / FOOTER
+   ───────────────────────────────────────────── */
+.slide-header {
+  position: relative;
+  z-index: 2;
+  min-height: 40px;
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+.slide-header .brand {
+  font-weight: 600;
+  font-size: 26px;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+/* A logo stands where the name would, at the top left, and replaces it. */
+.slide-header:has(.slide-logo) .brand { visibility: hidden; width: 0; }
+.slide-logo {
+  position: absolute;
+  top: var(--pad-y);
+  left: var(--pad-x);
+  height: 72px;
+  width: auto;
+  max-width: 360px;
+  object-fit: contain;
+  object-position: left center;
+  filter: var(--logo-filter, none);
+  transform: translateY(calc(20px - 50%));
+}
+
+.slide-footer {
+  position: relative;
+  z-index: 2;
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  color: var(--muted);
+  border-top: 1px solid var(--rule);
+  padding-top: 18px;
+  margin-top: 24px;
+}
+.slide-footer > span:last-child:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ─────────────────────────────────────────────
+   TYPOGRAPHY
+   ───────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+}
+.display {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+.title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+.subtitle {
+  font-family: var(--font-body);
+  font-size: var(--fs-sub);
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--ink-soft);
+  margin: 0;
+  text-wrap: pretty;
+}
+.body-text {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0;
+  text-wrap: pretty;
+}
+.meta { font-family: var(--font-body); font-size: var(--fs-small); color: var(--muted); }
+
+em { font-style: normal; font-weight: 600; color: var(--accent); }
+strong { font-weight: 600; color: var(--ink); }
+
+/* ─────────────────────────────────────────────
+   CONTENT SLIDE — the heading at the top, the content below it
+   ───────────────────────────────────────────── */
+.slide:not(.slide--title, .slide--chapter, .slide--focus, .slide--full-bleed-image) > .slide-body {
+  justify-content: flex-start;
+  padding-top: 20px;
+}
+.slide-body h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0 0 var(--gap-title) 0;
+  max-width: 1500px;
+  text-wrap: balance;
+}
+.slide-body h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0 0 var(--gap-item) 0;
+}
+.slide-body h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 10px 0;
+}
+.slide-body p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0 0 var(--gap-item) 0;
+  max-width: 1500px;
+  text-wrap: pretty;
+}
+.slide-body :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  padding: 0.05em 0.3em;
+  background: var(--surface);
+  border-radius: 3px;
+  color: var(--ink);
+}
+
+/* ─────────────────────────────────────────────
+   LISTS — square bullets, numbers in the accent
+   ───────────────────────────────────────────── */
+.slide-body ul > li { line-height: 1.4; padding-left: 40px; }
+.slide-body ul > li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: calc(0.7em - 6px);
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+}
+/* A point inside a point: a dash. */
+.slide-body li ul > li { padding-left: 34px; }
+.slide-body li ul > li::before {
+  top: calc(0.7em - 1.5px);
+  width: 16px;
+  height: 3px;
+  background: var(--muted);
+}
+.slide-body ol > li { line-height: 1.4; padding-left: 52px; }
+.slide-body ol > li::before {
+  content: counter(slide-ol) '.';
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: TITLE — the title at the lower left, under a short rule
+   ───────────────────────────────────────────── */
+/* A broader band on the title slide and the section dividers. */
+:is(.slide--title, .slide--chapter)::before { height: calc(var(--band) * 2); }
+.slide--title .slide-body {
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding-bottom: 24px;
+}
+.slide--title .title-text { display: flex; flex-direction: column; align-items: flex-start; max-width: 1400px; }
+.slide--title .title-text::before {
+  content: '';
+  width: 120px;
+  height: 8px;
+  background: var(--accent);
+  margin-bottom: 48px;
+}
+/* The title is an h1: as large as .display, not a content heading. */
+.slide--title .display { font-size: var(--fs-display); margin: 0; }
+.slide--title .subtitle { margin-top: 28px; max-width: 1200px; }
+
+/* With a picture: the picture fills the right of the slide, edge to edge. */
+.slide--title.has-image .title-text { max-width: 54%; }
+.slide--title.has-image .display { font-size: calc(var(--fs-display) * 0.72); }
+.slide--title.has-image .title-image {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  z-index: 1;
+}
+.slide--title.has-image .slide-header > span:last-child:not(.brand) { visibility: hidden; }
+/* The footer's hairline stops short of the picture (40% of 1920px, and a gap). */
+:is(.slide--title, .slide--chapter).has-image .slide-footer { margin-right: 712px; }
+
+/* ─────────────────────────────────────────────
+   LAYOUT: CHAPTER — a section divider: the number in the accent, a broader band
+   ───────────────────────────────────────────── */
+.slide--chapter .slide-body { justify-content: flex-end; align-items: flex-start; padding-bottom: 32px; }
+.chapter-num {
+  font-family: var(--font-display);
+  font-size: 200px;
+  font-weight: 300;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  margin: 0 0 40px -6px;
+}
+.chapter-meta {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 16px 0;
+}
+.slide--chapter .chapter-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-title);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0 0 28px 0;
+  max-width: 1400px;
+  text-wrap: balance;
+}
+.slide--chapter .chapter-desc {
+  font-family: var(--font-body);
+  font-size: var(--fs-sub);
+  line-height: 1.35;
+  color: var(--ink-soft);
+  max-width: 1100px;
+  margin: 0;
+}
+/* With a picture: the picture fills the right of the slide, edge to edge. */
+.slide--chapter.has-image .chapter-content { max-width: 52%; }
+.slide--chapter.has-image .chapter-title { font-size: calc(var(--fs-title) * 0.78); }
+.slide--chapter.has-image .chapter-image {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40%;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  z-index: 1;
+}
+.slide--chapter.has-image .slide-header > span:last-child:not(.brand) { visibility: hidden; }
+
+/* ─────────────────────────────────────────────
+   LAYOUT: FOCUS — the key message, flush left beside an accent bar
+   ───────────────────────────────────────────── */
+.slide--focus .slide-body { justify-content: center; align-items: flex-start; }
+.focus-eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 32px 58px;
+}
+.focus-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border-left: 10px solid var(--accent);
+  padding: 6px 0 10px 48px;
+}
+.focus-statement,
+.slide--focus .focus-content h1,
+.slide--focus .focus-content p {
+  font-family: var(--font-display);
+  font-size: var(--fs-focus);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  max-width: 1450px;
+  margin: 0;
+  text-wrap: balance;
+}
+.focus-attribution {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--muted);
+  margin: 32px 0 0 58px;
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: IMAGE + TEXT
+   ───────────────────────────────────────────── */
+.slide--image-text .slide-body { gap: 80px; }
+.image-pane {
+  flex: 1.05;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  overflow: hidden;
+  position: relative;
+  border-radius: 4px;
+}
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(135deg, var(--surface) 0 22px, var(--bg) 22px 44px);
+}
+.image-placeholder span {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--bg);
+  padding: 12px 18px;
+  border: 1px solid var(--rule);
+}
+.text-pane .title { font-size: var(--fs-h); }
+.text-pane .body-text + .body-text { margin-top: 8px; }
+
+/* ─────────────────────────────────────────────
+   LAYOUT: SPLIT — two columns with a hairline between them
+   ───────────────────────────────────────────── */
+.split-columns { gap: 0; }
+.slide--split :is(.split-left, .split-right) { padding: 0 56px; }
+.slide--split .split-left { padding-left: 0; border-right: 1px solid var(--rule); }
+.slide--split .split-right { padding-right: 0; }
+
+/* ─────────────────────────────────────────────
+   LAYOUT: FULL-BLEED IMAGE — the title on a label at the lower left
+   ───────────────────────────────────────────── */
+.slide--full-bleed-image .slide-body { align-items: flex-start; }
+.slide--full-bleed-image.has-overlay .slide-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, color-mix(in oklab, var(--ink) 30%, transparent), transparent 50%);
+}
+.slide--full-bleed-image .overlay-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  background: var(--bg);
+  border-left: 10px solid var(--accent);
+  padding: 28px 44px 32px 40px;
+  margin: 0;
+  max-width: 1300px;
+  text-wrap: balance;
+}
+
+/* ─────────────────────────────────────────────
+   TABLES — a ruled header, striped rows
+   ───────────────────────────────────────────── */
+.slide-body table { font-size: calc(var(--fs-body) * 0.9); font-variant-numeric: tabular-nums; }
+.slide-body th {
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom: 2px solid var(--accent);
+}
+.slide-body td { border-bottom: 0; }
+.slide-body tbody tr:nth-child(odd) td { background: var(--surface); }
+
+/* ─────────────────────────────────────────────
+   CALLOUTS — a surface with a coloured bar
+   ───────────────────────────────────────────── */
+.slide-body .callout {
+  --bar: var(--accent);
+  background: var(--surface);
+  border: 0;
+  border-left: 8px solid var(--bar);
+  border-radius: 0 4px 4px 0;
+  padding: 22px 32px 24px;
+  margin: 14px 0 0;
+  max-width: 1500px;
+}
+.slide-body .callout-title {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 8px 0;
+}
+.slide-body .callout p { padding-left: 0; margin: 0; color: var(--ink); }
+.slide-body .callout-note { --bar: var(--callout-note); }
+.slide-body .callout-tip { --bar: var(--callout-tip); }
+.slide-body .callout-important { --bar: var(--callout-important); }
+.slide-body .callout-warning { --bar: var(--callout-warning); }
+.slide-body .callout-caution { --bar: var(--callout-caution); }
+.slide-body .callout-definition { --bar: var(--accent-2); }
+
+/* ─────────────────────────────────────────────
+   CODE
+   ───────────────────────────────────────────── */
+.code-block {
+  --code-bg: var(--surface);
+  --code-radius: 4px;
+  --code-size: 25px;
+  background: var(--code-bg);
+  border-radius: var(--code-radius);
+  border: 1px solid var(--rule);
+  padding: 28px 36px;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--code-size);
+  line-height: 1.55;
+}
+.code-block code { font-family: inherit; font-size: inherit; background: none; padding: 0; }
+.slide-body .code-block-wrapper { margin: 24px 0; }
+
+/* ─────────────────────────────────────────────
+   QUOTATIONS — a large quotation mark in the accent, hanging beside
+   the quote
+   ───────────────────────────────────────────── */
+.slide-body blockquote {
+  position: relative;
+  margin: 0 0 var(--gap-item);
+  padding: 0 0 0 64px;
+  border: 0;
+  max-width: 1300px;
+  font-size: calc(var(--fs-body) * 1.1);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.slide-body blockquote::before {
+  content: '\201C';
+  position: absolute;
+  left: 0;
+  top: -0.12em;
+  font-family: var(--font-display);
+  font-size: 104px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--accent);
+}
+
+/* ─────────────────────────────────────────────
+   FOOTNOTES, MATH, AUDIENCE QUESTIONS
+   ───────────────────────────────────────────── */
+.slide-footnotes, .slide-citations { font-family: var(--font-body); }
+.slide .katex-display { font-size: var(--fs-sub); margin: 32px 0; overflow-x: auto; overflow-y: hidden; text-align: left; }
+.slide .poll-track, .slide .scale-track { border-radius: 2px; background: var(--surface); }
+.slide .poll-fill, .slide .scale-fill { border-radius: 2px; background: var(--accent); }
+.slide .question-cards li { border-radius: 4px; border-left: 6px solid var(--accent); background: var(--surface); }

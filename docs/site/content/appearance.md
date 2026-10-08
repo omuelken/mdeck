@@ -5,7 +5,7 @@ A **theme** chooses the fonts and the style of the slides. A **palette** chooses
 Ask your assistant by name or by description:
 
 ```prompt
-Use the aurora theme, dark. Or suggest a look that suits a talk for
+Use the glass theme, light. Or suggest a look that suits a talk for
 a design conference.
 ```
 
@@ -26,9 +26,11 @@ If you already have a settings block there, change the existing lines rather tha
 | Name to use | What it looks like |
 |---|---|
 | `neue` | Swiss style: large type, clear lines, red on white |
-| `aurora` | Northern lights: curtains of light, night-sky chapters and glass |
+| `plain` | Black on white and lots of room, the heading beside the content |
 | `minimal` | Nothing but the content: system fonts, calm type, no decoration; works offline |
 | `academic` | A lecture: compact slides, theorem and definition boxes, tables like in a paper |
+| `work` | An everyday company template: a coloured band, your logo, numbered sections, a footer |
+| `glass` | Liquid glass: soft light behind frosted panes; it starts dark |
 
 Each theme comes with colours that suit it, so you do not have to choose any. More themes are in the theme repository (see “Themes that moved to the repository” below).
 
@@ -42,11 +44,11 @@ Each theme in its own colours, on the title slide of the tour example. Click a p
 
 Default colours: `swiss`.
 
-### Aurora
+### Plain
 
-[![The tour's title slide in the Aurora theme](images/themes/aurora.webp)](images/themes/aurora.webp)
+[![The tour's title slide in the Plain theme](images/themes/plain.webp)](images/themes/plain.webp)
 
-Default colours: `neon`.
+Default colours: `greyscale`. In the dark it is the same, inverted.
 
 ### Academic
 
@@ -60,6 +62,18 @@ Default colours: `nordic`.
 
 Default colours: `paper`. It uses the fonts already on the computer, so it needs no internet connection and looks plain on purpose.
 
+### Work
+
+[![The tour's title slide in the Work theme](images/themes/work.webp)](images/themes/work.webp)
+
+Default colours: `cobalt`. Set `meta.logo` and it shows top left; any palette makes it your company's colours.
+
+### Glass
+
+[![The tour's title slide in the Glass theme](images/themes/glass.webp)](images/themes/glass.webp)
+
+Default colours: `nordic`, dark.
+
 ## Choose colours
 
 To use other colours, set `palette` to one of these:
@@ -67,8 +81,9 @@ To use other colours, set `palette` to one of these:
 | Name to use | Colours |
 |---|---|
 | `swiss` | White, black and signal red (neue's own) |
-| `nordic` | Ice grey, deep navy and a cool steel blue (academic's own) |
-| `neon` | Violet and magenta, loud (aurora's own) |
+| `nordic` | Ice grey, deep navy and a cool steel blue (academic's and glass's own) |
+| `cobalt` | Strong ultramarine on white with vivid orange (work's own) |
+| `greyscale` | Black, white and greys only, good for printing (plain's own) |
 | `lagoon` | Teal on warm stone |
 | `paper` | Off-white and near-black with one orange accent (minimal's own) |
 
@@ -96,8 +111,6 @@ Some slides use the other version on purpose: neue's statement slides are dark i
 ## Every theme in every palette
 
 The first chapter slide of the tour in each palette a theme offers. Choose a theme above the pictures; click a sheet to see it larger. A theme that offers only its own colours is not shown here.
-
-Some themes turn their chapter slides around on purpose: aurora's are a night sky in a light talk, and light in a dark one.
 
 ### Light
 
@@ -127,7 +140,8 @@ Earlier versions of mdeck came with more themes and palettes. They are now in th
 
 | Theme | What it looks like (its palette) |
 |---|---|
-| `duet` | Two accent colours that take turns, slab headings (`cobalt`) |
+| `aurora` | Northern lights: curtains of light, night-sky chapters (`neon`) |
+| `duet` | Two accent colours that take turns, slab headings (`cobalt`, which comes with mdeck) |
 | `editorial` | A magazine spread with serif headlines and pull quotes (`terra`) |
 | `fhnw` | The FHNW visual identity, with its own `brand` palette only |
 | `terminal` | Headings typed at a prompt, a status bar; it starts dark (`phosphor`) |

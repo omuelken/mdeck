@@ -1,0 +1,58 @@
+schema = 1
+kind = "theme"
+id = "plain"
+title = "Plain"
+description = "Black on white and lots of room: Inter, the heading in a column of its own beside the content, lists of short titles with a line under each, the accent only in small places; in greyscale, dark is the same, inverted."
+version = "0.1.0"
+author = "Tilman Schieber"
+license = "MIT"
+# The palette this theme uses unless the deck sets one; colours come only from palettes.
+# Black, white and greys: in dark, exactly the inverse.
+palette = "greyscale"
+fonts = [
+  "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400;1,14..32,600&display=swap",
+]
+
+[files]
+styles = "styles.css"
+
+# Type, spacing and fonts used by styles.css; colours come from the palette.
+# Deck settings (params) override these. The headings are only a little
+# larger than the text: the room around them does the work.
+[tokens]
+
+# Type scale (px) — projection-appropriate at 1920×1080
+"--fs-display" = "88px"
+"--fs-title" = "72px"
+"--fs-focus" = "64px"
+"--fs-h" = "52px"
+"--fs-sub" = "34px"
+"--fs-body" = "29px"
+"--fs-small" = "19px"
+"--fs-eyebrow" = "21px"
+
+# Spacing
+"--pad-x" = "128px"
+"--pad-y" = "64px"
+"--gap-title" = "36px"
+"--gap-item" = "30px"
+
+# How wide the column with the heading is, beside the content.
+"--side" = "560px"
+
+# Type families
+"--font-display" = "\"Inter\", -apple-system, \"Segoe UI\", Helvetica, Arial, sans-serif"
+"--font-body" = "\"Inter\", -apple-system, \"Segoe UI\", Helvetica, Arial, sans-serif"
+"--font-mono" = "ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
+
+[params.fontDisplay]
+token = "--font-display"
+title = "Display font"
+
+[params.fontBody]
+token = "--font-body"
+title = "Body font"
+
+[params.side]
+token = "--side"
+title = "Width of the heading column"

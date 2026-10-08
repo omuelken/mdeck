@@ -1,0 +1,471 @@
+/* Plain — black on white and lots of room.
+   Nothing on the slides but the words, set in Inter: no band, no rules, no
+   boxes worth the name. What gives it its look is the arrangement: on a
+   content slide the heading stands in a column of its own at the left,
+   and everything else to the right of it; a statement with a label puts
+   the label there too, and a split slide with a heading becomes the
+   heading and two columns beside it. A list item that starts in bold is a
+   short title with a line of description under it. Headings are only a
+   little larger than the text. The header and the page number are small
+   and grey. The palette's accent shows only in small places: emphasis,
+   links, labels, list numbers, the edge of a callout. All colours are the
+   palette's; in greyscale the accent is black, and dark is the exact
+   inverse of light. */
+
+/* ─────────────────────────────────────────────
+   HEADER / FOOTER — small and grey
+   ───────────────────────────────────────────── */
+.slide-header, .slide-footer {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  color: var(--muted);
+  min-height: 28px;
+}
+.slide-header .brand { color: var(--ink); font-weight: 600; }
+.slide-footer > span:last-child:not(:first-child) { font-variant-numeric: tabular-nums; }
+.slide-logo {
+  position: absolute;
+  top: var(--pad-y);
+  left: var(--pad-x);
+  height: 48px;
+  width: auto;
+  max-width: 280px;
+  object-fit: contain;
+  object-position: left center;
+  filter: var(--logo-filter, none);
+  transform: translateY(calc(14px - 50%));
+}
+.slide-header:has(.slide-logo) .brand { visibility: hidden; width: 0; }
+
+/* ─────────────────────────────────────────────
+   TYPOGRAPHY
+   ───────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0;
+}
+.display {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+.title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+.subtitle {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  margin: 0;
+  text-wrap: pretty;
+}
+.body-text {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0;
+  text-wrap: pretty;
+}
+.meta { font-family: var(--font-body); font-size: var(--fs-small); color: var(--muted); }
+
+/* The palette's accent, in a few small places: emphasis, links, labels,
+   numbers, the edge of a callout. In greyscale it is black and grey. */
+em { font-style: italic; color: var(--accent); }
+strong { font-weight: 600; color: var(--ink); }
+.slide a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 0.06em; text-underline-offset: 0.18em; }
+.slide :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  padding: 0.08em 0.32em;
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+/* ─────────────────────────────────────────────
+   CONTENT SLIDE — the heading in a column of its own, the content beside it
+   ───────────────────────────────────────────── */
+.slide-body h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 var(--gap-title) 0;
+  text-wrap: balance;
+}
+.slide-body h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-sub);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 var(--gap-item) 0;
+}
+.slide-body h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 8px 0;
+}
+.slide-body p {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0 0 var(--gap-item) 0;
+  text-wrap: pretty;
+}
+
+.slide:not(.slide--title, .slide--chapter, .slide--focus, .slide--image-text, .slide--split, .slide--full-bleed-image) > .slide-body:has(> h1) {
+  display: grid;
+  grid-template-columns: var(--side) minmax(0, 1fr);
+  column-gap: 96px;
+  align-content: center;
+  align-items: start;
+}
+.slide:not(.slide--title, .slide--chapter, .slide--focus, .slide--image-text, .slide--split, .slide--full-bleed-image) > .slide-body:has(> h1) > * { grid-column: 2; min-width: 0; }
+/* The heading stands beside all of it, at the middle of its height. */
+.slide:not(.slide--title, .slide--chapter, .slide--focus, .slide--image-text, .slide--split, .slide--full-bleed-image) > .slide-body:has(> h1) > h1 {
+  grid-column: 1;
+  grid-row: 1 / span 40;
+  align-self: center;
+  margin: 0;
+  padding-right: 24px;
+}
+.slide-body > :last-child { margin-bottom: 0; }
+
+/* ─────────────────────────────────────────────
+   LISTS — a short title with a line under it; plain lines otherwise
+   ───────────────────────────────────────────── */
+.slide-body ul > li { line-height: 1.45; padding-left: 34px; }
+.slide-body ul > li::before {
+  content: '\2013';
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--muted);
+}
+/* An item that starts in bold: the bold part is a title on its own line,
+   the rest a smaller description under it, and no marker. */
+.slide-body ul > li:has(> strong:first-child) {
+  padding-left: 0;
+  font-size: calc(var(--fs-body) * 0.86);
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+.slide-body ul > li:has(> strong:first-child)::before { content: none; }
+.slide-body li > strong:first-child {
+  display: block;
+  font-size: calc(var(--fs-body) / 0.86);
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.slide-body ol > li { line-height: 1.45; padding-left: 46px; }
+.slide-body ol > li::before {
+  content: counter(slide-ol) '.';
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+.slide-body ol > li > strong:first-child { font-size: inherit; }
+.slide-body li :is(ul, ol) { font-size: calc(var(--fs-body) * 0.9); }
+
+/* ─────────────────────────────────────────────
+   LAYOUT: TITLE — at the left, in the middle of the slide
+   ───────────────────────────────────────────── */
+.slide--title .slide-body { justify-content: center; align-items: flex-start; }
+.slide--title .title-text { display: flex; flex-direction: column; align-items: flex-start; max-width: 1300px; }
+/* The title is an h1: as large as .display, not a content heading. */
+.slide--title .display { font-size: var(--fs-display); margin: 0; }
+.slide--title .subtitle { margin-top: 20px; max-width: 1100px; }
+.slide--title.has-image .slide-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 96px;
+  align-items: center;
+}
+.slide--title.has-image .title-image {
+  align-self: stretch;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: CHAPTER — the section's title at the left, a line about it under
+   ───────────────────────────────────────────── */
+.slide--chapter .slide-body { justify-content: center; align-items: flex-start; }
+/* "Chapter 2" on one line above the title (the layout writes the number first). */
+.slide--chapter .chapter-content { display: grid; grid-template-columns: auto 1fr; column-gap: 0.3em; align-items: baseline; justify-items: start; }
+.slide--chapter .chapter-content > * { grid-column: 1 / -1; }
+.slide--chapter .chapter-content > .chapter-meta { grid-column: 1; grid-row: 1; }
+.slide--chapter .chapter-content > .chapter-num { grid-column: 2; grid-row: 1; }
+.chapter-meta, .chapter-num {
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 18px 0;
+}
+.slide--chapter .chapter-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 0 0 20px 0;
+  max-width: 1300px;
+  text-wrap: balance;
+}
+.slide--chapter .chapter-desc {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--ink-soft);
+  max-width: 1000px;
+  margin: 0;
+}
+.slide--chapter.has-image .slide-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 96px;
+  align-items: center;
+}
+.slide--chapter.has-image .chapter-title { font-size: calc(var(--fs-title) * 0.8); }
+.slide--chapter.has-image .chapter-image {
+  align-self: stretch;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: FOCUS — with a label, the label at the left as a heading and
+   the statement beside it; without one, the statement alone in the middle
+   ───────────────────────────────────────────── */
+.slide--focus .slide-body { justify-content: center; align-items: center; text-align: center; }
+.focus-content { display: flex; flex-direction: column; align-items: center; }
+.focus-statement,
+.slide--focus .focus-content h1,
+.slide--focus .focus-content p {
+  font-family: var(--font-display);
+  font-size: var(--fs-focus);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  max-width: 1400px;
+  margin: 0;
+  text-wrap: balance;
+}
+.focus-eyebrow {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+.focus-attribution {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--muted);
+  margin: 28px 0 0 0;
+}
+.slide--focus .slide-body:has(> .focus-eyebrow) {
+  display: grid;
+  grid-template-columns: var(--side) minmax(0, 1fr);
+  column-gap: 96px;
+  align-content: center;
+  align-items: start;
+  text-align: left;
+}
+.slide--focus .slide-body:has(> .focus-eyebrow) > * { grid-column: 2; }
+.slide--focus .slide-body:has(> .focus-eyebrow) > .focus-eyebrow { grid-column: 1; grid-row: 1 / span 2; align-self: center; padding-right: 24px; }
+.slide--focus .slide-body:has(> .focus-eyebrow) .focus-content { align-items: flex-start; }
+.slide--focus .slide-body:has(> .focus-eyebrow) :is(.focus-statement, .focus-content h1, .focus-content p) {
+  font-family: var(--font-body);
+  font-size: var(--fs-sub);
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  max-width: 900px;
+  text-align: left;
+}
+
+/* ─────────────────────────────────────────────
+   LAYOUT: IMAGE + TEXT
+   ───────────────────────────────────────────── */
+.slide--image-text .slide-body { gap: 96px; }
+.image-pane {
+  flex: 1.1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  background: var(--surface);
+  border-radius: 6px;
+}
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(135deg, var(--surface) 0 22px, var(--bg) 22px 44px);
+}
+.image-placeholder span {
+  font-family: var(--font-body);
+  font-size: 20px;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 10px 16px;
+  border-radius: 6px;
+}
+.text-pane .title { font-size: var(--fs-h); }
+.text-pane .eyebrow { margin-bottom: -8px; }
+.text-pane .body-text + .body-text { margin-top: 8px; }
+
+/* ─────────────────────────────────────────────
+   LAYOUT: SPLIT — with a heading: the heading at the left, two columns
+   beside it
+   ───────────────────────────────────────────── */
+.split-columns { gap: 64px; }
+.slide--split .slide-body:has(> .split-heading) {
+  display: grid;
+  /* A narrower heading column: two columns of content need the room. */
+  grid-template-columns: calc(var(--side) * 0.72) minmax(0, 1fr);
+  column-gap: 80px;
+  align-items: center;
+}
+.slide--split .split-heading { margin: 0; padding-right: 24px; }
+.slide--split .split-heading h1 { margin: 0; }
+.slide--split .slide-body:has(> .split-heading) .split-columns { align-self: stretch; }
+
+/* ─────────────────────────────────────────────
+   LAYOUT: FULL-BLEED IMAGE — the title in white at the lower left
+   ───────────────────────────────────────────── */
+.slide--full-bleed-image .slide-body { align-items: flex-start; }
+.slide--full-bleed-image.has-overlay .slide-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, color-mix(in oklab, light-dark(var(--ink), var(--bg)) 55%, transparent), transparent 55%);
+}
+.slide--full-bleed-image .overlay-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: light-dark(var(--bg), var(--ink));
+  text-shadow: 0 1px 18px color-mix(in oklab, light-dark(var(--ink), var(--bg)) 40%, transparent);
+  margin: 0;
+  max-width: 1300px;
+  text-wrap: balance;
+}
+
+/* ─────────────────────────────────────────────
+   CALLOUTS — a quiet grey field with a thin edge in the accent, the
+   title in bold; warnings in their own colour
+   ───────────────────────────────────────────── */
+.slide-body .callout {
+  background: var(--surface);
+  border: 0;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 20px 28px 22px;
+  margin: 0 0 16px;
+}
+.slide-body .callout-title {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  margin: 0 0 4px 0;
+}
+.slide-body .callout p { padding-left: 0; margin: 0; color: var(--ink-soft); }
+.slide-body .callout :is(.callout-title) { color: var(--ink); }
+.slide-body .callout:is(.callout-warning, .callout-caution) { border-left-color: var(--callout-warning); }
+.slide-body .callout.callout-caution { border-left-color: var(--callout-caution); }
+.slide-body .callout.callout-proof { background: none; border: 0; padding: 0; }
+
+/* ─────────────────────────────────────────────
+   CODE, TABLES, QUOTATIONS
+   ───────────────────────────────────────────── */
+.code-block {
+  --code-bg: var(--surface);
+  --code-radius: 8px;
+  background: var(--code-bg);
+  border-radius: var(--code-radius);
+  padding: 26px 32px;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--code-size);
+  line-height: 1.6;
+}
+/* The size is set on the slide, so the split layout's smaller code (on its
+   columns) reaches the block. */
+.slide { --code-size: 24px; }
+.slide--split .code-block { padding: 22px 26px; }
+.code-block code { font-family: inherit; font-size: inherit; background: none; padding: 0; }
+.slide-body .code-block-wrapper { margin: 0 0 var(--gap-item); }
+
+.slide-body table { font-size: calc(var(--fs-body) * 0.9); font-variant-numeric: tabular-nums; }
+.slide-body :is(th, td) { padding: 12px 24px 12px 0; }
+.slide-body th { font-weight: 600; color: var(--ink); border-bottom: 1px solid var(--ink); }
+.slide-body td { border-bottom: 1px solid var(--rule); }
+
+/* A quotation is just larger text, with nothing round it. */
+.slide-body blockquote {
+  margin: 0 0 var(--gap-item);
+  padding: 0;
+  border: 0;
+  font-size: var(--fs-sub);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+/* ─────────────────────────────────────────────
+   FOOTNOTES, MATH, AUDIENCE QUESTIONS
+   ───────────────────────────────────────────── */
+.slide-footnotes, .slide-citations { font-family: var(--font-body); }
+.slide .katex-display { font-size: var(--fs-sub); margin: 24px 0; overflow-x: auto; overflow-y: hidden; text-align: left; }
+.slide .poll-track, .slide .scale-track { border-radius: 4px; background: var(--surface); }
+.slide .poll-fill, .slide .scale-fill { border-radius: 4px; background: var(--accent); }
+.slide .question-cards li { border-radius: 8px; border-left: 0; background: var(--surface); }

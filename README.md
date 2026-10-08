@@ -143,7 +143,7 @@ complete folder.
 
 | Example | Theme | What it demonstrates |
 |---|---|---|
-| [Tour](examples/showcase/slides.md) | Aurora | Start here: each slide shows the Markdown beside what it becomes, from headings to layouts, live code, notes, drawing, a poll and sharing |
+| [Tour](examples/showcase/slides.md) | Glass | Start here: each slide shows the Markdown beside what it becomes, from headings to layouts, live code, notes, drawing, a poll and sharing |
 | [Python](examples/python/slides.md) | Academic | A real lesson: live code to try out, points revealed step by step, notes on every slide, a poll to check understanding |
 | [Poll](examples/poll/slides.md) | Neue | A join slide, then a poll, a scale, a word cloud and open questions; start it with `mdeck run slides.md --network` |
 | [Custom layouts](examples/custom-layouts/slides.md) | Neue | A deck-local comparison design and named regions |

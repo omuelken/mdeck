@@ -1,0 +1,59 @@
+schema = 1
+kind = "theme"
+id = "glass"
+title = "Glass"
+description = "Liquid glass: soft pools of light behind every slide, content without frames, titles on a frosted pane with a bright rim; capsule labels, glass beads for list markers and a glass lens for chapter numbers; Geist throughout, dark by default."
+version = "0.1.1"
+author = "Tilman Schieber"
+license = "MIT"
+# The palette this theme uses unless the deck sets one; colours come only from palettes.
+# Muted: polar night, ice blue and lavender; the glass is the look, not the colour.
+palette = "nordic"
+appearance = "dark"
+fonts = [
+  "https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&display=swap",
+]
+
+[files]
+styles = "styles.css"
+
+# Type, spacing and fonts used by styles.css; colours come from the palette.
+# Deck settings (params) override these.
+[tokens]
+
+# Type scale (px) — projection-appropriate at 1920×1080
+"--fs-display" = "136px"
+"--fs-title" = "104px"
+"--fs-focus" = "88px"
+"--fs-h" = "68px"
+"--fs-sub" = "40px"
+"--fs-body" = "32px"
+"--fs-small" = "24px"
+"--fs-eyebrow" = "20px"
+
+# Spacing
+"--pad-x" = "96px"
+"--pad-y" = "60px"
+"--gap-title" = "40px"
+"--gap-item" = "22px"
+
+# The glass: how round the panes are and how much they blur what is behind them.
+"--glass-radius" = "44px"
+"--glass-blur" = "28px"
+
+# Type families
+"--font-display" = "\"Geist\", \"Inter\", \"Helvetica Neue\", Arial, sans-serif"
+"--font-body" = "\"Geist\", \"Inter\", \"Helvetica Neue\", Arial, sans-serif"
+"--font-mono" = "\"Geist Mono\", ui-monospace, \"SF Mono\", Menlo, Consolas, monospace"
+
+[params.fontDisplay]
+token = "--font-display"
+title = "Display font"
+
+[params.fontBody]
+token = "--font-body"
+title = "Body font"
+
+[params.glassBlur]
+token = "--glass-blur"
+title = "How much the glass blurs"

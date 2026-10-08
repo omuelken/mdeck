@@ -21,8 +21,8 @@ export function userExtensionsDir() {
 }
 
 // The built-in themes and palettes this user removed (`mdeck themes remove
-// aurora`): they stay in mdeck's folder but are not offered. Kept as
-// "theme:aurora" and "palette:neon".
+// glass`): they stay in mdeck's folder but are not offered. Kept as
+// "theme:glass" and "palette:nordic".
 const removedFile = () => resolve(mdeckHome(), 'removed.json')
 export function removedBuiltIns() {
   let saved = {}

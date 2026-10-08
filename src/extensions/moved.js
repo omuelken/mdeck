@@ -1,9 +1,9 @@
-// Themes and palettes that came with mdeck before 3.0 and now live in the
-// theme repository. A deck that names one is told how to install it instead
+// Themes and palettes that once came with mdeck and now live in the theme
+// repository. A deck that names one is told how to install it instead
 // of being told the name is unknown.
 export const MOVED = {
-  themes: ['duet', 'editorial', 'fhnw', 'terminal', 'sketch'],
-  palettes: ['cobalt', 'terra', 'brand', 'phosphor', 'pastel', 'forest'],
+  themes: ['duet', 'editorial', 'fhnw', 'terminal', 'sketch', 'aurora'],
+  palettes: ['terra', 'brand', 'phosphor', 'pastel', 'forest', 'neon'],
 }
 
 // Palettes that were removed because another one looks almost the same, by

@@ -17,16 +17,18 @@ theme: neue
 | Theme | Look | Default palette |
 |---|---|---|
 | `neue` | Swiss style: large flush-left type, rules, red on white | `swiss` |
-| `aurora` | Northern lights: curtains of light, night-sky chapters, frosted glass | `neon` |
 | `minimal` | Nothing but the content: system fonts, calm type, no decoration; works offline | `paper` |
 | `academic` | A lecture: compact type, the heading fixed at the top and the content centred below, theorem and definition blocks, booktabs tables, a footnote rule | `nordic` |
+| `plain` | Black on white and lots of room: the heading in a column beside the content, the accent only in small places | `greyscale` |
+| `work` | An everyday company template: accent band, logo top left, headings in a fixed place, numbered section dividers, a footer | `cobalt` |
+| `glass` | Liquid glass, dark by default: pools of light, frosted titles, glass list markers | `nordic` |
 
 `mdeck list my-talk.md` lists them with their descriptions.
 
 More themes are in the [theme repository](https://github.com/tilman-schieber/mdeck-themes):
 `mdeck themes search` lists them, and `mdeck themes install <theme> my-talk.md`
-puts one beside the deck, with its default palette. The themes duet, editorial,
-fhnw, terminal and sketch, built in before mdeck 3.0, are there.
+puts one beside the deck, with its default palette. The themes that used to come
+with mdeck are there: aurora, duet, editorial, fhnw, terminal and sketch.
 
 ## Theme structure
 

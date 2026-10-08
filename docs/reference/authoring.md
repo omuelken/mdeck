@@ -41,7 +41,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | Field | Default | Description |
 |---|---|---|
 | `theme` | `neue` | Theme name |
-| `palette` | _(theme default)_ | Colour palette: `swiss`, `nordic`, `neon`, `lagoon`, `paper`, one installed from the theme repository, or one of your own |
+| `palette` | _(theme default)_ | Colour palette: `swiss`, `nordic`, `cobalt`, `greyscale`, `lagoon`, `paper`, one installed from the theme repository, or one of your own |
 | `appearance` | _(theme default)_ | `light` or `dark`: which variant of the palette the slides use |
 | `meta.title` | — | Deck title (shown in footer) |
 | `meta.author` | — | Author name (shown in footer) |
@@ -108,11 +108,13 @@ view is reachable in any build through `?view=reader`.
 | Key | Description |
 |---|---|
 | `neue` | Swiss style: Inter Tight and Inter, large flush-left type, a rule across the top, square accent markers, red on white |
-| `aurora` | Northern lights: Plus Jakarta Sans, curtains of light in the palette's accents, night-sky chapter slides, frosted glass |
 | `minimal` | Nothing but the content: the system's own fonts (no web fonts, works offline), medium weights, space instead of rules and boxes |
 | `academic` | A lecture: Source Sans and Source Serif, compact type with the heading fixed at the top and the content centred below, theorem and definition blocks, booktabs tables, a footnote rule |
+| `plain` | Black on white and lots of room: Inter, the heading in a column of its own beside the content, the accent only in small places |
+| `work` | An everyday company template: IBM Plex Sans, an accent band along the top, the logo top left, headings in a fixed place, numbered section dividers, a footer with the page number |
+| `glass` | Liquid glass, dark by default: Geist, soft pools of light behind every slide, titles on a frosted pane, glass beads for list markers |
 
-More themes (duet, editorial, fhnw, terminal, sketch) are in the theme
+More themes (aurora, duet, editorial, fhnw, terminal, sketch and others) are in the theme
 repository: `mdeck themes search` lists them, and
 `mdeck themes install <theme> <deck>.md` puts one beside the deck.
 
@@ -128,12 +130,13 @@ Each palette has a light and a dark variant; `appearance:` picks one.
 | Key | Light | Dark |
 |---|---|---|
 | `swiss` | White, black, signal red (neue's default) | Black, white, red |
-| `nordic` | Ice grey, navy, steel blue (academic's default) | Polar night, ice blue |
-| `neon` | White, violet, magenta (aurora's default) | Black, neon violet and pink |
+| `nordic` | Ice grey, navy, steel blue (academic's and glass's default) | Polar night, ice blue |
+| `cobalt` | Ultramarine on white, vivid orange (work's default) | Midnight blue, bright blue and orange |
+| `greyscale` | Black, white and greys only (plain's default) | The same, inverted |
 | `lagoon` | Teal on warm stone | Bright teal on teal-black |
 | `paper` | Off-white, near-black, orange (minimal's default) | Charcoal, soft orange |
 
-More palettes (cobalt, terra, phosphor, pastel, forest, among others)
+More palettes (neon, terra, phosphor, pastel, forest, among others)
 are in the theme repository; install them with `mdeck palettes install <palette> <deck>.md`.
 
 ---
