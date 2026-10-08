@@ -4,7 +4,8 @@ import { spawnSync } from 'node:child_process'
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { parseArgs } from '../src/cli/args.js'
+import { parseArgs, parseSlideNumbers } from '../src/cli/args.js'
+import { slideLabels } from '../src/build/renderCheck.js'
 import { migrateDeck } from '../src/cli/migrate.js'
 import { parseSlides } from '../src/core/parseSlides.js'
 import { readerLink, validatePageUrl } from '../src/core/urls.js'
@@ -24,6 +25,20 @@ test('command options are strict, with aliases and explicit values', () => {
   assert.equal(parseArgs('run', ['--server=https://example.org', 'a.md']).options['--server'], 'https://example.org')
   for (const args of [['--server', 'ftp://example.org'], ['--port', '0'], ['--port=NaN'], ['--server', 'https://example.org/path']]) assert.throws(() => parseArgs('run', args))
   assert.deepEqual(parseArgs('skill', ['--project', '--install', 'codex', 'claude']).options['--install'], ['codex', 'claude'])
+})
+
+test('snapshot takes slide numbers, single, listed or as a range', () => {
+  assert.deepEqual(parseSlideNumbers('3'), [3])
+  assert.deepEqual(parseSlideNumbers('5, 2-4,3'), [5, 2, 3, 4])
+  assert.deepEqual(parseSlideNumbers(''), [])
+  for (const text of ['0', '4-2', '2x', '-3']) assert.throws(() => parseSlideNumbers(text))
+  assert.throws(() => parseArgs('snapshot', ['--dark', '--light']))
+  assert.deepEqual(parseArgs('check', ['a.md', '--render']).options, { '--render': true })
+})
+
+test('render problems name the slide, its heading and the line it starts at', () => {
+  const labels = slideLabels('---\ntitle: T\n---\n\n# First *one*\n\n---\n\n\n## Second\n\ntext\n\n---\n\nNo heading here\n')
+  assert.deepEqual(labels.map(({ number, line, heading }) => [number, line, heading]), [[1, 5, 'First one'], [2, 10, 'Second'], [3, 16, null]])
 })
 
 test('invalid arguments leave existing build output untouched', t => {

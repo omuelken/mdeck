@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `mdeck check --render` looks at the deck in Chrome: it builds it, shows every slide with all steps revealed, and reports content that does not fit, text cut off at the slide's edge or hard to read on what is behind it, and errors the page reports, each with the slide's number, heading and line. `mdeck snapshot` saves slides as PNG files (`--slide 3,5-7`, `--dark`, `--light`, `-o`; by default in `.mdeck-snapshots/`), so a person or an assistant can look at them. The slide-writing skill uses both.
 - New view `?view=follow`: people in the room follow the talk on their phone or laptop. It shows the slide the presenter shows, step by step, and their drawing, read from the stage room without sending anything; people can page back and return with **Back to live**, and never see a slide or step before the presenter shows it. `<qrcode follow />` shows its link on a slide, the phones' answer page links to it (**Follow the slides**), and `mdeck run --network` prints it. It works on the same network with `mdeck run --network`, and anywhere for a deck hosted with a `server` setting. Followers count as phones in the presenter's overview of who is connected.
 
 ## 3.2.0 — 2026-10-07

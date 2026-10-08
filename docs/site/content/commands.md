@@ -16,7 +16,8 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck palettes search`, `install <palette>`, … | The same for palettes |
 | `mdeck design [my-talk.md or folder]` | Look at themes and palettes on a sample deck and fine-tune them; saves to `extensions/` |
 | `mdeck migrate my-talk.md --dry-run` | Preview the changes needed for API 2.0 |
-| `mdeck check my-talk.md` | Check settings and look for missing local files |
+| `mdeck check my-talk.md` | Check settings and look for missing local files; `--render` also finds slides whose content does not fit |
+| `mdeck snapshot my-talk.md` | Save pictures of the slides as PNG files, for you or your assistant to look at |
 | `mdeck send my-talk.md` | Make one file to send to readers, with a PDF inside |
 | `mdeck build my-talk.md` | Make a folder to host in `dist` |
 | `mdeck pdf my-talk.md` | Make a PDF |
@@ -117,7 +118,29 @@ mdeck check my-talk.md --strict
 
 The ordinary check fails when it finds an error. The strict check also fails when it finds a warning, such as a layout name it does not recognize.
 
-The check does not measure whether text fits on the slide. Always look through the preview too.
+## Check how the slides look
+
+```sh
+mdeck check my-talk.md --render
+```
+
+This builds the deck and shows every slide in Chrome, with all steps revealed as in a PDF. It reports, by slide, heading and line:
+
+- content that is taller than the slide's room for it;
+- text that is cut off at the slide's edge;
+- text that is hard to read on a plain background behind it;
+- errors the page reports, such as a component that fails.
+
+The check takes a few seconds and needs Chrome or Chromium; set `MDECK_CHROME` to its path if it is not found. It checks the deck in its own appearance. A slide with a problem it cannot measure, such as text on a photo, still needs a look in the preview.
+
+## Pictures of the slides
+
+```sh
+mdeck snapshot my-talk.md
+mdeck snapshot my-talk.md --slide 3,5-7 --dark
+```
+
+This saves each slide, with all steps revealed, as a 1280×720 PNG file in `.mdeck-snapshots/` beside the deck (`-o` for another folder), named `my-talk-03.png` and so on, and prints the paths. `--slide` picks slides by number; `--dark` and `--light` show that appearance instead of the deck's own. An AI assistant that reads pictures can use them to look at what it wrote. If you keep your slides in Git, add `.mdeck-snapshots/` to your `.gitignore`.
 
 ## Layouts, themes and palettes
 

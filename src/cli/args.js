@@ -13,7 +13,8 @@ const commands = {
   send: { ...output, '--notes': flag, '--no-pdf': flag, max: 1 },
   pdf: { ...output, max: 1 },
   preview: { ...common, max: 1 },
-  check: { '--strict': flag, max: 1 },
+  check: { '--strict': flag, '--render': flag, max: 1 },
+  snapshot: { '--output': value, '-o': '--output', '--slide': value, '--dark': flag, '--light': flag, max: 1 },
   list: { '--json': flag, max: 2 },
   starter: { max: 2 },
   docs: { ...common, '--build': flag, max: 1 },
@@ -26,6 +27,19 @@ export function validateServerOrigin(address) {
   let url
   try { url = new URL(address) } catch {}
   if (!url || !['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error('--server needs an http:// or https:// server origin, for example https://slides.example.org')
+}
+
+// Slide numbers from "3", "3,5" or "2-4": in order, each once.
+export function parseSlideNumbers(text) {
+  const numbers = []
+  for (const part of String(text).split(',').map(part => part.trim()).filter(Boolean)) {
+    const range = /^(\d+)(?:-(\d+))?$/.exec(part)
+    if (!range) throw new Error(`--slide takes slide numbers such as 3, 3,5 or 2-4, not "${part}"`)
+    const [from, to] = [Number(range[1]), Number(range[2] ?? range[1])]
+    if (!from || to < from) throw new Error(`--slide takes slide numbers from 1, with the smaller one first: not "${part}"`)
+    for (let n = from; n <= to; n++) if (!numbers.includes(n)) numbers.push(n)
+  }
+  return numbers
 }
 
 export function parseArgs(command, argv) {
@@ -72,6 +86,7 @@ export function parseArgs(command, argv) {
   if (command === 'build' && options['--notes'] && !options['--reader']) throw new Error('--notes requires --reader for mdeck build')
   if (command === 'build' && options['--launchers'] && options['--single-file']) throw new Error('--launchers is only available for folders, not with --single-file.')
   if (command === 'list' && positionals.length === 2 && !['layouts', 'themes', 'palettes'].includes(positionals[0])) throw new Error('Use mdeck list [layouts|themes|palettes] [slides.md]')
+  if (command === 'snapshot' && options['--dark'] && options['--light']) throw new Error('Choose --dark or --light')
   if (command === 'skill' && options['--print'] && options['--install']) throw new Error('Choose --print or --install')
   return { options, positionals }
 }

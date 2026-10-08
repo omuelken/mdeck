@@ -61,7 +61,7 @@ For new slides, a settings block should begin with `:::meta` and end with `:::`.
 
 ## Text is missing or does not fit
 
-A slide has a fixed amount of space. Split a long explanation over two slides, shorten a paragraph, or try a simpler layout. The current checker does not automatically detect visual overflow; tell your assistant which slides overflow.
+A slide has a fixed amount of space. Split a long explanation over two slides, shorten a paragraph, or try a simpler layout. `mdeck check my-talk.md --render` lists the slides whose content does not fit, with the line each starts on.
 
 If you see an “unknown region” error, check that the layout supports the named area you used. For example, `left` and `right` work with `split`, but not with `title`.
 

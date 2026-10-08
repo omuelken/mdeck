@@ -25,7 +25,7 @@ import { ManifestError, KINDS } from '../extensions/manifest.js'
 import { frameworkRoot } from '../paths.js'
 import { parseSlides } from '../core/parseSlides.js'
 import { stripNotes as stripNotesFrom } from '../core/editDeck.js'
-import { parseArgs, validateServerOrigin } from './args.js'
+import { parseArgs, parseSlideNumbers, validateServerOrigin } from './args.js'
 import { assertDrawings } from '../build/drawings.js'
 import { createRelayAccess } from '../build/relayAccess.js'
 import { sessionCode } from '../live/code.js'
@@ -334,6 +334,11 @@ const HELP = `
   ${c.dim}Check and look things up${c.reset}
     ${c.green}mdeck migrate${c.reset} [slides.md] [--dry-run]   Update settings, local layouts and drawings to API 2.0
     ${c.green}mdeck check${c.reset} [slides.md] [--strict]        Validate source and local assets
+      --render               also show every slide in Chrome, all steps revealed: content that
+                             does not fit, text cut off or hard to read, errors on the page
+    ${c.green}mdeck snapshot${c.reset} [slides.md]                Pictures of slides as PNG files (default: .mdeck-snapshots/)
+      --slide <numbers>      only these slides: 3, 3,5 or 2-4
+      --dark | --light       in this appearance instead of the deck's own   -o <folder>
     ${c.green}mdeck list${c.reset} [layouts|themes|palettes] [slides.md] [--json]
                                               List built-in and deck-local layouts, themes and palettes
     ${c.green}mdeck starter${c.reset} <layout> [slides.md]        Print starter Markdown for a layout
@@ -463,10 +468,27 @@ if (command === 'new') {
   const input = requireInput('check')
   const registry = registryFor(input)
   const { diagnostics } = checkDeck(input, registry)
+  if (hasFlag('--render') && !diagnostics.some(d => d.severity === 'error')) {
+    tip('Building the deck and looking at every slide in Chrome…')
+    try {
+      const { renderCheck } = await import('../build/renderCheck.js')
+      diagnostics.push(...await renderCheck(input))
+    } catch (error) { diagnostics.push({ severity: 'error', code: 'render', message: error.message, line: 1 }) }
+  }
   if (diagnostics.length) console.log(formatDiagnostics(diagnostics, input))
   const warned = diagnostics.length || registry.warnings.length
   if (diagnostics.some(d => d.severity === 'error') || (warned && hasFlag('--strict'))) process.exitCode = 1
   else ok(`Checked ${input}${warned ? ' (with warnings)' : ''}`)
+
+} else if (command === 'snapshot') {
+  const input = requireInput('snapshot')
+  try {
+    const slides = parseSlideNumbers(parsed.options['--slide'] ?? '')
+    const outDir = resolve(outputOption() ?? resolve(dirname(resolve(input)), '.mdeck-snapshots'))
+    const appearance = hasFlag('--dark') ? 'dark' : hasFlag('--light') ? 'light' : ''
+    const { snapshot } = await import('../build/renderCheck.js')
+    for (const file of await snapshot(input, { slides, outDir, appearance })) console.log(relative(process.cwd(), file))
+  } catch (error) { err(error.message); process.exitCode = 1 }
 
 } else if (command === 'list') {
   const KIND_WORDS = { layouts: 'layout', themes: 'theme', palettes: 'palette' }

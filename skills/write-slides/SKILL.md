@@ -128,10 +128,12 @@ The request is the message that invoked this skill: usually source material to t
 Save the deck as a `.md` file named after the topic (for example `enzyme-kinetics.md`), then run:
 
 ```sh
-mdeck check <deck>.md
+mdeck check <deck>.md --render
 ```
 
-Fix anything it reports. When you worked from source material, list what you left out or moved to notes, and anything you added that is not in the material. Finish by telling the user the two commands they will want next: `mdeck run <deck>.md` for the launch page (preview, presenting, editor, builds and checks), and `mdeck send <deck>.md` for a file to send around (a reader view with a PDF; notes are removed unless `--notes` is added).
+Fix anything it reports. `--render` builds the deck and shows every slide in Chrome with all steps revealed; it names each slide whose content does not fit, whose text is cut off at the edge or hard to read, with the line the slide starts on. Shorten or split those slides, or pick another layout, and check again. If Chrome is missing, run the check without `--render` and tell the user.
+
+To see slides yourself, if you can read pictures, run `mdeck snapshot <deck>.md --slide 3,5-7`: it saves PNG files to `.mdeck-snapshots/` beside the deck and prints their paths (`--dark` shows the dark appearance). Look at slides you were unsure about, such as diagrams, pictures and columns. When you worked from source material, list what you left out or moved to notes, and anything you added that is not in the material. Finish by telling the user the two commands they will want next: `mdeck run <deck>.md` for the launch page (preview, presenting, editor, builds and checks), and `mdeck send <deck>.md` for a file to send around (a reader view with a PDF; notes are removed unless `--notes` is added).
 
 ## 5. A new look: themes and palettes
 

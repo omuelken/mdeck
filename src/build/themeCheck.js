@@ -14,13 +14,13 @@ import { sampleDeck, SAMPLE_PICTURE } from '../editor/sampleDeck.js'
 import { loadRegistry } from '../extensions/discover.js'
 
 // Runs in the page before the deck: keeps what the page reports.
-const RECORDER = `window.__report = [];
+export const RECORDER = `window.__report = [];
 for (const level of ['warn', 'error']) { const original = console[level]; console[level] = (...args) => { window.__report.push(level + ': ' + args.map(String).join(' ')); original.apply(console, args) } }
 addEventListener('error', event => window.__report.push('error: ' + event.message))
 addEventListener('unhandledrejection', event => window.__report.push('error: ' + (event.reason?.message ?? event.reason)))`
 
 // Runs in the page for the slide on screen: what is cut off or hard to read.
-const MEASURE = `(() => {
+export const MEASURE = `(() => {
   const slide = document.querySelector('deck-stage').querySelectorAll(':scope > section')[window.__index]
   const problems = []
   const frame = slide.getBoundingClientRect()
@@ -71,7 +71,9 @@ const MEASURE = `(() => {
     const box = range.getBoundingClientRect()
     if (!box.width || !box.height) continue
     const words = text.textContent.trim().slice(0, 40)
-    if (box.left < frame.left - 2 * scale || box.right > frame.right + 2 * scale || box.top < frame.top - 2 * scale || box.bottom > frame.bottom + 2 * scale) problems.push('"' + words + '" is cut off at the edge')
+    // Text in a box that scrolls (a component's long list) is meant to be out of view.
+    const scrolls = node => { for (; node && node !== slide; node = node.parentElement) if (/auto|scroll/.test(getComputedStyle(node).overflowY + getComputedStyle(node).overflowX)) return true; return false }
+    if (!scrolls(element) && (box.left < frame.left - 2 * scale || box.right > frame.right + 2 * scale || box.top < frame.top - 2 * scale || box.bottom > frame.bottom + 2 * scale)) problems.push('"' + words + '" is cut off at the edge')
     const colour = parse(style.color), back = behind(element, box)
     if (!colour || !back || colour.a < 0.5 || element.closest('.code-block, .katex')) continue
     const large = parseFloat(style.fontSize) / scale >= 40 || (parseFloat(style.fontSize) / scale >= 30 && Number(style.fontWeight) >= 600)
@@ -120,7 +122,7 @@ export async function withSampleDeck({ extensions = {} } = {}, use) {
   } finally { rmSync(temp, { recursive: true, force: true }) }
 }
 
-const settle = page => page.evaluate('new Promise(done => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(done, 60))))')
+export const settle = page => page.evaluate('new Promise(done => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(done, 60))))')
 
 // Every slide of each look ({ theme, palette }), light and dark; returns the
 // problems found, one line each.
