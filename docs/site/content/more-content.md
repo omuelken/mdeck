@@ -81,6 +81,28 @@ This finding comes from our neighborhood survey.[^survey]
 
 The name inside the brackets connects the sentence to its source. Give each source a different name.
 
+If you keep your sources in Zotero or another reference manager, export them as a `.bib` file next to the deck and cite them by their keys. The slide shows a short citation and lists the full reference at its bottom; a slide with `<bibliography />` lists them all:
+
+```markdown
+---
+bibliography: refs.bib
+---
+# Results
+
+Gardens cool the street [@smith2020, p. 12].
+
+---
+# Sources
+
+<bibliography />
+```
+
+- `[@smith2020, p. 12]` adds a page, `[see @smith2020; @doe2019]` cites two works at once, and `@smith2020` in a sentence reads "Smith et al. (2020)".
+- `csl: vancouver` numbers the works instead; `harvard1` is built in too, and any style from the [Zotero style repository](https://www.zotero.org/styles) works as a `.csl` file next to the deck. Words such as "p." follow the deck's `lang`.
+- Besides `.bib`, a CSL-JSON file (`.json`) or a Typst Hayagriva file (`.yml`) works, and `bibliography:` takes a list of several.
+- A long list goes over two slides with `<bibliography part="1/2" />` and `<bibliography part="2/2" />`.
+- A key that is not in the file shows as `@key?`, and `mdeck check` names it.
+
 ## Add a QR code
 
 A QR code lets people open a link on their phones. Replace the address below with your own:

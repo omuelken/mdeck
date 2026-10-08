@@ -1,0 +1,28 @@
+/* ── Citations and references (src/runtime/citations.js) ────────────────── */
+.citation { font-style: normal; }
+.citation-key--missing {
+  color: var(--accent);
+  text-decoration: underline wavy var(--accent);
+  text-underline-offset: 4px;
+}
+
+/* A slide's references sit with its footnotes, above the footer. */
+.slide-citations {
+  font-size: var(--fs-small);
+  color: var(--muted);
+  border-top: 1px solid var(--rule);
+  padding-top: 20px;
+  margin-top: auto;
+}
+.slide-footnotes + .slide-citations { margin-top: 0; border-top: 0; padding-top: 8px; }
+.slide-citations .csl-bib-body { display: flex; flex-direction: column; gap: 4px; }
+
+/* Entries hang; numeric styles put the number in a margin column. */
+.csl-entry { line-height: 1.4; padding-left: 1.5em; text-indent: -1.5em; overflow-wrap: anywhere; }
+.csl-entry:has(.csl-left-margin) { display: grid; grid-template-columns: auto 1fr; column-gap: 0.6em; padding-left: 0; text-indent: 0; }
+.csl-left-margin { color: var(--muted); font-variant-numeric: tabular-nums; }
+.csl-entry a { color: inherit; text-decoration: none; }
+
+/* <bibliography />: the reference list on its slide. */
+.bibliography { display: flex; flex-direction: column; gap: 0.6em; font-size: var(--fs-small); color: var(--ink-soft); }
+.bibliography-hint { color: var(--muted); font-style: italic; }

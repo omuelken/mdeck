@@ -5,6 +5,7 @@ import { marked, Parser } from 'marked'
 import { registry } from '../runtime/registry'
 import { InkLayer } from '../runtime/ink/InkLayer.jsx'
 import themedSvgs from 'virtual:deck-svgs'
+import { renderCitations, citationsHtml as referencesOf } from '../runtime/citations.js'
 
 // ─── Content extraction ────────────────────────────────────────────────────
 
@@ -170,6 +171,12 @@ function SlideFootnotes({ html }) {
   return <div class="slide-footnotes" dangerouslySetInnerHTML={{ __html: html }} />
 }
 
+// The full references of the works this slide cites (show.citations: false hides them).
+function SlideCitations({ html }) {
+  if (!html) return null
+  return <div class="slide-citations" dangerouslySetInnerHTML={{ __html: html }} />
+}
+
 function slideNum(index) {
   return String(index + 1).padStart(2, '0')
 }
@@ -181,10 +188,12 @@ export function prepareSlide(slide) {
     .sort((a, b) => position(a[1]) - position(b[1]))
   let separator = '\u0000mdeck-region\u0000'
   while (entries.some(([, r]) => r.content.includes(separator))) separator += '\u0000'
-  const { processed, footnotesHtml } = preprocessFootnotes(entries.map(([, r]) => r.content).join(separator))
+  const cited = renderCitations(entries.map(([, r]) => r.content).join(separator))
+  const { processed, footnotesHtml } = preprocessFootnotes(cited.markdown)
   const pieces = processed.split(separator)
   const regions = Object.fromEntries(entries.map(([name, region], i) => [name, { ...region, content: pieces[i] }]))
-  return { ...slide, regions, content: regions.body?.content ?? '', footnotesHtml }
+  const citationsHtml = slide.deckConfig?.show?.citations === false ? '' : referencesOf(cited.ids)
+  return { ...slide, regions, content: regions.body?.content ?? '', footnotesHtml, citationsHtml }
 }
 
 export function MarkdownRegion({ region, content, class: className, ...attributes }) {
@@ -194,7 +203,7 @@ export function MarkdownRegion({ region, content, class: className, ...attribute
 }
 
 // Layouts supply body content; every layout receives the same outer frame.
-export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, id, manifest, footnotesHtml, children }) {
+export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, id, manifest, footnotesHtml, citationsHtml, children }) {
   const layout = manifest.id === 'generic' ? meta.layout : manifest.id
   const frame = manifest.frame ?? 'standard'
   const title = frame === 'title'
@@ -207,6 +216,7 @@ export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, 
       isTitle={title} right={frame === 'chapter' ? meta.part ?? '' : meta.section ?? ''} />}
     {children}
     <SlideFootnotes html={footnotesHtml} />
+    <SlideCitations html={citationsHtml} />
     {frame !== 'none' && <SlideFooter deckConfig={deckConfig} right={slideNum(index)} isTitle={title} />}
     <InkLayer slideId={id} />
   </section>

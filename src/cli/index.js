@@ -12,7 +12,7 @@ import { loadRegistry, manifestsOf, serializeRegistry } from '../extensions/disc
 import { BACKUP_DIR } from '../build/editorPlugin.js'
 import { createEditorServer, createDesignServer } from '../build/editorServer.js'
 import { homePlugin } from '../build/homePlugin.js'
-import { checkDeck } from '../build/check.js'
+import { checkDeck, bibliographyDiagnostics } from '../build/check.js'
 import { livePlugin, startLiveServer } from '../live/server.js'
 import { inkPlugin } from '../build/inkPlugin.js'
 import { createPairing, pairingPlugin } from '../build/pairing.js'
@@ -470,6 +470,7 @@ if (command === 'new') {
   const input = requireInput('check')
   const registry = registryFor(input)
   const { diagnostics } = checkDeck(input, registry)
+  diagnostics.push(...await bibliographyDiagnostics(input))
   if (hasFlag('--render') && !diagnostics.some(d => d.severity === 'error')) {
     tip('Building the deck and looking at every slide in Chrome…')
     try {

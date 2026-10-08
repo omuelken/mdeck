@@ -41,6 +41,8 @@ meta:
   author: "Name"
   organization: "FHNW"
   date: "2026-09-16"
+bibliography: refs.bib  # optional: .bib, CSL-JSON or Hayagriva; cite [@key, p. 3] or @key, list with <bibliography />
+csl: apa                # optional: apa, vancouver, harvard1 or a .csl file
 ---
 
 ---

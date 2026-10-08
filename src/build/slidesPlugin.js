@@ -12,6 +12,7 @@ import { isOwnWrite } from './ownWrites.js'
 import { fileURLToPath } from 'node:url'
 import { assertDrawings } from './drawings.js'
 import { marked } from 'marked'
+import { resolveBibliography } from './bibliography.js'
 
 const VIRTUAL_ID = 'virtual:slides'
 const RESOLVED_ID = '\0virtual:slides'
@@ -24,6 +25,8 @@ const INK_ID = 'virtual:deck-ink'
 const RESOLVED_INK_ID = '\0virtual:deck-ink'
 const SVGS_ID = 'virtual:deck-svgs'
 const RESOLVED_SVGS_ID = '\0virtual:deck-svgs'
+const BIB_ID = 'virtual:bibliography'
+const RESOLVED_BIB_ID = '\0virtual:bibliography'
 
 const MIME_BY_EXT = {
   '.png': 'image/png',
@@ -236,8 +239,15 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     for (const dir of next) if (!allow.includes(dir)) allow.push(dir)
     return true
   }
-  const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID]
-  const SOURCE_IDS = [RESOLVED_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID]
+  const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID, RESOLVED_BIB_ID]
+  const SOURCE_IDS = [RESOLVED_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID, RESOLVED_BIB_ID]
+  // The reference files (and .csl style) the deck names, from the last load.
+  let bibFiles = []
+  // The editor keeps its page: the formatted references arrive as a hot update.
+  const bibUpdate = server => {
+    const mod = server.moduleGraph.getModuleById(RESOLVED_BIB_ID)
+    return editor && mod ? [mod] : []
+  }
   const invalidate = (server, ids) => {
     for (const id of ids) {
       const mod = server.moduleGraph.getModuleById(id)
@@ -269,6 +279,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       if (id === EXTENSIONS_ID) return RESOLVED_EXTENSIONS_ID
       if (id === INK_ID) return RESOLVED_INK_ID
       if (id === SVGS_ID) return RESOLVED_SVGS_ID
+      if (id === BIB_ID) return RESOLVED_BIB_ID
     },
     load(id) {
       if (id === RESOLVED_ID) {
@@ -313,6 +324,18 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         const svgs = themedSvgs(abs, sourceFor(readDeck()))
         for (const { file } of Object.values(svgs)) this.addWatchFile(file)
         return `export default ${JSON.stringify(Object.fromEntries(Object.entries(svgs).map(([ref, { markup }]) => [ref, markup])))}`
+      }
+      // The deck's citations and references, formatted with citeproc here so
+      // that none of it travels in the deck (bibliography.js).
+      if (id === RESOLVED_BIB_ID) {
+        watchDeck(this)
+        return resolveBibliography(abs, sourceFor(readDeck())).then(bibliography => {
+          bibFiles = bibliography ? [...bibliography.files, bibliography.style].filter(Boolean) : []
+          for (const file of bibFiles) if (existsSync(file)) this.addWatchFile(file)
+          if (bibliography?.diagnostics.length) this.warn(bibliography.diagnostics.map(d => d.message).join('\n'))
+          const data = bibliography && { ids: bibliography.ids, clusters: bibliography.clusters, singles: bibliography.singles, entries: bibliography.entries, order: bibliography.order }
+          return `export default ${JSON.stringify(data)}`
+        })
       }
       if (id === RESOLVED_EXTENSIONS_ID) {
         const registry = loadRegistry(abs)
@@ -361,10 +384,16 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       const own = [inkPath, abs].includes(changed) && (() => { try { return isOwnWrite(changed, readFileSync(changed, 'utf-8')) } catch { return false } })()
       if (own) {
         invalidate(server, changed === abs ? SOURCE_IDS : [RESOLVED_INK_ID])
-        return []
+        return changed === abs ? bibUpdate(server) : []
       }
       if (changed === inkPath) {
         reload(server, [RESOLVED_INK_ID], changed)
+        return []
+      }
+      if (bibFiles.includes(changed)) {
+        invalidate(server, [RESOLVED_BIB_ID])
+        if (editor) return bibUpdate(server)
+        server.ws.send({ type: 'full-reload' })
         return []
       }
       if (changed === abs) {
@@ -374,7 +403,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         }
         // The deck sets the ink's design size and which SVGs are inlined.
         invalidate(server, SOURCE_IDS)
-        if (editor) return []
+        if (editor) return bibUpdate(server)
         server.ws.send({ type: 'full-reload' })
       }
     },

@@ -2,6 +2,7 @@ import { validatePageUrl } from '../core/urls.js'
 import { h, render } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { marked } from 'marked'
+import { renderCitations, onBibliography } from './citations.js'
 import deckFileContent from 'virtual:slides'
 import { parseSlides } from '../core/parseSlides'
 import { validateDeck } from '../core/validateDeck'
@@ -487,7 +488,7 @@ function PresenterView({ deckConfig, slides }) {
           }}
             dangerouslySetInnerHTML={{
               __html: note
-                ? marked.parse(note)
+                ? marked.parse(renderCitations(note).markdown)
                 : '<p>No notes — add a <code>:::notes</code> block to the slide.</p>',
             }}
           />
@@ -751,6 +752,8 @@ async function init() {
       if (event.source !== window.parent || event.origin !== window.location.origin) return
       if (!bridge.handleMessage(event.data)) handleDeckControl(event.data?.deckControl)
     })
+    // Saving the deck or its reference file reformats the citations.
+    onBibliography(() => bridge.refresh())
     await bridge.render(slidesContent)
     post({ deckEditorReady: true })
     return

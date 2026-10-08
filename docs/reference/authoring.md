@@ -63,6 +63,10 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `params` | — | Theme-specific color/font overrides (see below) |
 | `reader.themes` | `true` | Whether the reader view offers a switch between light and dark (see below) |
 | `reader.notes` | `false` | Whether the reader view shows speaker notes under each slide in Read mode |
+| `bibliography` | — | Reference file, or a list of them, relative to the deck: `.bib`, `.json` (CSL-JSON) or `.yml` (Hayagriva) (see [Citations](#citations-and-references)) |
+| `csl` | `apa` | Citation style: `apa`, `vancouver`, `harvard1`, or a `.csl` file |
+| `nocite` | — | References to list without citing them; `['*']` lists the whole file |
+| `show.citations` | `true` | `false` leaves out each slide's own references above the footer |
 
 ### Theme params
 
@@ -376,6 +380,52 @@ This claim needs a source.[^1]
 
 [^1]: The source citation goes here.
 ```
+
+### Citations and references
+
+Name a reference file in the deck frontmatter and cite its entries by key, in the syntax Pandoc and Quarto use:
+
+```markdown
+---
+bibliography: refs.bib
+csl: apa
+---
+# Results
+
+As @smith2020 showed, it works [see @smith2020, p. 12; @doe2019].
+
+---
+# References
+
+<bibliography />
+```
+
+| Written | APA | Vancouver |
+|---|---|---|
+| `[@smith2020]` | (Smith et al., 2020) | (1) |
+| `[@smith2020, p. 12]` | (Smith et al., 2020, p. 12) | (1) |
+| `[see @smith2020; @doe2019]` | (see Smith et al., 2020; Doe, 2019) | (1,2) |
+| `[-@smith2020]` | (2020) | (1) |
+| `@smith2020` | Smith et al. (2020) | Smith et al. (1) |
+| `@smith2020 [chap. 3]` | Smith et al. (2020, Chapter 3) | Smith et al. (1) |
+
+- **On the slide** each citation shows in the style's short form, and the full reference of every work the slide cites stands in small type above the footer, after any footnotes. `show.citations: false` leaves those out.
+- **`<bibliography />`** lists every cited work, plus those named in `nocite`, in the style's order. A list too long for one slide goes on several: `<bibliography part="1/2" />` on one and `<bibliography part="2/2" />` on the next split it in halves.
+- **Locators** after a comma: `p.`/`pp.`, `chap.`, `sec.`, `fig.`, `vol.`, `para.`, `no.`, `l.`, `eq.` and the German `S.`, `Kap.`, `Abb.`, `Bd.`, `Nr.`; a bare number is a page.
+- **`@key` without brackets** is a citation only when the key is in the reference file, so e-mail addresses and `@handles` stay text. Citations in code, in links' addresses and in `:::notes` blocks work as in slide text, except that notes show no reference footer.
+- **A key that is not in the file** shows as `@key?`, marked, and `mdeck check` and `mdeck build` warn about it.
+
+**Reference files.** `bibliography` takes one file or a list:
+
+| Extension | Format | Comes from |
+|---|---|---|
+| `.bib` | BibTeX / BibLaTeX | Zotero, JabRef, Google Scholar, most journals |
+| `.json` | CSL-JSON | Zotero ("CSL JSON"), Pandoc |
+| `.yml`, `.yaml` | Hayagriva (Typst), or CSL-YAML when the file is a list | Typst projects |
+
+**Styles.** `apa`, `vancouver` and `harvard1` are built in. Any other style from the [CSL style repository](https://www.zotero.org/styles) works as a file next to the deck: `csl: nature.csl`. The style's words (`p.`/`S.`, `and`/`und`, `et al.`/`u. a.`) follow the deck's `lang`; English, German, French, Spanish and Dutch are included, other languages fall back to English. Note styles (such as Chicago notes-bibliography) are written for footnotes; on slides an author-date or numeric style reads better.
+
+The references are formatted when the deck is built, so the deck carries only the finished text and works offline; the dev server reformats them when the deck or a reference file changes.
 
 ---
 

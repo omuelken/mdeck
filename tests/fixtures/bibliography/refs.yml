@@ -1,0 +1,19 @@
+smith2020:
+  type: Article
+  title: A study of things
+  author: ["Smith, John", "Doe, Jane", "Roe, Richard"]
+  date: 2020
+  page-range: 1-10
+  serial-number:
+    doi: 10.1000/xyz
+  parent:
+    type: Periodical
+    title: Nature
+    volume: 5
+
+jones2019:
+  type: Book
+  title: Counting sheep
+  author: Jones, Alice
+  publisher: Wiley
+  date: 2019

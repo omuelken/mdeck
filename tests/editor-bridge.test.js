@@ -78,3 +78,12 @@ test('preview config and extension overrides reload the theme when they change',
   await new Promise(r => setTimeout(r, 20))
   assert.equal(calls.themes.at(-1), 'terminal')
 })
+
+test('a refresh renders the newest source again with its preview settings, without reloading the theme', async () => {
+  const { bridge, calls } = harness()
+  await bridge.render('---\ntheme: duet\n---\n# A', { config: { palette: 'swiss' }, overrides: { themes: {} } })
+  await bridge.refresh()
+  assert.deepEqual(calls.themes, ['duet'])
+  assert.equal(calls.overrides.length, 1)
+  assert.equal(calls.mounts.length, 2)
+})

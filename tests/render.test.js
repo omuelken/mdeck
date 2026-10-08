@@ -87,3 +87,17 @@ test('a paragraph of only pictures is marked, a sentence with a picture is not',
   assert.doesNotMatch(marked.parse('Press ![stop](stop.png) to stop.'), /pictures/)
   assert.doesNotMatch(marked.parse('Just words.'), /pictures/)
 })
+
+test('citations are put in place, a slide lists the works it cites, and unknown keys are marked', async () => {
+  const { renderCitations, citationsHtml } = await server.ssrLoadModule('/src/runtime/citations.js')
+  const bib = { ids: ['smith2020', 'jones2019'], clusters: { '[@smith2020, p. 4]': '(Smith, 2020, p. 4)' }, singles: { smith2020: '(Smith, 2020)', jones2019: '(Jones, 2019)' }, entries: { smith2020: '<div class="csl-entry">Smith 2020</div>' }, order: ['smith2020'] }
+  const { markdown, ids } = renderCitations('As [@smith2020, p. 4] and [@jones2019; @nobody] say.', bib)
+  assert.match(markdown, /<cite class="citation" data-cites="smith2020">\(Smith, 2020, p\. 4\)<\/cite>/)
+  assert.match(markdown, /\(Jones, 2019\); <span class="citation-key citation-key--missing"[^>]*>@nobody\?<\/span>/)
+  assert.deepEqual(ids, ['smith2020'])
+  assert.equal(citationsHtml(ids, bib), '<div class="csl-bib-body"><div class="csl-entry">Smith 2020</div></div>')
+  // This deck has no bibliography: the key stays visible, marked.
+  const html = htmlFragments(SlideRenderer({ meta: {}, content: '# Title\n\nSee [@smith2020].[^a]\n\n[^a]: A note', deckConfig: {}, index: 0 }))
+  assert.match(html, /@smith2020\?/)
+  assert.match(html, /A note/)
+})
