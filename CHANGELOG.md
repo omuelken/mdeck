@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.5.0 — 2026-10-09
 
 - mdeck now comes with six themes: `neue` (still the default), `academic` and `minimal` as before, and new among them `plain` (black on white, the heading in a column beside the content), `work` (an everyday company template with an accent band, the logo and numbered sections) and `glass` (liquid glass, dark by default). The palettes `greyscale` (`plain`'s) and `cobalt` (`work`'s) come with it too. `aurora` and its palette `neon` moved to the theme repository: a deck that uses them is told to run `mdeck themes install aurora`; files made with `mdeck send` or `mdeck build` keep working, because they carry their theme. The tour example now uses `glass`.
 - Tags in a deck are found the way the slide finds them, everywhere mdeck looks for them: the phones, `--no-polls`, the pictures and videos a build takes along. A `>` in a quoted value no longer cuts a tag short there either (`<qrcode label="a > b" join />`, `<img alt="a > b" src="…">`), and a tag that a blank line cuts in two is no activity for the phones when the slide does not show it.
