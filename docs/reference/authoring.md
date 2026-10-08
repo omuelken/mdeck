@@ -592,6 +592,20 @@ labels:
 | `follow.tryHere` | Try following here | Mitverfolgen hier ausprobieren |
 | `question.empty` | Answers appear here. | Hier erscheinen die Antworten. |
 | `scale.average` | Average {n} | Durchschnitt {n} |
+| `poll.answeredOf` | {n} of {of} answered | {n} von {of} haben geantwortet |
+| `poll.closed` | Closed | Geschlossen |
+| `poll.several` | Several answers possible. | Mehrere Antworten möglich. |
+| `poll.pickSeveral` | Tap all that apply. | Alle zutreffenden antippen. |
+| `poll.thanksSeveral` | Thanks! You chose {choice}. Tap to change. | Danke! Gewählt: {choice}. Zum Ändern antippen. |
+| `respond.closed` | Closed: no more answers. | Geschlossen: keine weiteren Antworten. |
+| `respond.right` | Right! | Richtig! |
+| `respond.wrong` | Not quite. The right answer: {answer} | Leider nicht. Richtig ist: {answer} |
+| `respond.solution` | The right answer: {answer} | Richtig ist: {answer} |
+| `numeric.placeholder` | A number | Eine Zahl |
+| `numeric.invalid` | Enter a number, such as 0.5 or 1/2. | Eine Zahl eingeben, z. B. 0,5 oder 1/2. |
+| `numeric.sent` | Sent: {value}. Send another to change. | Gesendet: {value}. Zum Ändern eine andere senden. |
+| `numeric.other` | Other | Andere |
+| `numeric.right` | {n} right | {n} richtig |
 
 ---
 
@@ -745,14 +759,17 @@ For `play="auto"` the video pauses and resets to the beginning when you navigate
 | `options` | — | Answers separated by `\|`. Markdown and `$…$` maths, as on a slide (see below) |
 | `question` | — | Question text, Markdown and maths like `options`; phones fall back to the slide heading |
 | `qr` | `true` | `false` leaves out the QR code (shown earlier with `<qrcode join />`) |
-| `answer` | — | The right answer (several separated by `\|`): a button with a tick outlines its label, bar and count in green, also in the audience window and on paired devices. `--poll-correct` sets the colour |
+| `answer` | — | The right answer (several separated by `\|`): a button with a tick outlines its label, bar and count in green, also in the audience window and on paired devices, and each phone says whether its vote was right. `--poll-correct` sets the colour |
+| `multiple` | — | Each phone may pick several options; the slide and the phones say so. A vote is then the list of options picked, and is right when it is exactly the `answer` options |
+| `buttons` | — | `letters` puts A, B, C … before the options, and the phones show only those; `numbers` does the same with 1, 2, 3 …. For options better read on the slide, such as pictures (`options="![](a.svg)\|![](b.svg)"`) |
 | `results` | — | `hidden` starts with the results hidden, e.g. for peer instruction. A button with an eye shows or hides them (bars and counts) at any time, also in the audience window and on paired devices. Hidden, the audience window shows no bars; the presenter's own screens show them faint |
 
-Three more activities take the same `room`, `question` and `qr`:
+Four more activities take the same `room`, `question` and `qr`:
 
 | Tag | Attributes | Phones | Slide |
 |---|---|---|---|
 | `<scale>` | `min` (1), `max` (5), `low`, `high` | One button per number, `low`/`high` as labels | Count per number and the average; latest answer per device |
+| `<numeric>` | `answer`, `tolerance` (0), `limit` (6), `placeholder`, `results` | A number field: `0.5`, `0,5`, `1/2`, `1e-3`; latest answer per device | The most frequent answers as bars, the rest as Other; with `answer`, the tick marks the right ones, counts them and tells each phone |
 | `<wordcloud>` | `placeholder`, `limit` (60), `height` (520) | Text field, up to 40 characters, repeatable | A packed word cloud (d3-cloud): size by frequency, some words upright, case-insensitive |
 | `<question>` | `placeholder`, `limit` (8) | Text field, up to 200 characters, repeatable | The newest answers as cards |
 
@@ -761,6 +778,10 @@ Three more activities take the same `room`, `question` and `qr`:
 Options and the question may use Markdown and maths, e.g. `options="$2x$|$x^2$|$\frac{x^3}{3}$"`. A `|` inside a formula belongs to it (`$|x|$` is one option), and `\|` is a bar in plain text. The slide draws maths with KaTeX, the phones as MathML; votes and `answer` use the text as written. The other activities' `question`, and the scale's `low` and `high`, take Markdown and maths too.
 
 The slide shows live bars, the number of answers, a QR code and a short link. Phones never load the deck: they open the server's own answer page at `<server>/<code>`, where the six-digit session code is the same for every poll in the deck. The presenter's screen (the presenter view or a full deck window, never an embedded preview) announces the poll on the current slide with what the phones should show and the deck's look; the server only accepts that from the presenter. Between polls the phones wait. Each device's latest vote counts. The presenter can reset the room (hover over the results).
+
+Every activity has a lock button that closes it: answers after that do not count, and the phones say it is closed until it opens again. Polls and `<numeric>` also have the eye that hides or shows the results. Below the results, polls, scales and `<numeric>` count “12 of 31 answered” while phones are connected (people following the slides count as phones). The lock, the eye and the tick reach every screen of the talk, also after a reload: they are kept in the activity room's state on the server, which only the presenter may set, and phones read it there. Reset clears the answers and opens the activity again.
+
+While `mdeck run` runs, the answers are kept beside the deck in `<slides>.results.json`: per activity room, each answer with its time, the phones numbered per room (their ids are not kept), and, once an activity was closed, only the answers that counted. Reset takes a room out of the file; a new, empty server leaves the file alone. Builds, `mdeck send` and `mdeck pdf` show the kept answers where no room server answers (`--no-results` leaves them out), and `mdeck results [slides.md] [-o file.csv]` prints them as CSV: `room,phone,at,answer`, several picks joined by `|`.
 
 `--no-polls` leaves slides with an activity or a join code (`<qrcode join />`) out of `mdeck send`, `mdeck build --reader` and `mdeck pdf`; without it they show as a record of the talk. Saved drawings follow the remaining slides.
 

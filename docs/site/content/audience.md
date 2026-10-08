@@ -28,9 +28,12 @@ Every poll in a presentation shows the same code, so people scan once. Their pho
 | Setting | Meaning |
 |---|---|
 | `room` | A short name for this question, different for each poll in the deck. Letters, digits, hyphens and underscores. |
-| `answer` | Optional: the right answer, written exactly like the option. A button with a tick then appears under the bars; tapping it outlines the right answer, its bar and its number in green, and tapping again hides it. The audience window shows it too. |
+| `answer` | Optional: the right answer, written exactly like the option (several separated by `\|`). A button with a tick then appears under the bars; tapping it outlines the right answer, its bar and its number in green, and each phone says whether its vote was right. Tapping again hides it. |
 | `options` | The answers, separated by `\|` |
 | `question` | Optional question text. Without it, phones show the slide's heading. |
+| `multiple` | Each phone may pick several options. The slide and the phones say “Several answers possible”. Without it, one option per phone. |
+| `buttons` | `letters` puts A, B, C … before the options on the slide, and the phones show only those letters; `numbers` does the same with 1, 2, 3 … For options that are pictures or long formulas, better read on the big screen. |
+| `results` | `hidden` starts with the bars hidden, e.g. to let people vote before they see what others chose. |
 | `qr` | `false` leaves out the QR code, when an earlier slide showed it with `<qrcode join />`. |
 
 The question and the options may contain formatting and formulas, written as on a slide, so a maths lecture can ask:
@@ -41,14 +44,31 @@ The question and the options may contain formatting and formulas, written as on 
 
 Both the slide and the phones show the formulas. A `|` inside a formula stays in it, so `$|x|$` is one option; to put a `|` in plain text, write `\|`.
 
+Options can also be pictures. Show only letters on the phones then:
+
+```markdown
+<poll room="graph" question="Which graph shows $f(x) = e^{-x}$?" options="![](a.svg)|![](b.svg)|![](c.svg)" answer="![](b.svg)" buttons="letters" />
+```
+
+### During the poll
+
+Below the bars, the slide counts the answers, “12 of 31 answered” while phones are connected. The presenter has three buttons there (the audience window does not show them):
+
+- **The lock** closes the poll. Answers after that do not count, and the phones say the poll is closed until you open it again.
+- **The eye** hides or shows the bars. Hidden, the audience sees no bars; your own screens show them faint.
+- **The tick** (with `answer`) shows the right answer: on the slide, and on each phone, which says whether its answer was right.
+
+Together they make a peer-instruction round: start with `results="hidden"`, let people vote, close, show the bars, let them discuss, and show the answer. **Reset** clears the answers and opens the poll again.
+
 With `lang: de` in the settings, the slide and the phones show German words, such as “Scannen und abstimmen”. The phones use the presentation's colours and fonts; if you pick another theme or palette in the presenter view, the phones change with it.
 
 ## Other kinds of questions
 
-Besides a poll, three more kinds work the same way: one line on a slide, answered on the phones.
+Besides a poll, four more kinds work the same way: one line on a slide, answered on the phones.
 
 ```markdown
 <scale room="pace" min="1" max="5" low="Too slow" high="Too fast" />
+<numeric room="limit" question="What is $\lim_{x \to 0} \frac{\sin x}{x}$?" answer="1" />
 <wordcloud room="mood" placeholder="One word" />
 <question room="ask" placeholder="Your question" />
 ```
@@ -56,10 +76,11 @@ Besides a poll, three more kinds work the same way: one line on a slide, answere
 | Tag | Phones show | The slide shows |
 |---|---|---|
 | `<scale>` | The numbers from `min` to `max` (1 to 5 unless set, at most 11 steps), with `low` and `high` as labels at the ends | How many chose each number, and the average. Each phone's latest answer counts |
+| `<numeric>` | A field for a number: `0.5`, `0,5`, `1/2` or `1e-3` | The most frequent answers as bars, six unless `limit` says otherwise, and the rest as Other. With `answer`, the tick marks the right ones and counts them, and each phone hears whether it was right; `tolerance` (0 unless set) says how far off still counts. Each phone's latest answer counts |
 | `<wordcloud>` | A short text field | A cloud of every answer, packed around the middle, larger the more often it came in and some upright. Capitals and extra spaces do not matter. People may send several. `height` sets its height (520). Colours come from the palette; `--cloud-1` to `--cloud-6` override them |
 | `<question>` | A text field | The newest answers as cards, eight unless `limit` says otherwise. People may send several |
 
-All of them take `room`, `question` and `qr` like a poll, and `placeholder` for the text fields. Their `question`, and the scale's `low` and `high`, may contain formatting and formulas like a poll's options.
+All of them take `room`, `question` and `qr` like a poll, and `placeholder` for the text fields. Their `question`, and the scale's `low` and `high`, may contain formatting and formulas like a poll's options. All of them have the lock that closes them; `<numeric>` also has the eye and the tick, and takes `results="hidden"`.
 
 ## Show the code once
 
@@ -183,9 +204,11 @@ Two presentations with the same title share a session code. Give one of them `se
 
 Answers are anonymous. Each phone gets a random number so it can change its vote; nothing else identifies it. The server keeps answers in memory only. It forgets a room after twelve hours without visitors and everything when it restarts. Each phone can send a limited number of answers in a short time.
 
+While you present with `mdeck run`, the answers are also kept beside the presentation, in `my-talk.results.json`. It holds each answer with its time, and the phones numbered 1, 2, 3 … per question instead of their random numbers. Once a question was closed, only the answers that counted. **Reset** takes a question's answers out of the file; a new server that starts empty leaves the file as it is. `mdeck results my-talk.md` prints the answers as CSV (question, phone, time, answer), to open in a spreadsheet; `-o answers.csv` saves them to a file. A deck hosted with its own `server` keeps nothing beside it.
+
 ## In a PDF or a shared file
 
-A PDF, a file made with `mdeck send` and a folder hosted without a poll server keep your questions as a record of the talk: each shows its question and options, with a note that it was answered live, and no join code. If the deck's `server` still answers when the file is made or opened, the results it holds appear instead. Printed slides never show the join code or the presenter's buttons.
+A PDF, a file made with `mdeck send` and a folder hosted without a poll server keep your questions as a record of the talk, without a join code. With answers kept in `my-talk.results.json`, each shows its results as they were at the end of the talk; without, its question and options with a note that it was answered live. `--no-results` leaves the kept answers out. If the deck's `server` still answers when the file is opened, the results it holds appear instead. Printed slides never show the join code or the presenter's buttons.
 
 ## Make your own activity
 

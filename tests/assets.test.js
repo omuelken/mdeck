@@ -11,6 +11,11 @@ test('assets in explicit metadata, slots and speaker notes are collected', () =>
   assert.deepEqual(collectLocalAssetRefs(source).sort(), ['./demo.mp4', './hero.png', './note.png'])
 })
 
+test("pictures in a tag's attributes, such as a poll's options, are collected", () => {
+  const source = '# Which graph?\n\n<poll room="graph" options="![](./a.svg)|![B](b.png)" answer="![](./a.svg)" buttons="letters" />\n'
+  assert.deepEqual(collectLocalAssetRefs(source).sort(), ['./a.svg', 'b.png'])
+})
+
 test('embedding pictures leaves code examples as text', () => {
   const deck = new URL('../examples/showcase/slides.md', import.meta.url).pathname
   const example = '````markdown\n:::meta\nimage: ./img/image.jpg\n:::\n![Map](./img/image.jpg)\n````'

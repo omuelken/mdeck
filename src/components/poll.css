@@ -7,9 +7,9 @@
 .poll-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* buttons="letters|numbers": the key phones show, before the option. */
 .poll-key { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; margin-right: .5em; padding: 0 .3em; border-radius: .4em; background: color-mix(in srgb, var(--accent, #0d9488) 14%, transparent); color: var(--accent, #0d9488); font-weight: 700; font-size: .8em; vertical-align: .1em; }
-/* A picture as an option: as high as two lines of text. */
+/* A picture as an option: a thumbnail beside its bar. */
 .poll-label:has(img) { white-space: normal; }
-.poll-label img { max-height: 2.4em; max-width: 100%; vertical-align: middle; }
+.poll-label img { max-height: 3.2em; max-width: 100%; vertical-align: middle; }
 .poll .poll-several { margin: -20px 0 24px; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
 .poll-track { height: 1.1em; background: color-mix(in srgb, var(--ink, #111) 8%, transparent); border-radius: 6px; overflow: hidden; }
 .poll-fill { display: block; height: 100%; background: var(--accent, #0d9488); border-radius: 6px; transition: width .6s cubic-bezier(.2, .8, .2, 1); }

@@ -38,7 +38,7 @@ export default function Numeric({ room = 'numeric', question = '', answer = '', 
         </div>)}
       </div>
       {!rows.length && !live.offline && <p class="question-empty">{t('question.empty')}</p>}
-      {right != null && controls.revealed && <p class="numeric-answer"><span dangerouslySetInnerHTML={{ __html: slideHtml(answer) }} />{within > 0 && <span> ± {tolerance}</span>} · {t('numeric.right', { n: rightCount })}</p>}
+      {right != null && controls.revealed && <p class="numeric-answer">{t('respond.solution', { answer: <span><span dangerouslySetInnerHTML={{ __html: slideHtml(answer) }} />{within > 0 && ` ± ${tolerance}`}</span> })} · {t('numeric.right', { n: rightCount })}</p>}
       <ActivityFooter count={texts.length} {...live} perPhone reset={controls.reset} closed={controls.closed}>
         <ActivityControls controls={controls} messages={live.messages} offline={live.offline} results solve={right != null} />
       </ActivityFooter>

@@ -142,6 +142,8 @@ export function collectLocalAssetRefs(markdown) {
         if (token.type === 'image') add(token.href)
         if (token.type === 'html') {
           for (const match of token.text.matchAll(/<(?:img|video|audio|source|videoplayer)\b[^>]*\bsrc=(["'])([^"']+)\1/gi)) add(match[2])
+          // Markdown pictures in a tag's attributes, such as a poll's options.
+          for (const match of token.text.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)) add(match[1])
         }
       })
     }

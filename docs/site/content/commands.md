@@ -97,6 +97,8 @@ The design page shows themes and palettes on a sample deck with every kind of sl
 | `mdeck send my-talk.md --no-pdf` | The same, without rendering the PDF |
 | `mdeck pdf my-talk.md -o talk.pdf` | Render the slides to a PDF file (`--no-polls` leaves out the slides with polls) |
 | `--no-drawings` | Leave out the drawings from `my-talk.drawings.json`, for `build`, `send` and `pdf` |
+| `--no-results` | Leave out the answers kept in `my-talk.results.json`, for `build`, `send` and `pdf`; the polls then show their questions only |
+| `mdeck results my-talk.md` | The answers kept during the talk, as CSV; `-o answers.csv` saves them to a file |
 
 See [Send, host or print your slides](sharing.html) for help choosing between them. Unknown options, missing option values and extra filenames stop the command before it changes any output. `--output=path` and `-o path` are both accepted. `mdeck preview --no-open --port 4200` previews without opening a browser and chooses a port.
 

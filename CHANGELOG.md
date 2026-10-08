@@ -9,6 +9,13 @@
 - The sample deck, on which `mdeck design`, the theme gallery and the theme checks show every theme, now also has a link, a quotation, a bullet list inside a numbered list, citations with their references at the foot of the slide, and a reference list.
 - A poll's question and options may use Markdown and `$…$` maths, as on a slide: `options="$2x$|$x^2$|$\frac{x^3}{3}$"`. The slide draws them with KaTeX, the phones' answer page as MathML, which needs no fonts or scripts there; it keeps only text, emphasis and MathML from what the presenter's screen sends. A `|` inside a formula belongs to it (`$|x|$`), and `\|` is a bar in the text. Votes and `answer` still use the text as written. The same goes for the `question` of every activity (`<scale>`, `<question>`, `<wordcloud>`) and the scale's `low` and `high` labels. An answer page from an older `mdeck server` shows the source text.
 - Fixed: the phones' answer page showed the word “null” below the question when there was no link for following the slides.
+- Every activity has a lock button that closes it: answers after that do not count, and the phones say it is closed until it opens again. Together with the eye (`results="hidden"`) and the tick this makes a peer-instruction round: vote, close, show the bars, discuss, show the answer.
+- Showing a poll's right answer also tells each phone whether its vote was right, or what the right answer is. The lock, the eye and the tick are kept in the activity room's state on the server, so every screen of the talk and the phones follow them, also after a reload.
+- Polls, scales and numbers count “12 of 31 answered” while phones are connected.
+- `multiple` lets each phone pick several options of a poll; the slide and the phones say so. `buttons="letters"` (or `"numbers"`) puts A, B, C before the options on the slide and shows only those on the phones, for options that are pictures or long formulas.
+- New activity `<numeric>`: phones type a number (`0.5`, `0,5`, `1/2`), the slide shows the most frequent answers as bars. `answer` and `tolerance` mark the right ones and tell each phone whether it was right.
+- The answers of a talk are kept beside the deck in `<slides>.results.json` while `mdeck run` runs: anonymous, phones numbered per question. Builds, `mdeck send` and `mdeck pdf` show them as the record of the talk (`--no-results` leaves them out), and `mdeck results` prints them as CSV.
+- Fixed: a `>` or `<` in an activity's attributes (`question="Is $x > 0$?"`) cut its tag short, and the phones lost the options. Pictures in a tag's attributes, such as a poll's options, are now copied into folder builds.
 
 ## 3.3.0 — 2026-10-08
 
