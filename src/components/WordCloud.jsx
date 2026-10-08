@@ -2,7 +2,7 @@ import { h } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import cloud from 'd3-cloud'
 import { useRoom } from '../live/client.js'
-import { JoinCode, ActivityFooter, ActivityQuestion, wantsQr } from './activity.jsx'
+import { JoinCode, ActivityFooter, ActivityQuestion, ActivityControls, useControls, wantsQr } from './activity.jsx'
 import { phoneQuestion } from './inlineText.js'
 import { t } from '../core/labels.js'
 import './poll.css'
@@ -65,7 +65,8 @@ function layout(words, { width, height, font }) {
 
 export default function WordCloud({ room = 'words', question = '', limit = '60', height = '520', qr }) {
   const live = useRoom(room)
-  const all = countWords(live.messages)
+  const controls = useControls(room, live)
+  const all = countWords(controls.counted(live.messages))
   const words = all.slice(0, Math.max(1, Number(limit) || 60))
   const total = all.reduce((sum, word) => sum + word.n, 0)
   const cloudHeight = Math.max(200, Number(height) || 520)
@@ -86,7 +87,7 @@ export default function WordCloud({ room = 'words', question = '', limit = '60',
   const key = words.map(word => `${word.text}:${word.n}`).join('|')
   const placed = useMemo(() => layout(words, { width: measure.width, height: cloudHeight, font: measure.font }), [key, measure.width, measure.font, measure.fontsReady, cloudHeight])
   const code = wantsQr(qr)
-  return <div class="poll poll--cloud">
+  return <div class={`poll poll--cloud${controls.closed ? ' is-closed' : ''}`} ref={controls.ref}>
     <div class="poll-main">
       <ActivityQuestion text={question} />
       {/* Without a server and words there is nothing to place: no empty box. */}
@@ -98,7 +99,9 @@ export default function WordCloud({ room = 'words', question = '', limit = '60',
           </svg>
           : !live.offline && <p class="question-empty">{t('question.empty')}</p>}
       </div>
-      <ActivityFooter count={total} {...live} />
+      <ActivityFooter count={total} {...live} reset={controls.reset} closed={controls.closed}>
+        <ActivityControls controls={controls} messages={live.messages} offline={live.offline} />
+      </ActivityFooter>
     </div>
     <JoinCode room={room} {...live} qr={code} size={240} />
   </div>

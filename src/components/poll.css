@@ -5,32 +5,37 @@
 .poll-bars { display: grid; gap: 20px; }
 .poll-row { display: grid; grid-template-columns: minmax(120px, 28%) 1fr 3ch; gap: 24px; align-items: center; }
 .poll-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* buttons="letters|numbers": the key phones show, before the option. */
+.poll-key { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; margin-right: .5em; padding: 0 .3em; border-radius: .4em; background: color-mix(in srgb, var(--accent, #0d9488) 14%, transparent); color: var(--accent, #0d9488); font-weight: 700; font-size: .8em; vertical-align: .1em; }
+/* A picture as an option: as high as two lines of text. */
+.poll-label:has(img) { white-space: normal; }
+.poll-label img { max-height: 2.4em; max-width: 100%; vertical-align: middle; }
+.poll .poll-several { margin: -20px 0 24px; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
 .poll-track { height: 1.1em; background: color-mix(in srgb, var(--ink, #111) 8%, transparent); border-radius: 6px; overflow: hidden; }
 .poll-fill { display: block; height: 100%; background: var(--accent, #0d9488); border-radius: 6px; transition: width .6s cubic-bezier(.2, .8, .2, 1); }
 .poll-count { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .poll .poll-total { display: flex; align-items: center; gap: 14px; margin: 36px 0 0; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
 .poll-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted, #999); opacity: .5; }
 .poll-dot.is-live { background: #16a34a; opacity: 1; }
-.poll-reset { margin-left: auto; padding: 4px 14px; border: 1px solid var(--rule, #ccc); border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.poll-spacer { flex: 1; }
+.poll-reset { padding: 4px 14px; border: 1px solid var(--rule, #ccc); border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; }
 .poll-reset:disabled { opacity: .4; cursor: default; }
 /* The audience sees the results, not the presenter's controls. */
 deck-stage[data-follower] .poll-reset { display: none; }
 /* answer="…": the tick outlines the right answer's row (label, bar, count) in green. */
-.poll-solve { display: grid; place-items: center; width: 44px; height: 44px; margin-left: auto; padding: 0; border: 1px solid var(--rule, #ccc); border-radius: 50%; background: none; color: var(--muted, #666); cursor: pointer; opacity: .55; transition: opacity .2s, background .2s, color .2s; }
-.poll-reset + .poll-solve { margin-left: 0; }
-.poll-results { display: grid; place-items: center; width: 44px; height: 44px; margin-left: auto; padding: 0; border: 1px solid var(--rule, #ccc); border-radius: 50%; background: none; color: var(--muted, #666); cursor: pointer; opacity: .55; transition: opacity .2s, background .2s, color .2s; }
-.poll-reset + .poll-results, .poll-results + .poll-solve { margin-left: 0; }
-.poll-results:hover, .poll-results:focus-visible { opacity: 1; }
-.poll-results.is-off { opacity: 1; background: var(--muted, #666); border-color: var(--muted, #666); color: #fff; }
-deck-stage[data-follower] .poll-results { display: none; }
+/* The presenter's controls: close (lock), results (eye), right answer (tick). */
+.poll-control { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--rule, #ccc); border-radius: 50%; background: none; color: var(--muted, #666); cursor: pointer; opacity: .55; transition: opacity .2s, background .2s, color .2s; }
+.poll-control:hover, .poll-control:focus-visible { opacity: 1; }
+.poll-close.is-on, .poll-results.is-on { opacity: 1; background: var(--muted, #666); border-color: var(--muted, #666); color: #fff; }
+deck-stage[data-follower] .poll-control { display: none; }
+/* Closed: no more answers count. */
+.poll-closed { padding: 2px 12px; border-radius: 999px; background: color-mix(in srgb, var(--ink, #111) 10%, transparent); color: var(--ink, #111); font-weight: 600; }
 /* results="hidden" or the eye off: the presenter's screens show the results faint and hatched, the audience none. */
 .poll.is-results-hidden .poll-fill { opacity: .35; background: repeating-linear-gradient(45deg, var(--accent, #0d9488) 0 8px, transparent 8px 14px); }
 .poll.is-results-hidden .poll-count { opacity: .35; }
 deck-stage[data-follower] .poll.is-results-hidden .poll-fill, deck-stage[data-follower] .poll.is-results-hidden .poll-count { visibility: hidden; }
 .poll-solve svg { width: 24px; height: 24px; }
-.poll-solve:hover, .poll-solve:focus-visible { opacity: 1; }
 .poll-solve.is-on { opacity: 1; background: var(--poll-correct, #16a34a); border-color: var(--poll-correct, #16a34a); color: #fff; }
-deck-stage[data-follower] .poll-solve { display: none; }
 .poll.is-solved .poll-row.is-correct { outline: 4px solid var(--poll-correct, #16a34a); outline-offset: 10px; border-radius: 10px; }
 .poll.is-solved .poll-row.is-correct .poll-label { font-weight: 700; color: var(--poll-correct, #16a34a); }
 .poll-link { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 20px; color: var(--muted, #555); }
@@ -76,16 +81,16 @@ deck-stage[data-follower] .poll-solve { display: none; }
 .poll-join-slide { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
 .poll-join-slide .poll-join { font-size: var(--fs-body, 32px); gap: 16px; padding: 24px 32px; }
 .poll-join-slide .poll-link { font-size: 28px; }
-@media print { .poll-reset, .poll-dot, .poll-solve, .poll-results { display: none; } .poll-fill, .scale-fill, .word { transition: none; animation: none; } .question-cards li { animation: none; } }
+@media print { .poll-reset, .poll-dot, .poll-control { display: none; } .poll-fill, .scale-fill, .word { transition: none; animation: none; } .question-cards li { animation: none; } }
 
 /* A record of the talk (no room server: a PDF, a file sent to readers): the
    question and its options, without counts, the live dot or a join code. */
 .poll.is-static .poll-count, .poll.is-static .scale-count { visibility: hidden; }
-.poll.is-static .poll-results { display: none; }
+.poll.is-static .poll-close { display: none; }
 .poll .poll-static, .poll-join-slide .poll-static { margin: 36px 0 0; color: var(--muted, #666); font-style: italic; font-size: var(--fs-small, 24px); }
 .poll-join-slide .poll-static { margin: 0; font-size: var(--fs-body, 32px); }
 
 /* On paper the join code and the presenter's controls have no use. */
 @media print {
-  .poll-join, .poll-reset, .poll-solve, .poll-dot, .poll-results { display: none !important; }
+  .poll-join, .poll-reset, .poll-dot, .poll-control { display: none !important; }
 }

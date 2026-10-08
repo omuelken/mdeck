@@ -7,13 +7,25 @@
   const code = location.pathname.split('/').filter(Boolean).pop()
   const root = document.getElementById('answer')
   const FALLBACK = {
-    en: { waiting: 'The next question will appear here.', pick: 'Tap one answer.', thanks: 'Thanks! You chose “{choice}”. Tap another to change.', send: 'Send', sent: 'Sent. Thank you!', offline: 'Connecting…' },
-    de: { waiting: 'Die nächste Frage erscheint hier.', pick: 'Eine Antwort antippen.', thanks: 'Danke! Gewählt: „{choice}“. Zum Ändern eine andere antippen.', send: 'Senden', sent: 'Gesendet. Danke!', offline: 'Verbinde…' },
+    en: {
+      waiting: 'The next question will appear here.', pick: 'Tap one answer.', thanks: 'Thanks! You chose “{choice}”. Tap another to change.', send: 'Send', sent: 'Sent. Thank you!', offline: 'Connecting…',
+      pickSeveral: 'Tap all that apply.', thanksSeveral: 'Thanks! You chose {choice}. Tap to change.', closed: 'Closed: no more answers.',
+      right: 'Right!', wrong: 'Not quite. The right answer: {answer}', solution: 'The right answer: {answer}',
+      number: 'A number', invalid: 'Enter a number, such as 0.5 or 1/2.', numberSent: 'Sent: {value}. Send another to change.',
+    },
+    de: {
+      waiting: 'Die nächste Frage erscheint hier.', pick: 'Eine Antwort antippen.', thanks: 'Danke! Gewählt: „{choice}“. Zum Ändern eine andere antippen.', send: 'Senden', sent: 'Gesendet. Danke!', offline: 'Verbinde…',
+      pickSeveral: 'Alle zutreffenden antippen.', thanksSeveral: 'Danke! Gewählt: {choice}. Zum Ändern antippen.', closed: 'Geschlossen: keine weiteren Antworten.',
+      right: 'Richtig!', wrong: 'Leider nicht. Richtig ist: {answer}', solution: 'Richtig ist: {answer}',
+      number: 'Eine Zahl', invalid: 'Eine Zahl eingeben, z. B. 0,5 oder 1/2.', numberSent: 'Gesendet: {value}. Zum Ändern eine andere senden.',
+    },
   }
   let words = FALLBACK[navigator.language?.slice(0, 2) === 'de' ? 'de' : 'en']
   let current = null
   let connected = false
   let status = ''
+  // What is typed into a number field, kept while the page redraws.
+  let draft = ''
 
   const me = (() => {
     try {
@@ -33,7 +45,7 @@
       if (key.startsWith('on')) node.addEventListener(key.slice(2), value)
       else if (value != null && value !== false) node.setAttribute(key, value === true ? '' : value)
     }
-    node.append(...children.flat().filter(child => child != null))
+    node.append(...children.flat(Infinity).filter(child => child != null))
     return node
   }
 
@@ -71,13 +83,52 @@
     const body = clean(new DOMParser().parseFromString(html, 'text/html').body)
     return el('span', { class: 'answer-rich' }, ...body.childNodes)
   }
-  // "Thanks! You chose “{choice}”." with the option drawn.
-  const thanks = (activity, value) => {
+  // An option as this phone shows it: its key (A, B… with `buttons`), or drawn.
+  const shown = (activity, value) => {
     const i = activity.options.indexOf(value)
-    if (!words.thanks.includes('{choice}')) return words.thanks
-    const [before, after] = words.thanks.split('{choice}')
-    return [before, drawn(activity.optionsHtml?.[i], value), after]
+    return activity.keys?.[i] ?? drawn(activity.optionsHtml?.[i], value)
   }
+  // A sentence with nodes put in for {name}; without {name}, the sentence.
+  const sentence = (text, name, part) => {
+    if (!text.includes(`{${name}}`)) return text
+    const [before, after] = text.split(`{${name}}`)
+    return [before, part, after]
+  }
+  const listed = parts => parts.flatMap((part, i) => i ? [', ', part] : [part])
+
+  // A number as src/components/Numeric.jsx reads it: 0.5, 0,5, −3, 1e-3, 1/2.
+  function parseNumber(text) {
+    const plain = String(text ?? '').trim().replace(/\s+/g, '').replace(/\u2212/g, '-').replace(/(\d),(\d)/g, '$1.$2')
+    const parts = plain.match(/^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(?:\/((?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?))?$/i)
+    if (!parts) return null
+    const value = parts[2] ? Number(parts[1]) / Number(parts[2]) : Number(parts[1])
+    return Number.isFinite(value) ? value : null
+  }
+
+  // The activity's controls (src/components/activity.jsx), from its room's
+  // state: `closed`, and `revealed` with the `solution` once the right
+  // answer shows. Only the state, not everyone's answers (?only=state).
+  let controls = {}, controlRoom = null, controlSource = null
+  function followControls(room) {
+    if (room === controlRoom) return
+    controlSource?.close()
+    controlSource = null
+    controls = {}
+    controlRoom = room
+    if (!room) return
+    controlSource = new EventSource(new URL(`rooms/${encodeURIComponent(`${code}.${room}`)}/events?only=state`, base))
+    const take = event => {
+      const state = JSON.parse(event.data).state
+      controls = state && typeof state === 'object' ? state : {}
+      render()
+    }
+    controlSource.addEventListener('snapshot', take)
+    controlSource.addEventListener('state', take)
+  }
+  // Once the right answer shows: whether this phone's was right, or what it is.
+  const verdict = (answered, right, solution) => el('p', { class: `answer-verdict${answered ? (right ? ' is-right' : ' is-wrong') : ''}`, role: 'status' },
+    answered ? (right ? words.right : sentence(words.wrong, 'answer', solution)) : sentence(words.solution, 'answer', solution))
+  const statusLine = text => el('p', { class: 'answer-status', role: 'status' }, status || (controls.closed ? words.closed : text))
 
   async function answer(room, value) {
     const response = await fetch(new URL(`rooms/${encodeURIComponent(`${code}.${room}`)}`, base), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: me, data: { value } }) })
@@ -85,31 +136,72 @@
   }
 
   const FORMS = {
-    // { question, options: [..] }: one of several answers, which can be changed.
+    // { question, options, optionsHtml | keys, multiple }: one answer, or with
+    // `multiple` several, which can be changed. With `keys` the buttons show
+    // A, B… (or 1, 2…) and the options are on the slide.
     choice(activity, room) {
-      const picked = remembered(room)
+      const several = !!activity.multiple
+      const saved = remembered(room)
+      let picks = []
+      if (several) { try { picks = JSON.parse(saved ?? '[]') } catch {} }
+      else if (saved != null) picks = [saved]
+      picks = activity.options.filter(option => Array.isArray(picks) && picks.includes(option))
+      const vote = async next => {
+        try {
+          await answer(room, several ? next : next[0])
+          remember(room, several ? JSON.stringify(next) : next[0])
+          status = ''
+        } catch (error) { status = error.message }
+        render()
+      }
+      const solution = controls.revealed && Array.isArray(controls.solution) ? activity.options.filter(option => controls.solution.includes(option)) : null
+      const right = solution && (several ? picks.length === solution.length && picks.every(pick => solution.includes(pick)) : solution.includes(picks[0]))
       return [
-        el('div', { class: 'answer-options' }, activity.options.map((option, i) => el('button', {
-          class: option === picked ? 'is-picked' : null, 'aria-pressed': String(option === picked),
-          onclick: async () => {
-            try { await answer(room, option); remember(room, option); status = thanks(activity, option) } catch (error) { status = error.message }
-            render()
-          },
-        }, drawn(activity.optionsHtml?.[i], option)))),
-        el('p', { class: 'answer-status', role: 'status' }, status || (picked ? thanks(activity, picked) : words.pick)),
+        el('div', { class: activity.keys ? 'answer-keys' : 'answer-options' }, activity.options.map(option => {
+          const on = picks.includes(option)
+          return el('button', {
+            class: on ? 'is-picked' : null, 'aria-pressed': String(on), disabled: !!controls.closed,
+            onclick: () => vote(several ? activity.options.filter(o => o === option ? !on : picks.includes(o)) : [option]),
+          }, several && !activity.keys ? el('span', { class: 'answer-check', 'aria-hidden': 'true' }) : null, shown(activity, option))
+        })),
+        statusLine(picks.length
+          ? sentence(several ? words.thanksSeveral : words.thanks, 'choice', listed(picks.map(pick => shown(activity, pick))))
+          : several ? words.pickSeveral : words.pick),
+        solution?.length ? verdict(picks.length > 0, right, listed(solution.map(option => shown(activity, option)))) : null,
+      ]
+    },
+    // { question, placeholder }: a number, typed; the latest one counts.
+    numeric(activity, room) {
+      const sent = remembered(room)
+      const input = el('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', enterkeyhint: 'send', placeholder: activity.placeholder || words.number, disabled: !!controls.closed })
+      input.value = draft
+      input.addEventListener('input', () => { draft = input.value })
+      const form = el('form', { class: 'answer-number', onsubmit: async event => {
+        event.preventDefault()
+        const text = input.value.trim()
+        if (parseNumber(text) == null) { status = words.invalid; render(); return }
+        try { await answer(room, text); remember(room, text); draft = ''; status = '' } catch (error) { status = error.message }
+        render()
+      } }, input, el('button', { type: 'submit', disabled: !!controls.closed }, words.send))
+      const solution = controls.revealed && controls.solution && Number.isFinite(controls.solution.value) ? controls.solution : null
+      const right = solution && sent != null && Math.abs(parseNumber(sent) - solution.value) <= (solution.tolerance ?? 0)
+      return [
+        form,
+        statusLine(sent != null ? fill(words.numberSent, { value: sent }) : ''),
+        solution ? verdict(sent != null, right, drawn(solution.html, solution.text)) : null,
       ]
     },
     // { question, placeholder, maxLength }: short text, as often as people like.
     text(activity, room) {
-      const input = el('textarea', { rows: 3, maxlength: activity.maxLength ?? 200, placeholder: activity.placeholder ?? '' })
+      const input = el('textarea', { rows: 3, maxlength: activity.maxLength ?? 200, placeholder: activity.placeholder ?? '', disabled: !!controls.closed })
       const form = el('form', { class: 'answer-text', onsubmit: async event => {
         event.preventDefault()
         const value = input.value.trim()
         if (!value) return
         try { await answer(room, value); status = words.sent } catch (error) { status = error.message }
         render()
-      } }, input, el('button', { type: 'submit' }, words.send))
-      return [form, el('p', { class: 'answer-status', role: 'status' }, status)]
+      } }, input, el('button', { type: 'submit', disabled: !!controls.closed }, words.send))
+      return [form, statusLine('')]
     },
     // { question, min, max, minLabel, maxLabel }: a number on a scale.
     scale(activity, room) {
@@ -118,14 +210,14 @@
       for (let n = activity.min ?? 1; n <= (activity.max ?? 5); n++) steps.push(String(n))
       return [
         el('div', { class: 'answer-scale' }, steps.map(step => el('button', {
-          class: step === picked ? 'is-picked' : null, 'aria-pressed': String(step === picked),
+          class: step === picked ? 'is-picked' : null, 'aria-pressed': String(step === picked), disabled: !!controls.closed,
           onclick: async () => {
-            try { await answer(room, Number(step)); remember(room, step); status = fill(words.thanks, { choice: step }) } catch (error) { status = error.message }
+            try { await answer(room, Number(step)); remember(room, step); status = '' } catch (error) { status = error.message }
             render()
           },
         }, step))),
         (activity.minLabel || activity.maxLabel) && el('div', { class: 'answer-scale-labels' }, el('span', {}, drawn(activity.minLabelHtml, activity.minLabel ?? '')), el('span', {}, drawn(activity.maxLabelHtml, activity.maxLabel ?? ''))),
-        el('p', { class: 'answer-status', role: 'status' }, status || (picked ? fill(words.thanks, { choice: picked }) : words.pick)),
+        statusLine(picked ? fill(words.thanks, { choice: picked }) : words.pick),
       ]
     },
   }
@@ -149,7 +241,8 @@
     current = state
     if (state?.labels) words = { ...words, ...state.labels }
     applyLook(state?.look, state?.lang)
-    if (state?.room !== previous) status = ''
+    if (state?.room !== previous) { status = ''; draft = '' }
+    followControls(state?.activity ? state.room : null)
     render()
   }
 

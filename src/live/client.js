@@ -138,6 +138,10 @@ const reach = info => ({ known: info.reachable != null, offline: info.reachable 
  *   joinUrl   the deck's join link for the QR code, or null if phones cannot
  *             reach the server; localJoinUrl works on this computer
  *   canReset / reset()  presenter only
+ *   state     the room's state, which only the presenter sets (setState):
+ *             an activity's controls, such as closed or revealed
+ *   present   how many phones (and followers) are connected to the deck,
+ *             or null before the server said
  *   connected false until the live stream is open
  *   offline   no room server answered: a PDF, a file sent to readers or a
  *             build hosted without one. Activities then show their question
@@ -148,16 +152,25 @@ export function useRoom(room) {
   const live = useActive(room)
   const [messages, setMessages] = useState([])
   const [connected, setConnected] = useState(false)
+  const [state, setRoomState] = useState(null)
+  const [present, setPresent] = useState(null)
   const [info, setInfo] = useState({})
 
   useEffect(() => { serverInfo().then(setInfo) }, [])
 
   useEffect(() => {
     if (!live || !room || typeof EventSource === 'undefined') return
-    const source = new EventSource(`${roomPath(room)}/events`)
+    const source = new EventSource(`${roomPath(room)}/events?presence=1`)
     source.addEventListener('open', () => setConnected(true))
     source.addEventListener('error', () => setConnected(false))
-    source.addEventListener('snapshot', event => setMessages(JSON.parse(event.data).messages))
+    source.addEventListener('snapshot', event => {
+      const snapshot = JSON.parse(event.data)
+      setMessages(snapshot.messages)
+      setRoomState(snapshot.state ?? null)
+      if (snapshot.presence) setPresent(snapshot.presence.phones)
+    })
+    source.addEventListener('state', event => setRoomState(JSON.parse(event.data).state ?? null))
+    source.addEventListener('presence', event => setPresent(JSON.parse(event.data).phones))
     source.addEventListener('message', event => { const message = JSON.parse(event.data); setMessages(list => list.some(m => m.n === message.n) ? list : [...list, message]) })
     source.addEventListener('reset', () => setMessages([]))
     return () => { source.close(); setConnected(false) }
@@ -168,7 +181,13 @@ export function useRoom(room) {
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error ?? 'Could not reset')
   }, [room])
 
-  return { messages, reset, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
+  // Ordered like the session's state: the latest change of any screen wins.
+  const setState = useCallback(async next => {
+    const response = await fetch(`${controlRoomPath(room)}/state`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state: { ...next, at: Date.now(), screen: SCREEN } }) })
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error ?? 'Could not change the room')
+  }, [room])
+
+  return { messages, reset, state, setState, present, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
 }
 
 /** The deck's join link alone, for a slide that only invites people in (<qrcode join />). */
@@ -218,7 +237,12 @@ export function captureLook(doc = lookSource()) {
 }
 
 // The words the answer page shows, in the deck's language.
-const phoneWords = () => ({ waiting: t('respond.waiting'), pick: t('poll.pick'), thanks: t('poll.thanks'), send: t('respond.send'), sent: t('respond.sent'), follow: t('follow.open') })
+const phoneWords = () => ({
+  waiting: t('respond.waiting'), pick: t('poll.pick'), thanks: t('poll.thanks'), send: t('respond.send'), sent: t('respond.sent'), follow: t('follow.open'),
+  pickSeveral: t('poll.pickSeveral'), thanksSeveral: t('poll.thanksSeveral'), several: t('poll.several'),
+  closed: t('respond.closed'), right: t('respond.right'), wrong: t('respond.wrong'), solution: t('respond.solution'),
+  number: t('numeric.placeholder'), invalid: t('numeric.invalid'), numberSent: t('numeric.sent'),
+})
 
 // The presenter's screen announces the activity on the current slide and
 // repeats it every few seconds, so phones that join late and a server

@@ -1,6 +1,6 @@
 import { h } from 'preact'
 import { useRoom, latestByDevice } from '../live/client.js'
-import { JoinCode, ActivityFooter, ActivityQuestion, wantsQr } from './activity.jsx'
+import { JoinCode, ActivityFooter, ActivityQuestion, ActivityControls, useControls, wantsQr } from './activity.jsx'
 import { slideHtml, phoneHtml, phoneQuestion } from './inlineText.js'
 import { t } from '../core/labels.js'
 import './poll.css'
@@ -20,12 +20,13 @@ export default function Scale({ room = 'scale', question = '', low = '', high = 
   const [min, max] = bounds(rest)
   const steps = Array.from({ length: max - min + 1 }, (_, i) => min + i)
   const live = useRoom(room)
-  const values = latestByDevice(live.messages).map(message => Number(message.data?.value)).filter(value => steps.includes(value))
+  const controls = useControls(room, live)
+  const values = latestByDevice(controls.counted(live.messages)).map(message => Number(message.data?.value)).filter(value => steps.includes(value))
   const counts = steps.map(step => values.filter(value => value === step).length)
   const most = Math.max(1, ...counts)
   const average = values.length ? (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1) : null
   const code = wantsQr(qr)
-  return <div class={`poll poll--scale${live.offline && !values.length ? ' is-static' : ''}`}>
+  return <div class={`poll poll--scale${live.offline && !values.length ? ' is-static' : ''}${controls.closed ? ' is-closed' : ''}`} ref={controls.ref}>
     <div class="poll-main">
       <ActivityQuestion text={question} />
       <div class="scale-columns" role="list">
@@ -36,7 +37,9 @@ export default function Scale({ room = 'scale', question = '', low = '', high = 
         </div>)}
       </div>
       {(low || high) && <p class="scale-labels"><span dangerouslySetInnerHTML={{ __html: slideHtml(low) }} /><span dangerouslySetInnerHTML={{ __html: slideHtml(high) }} /></p>}
-      <ActivityFooter count={values.length} {...live} />
+      <ActivityFooter count={values.length} {...live} perPhone reset={controls.reset} closed={controls.closed}>
+        <ActivityControls controls={controls} messages={live.messages} offline={live.offline} />
+      </ActivityFooter>
       {average && <p class="scale-average">{t('scale.average', { n: average })}</p>}
     </div>
     <JoinCode room={room} {...live} qr={code} size={240} />

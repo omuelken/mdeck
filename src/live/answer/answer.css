@@ -35,3 +35,20 @@ footer { padding: 16px 20px; text-align: center; color: var(--muted); font-size:
 .answer-follow { display: block; margin: 0 20px 24px; padding: 12px 16px; text-align: center; border: 1px solid var(--rule); border-radius: 10px; color: var(--ink); text-decoration: none; font-size: 15px; }
 /* Maths in a question or option (MathML, see answer.js). */
 .answer-rich math { font-size: 1.1em; }
+/* buttons="letters|numbers": big keys; the options are on the slide. */
+.answer-keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 12px; }
+.answer .answer-keys button { padding: 22px 0; text-align: center; font-size: 28px; }
+/* `multiple`: a box that is ticked when picked. */
+.answer-check { display: inline-block; width: 1em; height: 1em; margin-right: 12px; border: 2px solid currentColor; border-radius: 4px; vertical-align: -.12em; opacity: .6; }
+.answer button.is-picked .answer-check { opacity: 1; background: currentColor; box-shadow: inset 0 0 0 2px var(--accent); }
+/* Closed: no more answers. */
+.answer button:disabled, .answer textarea:disabled, .answer input:disabled { opacity: .45; cursor: default; }
+.answer button.is-picked:disabled { opacity: .75; }
+/* Once the right answer shows. */
+.answer-verdict { margin: 4px 0 0; padding: 14px 16px; border-radius: 12px; background: color-mix(in srgb, var(--ink) 6%, transparent); font-weight: 600; }
+.answer-verdict.is-right { background: color-mix(in srgb, #16a34a 16%, transparent); color: color-mix(in srgb, #16a34a 75%, var(--ink)); }
+.answer-verdict.is-wrong { background: color-mix(in srgb, #dc2626 12%, transparent); }
+/* <numeric>: a number field and Send. */
+.answer-number { display: grid; grid-template-columns: 1fr auto; gap: 12px; }
+.answer-number input { width: 100%; min-width: 0; padding: 14px; border: 2px solid var(--rule); border-radius: 14px; background: var(--bg); color: var(--ink); font: inherit; font-size: 22px; font-variant-numeric: tabular-nums; }
+.answer-number button[type=submit] { background: var(--accent); border-color: var(--accent); color: var(--on-accent, var(--bg)); }

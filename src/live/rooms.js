@@ -179,6 +179,7 @@ function reply(response, status, body) {
 //   GET  /rooms/<id>/events    Server-Sent Events: snapshot, message, reset, state;
 //                              ?view=…&device=… counts this window as connected,
 //                              ?presence=1 adds who is connected to the session
+//                              ?only=state sends the room's state alone
 //   GET  /rooms/<id>/presence  who is connected to the session, once
 //   POST /rooms/<id>           { from, data } → { n }
 //   POST /rooms/<id>/reset     presenter only
@@ -211,9 +212,13 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
         const view = searchParams.get('view'), device = searchParams.get('device')
         const present = VIEWS.includes(view) ? { view, device: DEVICES.includes(device) ? device : 'computer' } : null
         const wantsPresence = searchParams.get('presence') === '1'
-        write('snapshot', { messages: rooms.snapshot(id), state: rooms.state(id), ...(ink.length ? { ink } : {}), ...(wantsPresence ? { presence: rooms.presence(id) } : {}) })
+        // ?only=state: the room's state alone, as phones follow an activity's
+        // controls (closed, the right answer) without everyone's answers.
+        const onlyState = searchParams.get('only') === 'state'
+        write('snapshot', { messages: onlyState ? [] : rooms.snapshot(id), state: rooms.state(id), ...(ink.length ? { ink } : {}), ...(wantsPresence ? { presence: rooms.presence(id) } : {}) })
         const unsubscribe = rooms.subscribe(id, event => {
           if (event.type === 'presence') { if (wantsPresence) write('presence', event.presence); return }
+          if (onlyState && event.type !== 'state') return
           write(event.type, event.type === 'message' ? event.message : event.type === 'state' ? { state: event.state } : event.type === 'ink' ? { messages: event.messages } : {})
         }, present)
         const beat = setInterval(() => response.write(': ping\n\n'), heartbeatMs)

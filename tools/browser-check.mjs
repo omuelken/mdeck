@@ -441,7 +441,7 @@ try {
   // Relay mode: the projector announces the poll on screen, the phone opens the
   // server's own answer page at /<code>, and its vote reaches the slide.
   const pollDeck = resolve(temp, 'poll.md')
-  writeFileSync(pollDeck, '---\ntheme: neue\nlang: de\nmeta:\n  title: Poll check\nsession:\n  code: 424242\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n\n---\n# Pace?\n\n<scale room="pace" min="1" max="5" qr="false" />\n\n---\n# Anything else?\n\n<question room="ask" qr="false" />\n\n---\n# One word?\n\n<wordcloud room="mood" qr="false" />\n\n---\n# Join\n\n<qrcode join />\n')
+  writeFileSync(pollDeck, '---\ntheme: neue\nlang: de\nmeta:\n  title: Poll check\nsession:\n  code: 424242\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n\n---\n# Pace?\n\n<scale room="pace" min="1" max="5" qr="false" />\n\n---\n# Anything else?\n\n<question room="ask" qr="false" />\n\n---\n# One word?\n\n<wordcloud room="mood" qr="false" />\n\n---\n# Join\n\n<qrcode join />\n\n---\n# Primes\n\n<poll room="primes" question="Which are prime?" options="2|4|5" answer="2|5" multiple buttons="letters" qr="false" />\n')
   const pollConfig = baseConfig(pollDeck)
   pollDev = await createServer({ ...pollConfig, plugins: [...pollConfig.plugins, livePlugin()], server: { ...pollConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await pollDev.listen()
@@ -453,7 +453,7 @@ try {
   await until(phone, "document.querySelectorAll('.answer-options button').length === 2 && document.querySelector('.answer h1')?.textContent === 'Lunch?'")
   assert.equal(await phone.evaluate("document.documentElement.lang + ' ' + getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()"), 'de #e30613', "the deck's language and look (neue's default palette, swiss)")
   await phone.evaluate("document.querySelectorAll('.answer-options button')[1].click()")
-  await until(projector, "[...document.querySelectorAll('.poll-count')].map(e => e.textContent).join() === '0,1'")
+  await until(projector, "[...document.querySelectorAll('[data-deck-active] .poll-count')].map(e => e.textContent).join() === '0,1'")
   await until(phone, "document.querySelector('.answer-status').textContent.includes('Thai')")
   // The other kinds: a scale and an open question, answered on the same page.
   await projector.evaluate("document.querySelector('deck-stage').goTo(1)")
@@ -470,7 +470,24 @@ try {
   await until(projector, "[...document.querySelectorAll('[data-deck-active] .word-cloud text')].map(e => e.textContent).join() === 'fun'")
   await projector.evaluate("document.querySelector('deck-stage').goTo(4)")
   await until(projector, "!!document.querySelector('[data-deck-active] .poll-join-slide .poll-join')")
-  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room (also with a standalone server for the polls).')
+  // Several answers, with keys on the phone; closing and showing the answer
+  // reach the phone, and a vote after closing does not count.
+  await projector.evaluate("document.querySelector('deck-stage').goTo(5)")
+  await until(phone, "[...document.querySelectorAll('.answer-keys button')].map(b => b.textContent).join() === 'A,B,C'")
+  await phone.evaluate("document.querySelectorAll('.answer-keys button')[0].click()")
+  await until(phone, "document.querySelectorAll('.answer-keys button.is-picked').length === 1")
+  await phone.evaluate("document.querySelectorAll('.answer-keys button')[2].click()")
+  await until(projector, "[...document.querySelectorAll('[data-deck-active] .poll-count')].map(e => e.textContent).join() === '1,0,1'")
+  await until(projector, "document.querySelector('[data-deck-active] .poll-total').textContent.includes('1 von 1')")
+  assert.equal(await projector.evaluate("[...document.querySelectorAll('[data-deck-active] .poll-key')].map(e => e.textContent).join()"), 'A,B,C', 'the keys before the options')
+  await projector.evaluate("document.querySelector('[data-deck-active] .poll-close').click()")
+  await until(phone, "document.querySelector('.answer-keys button').disabled && document.querySelector('.answer-status').textContent.includes('Geschlossen')")
+  await phone.evaluate("fetch('rooms/424242.primes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: 'late', data: { value: ['4'] } }) })")
+  await delay(400)
+  assert.equal(await projector.evaluate("[...document.querySelectorAll('[data-deck-active] .poll-count')].map(e => e.textContent).join()"), '1,0,1', 'a vote after closing does not count')
+  await projector.evaluate("document.querySelector('[data-deck-active] .poll-solve').click()")
+  await until(phone, "document.querySelector('.answer-verdict')?.classList.contains('is-right')")
+  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room (also with a standalone server for the polls).')
 } finally {
   await browser?.close()
   await tablet2?.close()
