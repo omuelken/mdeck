@@ -176,6 +176,9 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
   color: var(--ink-soft);
 }
 :where(.slide) blockquote > p:last-child { margin-bottom: 0; }
+/* The quote's paragraphs take its type: themes set the face and size of
+   every paragraph, which would undo a quote set in its own. */
+.slide-body blockquote > p { font: inherit; color: inherit; letter-spacing: inherit; }
 
 /* ── Code blocks ─────────────────────────────────────────────────────────── */
 .code-block { white-space: pre-wrap; overflow-x: hidden; }

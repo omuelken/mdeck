@@ -487,3 +487,16 @@ strong { color: var(--ink); font-weight: 600; }
   overflow-x: auto;
   overflow-y: hidden;
 }
+
+/* ─────────────────────────────────────────────
+   QUOTATIONS — a rule, not a box: a red bar to the left, the quote set
+   in a little, in the text's own size
+   ───────────────────────────────────────────── */
+.slide-body blockquote {
+  margin: 0 0 var(--gap-item);
+  padding: 2px 0 2px 32px;
+  border: 0;
+  border-left: 6px solid var(--accent);
+  max-width: 1200px;
+  color: var(--ink);
+}

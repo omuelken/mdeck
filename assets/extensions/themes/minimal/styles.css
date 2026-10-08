@@ -340,3 +340,15 @@ strong { color: var(--ink); font-weight: 600; }
   overflow-x: auto;
   overflow-y: hidden;
 }
+
+/* ─────────────────────────────────────────────
+   QUOTATIONS — a thin bar in the quiet grey, the quote set in a little,
+   in the softer ink
+   ───────────────────────────────────────────── */
+.slide-body blockquote {
+  margin: 0 0 var(--gap-item);
+  padding: 2px 0 2px 28px;
+  border: 0;
+  border-left: 3px solid var(--muted);
+  color: var(--ink-soft);
+}

@@ -642,3 +642,29 @@ strong { color: var(--ink); font-weight: 700; }
   overflow-x: auto;
   overflow-y: hidden;
 }
+
+/* ─────────────────────────────────────────────
+   QUOTATIONS — no pane, only a large quotation mark in the colours of
+   the lights beside the quote
+   ───────────────────────────────────────────── */
+.slide-body blockquote {
+  position: relative;
+  margin: 0 0 var(--gap-item);
+  padding: 0 0 0 76px;
+  border: 0;
+  max-width: 1300px;
+  color: var(--ink);
+}
+.slide-body blockquote::before {
+  content: '\201C';
+  position: absolute;
+  left: 0;
+  top: -18px;
+  font-size: 120px;
+  font-weight: 800;
+  line-height: 1;
+  background: var(--aurora-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

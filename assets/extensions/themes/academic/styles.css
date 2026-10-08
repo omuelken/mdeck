@@ -644,3 +644,16 @@ strong { color: var(--ink); font-weight: 700; }
   overflow-y: hidden;
 }
 .slide .katex-display > .katex { font-size: 1.2em; }
+
+/* ─────────────────────────────────────────────
+   QUOTATIONS — the quote environment of a printed text: set in from
+   both sides, in the serif, without ornament
+   ───────────────────────────────────────────── */
+.slide-body blockquote {
+  margin: 0 0 var(--gap-item);
+  padding: 0 64px;
+  border: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--ink-soft);
+}
