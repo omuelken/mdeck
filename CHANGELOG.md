@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- What follows a list has room above it in every theme, so a sentence after a list no longer sits right against its last item.
+
 ## 3.3.0 — 2026-10-08
 
 - Citations and references: `bibliography: refs.bib` in the deck settings, then cite in Pandoc's syntax, `[@smith2020, p. 12]`, `[see @a; @b]`, `[-@a]` or `@smith2020` in a sentence. Each citation shows in the style's short form, each slide lists the full references of the works it cites above its footer (`show.citations: false` leaves them out), and `<bibliography />` lists them all on a slide (`part="1/2"` splits a long list). Reference files may be BibTeX (`.bib`), CSL-JSON (`.json`) or Hayagriva (`.yml`, Typst's format), several at once. `csl:` picks the style, `apa` by default, `vancouver`, `harvard1` or any `.csl` file; the style's words follow `lang`. `nocite:` lists works without citing them. Formatting happens at build time, so a deck carries only the finished text. Unknown keys are marked on the slide and reported by `mdeck check`.

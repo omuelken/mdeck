@@ -105,7 +105,10 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 .split-right { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: safe center; gap: var(--gap-item); }
 
 /* ── List containers ─────────────────────────────────────────────────────── */
+/* Lists have no margins of their own, and paragraphs only one below them, so
+   whatever follows a list needs room above it. */
 .slide-body :is(ul, ol) + :is(ul, ol) { margin-top: var(--gap-item); }
+.slide-body :is(ul, ol) + :not(ul, ol) { margin-top: var(--gap-item); }
 /* Markers (::before), padding, and font styling are visual — defined per theme */
 .slide-body ul {
   list-style: none;
