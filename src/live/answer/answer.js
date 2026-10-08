@@ -124,7 +124,7 @@
             render()
           },
         }, step))),
-        (activity.minLabel || activity.maxLabel) && el('div', { class: 'answer-scale-labels' }, el('span', {}, activity.minLabel ?? ''), el('span', {}, activity.maxLabel ?? '')),
+        (activity.minLabel || activity.maxLabel) && el('div', { class: 'answer-scale-labels' }, el('span', {}, drawn(activity.minLabelHtml, activity.minLabel ?? '')), el('span', {}, drawn(activity.maxLabelHtml, activity.maxLabel ?? ''))),
         el('p', { class: 'answer-status', role: 'status' }, status || (picked ? fill(words.thanks, { choice: picked }) : words.pick)),
       ]
     },

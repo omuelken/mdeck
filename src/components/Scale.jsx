@@ -1,12 +1,14 @@
 import { h } from 'preact'
 import { useRoom, latestByDevice } from '../live/client.js'
-import { JoinCode, ActivityFooter, wantsQr } from './activity.jsx'
+import { JoinCode, ActivityFooter, ActivityQuestion, wantsQr } from './activity.jsx'
+import { slideHtml, phoneHtml, phoneQuestion } from './inlineText.js'
 import { t } from '../core/labels.js'
 import './poll.css'
 
 // <scale room="pace" question="How is the pace?" min="1" max="5" low="Too slow" high="Too fast" />
 // Phones pick a number; each device's latest answer counts. The slide shows
-// how many chose each number, and the average.
+// how many chose each number, and the average. The question and the labels
+// are Markdown with $…$ maths, like a poll's.
 
 const bounds = ({ min, max }) => {
   const low = Number.isFinite(Number(min)) && min !== '' && min != null ? Math.round(Number(min)) : 1
@@ -25,7 +27,7 @@ export default function Scale({ room = 'scale', question = '', low = '', high = 
   const code = wantsQr(qr)
   return <div class={`poll poll--scale${live.offline && !values.length ? ' is-static' : ''}`}>
     <div class="poll-main">
-      {question && <p class="poll-question">{question}</p>}
+      <ActivityQuestion text={question} />
       <div class="scale-columns" role="list">
         {steps.map((step, i) => <div class="scale-column" role="listitem" key={step}>
           <span class="scale-count">{counts[i]}</span>
@@ -33,7 +35,7 @@ export default function Scale({ room = 'scale', question = '', low = '', high = 
           <span class="scale-step">{step}</span>
         </div>)}
       </div>
-      {(low || high) && <p class="scale-labels"><span>{low}</span><span>{high}</span></p>}
+      {(low || high) && <p class="scale-labels"><span dangerouslySetInnerHTML={{ __html: slideHtml(low) }} /><span dangerouslySetInnerHTML={{ __html: slideHtml(high) }} /></p>}
       <ActivityFooter count={values.length} {...live} />
       {average && <p class="scale-average">{t('scale.average', { n: average })}</p>}
     </div>
@@ -43,5 +45,5 @@ export default function Scale({ room = 'scale', question = '', low = '', high = 
 
 Scale.phone = ({ question, low, high, ...rest }, { slideTitle = '' } = {}) => {
   const [min, max] = bounds(rest)
-  return { type: 'scale', question: question || slideTitle, min, max, minLabel: low ?? '', maxLabel: high ?? '' }
+  return { type: 'scale', ...phoneQuestion(question, slideTitle), min, max, minLabel: low ?? '', maxLabel: high ?? '', ...(low ? { minLabelHtml: phoneHtml(low) } : {}), ...(high ? { maxLabelHtml: phoneHtml(high) } : {}) }
 }

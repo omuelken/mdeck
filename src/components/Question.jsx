@@ -1,6 +1,7 @@
 import { h } from 'preact'
 import { useRoom } from '../live/client.js'
-import { JoinCode, ActivityFooter, wantsQr } from './activity.jsx'
+import { JoinCode, ActivityFooter, ActivityQuestion, wantsQr } from './activity.jsx'
+import { phoneQuestion } from './inlineText.js'
 import { t } from '../core/labels.js'
 import './poll.css'
 
@@ -15,7 +16,7 @@ export default function Question({ room = 'question', question = '', limit = '8'
   const code = wantsQr(qr)
   return <div class="poll poll--question">
     <div class="poll-main">
-      {question && <p class="poll-question">{question}</p>}
+      <ActivityQuestion text={question} />
       {shown.length
         ? <ul class="question-cards">{shown.map(answer => <li key={answer.n}>{answer.text}</li>)}</ul>
         : !live.offline && <p class="question-empty">{t('question.empty')}</p>}
@@ -25,4 +26,4 @@ export default function Question({ room = 'question', question = '', limit = '8'
   </div>
 }
 
-Question.phone = ({ question, placeholder }, { slideTitle = '' } = {}) => ({ type: 'text', question: question || slideTitle, placeholder: placeholder ?? '', maxLength: 200 })
+Question.phone = ({ question, placeholder }, { slideTitle = '' } = {}) => ({ type: 'text', ...phoneQuestion(question, slideTitle), placeholder: placeholder ?? '', maxLength: 200 })

@@ -11,6 +11,9 @@ const phone = new Marked().use(markedKatex({ throwOnError: false, output: 'mathm
 export const slideHtml = text => slide.parseInline(String(text ?? ''))
 export const phoneHtml = text => phone.parseInline(String(text ?? ''))
 
+/** An activity's question for the phones: the text, and drawn when the tag has one (else the slide's heading, as text). */
+export const phoneQuestion = (question, slideTitle) => question ? { question, questionHtml: phoneHtml(question) } : { question: slideTitle }
+
 // A formula, as KaTeX's inline rule finds it: $…$ or $$…$$, not starting
 // with a space, and ending before a space, punctuation, a bar or the end.
 const MATH = /^(\${1,2})(?!\$|\s)(?:\\.|[^\\\n$])*?\1(?=[\s?!.,:|]|$)/

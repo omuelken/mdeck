@@ -2,7 +2,8 @@ import { h } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import cloud from 'd3-cloud'
 import { useRoom } from '../live/client.js'
-import { JoinCode, ActivityFooter, wantsQr } from './activity.jsx'
+import { JoinCode, ActivityFooter, ActivityQuestion, wantsQr } from './activity.jsx'
+import { phoneQuestion } from './inlineText.js'
 import { t } from '../core/labels.js'
 import './poll.css'
 
@@ -87,7 +88,7 @@ export default function WordCloud({ room = 'words', question = '', limit = '60',
   const code = wantsQr(qr)
   return <div class="poll poll--cloud">
     <div class="poll-main">
-      {question && <p class="poll-question">{question}</p>}
+      <ActivityQuestion text={question} />
       {/* Without a server and words there is nothing to place: no empty box. */}
       <div class="word-cloud" ref={ref} style={{ height: live.offline && !words.length ? 0 : `${cloudHeight}px` }}>
         {words.length
@@ -103,4 +104,4 @@ export default function WordCloud({ room = 'words', question = '', limit = '60',
   </div>
 }
 
-WordCloud.phone = ({ question, placeholder }, { slideTitle = '' } = {}) => ({ type: 'text', question: question || slideTitle, placeholder: placeholder ?? '', maxLength: 40 })
+WordCloud.phone = ({ question, placeholder }, { slideTitle = '' } = {}) => ({ type: 'text', ...phoneQuestion(question, slideTitle), placeholder: placeholder ?? '', maxLength: 40 })

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { choicesOf, slideHtml, phoneHtml } from '../src/components/inlineText.js'
+import { choicesOf, slideHtml, phoneHtml, phoneQuestion } from '../src/components/inlineText.js'
 
 test('poll options split at bars outside formulas', () => {
   assert.deepEqual(choicesOf(' Mensa | Thai|Pizza||'), ['Mensa', 'Thai', 'Pizza'])
@@ -21,4 +21,11 @@ test('poll texts render Markdown and maths for the slide and the phones', () => 
   assert.doesNotMatch(phone, /katex-html/)
   assert.match(phone, /<em>so<\/em>/)
   assert.equal(phoneHtml('Mensa & Thai'), 'Mensa &amp; Thai')
+})
+
+test('an activity sends its own question drawn, the slide heading as text', () => {
+  assert.deepEqual(phoneQuestion('', 'Derivatives'), { question: 'Derivatives' })
+  const asked = phoneQuestion('Is $x > 0$?', 'Derivatives')
+  assert.equal(asked.question, 'Is $x > 0$?')
+  assert.match(asked.questionHtml, /^Is <span class="katex"><math/)
 })

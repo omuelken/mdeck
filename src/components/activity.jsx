@@ -1,6 +1,8 @@
 import { h } from 'preact'
 import QrCode from './QrCode.jsx'
 import { t } from '../core/labels.js'
+import { slideHtml } from './inlineText.js'
+import 'katex/dist/katex.min.css'
 
 // Parts every activity on a slide shares (<poll>, <question>, <wordcloud>,
 // <scale>, and <qrcode join />): the deck's join code and the line with the number of
@@ -10,6 +12,9 @@ export const shortLink = url => url.replace(/^https?:\/\//, '')
 // `qr="false"` (or "no", "off") leaves the code out: it was on an earlier
 // slide (<qrcode join />), and people's phones follow along.
 export const wantsQr = qr => !/^(false|no|off|0)$/i.test(String(qr ?? 'true'))
+
+/** An activity's question, Markdown with $…$ maths. */
+export const ActivityQuestion = ({ text }) => text ? <p class="poll-question" dangerouslySetInnerHTML={{ __html: slideHtml(text) }} /> : null
 
 /** The join code with the short link, or how to make phones reach the server. */
 export function JoinCode({ room, joinUrl, localJoinUrl, known, offline, qr = true, size = 300, label = t('poll.scan'), tryHere = t('poll.tryHere') }) {

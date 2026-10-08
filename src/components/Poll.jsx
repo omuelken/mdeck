@@ -2,10 +2,9 @@ import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useRoom, latestByDevice } from '../live/client.js'
 import { t } from '../core/labels.js'
-import { JoinCode, ActivityFooter, wantsQr } from './activity.jsx'
+import { JoinCode, ActivityFooter, ActivityQuestion, wantsQr } from './activity.jsx'
 import { Icon } from './Icon.jsx'
-import { choicesOf, slideHtml, phoneHtml } from './inlineText.js'
-import 'katex/dist/katex.min.css'
+import { choicesOf, slideHtml, phoneHtml, phoneQuestion } from './inlineText.js'
 import './poll.css'
 
 // <poll room="lunch" question="Where do we eat?" options="Mensa|Thai|Pizza" />
@@ -69,7 +68,7 @@ export default function Poll({ room = 'poll', question = '', options = '', qr, a
   const still = live.offline && !votes.length
   return <div class={`poll${shown ? ' is-solved' : ''}${still ? ' is-static' : ''}${resultsShown ? '' : ' is-results-hidden'}`} ref={ref}>
     <div class="poll-main">
-      {question && <p class="poll-question" dangerouslySetInnerHTML={{ __html: slideHtml(question) }} />}
+      <ActivityQuestion text={question} />
       <div class="poll-bars" role="list">
         {choices.map((choice, i) => <div class={`poll-row${correct.includes(choice) ? ' is-correct' : ''}`} role="listitem" key={choice}>
           <span class="poll-label" dangerouslySetInnerHTML={{ __html: slideHtml(choice) }} />
@@ -95,5 +94,5 @@ export default function Poll({ room = 'poll', question = '', options = '', qr, a
 // MathML; an answer page from before them shows `question` and `options`.
 Poll.phone = ({ question, options }, { slideTitle = '' } = {}) => {
   const choices = choicesOf(options)
-  return { type: 'choice', question: question || slideTitle, options: choices, ...(question ? { questionHtml: phoneHtml(question) } : {}), optionsHtml: choices.map(phoneHtml) }
+  return { type: 'choice', ...phoneQuestion(question, slideTitle), options: choices, optionsHtml: choices.map(phoneHtml) }
 }

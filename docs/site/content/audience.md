@@ -59,7 +59,7 @@ Besides a poll, three more kinds work the same way: one line on a slide, answere
 | `<wordcloud>` | A short text field | A cloud of every answer, packed around the middle, larger the more often it came in and some upright. Capitals and extra spaces do not matter. People may send several. `height` sets its height (520). Colours come from the palette; `--cloud-1` to `--cloud-6` override them |
 | `<question>` | A text field | The newest answers as cards, eight unless `limit` says otherwise. People may send several |
 
-All of them take `room`, `question` and `qr` like a poll, and `placeholder` for the text fields.
+All of them take `room`, `question` and `qr` like a poll, and `placeholder` for the text fields. Their `question`, and the scale's `low` and `high`, may contain formatting and formulas like a poll's options.
 
 ## Show the code once
 
