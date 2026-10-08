@@ -230,11 +230,15 @@ export function stripNotes(source) {
   return edit(deck, edits)
 }
 
-// The live activities: a slide with one of them is left out of shared builds.
+// The live activities, and the code to join them (<qrcode join />): a slide
+// with one of them is left out of shared builds. <qrcode follow /> and other
+// QR codes stay.
 const ACTIVITY_RE = /<(poll|question|wordcloud|scale)\b/i
+const JOIN_RE = /<qrcode\b[^>]*?\sjoin(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|\{?([^\s/>}]*)\}?))?(?=[\s/>])/i
+const joins = text => { const m = JOIN_RE.exec(text); return !!m && !/^(false|no|off|0)$/i.test(m[1] ?? m[2] ?? m[3] ?? '') }
 export function hasActivity(slide) {
   return [slide.content ?? '', ...Object.values(slide.regions ?? {}).map(region => region.content ?? '')]
-    .some(text => ACTIVITY_RE.test(maskCode(text)))
+    .some(text => { const masked = maskCode(text); return ACTIVITY_RE.test(masked) || joins(masked) })
 }
 
 // Removes every slide with a live activity (<poll>, <question>, <wordcloud>,

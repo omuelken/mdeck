@@ -327,7 +327,7 @@ const HELP = `
     ${c.green}mdeck send${c.reset} [slides.md] [-o talk.html]     One file to send: the reader view, speaker notes removed,
                                               with a PDF inside
       --notes                keep the speaker notes in the file
-      --no-polls             for send, build --reader and pdf: leave out the slides with polls
+      --no-polls             for send, build --reader and pdf: leave out the slides with polls and join codes
       --no-pdf               do not render the PDF inside
     ${c.green}mdeck pdf${c.reset} [slides.md] [-o talk.pdf]       A PDF, one page per slide
       --no-drawings          for build, send and pdf: leave out <slides>.drawings.json
@@ -670,7 +670,7 @@ if (command === 'new') {
   const launchers = !sending && hasFlag('--launchers')
   const reader = sending || hasFlag('--reader')
   const stripNotes = reader && !hasFlag('--notes')
-  // Polls show as a record of the talk; --no-polls leaves their slides out.
+  // Polls show as a record of the talk; --no-polls leaves their slides and join codes out.
   const stripActivities = reader && hasFlag('--no-polls')
   const wantPdf = sending && !hasFlag('--no-pdf')
 

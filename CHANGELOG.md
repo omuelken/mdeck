@@ -7,7 +7,7 @@
 - Fixed: a web video (YouTube, Vimeo, SwitchTube) in `<videoplayer>`'s click mode went on playing, with sound, after leaving its slide. Leaving the slide now stops it; coming back shows it ready to play.
 - Straight lines snap to steps of 15° (horizontal, vertical, 45° …) when they are within 4° of one, both when a held stroke straightens and when an end point is dragged; further off they stay as drawn.
 - Polls have a button with an eye that shows or hides the results (bars and counts), also in the audience window and on paired devices. `results="hidden"` starts with them hidden, e.g. for peer instruction; the audience then sees no bars, the presenter's own screens show them faint.
-- `--no-polls` leaves slides with a poll, question, word cloud or scale out of `mdeck send`, `mdeck build --reader` and `mdeck pdf`. By default they stay as a record of the talk. Drawings stay on their slides.
+- `--no-polls` leaves slides with a poll, question, word cloud, scale or join code (`<qrcode join />`) out of `mdeck send`, `mdeck build --reader` and `mdeck pdf`. By default they stay as a record of the talk. Drawings stay on their slides.
 
 ## 3.2.0 — 2026-10-07
 

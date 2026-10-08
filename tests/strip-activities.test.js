@@ -15,16 +15,19 @@ const deck = [
   '---\n:::meta\nid: kept\n:::\n# Named\n',
   '---\n# Code\n\n```html\n<poll room="c" />\n```\n',
   '---\n# Scale\n\n<scale room="d" />\n\n:::notes\nsecret\n:::\n',
+  '---\n# Join\n\n<qrcode join />\n',
+  '---\n# Follow\n\n<qrcode follow />\n',
+  '---\n# Off\n\n<qrcode join="false" url="https://example.org" />\n',
   '---\n# After\n',
 ].join('\n')
 
 test('stripActivities removes the slides with a live activity and nothing else', () => {
   const { source, ids, removed } = stripActivities(deck)
   const slides = parseSlides(source).slides
-  assert.deepEqual(slides.map(slide => slide.content.match(/^# (.+)$/m)?.[1]), ['Talk', 'Before', 'Named', 'Code', 'After'])
-  assert.deepEqual(removed, ['slide-3', 'slide-4', 'slide-7'])
+  assert.deepEqual(slides.map(slide => slide.content.match(/^# (.+)$/m)?.[1]), ['Talk', 'Before', 'Named', 'Code', 'Follow', 'Off', 'After'])
+  assert.deepEqual(removed, ['slide-3', 'slide-4', 'slide-7', 'slide-8'], 'the join code goes with the polls; the follow link stays')
   // Automatic ids move up; explicit ones stay.
-  assert.deepEqual(ids, { 'slide-1': 'slide-1', 'slide-2': 'slide-2', kept: 'kept', 'slide-6': 'slide-4', 'slide-8': 'slide-5' })
+  assert.deepEqual(ids, { 'slide-1': 'slide-1', 'slide-2': 'slide-2', kept: 'kept', 'slide-6': 'slide-4', 'slide-9': 'slide-5', 'slide-10': 'slide-6', 'slide-11': 'slide-7' })
   assert.match(source, /```html\n<poll room="c" \/>\n```/, 'a poll inside code is an example, not an activity')
   assert.ok(source.startsWith('---\ntheme: neue\n---\n'), 'the deck settings stay')
 })
