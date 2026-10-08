@@ -26,6 +26,7 @@ import { strokePath } from '../core/ink.js'
 import { inkFileName } from 'virtual:deck-ink'
 import savedResults from 'virtual:deck-results'
 import { roomsIn, roomsOnSlide, findRoomTag, slideTitleFor } from '../live/roomTag.js'
+import { expandPollLists } from '../core/pollList.js'
 import './reader.css'
 import { SlideRenderer, manifests } from '../layouts/renderSlide'
 import { setCalloutLabels } from './markedSetup'
@@ -81,7 +82,7 @@ function activityOn(deck, slide) {
   const room = roomsOnSlide(slide)[0]
   if (!room) return { room: null, activity: null }
   const tag = findRoomTag(slide.content ?? '', room) ?? Object.values(slide.regions ?? {}).map(region => findRoomTag(region.content ?? '', room)).find(Boolean)
-  const element = tag && new DOMParser().parseFromString(tag, 'text/html').body.firstElementChild
+  const element = tag && new DOMParser().parseFromString(expandPollLists(tag), 'text/html').body.firstElementChild
   const component = element && registry[element.localName]
   if (typeof component?.phone !== 'function') return { room, activity: null }
   const props = Object.fromEntries([...element.attributes].map(attribute => [attribute.name, attribute.value]))

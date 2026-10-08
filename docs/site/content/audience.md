@@ -44,6 +44,20 @@ The question and the options may contain formatting and formulas, written as on 
 
 Both the slide and the phones show the formulas. A `|` inside a formula stays in it, so `$|x|$` is one option; to put a `|` in plain text, write `\|`.
 
+When the options get long, write them as a list inside the tag instead, one option per line, and tick the right one with `[x]`:
+
+```markdown
+<poll room="derivative" question="What is $\frac{d}{dx}\, x^2$?">
+
+- [x] $2x$
+- [ ] $x^2$
+- [ ] $\frac{x^3}{3}$
+
+</poll>
+```
+
+Nothing needs escaping there, and the right answer is marked where it stands.
+
 Options can also be pictures. Show only letters on the phones then:
 
 ```markdown

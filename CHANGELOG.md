@@ -4,6 +4,8 @@
 
 - Tags in a deck are found the way the slide finds them, everywhere mdeck looks for them: the phones, `--no-polls`, the pictures and videos a build takes along. A `>` in a quoted value no longer cuts a tag short there either (`<qrcode label="a > b" join />`, `<img alt="a > b" src="…">`), and a tag that a blank line cuts in two is no activity for the phones when the slide does not show it.
 - Fixed: a bar inside `code`, a [link](…) or a picture in a poll's options split the option in two. Only bars outside them, and outside formulas, separate options.
+- A poll's options may be a list inside the tag, one item each, with `[x]` for a right answer: `<poll room="d">` then `- [x] $2x$`, `- [ ] $x^2$` and `</poll>`. Nothing needs escaping, and long options read better than in one attribute.
+- Fixed: text after an activity written `<poll … />` (or any component closed with `/>`) went missing from the slide, as did another activity right after it. What follows an activity or a join code now has room above it in every theme.
 
 ## 3.4.0 — 2026-10-08
 

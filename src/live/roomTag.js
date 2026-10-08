@@ -1,6 +1,6 @@
 // Finds the component tag a phone should see: the one whose `room` attribute
 // matches, with its content if it has any.
-import { tagsIn } from '../core/tags.js'
+import { tagsIn, closingTagOf } from '../core/tags.js'
 
 // Every activity in a source, in order: [{ tag, room }]. Tags in code are
 // not activities (src/core/tags.js).
@@ -29,14 +29,6 @@ export function findRoomTag(source, room) {
   const at = tags.findIndex(tag => !tag.closing && tag.attrs.room === room)
   if (at < 0) return null
   const open = tags[at]
-  if (open.selfClosing || open.start == null) return open.raw
-  // Its closing tag, past any of the same name inside it.
-  let depth = 0
-  for (const tag of tags.slice(at + 1)) {
-    if (tag.name !== open.name || tag.selfClosing) continue
-    if (!tag.closing) depth++
-    else if (depth) depth--
-    else return tag.end == null ? open.raw : text.slice(open.start, tag.end)
-  }
-  return open.raw
+  const close = open.start == null ? null : closingTagOf(tags, at)
+  return close?.end == null ? open.raw : text.slice(open.start, close.end)
 }

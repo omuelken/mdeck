@@ -3,7 +3,8 @@ import { useEffect, useRef } from 'preact/hooks'
 import { render } from 'preact'
 import { marked, Parser } from 'marked'
 import { registry } from '../runtime/registry'
-import { scanTags } from '../core/tags.js'
+import { scanTags, closeTags } from '../core/tags.js'
+import { expandPollLists } from '../core/pollList.js'
 import { InkLayer } from '../runtime/ink/InkLayer.jsx'
 import themedSvgs from 'virtual:deck-svgs'
 import { renderCitations, citationsHtml as referencesOf, bibliographyOf } from '../runtime/citations.js'
@@ -40,7 +41,9 @@ function preprocessFootnotes(markdown) {
 export { t } from '../core/labels.js'
 
 export function extractContent(markdown, { headingLevels = [], paragraph = false } = {}) {
-  const processed = markdown
+  // marked's preprocess hook (src/runtime/markedSetup.js) does not run for
+  // marked.lexer, so the lists of polls become their options here.
+  const processed = expandPollLists(markdown)
   const footnotesHtml = ''
   const tokens = marked.lexer(processed)
   const headings = {}
@@ -103,6 +106,10 @@ export function Picture({ src, alt, fit, position, class: className, ...attribut
 
 // ─── Hydration for inline components ──────────────────────────────────────
 
+// Components may be written `<poll … />`, which a browser takes for an open
+// tag, putting what follows inside the component, where it is lost.
+const COMPONENT_TAGS = new Set(Object.keys(registry))
+
 export function HtmlContent({ html, class: className, ...attributes }) {
   const ref = useRef()
 
@@ -122,7 +129,7 @@ export function HtmlContent({ html, class: className, ...attributes }) {
     return () => mounted.forEach(wrapper => render(null, wrapper))
   }, [html])
 
-  return <div class={className} {...attributes} ref={ref} dangerouslySetInnerHTML={{ __html: inlineThemedPictures(html) }} />
+  return <div class={className} {...attributes} ref={ref} dangerouslySetInnerHTML={{ __html: closeTags(inlineThemedPictures(html), COMPONENT_TAGS) }} />
 }
 
 // ─── Header / footer / footnotes rails ────────────────────────────────────

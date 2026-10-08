@@ -134,6 +134,38 @@ export function tagsIn(markdown = '') {
   })))
 }
 
+/**
+ * The closing tag of `tags[at]` in a list from tagsIn or scanTags, past any
+ * of the same name inside it; null when it has none.
+ */
+export function closingTagOf(tags, at) {
+  const open = tags[at]
+  if (open.closing || open.selfClosing) return null
+  let depth = 0
+  for (const tag of tags.slice(at + 1)) {
+    if (tag.name !== open.name || tag.selfClosing) continue
+    if (!tag.closing) depth++
+    else if (depth) depth--
+    else return tag
+  }
+  return null
+}
+
+/**
+ * Self-closing tags of the named elements given a closing tag. A browser
+ * takes `<poll />` for `<poll>`, so what follows would end up inside it.
+ */
+export function closeTags(html, names) {
+  let out = ''
+  let last = 0
+  for (const tag of scanTags(html)) {
+    if (!tag.selfClosing || !names.has(tag.name)) continue
+    out += html.slice(last, tag.index) + tag.raw.replace(/\s*\/>$/, '>') + `</${tag.name}>`
+    last = tag.end
+  }
+  return out + html.slice(last)
+}
+
 /** The opening tags (and self-closing ones) in a piece of Markdown. */
 export const openTagsIn = markdown => tagsIn(markdown).filter(tag => !tag.closing)
 

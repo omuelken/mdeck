@@ -1,4 +1,7 @@
 /* ── Poll on the slide ─────────────────────────────────────────────────── */
+/* What follows an activity (or a join code) on the slide has room above it,
+   as after a list: the component's wrapper has no margin of its own. */
+:is(.slide-body, [data-region]) div:has(> .poll, > .poll-join-slide) + * { margin-top: var(--gap-item, 32px); }
 .poll { display: flex; gap: 72px; align-items: center; width: 100%; font-size: var(--fs-body, 36px); color: var(--ink, #111); }
 .poll-main { flex: 1; min-width: 0; }
 .poll .poll-question { margin: 0 0 32px; font-weight: 600; }

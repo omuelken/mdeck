@@ -3,6 +3,7 @@ import { useRoom, latestByDevice } from '../live/client.js'
 import { t } from '../core/labels.js'
 import { JoinCode, ActivityFooter, ActivityQuestion, ActivityControls, useControls, wantsQr, isSet } from './activity.jsx'
 import { choicesOf, slideHtml, phoneHtml, phoneQuestion } from './inlineText.js'
+import { pollChoices } from '../core/pollList.js'
 import './poll.css'
 
 // <poll room="lunch" question="Where do we eat?" options="Mensa|Thai|Pizza" />
@@ -32,6 +33,18 @@ import './poll.css'
 // The question and the options are Markdown with $…$ maths, as on a slide:
 // options="$x^2$|$2x$|$\frac{x^3}{3}$". A bar inside a formula stays in it
 // ($|x|$); \| is a bar in the text. Votes and `answer` use the source text.
+//
+// Options may instead be a list inside the tag, one item each, `[x]` for a
+// right one (src/core/pollList.js). They arrive here as `data-choices`.
+
+// The options and the right ones, from the list or from `options` and `answer`.
+function choicesFrom({ options, answer, 'data-choices': listed }) {
+  const fromList = listed != null && pollChoices(listed)
+  const choices = fromList ? fromList.map(choice => choice.text) : choicesOf(options)
+  const marked = fromList ? fromList.filter(choice => choice.right).map(choice => choice.text) : []
+  const correct = marked.length ? marked : choicesOf(answer).filter(choice => choices.includes(choice))
+  return { choices, correct }
+}
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 /** What `buttons` puts before each option: letters, numbers, or nothing. */
@@ -46,11 +59,10 @@ export const keysFor = (buttons, count) => {
 // from before `multiple` sends one option; it counts as a list of one.
 const picksOf = (value, multiple) => multiple ? (Array.isArray(value) ? value : [value]) : (Array.isArray(value) ? [] : [value])
 
-export default function Poll({ room = 'poll', question = '', options = '', qr, answer = '', results = '', multiple, buttons }) {
-  const choices = choicesOf(options)
+export default function Poll({ room = 'poll', question = '', qr, results = '', multiple, buttons, ...attributes }) {
+  const { choices, correct } = choicesFrom(attributes)
   const several = isSet(multiple)
   const keys = keysFor(buttons, choices.length)
-  const correct = choicesOf(answer).filter(choice => choices.includes(choice))
   const live = useRoom(room)
   const controls = useControls(room, live, { results: results !== 'hidden', solution: correct.length ? correct : null })
   const votes = latestByDevice(controls.counted(live.messages))
@@ -82,8 +94,8 @@ export default function Poll({ room = 'poll', question = '', options = '', qr, a
 // What the phones show while this poll is on screen. `optionsHtml` are the
 // options drawn, with maths as MathML; with `buttons`, phones show `keys`
 // instead. An answer page from before them shows `question` and `options`.
-Poll.phone = ({ question, options, multiple, buttons }, { slideTitle = '' } = {}) => {
-  const choices = choicesOf(options)
+Poll.phone = ({ question, multiple, buttons, ...attributes }, { slideTitle = '' } = {}) => {
+  const { choices } = choicesFrom(attributes)
   const keys = keysFor(buttons, choices.length)
   return {
     type: 'choice', ...phoneQuestion(question, slideTitle), options: choices,

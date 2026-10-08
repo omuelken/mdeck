@@ -5,6 +5,7 @@ import '../components/callout.css'
 import '../components/columns.css'
 import { scanDirectives, sourceLines, fenceState } from '../core/source.js'
 import { CALLOUT_LABELS, labelSetFor } from '../core/labels.js'
+import { expandPollLists } from '../core/pollList.js'
 
 function readDirective(src, name) {
   if (!/^:::\s*[\w-]+/.test(src)) return null
@@ -36,6 +37,8 @@ function escapeHtml(text) {
 }
 
 marked.use(markedKatex({ throwOnError: false, output: 'html' }))
+// A poll's options written as a list inside the tag (src/core/pollList.js).
+marked.use({ hooks: { preprocess: expandPollLists } })
 
 // marked.use() prepends via unshift, so last-registered = highest priority.
 // Register callout first (lowest priority) so columns and steps match before it.

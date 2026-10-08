@@ -756,7 +756,7 @@ For `play="auto"` the video pauses and resets to the beginning when you navigate
 | Attribute | Default | Description |
 |---|---|---|
 | `room` | `poll` | Name of the room that collects the answers; unique per poll in a deck. Letters, digits, `.`, `-`, `_` |
-| `options` | — | Answers separated by `\|`. Markdown and `$…$` maths, as on a slide (see below) |
+| `options` | — | Answers separated by `\|`. Markdown and `$…$` maths, as on a slide (see below). Or a list inside the tag |
 | `question` | — | Question text, Markdown and maths like `options`; phones fall back to the slide heading |
 | `qr` | `true` | `false` leaves out the QR code (shown earlier with `<qrcode join />`) |
 | `answer` | — | The right answer (several separated by `\|`): a button with a tick outlines its label, bar and count in green, also in the audience window and on paired devices, and each phone says whether its vote was right. `--poll-correct` sets the colour |
@@ -775,7 +775,21 @@ Four more activities take the same `room`, `question` and `qr`:
 
 `<qrcode follow />` shows the link for following the slides on phones and laptops (`?view=follow`), with `mdeck run --network` or a hosted deck with a `server` setting; the phones' answer page links to it as well. `<qrcode join />` shows the deck's join code large with its link (`size`, default 420), for a slide that invites everyone once; activities after it can use `qr="false"`. QR codes (`<qrcode>`, activities) are SVG in the slide's `--ink` on a transparent background; `--qr-ink` and `--qr-bg` override the colours.
 
-Options and the question may use Markdown and maths, e.g. `options="$2x$|$x^2$|$\frac{x^3}{3}$"`. A `|` inside a formula belongs to it (`$|x|$` is one option), and `\|` is a bar in plain text. The slide draws maths with KaTeX, the phones as MathML; votes and `answer` use the text as written. The other activities' `question`, and the scale's `low` and `high`, take Markdown and maths too.
+Options and the question may use Markdown and maths, e.g. `options="$2x$|$x^2$|$\frac{x^3}{3}$"`. A `|` inside a formula, `code`, a link or a picture belongs to it (`$|x|$` is one option), and `\|` is a bar in plain text.
+
+For options that are more than a word, write them as a list inside the tag instead of `options`, one item each; `[x]` marks a right answer, in place of `answer`:
+
+```markdown
+<poll room="derivative" question="What is $\frac{d}{dx}\, x^2$?">
+
+- [x] $2x$
+- [ ] $x^2$
+- [ ] $\frac{x^3}{3}$
+
+</poll>
+```
+
+Each item is an option as written, with no `|` to split and nothing to escape; an item over several lines is one option. Plain `-` or `1.` items work too, with `answer` or without a right answer. The tag must hold nothing but the list; otherwise it is left as it is. The slide draws maths with KaTeX, the phones as MathML; votes and `answer` use the text as written. The other activities' `question`, and the scale's `low` and `high`, take Markdown and maths too.
 
 The slide shows live bars, the number of answers, a QR code and a short link. Phones never load the deck: they open the server's own answer page at `<server>/<code>`, where the six-digit session code is the same for every poll in the deck. The presenter's screen (the presenter view or a full deck window, never an embedded preview) announces the poll on the current slide with what the phones should show and the deck's look; the server only accepts that from the presenter. Between polls the phones wait. Each device's latest vote counts. The presenter can reset the room (hover over the results).
 
