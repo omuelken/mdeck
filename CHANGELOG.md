@@ -6,6 +6,8 @@
 - Fixed: a bullet list inside a numbered list took numbers too, and in some themes the number sat on top of the bullet; it also pushed the numbering of the items after it. Every built-in theme now styles only a list's own items.
 - Links and quotations look the part in every theme: links take the palette's accent colour instead of the browser's blue, and a `> quotation` has a rule in the accent colour at its side instead of a bare indent. Themes that style them their own way keep their look.
 - The sample deck, on which `mdeck design`, the theme gallery and the theme checks show every theme, now also has a link, a quotation, a bullet list inside a numbered list, citations with their references at the foot of the slide, and a reference list.
+- A poll's question and options may use Markdown and `$…$` maths, as on a slide: `options="$2x$|$x^2$|$\frac{x^3}{3}$"`. The slide draws them with KaTeX, the phones' answer page as MathML, which needs no fonts or scripts there; it keeps only text, emphasis and MathML from what the presenter's screen sends. A `|` inside a formula belongs to it (`$|x|$`), and `\|` is a bar in the text. Votes and `answer` still use the text as written. An answer page from an older `mdeck server` shows the source text.
+- Fixed: the phones' answer page showed the word “null” below the question when there was no link for following the slides.
 
 ## 3.3.0 — 2026-10-08
 

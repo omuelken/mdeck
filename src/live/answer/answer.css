@@ -33,3 +33,5 @@ body { min-height: 100vh; display: flex; flex-direction: column; font: 18px/1.45
 .answer-status { margin: 18px 0 0; color: var(--muted); min-height: 2.8em; }
 footer { padding: 16px 20px; text-align: center; color: var(--muted); font-size: 14px; }
 .answer-follow { display: block; margin: 0 20px 24px; padding: 12px 16px; text-align: center; border: 1px solid var(--rule); border-radius: 10px; color: var(--ink); text-decoration: none; font-size: 15px; }
+/* Maths in a question or option (MathML, see answer.js). */
+.answer-rich math { font-size: 1.1em; }

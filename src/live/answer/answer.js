@@ -50,6 +50,35 @@
     for (const url of wanted) if (!document.querySelector(`link[data-theme-font][href="${CSS.escape(url)}"]`)) document.head.append(el('link', { rel: 'stylesheet', href: url, 'data-theme-font': true }))
   }
 
+  // A question or option drawn by the deck (Markdown and maths as MathML,
+  // src/components/inlineText.js), kept to text, emphasis and MathML. The
+  // nodes are moved out of the parsed document, never parsed again.
+  const SAFE_TAGS = new Set('em strong b i code del s sub sup br math semantics annotation mrow mi mo mn ms mtext mspace msup msub msubsup mfrac msqrt mroot mstyle mover munder munderover mtable mtr mtd mpadded mphantom menclose'.split(' '))
+  const SAFE_ATTRIBUTES = new Set('mathvariant display displaystyle scriptlevel stretchy fence separator symmetric largeop movablelimits accent accentunder lspace rspace minsize maxsize linethickness width height depth voffset columnalign rowalign columnspacing rowspacing notation encoding'.split(' '))
+  const DROPPED = new Set('script style template noscript iframe object embed svg textarea title'.split(' '))
+  function clean(node) {
+    for (const child of [...node.childNodes]) {
+      if (child.nodeType === Node.TEXT_NODE) continue
+      if (child.nodeType !== Node.ELEMENT_NODE || DROPPED.has(child.localName)) { child.remove(); continue }
+      clean(child)
+      if (!SAFE_TAGS.has(child.localName)) { child.replaceWith(...child.childNodes); continue }
+      for (const { name } of [...child.attributes]) if (!SAFE_ATTRIBUTES.has(name)) child.removeAttribute(name)
+    }
+    return node
+  }
+  const drawn = (html, text) => {
+    if (typeof html !== 'string') return text
+    const body = clean(new DOMParser().parseFromString(html, 'text/html').body)
+    return el('span', { class: 'answer-rich' }, ...body.childNodes)
+  }
+  // "Thanks! You chose “{choice}”." with the option drawn.
+  const thanks = (activity, value) => {
+    const i = activity.options.indexOf(value)
+    if (!words.thanks.includes('{choice}')) return words.thanks
+    const [before, after] = words.thanks.split('{choice}')
+    return [before, drawn(activity.optionsHtml?.[i], value), after]
+  }
+
   async function answer(room, value) {
     const response = await fetch(new URL(`rooms/${encodeURIComponent(`${code}.${room}`)}`, base), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: me, data: { value } }) })
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error ?? String(response.status))
@@ -60,14 +89,14 @@
     choice(activity, room) {
       const picked = remembered(room)
       return [
-        el('div', { class: 'answer-options' }, activity.options.map(option => el('button', {
+        el('div', { class: 'answer-options' }, activity.options.map((option, i) => el('button', {
           class: option === picked ? 'is-picked' : null, 'aria-pressed': String(option === picked),
           onclick: async () => {
-            try { await answer(room, option); remember(room, option); status = fill(words.thanks, { choice: option }) } catch (error) { status = error.message }
+            try { await answer(room, option); remember(room, option); status = thanks(activity, option) } catch (error) { status = error.message }
             render()
           },
-        }, option))),
-        el('p', { class: 'answer-status', role: 'status' }, status || (picked ? fill(words.thanks, { choice: picked }) : words.pick)),
+        }, drawn(activity.optionsHtml?.[i], option)))),
+        el('p', { class: 'answer-status', role: 'status' }, status || (picked ? thanks(activity, picked) : words.pick)),
       ]
     },
     // { question, placeholder, maxLength }: short text, as often as people like.
@@ -104,14 +133,15 @@
   function render() {
     const activity = current?.activity
     const form = activity && FORMS[activity.type]
-    root.replaceChildren(
+    // Without the filter, replaceChildren() writes a missing part out as "null".
+    root.replaceChildren(...[
       form
-        ? el('main', { class: 'answer' }, activity.question && el('h1', {}, activity.question), form(activity, current.room))
+        ? el('main', { class: 'answer' }, activity.question && el('h1', {}, drawn(activity.questionHtml, activity.question)), form(activity, current.room))
         : el('main', { class: 'answer answer--waiting' }, el('p', {}, connected ? words.waiting : words.offline)),
       current?.title ? el('footer', {}, current.title) : null,
       // The presenter's screen sends the link when other devices can follow the slides.
       /^https?:\/\//.test(current?.follow ?? '') ? el('a', { class: 'answer-follow', href: current.follow }, words.follow ?? 'Follow the slides') : null,
-    )
+    ].filter(Boolean))
   }
 
   function follow(state) {

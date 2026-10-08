@@ -4,6 +4,8 @@ import { useRoom, latestByDevice } from '../live/client.js'
 import { t } from '../core/labels.js'
 import { JoinCode, ActivityFooter, wantsQr } from './activity.jsx'
 import { Icon } from './Icon.jsx'
+import { choicesOf, slideHtml, phoneHtml } from './inlineText.js'
+import 'katex/dist/katex.min.css'
 import './poll.css'
 
 // <poll room="lunch" question="Where do we eat?" options="Mensa|Thai|Pizza" />
@@ -23,8 +25,10 @@ import './poll.css'
 // them hidden, e.g. for peer instruction. Hidden, the audience window shows no
 // bars; the presenter's own screens show them faint, so the presenter can
 // still judge the votes.
-
-const choicesOf = options => String(options ?? '').split('|').map(option => option.trim()).filter(Boolean)
+//
+// The question and the options are Markdown with $…$ maths, as on a slide:
+// options="$x^2$|$2x$|$\frac{x^3}{3}$". A bar inside a formula stays in it
+// ($|x|$); \| is a bar in the text. Votes and `answer` use the source text.
 
 export default function Poll({ room = 'poll', question = '', options = '', qr, answer = '', results = '' }) {
   const choices = choicesOf(options)
@@ -65,10 +69,10 @@ export default function Poll({ room = 'poll', question = '', options = '', qr, a
   const still = live.offline && !votes.length
   return <div class={`poll${shown ? ' is-solved' : ''}${still ? ' is-static' : ''}${resultsShown ? '' : ' is-results-hidden'}`} ref={ref}>
     <div class="poll-main">
-      {question && <p class="poll-question">{question}</p>}
+      {question && <p class="poll-question" dangerouslySetInnerHTML={{ __html: slideHtml(question) }} />}
       <div class="poll-bars" role="list">
         {choices.map((choice, i) => <div class={`poll-row${correct.includes(choice) ? ' is-correct' : ''}`} role="listitem" key={choice}>
-          <span class="poll-label">{choice}</span>
+          <span class="poll-label" dangerouslySetInnerHTML={{ __html: slideHtml(choice) }} />
           <span class="poll-track"><span class="poll-fill" style={{ width: `${(counts[i] / max) * 100}%` }} /></span>
           <span class="poll-count">{counts[i]}</span>
         </div>)}
@@ -87,4 +91,9 @@ export default function Poll({ room = 'poll', question = '', options = '', qr, a
 }
 
 // What the phones show while this poll is on screen.
-Poll.phone = ({ question, options }, { slideTitle = '' } = {}) => ({ type: 'choice', question: question || slideTitle, options: choicesOf(options) })
+// `questionHtml` and `optionsHtml` are the same texts drawn, with maths as
+// MathML; an answer page from before them shows `question` and `options`.
+Poll.phone = ({ question, options }, { slideTitle = '' } = {}) => {
+  const choices = choicesOf(options)
+  return { type: 'choice', question: question || slideTitle, options: choices, ...(question ? { questionHtml: phoneHtml(question) } : {}), optionsHtml: choices.map(phoneHtml) }
+}

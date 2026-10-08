@@ -33,6 +33,14 @@ Every poll in a presentation shows the same code, so people scan once. Their pho
 | `question` | Optional question text. Without it, phones show the slide's heading. |
 | `qr` | `false` leaves out the QR code, when an earlier slide showed it with `<qrcode join />`. |
 
+The question and the options may contain formatting and formulas, written as on a slide, so a maths lecture can ask:
+
+```markdown
+<poll room="derivative" question="What is $\frac{d}{dx}\, x^2$?" options="$2x$|$x^2$|$\frac{x^3}{3}$" answer="$2x$" />
+```
+
+Both the slide and the phones show the formulas. A `|` inside a formula stays in it, so `$|x|$` is one option; to put a `|` in plain text, write `\|`.
+
 With `lang: de` in the settings, the slide and the phones show German words, such as “Scannen und abstimmen”. The phones use the presentation's colours and fonts; if you pick another theme or palette in the presenter view, the phones change with it.
 
 ## Other kinds of questions
