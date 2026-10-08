@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { launchChrome } from './chrome.js'
 import { frameworkRoot } from '../paths.js'
-import { sampleDeck, SAMPLE_PICTURE } from '../editor/sampleDeck.js'
+import { sampleDeck, SAMPLE_PICTURE, SAMPLE_REFERENCES, SAMPLE_REFERENCES_FILE } from '../editor/sampleDeck.js'
 import { loadRegistry } from '../extensions/discover.js'
 
 // Runs in the page before the deck: keeps what the page reports.
@@ -91,6 +91,7 @@ export function buildSampleDeck({ extensions = {}, outDir }) {
   try {
     writeFileSync(resolve(temp, 'slides.md'), sampleDeck())
     writeFileSync(resolve(temp, 'picture.svg'), SAMPLE_PICTURE)
+    writeFileSync(resolve(temp, SAMPLE_REFERENCES_FILE), SAMPLE_REFERENCES)
     // Keyed by id, or by "kind:id" to keep a theme and a palette of one name apart.
     for (const [key, dir] of Object.entries(extensions)) cpSync(dir, resolve(temp, 'extensions', ...key.split(':').map((part, i, all) => all.length > 1 && i === 0 ? `${part}s` : part)), { recursive: true })
     mkdirSync(resolve(temp, 'home'))

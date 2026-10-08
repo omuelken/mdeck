@@ -12,7 +12,7 @@ import { isOwnWrite } from './ownWrites.js'
 import { fileURLToPath } from 'node:url'
 import { assertDrawings } from './drawings.js'
 import { marked } from 'marked'
-import { resolveBibliography } from './bibliography.js'
+import { resolveBibliography, sampleBibliography } from './bibliography.js'
 
 const VIRTUAL_ID = 'virtual:slides'
 const RESOLVED_ID = '\0virtual:slides'
@@ -243,6 +243,9 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
   const SOURCE_IDS = [RESOLVED_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID, RESOLVED_BIB_ID]
   // The reference files (and .csl style) the deck names, from the last load.
   let bibFiles = []
+  // The dev and edit servers also show the sample deck (?sample=1, the
+  // design page), with its references from memory; builds never do.
+  let serving = false
   // The editor keeps its page: the formatted references arrive as a hot update.
   const bibUpdate = server => {
     const mod = server.moduleGraph.getModuleById(RESOLVED_BIB_ID)
@@ -262,6 +265,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
 
   return {
     name: 'vite-plugin-slides',
+    configResolved(config) { serving = config.command === 'serve' },
     configureServer(server) {
       server.watcher.add([abs, inkPath, ...watchDirs()])
       const refresh = file => {
@@ -329,12 +333,12 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       // that none of it travels in the deck (bibliography.js).
       if (id === RESOLVED_BIB_ID) {
         watchDeck(this)
-        return resolveBibliography(abs, sourceFor(readDeck())).then(bibliography => {
+        const data = bibliography => bibliography && { ids: bibliography.ids, clusters: bibliography.clusters, singles: bibliography.singles, entries: bibliography.entries, order: bibliography.order }
+        return Promise.all([resolveBibliography(abs, sourceFor(readDeck()), { sample: serving }), serving ? sampleBibliography() : null]).then(([bibliography, sample]) => {
           bibFiles = bibliography ? [...bibliography.files, bibliography.style].filter(Boolean) : []
           for (const file of bibFiles) if (existsSync(file)) this.addWatchFile(file)
           if (bibliography?.diagnostics.length) this.warn(bibliography.diagnostics.map(d => d.message).join('\n'))
-          const data = bibliography && { ids: bibliography.ids, clusters: bibliography.clusters, singles: bibliography.singles, entries: bibliography.entries, order: bibliography.order }
-          return `export default ${JSON.stringify(data)}`
+          return `export default ${JSON.stringify(data(bibliography))}\nexport const sample = ${JSON.stringify(data(sample))}`
         })
       }
       if (id === RESOLVED_EXTENSIONS_ID) {

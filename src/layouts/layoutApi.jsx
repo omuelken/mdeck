@@ -5,7 +5,7 @@ import { marked, Parser } from 'marked'
 import { registry } from '../runtime/registry'
 import { InkLayer } from '../runtime/ink/InkLayer.jsx'
 import themedSvgs from 'virtual:deck-svgs'
-import { renderCitations, citationsHtml as referencesOf } from '../runtime/citations.js'
+import { renderCitations, citationsHtml as referencesOf, bibliographyOf } from '../runtime/citations.js'
 
 // ─── Content extraction ────────────────────────────────────────────────────
 
@@ -188,11 +188,12 @@ export function prepareSlide(slide) {
     .sort((a, b) => position(a[1]) - position(b[1]))
   let separator = '\u0000mdeck-region\u0000'
   while (entries.some(([, r]) => r.content.includes(separator))) separator += '\u0000'
-  const cited = renderCitations(entries.map(([, r]) => r.content).join(separator))
+  const bib = bibliographyOf(slide.deckConfig)
+  const cited = renderCitations(entries.map(([, r]) => r.content).join(separator), bib)
   const { processed, footnotesHtml } = preprocessFootnotes(cited.markdown)
   const pieces = processed.split(separator)
   const regions = Object.fromEntries(entries.map(([name, region], i) => [name, { ...region, content: pieces[i] }]))
-  const citationsHtml = slide.deckConfig?.show?.citations === false ? '' : referencesOf(cited.ids)
+  const citationsHtml = slide.deckConfig?.show?.citations === false ? '' : referencesOf(cited.ids, bib)
   return { ...slide, regions, content: regions.body?.content ?? '', footnotesHtml, citationsHtml }
 }
 

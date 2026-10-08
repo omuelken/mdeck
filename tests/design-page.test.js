@@ -30,6 +30,11 @@ test('the sample deck parses cleanly and uses every built-in layout', () => {
   assert.ok(!sampleDeck('data:image/svg+xml,x').includes('./picture.svg'))
 })
 
+test('the sample deck shows a link, a quote, a list nested in a numbered list, and citations', () => {
+  const source = sampleDeck()
+  for (const [what, pattern] of [['link', /\]\(https:/], ['quote', /^> /m], ['nested list', /^\d+\. .*\n(?:\d+\. .*\n)*\s+- /m], ['citation', /\[@\w+/], ['narrative citation', / @roe2023 /], ['reference list', /<bibliography \/>/]]) assert.match(source, pattern, what)
+})
+
 // `mdeck design` on a folder without a deck: the sample deck is served from
 // memory, extensions are written to the folder, and nothing else is.
 const folder = mkdtempSync(resolve(tmpdir(), 'mdeck-design-'))
@@ -55,4 +60,8 @@ test('without a deck, the design page gets the sample deck and saves only extens
   const slides = await vite.transformRequest('virtual:slides')
   assert.ok(slides.code.includes('A talk about *trying* themes.'))
   assert.deepEqual(readdirSync(folder), ['extensions'])
+  // Its references come from memory: formatted, with nothing written.
+  const bibliography = await vite.transformRequest('virtual:bibliography')
+  assert.match(bibliography.code, /\(Doe &#38; Roe, 2024, p\. 4\)/)
+  assert.match(bibliography.code, /export const sample = \{/)
 })

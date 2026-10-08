@@ -167,7 +167,7 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
    indent. :where keeps them weaker than any rule of the theme's own. */
 :where(.slide) a { color: var(--accent); text-underline-offset: 0.15em; text-decoration-thickness: 0.06em; }
 :where(.slide) blockquote {
-  margin: 0;
+  margin: 0 0 var(--gap-item);
   padding-left: 0.9em;
   border-left: 4px solid var(--accent);
   color: var(--ink-soft);

@@ -1,8 +1,9 @@
-import { readFileSync, statSync } from 'fs'
-import { resolve, dirname, extname } from 'path'
+import { readFileSync, statSync, existsSync } from 'fs'
+import { resolve, dirname, extname, basename } from 'path'
 import yaml from 'js-yaml'
 import { parseSlides } from '../core/parseSlides.js'
 import { scanCitations, citedKeys } from '../core/citations.js'
+import { sampleDeck, SAMPLE_REFERENCES, SAMPLE_REFERENCES_FILE } from '../editor/sampleDeck.js'
 
 // The deck's references, formatted here in Node with citeproc so that none of
 // it travels in the deck: the page receives finished HTML for every citation
@@ -26,8 +27,14 @@ async function readItems(file) {
   const { mtimeMs } = statSync(file)
   const cached = parsed.get(file)
   if (cached?.mtimeMs === mtimeMs) return cached.items
-  const text = readFileSync(file, 'utf-8')
-  const ext = extname(file).toLowerCase()
+  const items = await parseReferences(readFileSync(file, 'utf-8'), extname(file))
+  parsed.set(file, { mtimeMs, items })
+  return items
+}
+
+// Reference file text as CSL-JSON items; `ext` names the format.
+export async function parseReferences(text, ext) {
+  ext = ext.toLowerCase()
   let items
   if (ext === '.json') items = JSON.parse(text)
   else if (ext === '.yml' || ext === '.yaml') {
@@ -40,18 +47,20 @@ async function readItems(file) {
     items = new Cite(text, { forceType: '@biblatex/text' }).data
   } else throw new Error(`unknown reference format "${ext}" (use .bib, .json or .yml)`)
   if (!Array.isArray(items)) throw new Error('expected a list of references')
-  items = items.filter(item => item && item.id != null).map(item => ({ ...item, id: String(item.id) }))
-  parsed.set(file, { mtimeMs, items })
-  return items
+  return items.filter(item => item && item.id != null).map(item => ({ ...item, id: String(item.id) }))
 }
 
-export async function loadBibliography(files) {
+// `sample`: the sample deck's references stand in for a missing file of
+// theirs (the dev and edit servers show the sample deck without a folder).
+export async function loadBibliography(files, { sample = false } = {}) {
   const items = []
   const seen = new Set()
   const diagnostics = []
   for (const file of files) {
     let found
-    try { found = await readItems(file) } catch (error) {
+    try {
+      found = sample && basename(file) === SAMPLE_REFERENCES_FILE && !existsSync(file) ? await parseReferences(SAMPLE_REFERENCES, '.bib') : await readItems(file)
+    } catch (error) {
       diagnostics.push({ severity: 'warning', code: 'bibliography-file', message: error.code === 'ENOENT' ? `Bibliography ${file} not found` : `Bibliography ${file}: ${error.message}` })
       continue
     }
@@ -275,15 +284,24 @@ export async function formatBibliography({ items, texts, csl, lang, nocite = [],
 
 // Everything the deck's `bibliography`, `csl`, `nocite` and `lang` ask for,
 // or null when the deck has no bibliography.
-export async function resolveBibliography(deckPath, source) {
+export async function resolveBibliography(deckPath, source, { sample = false } = {}) {
   let deckConfig
   try { deckConfig = parseSlides(source).deckConfig ?? {} } catch { return null }
   const files = bibliographyFiles(deckPath, deckConfig)
   if (!files.length) return null
-  const loaded = await loadBibliography(files)
+  const loaded = await loadBibliography(files, { sample })
   const formatted = await formatBibliography({
     items: loaded.items, texts: deckTexts(source), csl: deckConfig.csl, lang: deckConfig.lang,
     nocite: deckConfig.nocite ?? [], deckDir: dirname(resolve(deckPath)),
   })
   return { ...formatted, diagnostics: [...loaded.diagnostics, ...formatted.diagnostics], files, style: styleFile(deckPath, deckConfig) }
+}
+
+// The sample deck's citations, formatted once: the design page previews it
+// in the editor of any deck, whose own references are another matter.
+let sampleFormatted = null
+export function sampleBibliography() {
+  sampleFormatted ??= parseReferences(SAMPLE_REFERENCES, '.bib')
+    .then(items => formatBibliography({ items, texts: deckTexts(sampleDeck()) }))
+  return sampleFormatted
 }

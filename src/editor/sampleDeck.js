@@ -6,6 +6,26 @@
 // over hills under a sun, for every layout that shows a picture.
 export const SAMPLE_PICTURE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"><rect width="800" height="500" fill="var(--surface, #eef1f4)"/><g stroke="var(--rule, #d5dbe1)" stroke-width="2"><path d="M0 100H800M0 200H800M0 300H800M0 400H800M100 0V500M200 0V500M300 0V500M400 0V500M500 0V500M600 0V500M700 0V500"/></g><circle cx="580" cy="165" r="128" fill="none" stroke="var(--accent, #3d5a73)" stroke-width="4" opacity="0.35"/><circle cx="580" cy="165" r="88" fill="var(--accent, #3d5a73)"/><path d="M0 360C140 292 262 300 384 338S628 424 800 330V500H0Z" fill="var(--accent-2, #c2410c)"/><path d="M0 418C168 366 330 392 470 422S690 474 800 434V500H0Z" fill="var(--accent, #3d5a73)" opacity="0.6"/><polyline points="80,262 170,214 260,236 350,170 440,196" fill="none" stroke="var(--ink, #1b2733)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><g fill="var(--bg, #ffffff)" stroke="var(--ink, #1b2733)" stroke-width="5"><circle cx="80" cy="262" r="10"/><circle cx="170" cy="214" r="10"/><circle cx="260" cy="236" r="10"/><circle cx="350" cy="170" r="10"/><circle cx="440" cy="196" r="10"/></g></svg>'
 
+// The references the sample deck cites. Builds find them in a file beside the
+// deck; the dev and edit servers read them from here where there is none.
+export const SAMPLE_REFERENCES_FILE = 'sample-references.bib'
+export const SAMPLE_REFERENCES = `@article{doe2024,
+  author  = {Doe, Jane and Roe, Richard},
+  title   = {Measuring how slides are read},
+  journal = {Journal of Sample Studies},
+  year    = {2024},
+  volume  = {12},
+  pages   = {1--10}
+}
+
+@book{roe2023,
+  author    = {Roe, Richard},
+  title     = {Quotations and Their Sources},
+  publisher = {Example Press},
+  year      = {2023}
+}
+`
+
 // `picture` is where the slides find the picture: a file beside the deck, or
 // a data URL where there is no such file.
 export function sampleDeck(picture = './picture.svg') {
@@ -15,6 +35,7 @@ meta:
   author: "A. Author"
   organization: "Institute"
   date: "2026-10-06"
+bibliography: ${SAMPLE_REFERENCES_FILE}
 ---
 
 ---
@@ -51,10 +72,10 @@ alt: "Shapes"
 ---
 # Lists, emphasis and code
 
-- A point with *emphasis* and **strong** words
-- A second point with \`inline code\`
-  - A nested point
-  - Another nested point
+1. A step with *emphasis* and **strong** words
+2. A step with \`inline code\` and a [link](https://example.com)
+   - A nested point
+   - Another nested point
 
 \`\`\`js
 const total = values.reduce((sum, value) => sum + value, 0)
@@ -69,7 +90,7 @@ const total = values.reduce((sum, value) => sum + value, 0)
 | Treatment | 5.1 | 0.6 |
 | Follow-up | 5.0 | 0.7 |
 
-The difference is $\\Delta = 0.9$, with a footnote.[^1]
+The difference is $\\Delta = 0.9$ [@doe2024, p. 4], with a footnote.[^1]
 
 [^1]: A source for the claim.
 
@@ -115,9 +136,9 @@ $$
 
 +++
 
-1. First step
-2. Second step
-3. Third step
+> A quotation set apart from the text.
+
+As @roe2023 notes, a quote needs its source.
 :::
 
 ---
@@ -158,6 +179,11 @@ alt: "Shapes"
 overlay: true
 ---
 # A picture that fills the slide.
+
+---
+# References
+
+<bibliography />
 `.replaceAll('./picture.svg', picture)
 }
 
