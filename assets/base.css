@@ -129,6 +129,9 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
   gap: var(--gap-item);
 }
 .slide-body ol > li { counter-increment: slide-ol; position: relative; }
+/* A list inside an item: closer to its item than items are to each other,
+   and as close inside. Themes with their own (same selector) win. */
+.slide-body li :is(ul, ol) { margin-top: calc(var(--gap-item) * 0.5); gap: calc(var(--gap-item) * 0.5); }
 
 /* ── Full-bleed image ────────────────────────────────────────────────────── */
 .slide--full-bleed-image { padding: 0; }
