@@ -1,21 +1,11 @@
 // Finds the component tag a phone should see: the one whose `room` attribute
 // matches, with its content if it has any.
-const escape = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+import { tagsIn } from '../core/tags.js'
 
-// Code is not an activity: fenced blocks and `inline code` are blanked out
-// (keeping every other character where it was) before searching.
-const blank = text => text.replace(/[^\n]/g, ' ')
-export function maskCode(source = '') {
-  return source.replace(/^(```+|~~~+)[^\n]*\n[\s\S]*?^\1[ \t]*$/gm, blank).replace(/`[^`\n]+`/g, blank)
-}
-
-// Inside a tag: anything but its end, with quoted values whole, so a `>` in
-// an attribute (question="Is $x > 0$?") does not end the tag.
-const INSIDE = `(?:[^>"']|"[^"]*"|'[^']*')`
-
-// Every activity in a source, in order: [{ tag, room }].
+// Every activity in a source, in order: [{ tag, room }]. Tags in code are
+// not activities (src/core/tags.js).
 export function roomsIn(source = '') {
-  return [...maskCode(source).matchAll(new RegExp(`<([a-z][a-z0-9-]*)\\b${INSIDE}*?\\broom\\s*=\\s*(["'])([^"']+)\\2`, 'gi'))].map(match => ({ tag: match[1].toLowerCase(), room: match[3] }))
+  return tagsIn(source).filter(tag => !tag.closing && tag.attrs.room).map(tag => ({ tag: tag.name, room: tag.attrs.room }))
 }
 
 // The rooms on one slide, from its body and its named regions (the body is
@@ -34,9 +24,19 @@ export function slideTitleFor(deck, room) {
 }
 
 export function findRoomTag(source, room) {
-  const open = new RegExp(`<([a-z][a-z0-9-]*)\\b${INSIDE}*?\\broom\\s*=\\s*(["'])${escape(room)}\\2${INSIDE}*>`, 'i').exec(maskCode(source))
-  if (!open) return null
-  if (open[0].endsWith('/>')) return open[0]
-  const close = source.indexOf(`</${open[1]}>`, open.index + open[0].length)
-  return close < 0 ? open[0] : source.slice(open.index, close + open[1].length + 3)
+  const text = String(source ?? '').replace(/\r\n?/g, '\n')
+  const tags = tagsIn(text)
+  const at = tags.findIndex(tag => !tag.closing && tag.attrs.room === room)
+  if (at < 0) return null
+  const open = tags[at]
+  if (open.selfClosing || open.start == null) return open.raw
+  // Its closing tag, past any of the same name inside it.
+  let depth = 0
+  for (const tag of tags.slice(at + 1)) {
+    if (tag.name !== open.name || tag.selfClosing) continue
+    if (!tag.closing) depth++
+    else if (depth) depth--
+    else return tag.end == null ? open.raw : text.slice(open.start, tag.end)
+  }
+  return open.raw
 }

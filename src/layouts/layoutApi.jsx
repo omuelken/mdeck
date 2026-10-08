@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'preact/hooks'
 import { render } from 'preact'
 import { marked, Parser } from 'marked'
 import { registry } from '../runtime/registry'
+import { scanTags } from '../core/tags.js'
 import { InkLayer } from '../runtime/ink/InkLayer.jsx'
 import themedSvgs from 'virtual:deck-svgs'
 import { renderCitations, citationsHtml as referencesOf, bibliographyOf } from '../runtime/citations.js'
@@ -74,17 +75,19 @@ function themedDataSvg(src) {
   return /var\(--/.test(markup) && /^\s*<svg\b/.test(markup) ? markup : null
 }
 
-const attribute = (tag, name) => tag.match(new RegExp(`\\s${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, 'i'))?.slice(1).find(v => v != null)
-
 // Pictures in slide text keep the drawing's own size, like an <img>.
 export function inlineThemedPictures(html) {
   if (!html || !html.includes('<img')) return html
-  return html.replace(/<img\b[^>]*>/gi, tag => {
-    const markup = themedSvg(attribute(tag, 'src'))
-    if (!markup) return tag
-    const alt = attribute(tag, 'alt') ?? ''
-    return `<span class="themed-picture themed-picture--inline" role="img" aria-label="${alt}">${markup}</span>`
-  })
+  let out = ''
+  let last = 0
+  for (const tag of scanTags(html)) {
+    const markup = tag.name === 'img' && !tag.closing && themedSvg(tag.attrs.src)
+    if (!markup) continue
+    const alt = (tag.attrs.alt ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    out += html.slice(last, tag.index) + `<span class="themed-picture themed-picture--inline" role="img" aria-label="${alt}">${markup}</span>`
+    last = tag.end
+  }
+  return out + html.slice(last)
 }
 
 // A picture from the slide's settings; `fit: cover` fills its box like a

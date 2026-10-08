@@ -13,6 +13,7 @@ import { isOwnWrite } from './ownWrites.js'
 import { fileURLToPath } from 'node:url'
 import { assertDrawings } from './drawings.js'
 import { marked } from 'marked'
+import { scanTags, replaceTagsIn, withAttribute } from '../core/tags.js'
 import { resolveBibliography, sampleBibliography } from './bibliography.js'
 
 const VIRTUAL_ID = 'virtual:slides'
@@ -97,21 +98,19 @@ function inlineMarkdownImages(markdown, baseDir) {
   })
 }
 
-function inlineHtmlImgSources(markdown, baseDir) {
-  return markdown.replace(/(<img\b[^>]*\bsrc=)(["'])([^"']+)(\2)/gi, (m, pre, quote, src, endQuote) => {
-    const dataUrl = toDataUrl(src, baseDir)
-    if (!dataUrl) return m
-    return `${pre}${quote}${dataUrl}${endQuote}`
+// The `src` of the named tags, as data: URLs where the file is local.
+function inlineTagSources(markdown, baseDir, names) {
+  return replaceTagsIn(markdown, tag => {
+    if (tag.closing || !names.has(tag.name) || !tag.attrs.src) return
+    const dataUrl = toDataUrl(tag.attrs.src, baseDir)
+    return dataUrl ? withAttribute(tag, 'src', dataUrl) : undefined
   })
 }
 
-function inlineHtmlMediaSources(markdown, baseDir) {
-  return markdown.replace(/(<(?:video|audio|source|videoplayer)\b[^>]*\bsrc=)(["'])([^"']+)(\2)/gi, (m, pre, quote, src, endQuote) => {
-    const dataUrl = toDataUrl(src, baseDir)
-    if (!dataUrl) return m
-    return `${pre}${quote}${dataUrl}${endQuote}`
-  })
-}
+const PICTURE_TAGS = new Set(['img'])
+const MEDIA_TAGS = new Set(['video', 'audio', 'source', 'videoplayer'])
+const inlineHtmlImgSources = (markdown, baseDir) => inlineTagSources(markdown, baseDir, PICTURE_TAGS)
+const inlineHtmlMediaSources = (markdown, baseDir) => inlineTagSources(markdown, baseDir, MEDIA_TAGS)
 
 function inlineYamlImageFields(markdown, baseDir) {
   return markdown.replace(/^(\s*)(image|logo):\s*(["']?)([^"'\n]+)\3\s*$/gm, (m, indent, key, quote, value) => {
@@ -141,9 +140,11 @@ export function collectLocalAssetRefs(markdown) {
       marked.walkTokens(marked.lexer(body), token => {
         if (token.type === 'image') add(token.href)
         if (token.type === 'html') {
-          for (const match of token.text.matchAll(/<(?:img|video|audio|source|videoplayer)\b[^>]*\bsrc=(["'])([^"']+)\1/gi)) add(match[2])
-          // Markdown pictures in a tag's attributes, such as a poll's options.
-          for (const match of token.text.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)) add(match[1])
+          for (const tag of scanTags(token.text)) {
+            if (PICTURE_TAGS.has(tag.name) || MEDIA_TAGS.has(tag.name)) add(tag.attrs.src)
+            // Markdown pictures in a tag's attributes, such as a poll's options.
+            for (const value of Object.values(tag.attrs)) for (const match of value.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)) add(match[1])
+          }
         }
       })
     }

@@ -4,7 +4,7 @@
 // identical; callers reparse the result.
 import { parseSlides, SLIDE_KEYS, DECK_KEYS } from './parseSlides.js'
 import { applySourceEdits, replaceRegion, normalizeBlock, detectNewline, patchYamlMapping, firstYamlKey } from './source.js'
-import { maskCode } from '../live/roomTag.js'
+import { openTagsIn } from './tags.js'
 
 const REGION_RE = /^[a-z][a-z0-9-]*$/
 
@@ -233,12 +233,11 @@ export function stripNotes(source) {
 // The live activities, and the code to join them (<qrcode join />): a slide
 // with one of them is left out of shared builds. <qrcode follow /> and other
 // QR codes stay.
-const ACTIVITY_RE = /<(poll|question|wordcloud|scale|numeric)\b/i
-const JOIN_RE = /<qrcode\b[^>]*?\sjoin(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|\{?([^\s/>}]*)\}?))?(?=[\s/>])/i
-const joins = text => { const m = JOIN_RE.exec(text); return !!m && !/^(false|no|off|0)$/i.test(m[1] ?? m[2] ?? m[3] ?? '') }
+const ACTIVITIES = new Set(['poll', 'question', 'wordcloud', 'scale', 'numeric'])
+const joins = tag => tag.name === 'qrcode' && 'join' in tag.attrs && !/^\{?(false|no|off|0)\}?$/i.test(tag.attrs.join.trim())
 export function hasActivity(slide) {
   return [slide.content ?? '', ...Object.values(slide.regions ?? {}).map(region => region.content ?? '')]
-    .some(text => { const masked = maskCode(text); return ACTIVITY_RE.test(masked) || joins(masked) })
+    .some(text => openTagsIn(text).some(tag => ACTIVITIES.has(tag.name) || joins(tag)))
 }
 
 // Removes every slide with a live activity (<poll>, <question>, <wordcloud>,
