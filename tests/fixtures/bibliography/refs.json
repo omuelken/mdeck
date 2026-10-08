@@ -1,0 +1,7 @@
+[
+  { "id": "smith2020", "type": "article-journal", "title": "A study of things", "container-title": "Nature",
+    "author": [{ "family": "Smith", "given": "John" }, { "family": "Doe", "given": "Jane" }, { "family": "Roe", "given": "Richard" }],
+    "issued": { "date-parts": [[2020]] }, "volume": "5", "page": "1-10", "DOI": "10.1000/xyz" },
+  { "id": "jones2019", "type": "book", "title": "Counting sheep", "publisher": "Wiley",
+    "author": [{ "family": "Jones", "given": "Alice" }], "issued": { "date-parts": [[2019]] } }
+]

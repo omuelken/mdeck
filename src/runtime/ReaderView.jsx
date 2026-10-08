@@ -2,6 +2,7 @@ import { readerLink } from '../core/urls.js'
 import { h } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { marked } from 'marked'
+import { renderCitations } from './citations.js'
 import { deckOutline } from '../core/outline.js'
 import { manifests, SlideRenderer } from '../layouts/renderSlide'
 import { loadTheme, THEME_METAS } from './themeLoader'
@@ -49,7 +50,7 @@ function ReadPage({ slide, index, total, deckConfig, width, height, scale, showN
         <SlideRenderer id={slide.id} regions={slide.regions} meta={slide.meta} content={slide.content} deckConfig={deckConfig} index={index} total={total} />
       </div>
     </div>
-    {showNotes && notes && <div class="reader-page-notes" dangerouslySetInnerHTML={{ __html: marked.parse(notes) }} />}
+    {showNotes && notes && <div class="reader-page-notes" dangerouslySetInnerHTML={{ __html: marked.parse(renderCitations(notes).markdown) }} />}
   </article>
 }
 

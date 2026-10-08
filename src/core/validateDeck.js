@@ -38,14 +38,20 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
       else if (typeof value !== 'string') add('invalid-config', `labels.${key} must be text`, deck.configSource?.start)
     }
   }
+  // References: bibliography.js reads the files and reports what it cannot use.
+  if (config.bibliography != null && ![config.bibliography].flat().every(file => typeof file === 'string' && file.trim())) add('invalid-config', 'bibliography must be a file name such as refs.bib, or a list of them', deck.configSource?.start)
+  if (config.csl != null && (typeof config.csl !== 'string' || !config.csl.trim())) add('invalid-config', 'csl must be a style name (apa, vancouver, harvard1) or a .csl file', deck.configSource?.start)
+  if (config.nocite != null && (!Array.isArray(config.nocite) || config.nocite.some(key => typeof key !== 'string'))) add('invalid-config', "nocite must be a list of reference keys, or ['*'] for all", deck.configSource?.start)
   if (config.server != null && (typeof config.server !== 'string' || !/^https?:\/\//.test(config.server))) add('invalid-config', 'server must be an http:// or https:// address', deck.configSource?.start)
   if (isPlainObject(config.session)) {
     for (const key of Object.keys(config.session)) if (!['id', 'code'].includes(key)) add('invalid-config', `session.${key} is not a setting; available: id, code`, deck.configSource?.start, 'warning')
     if (config.session.code != null && !/^\d{4,8}$/.test(String(config.session.code))) add('invalid-config', 'session.code must be 4 to 8 digits', deck.configSource?.start)
   }
   const enums = { organization: ['title', 'all', 'none'], author: ['title', 'all', 'none'], numbers: ['slides', 'all', 'none'], sections: ['all', 'none'] }
+  const switches = ['citations']
   if (isPlainObject(config.show)) {
-    for (const key of Object.keys(config.show)) if (!Object.hasOwn(enums, key)) add('invalid-config', `show.${key} is not a setting; available: ${Object.keys(enums).join(', ')}`, deck.configSource?.start, 'warning')
+    for (const key of Object.keys(config.show)) if (!Object.hasOwn(enums, key) && !switches.includes(key)) add('invalid-config', `show.${key} is not a setting; available: ${[...Object.keys(enums), ...switches].join(', ')}`, deck.configSource?.start, 'warning')
+    for (const key of switches) if (config.show[key] != null && typeof config.show[key] !== 'boolean') add('invalid-config', `show.${key} must be true or false`, deck.configSource?.start)
     for (const [key, values] of Object.entries(enums)) {
       if (config.show[key] != null && !values.includes(config.show[key])) add('invalid-config', `show.${key} must be one of: ${values.join(', ')}`, deck.configSource?.start)
     }

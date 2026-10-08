@@ -10,6 +10,7 @@ import { paletteProblems } from '../extensions/contrast.js'
 import { collectLocalAssetRefs } from './slidesPlugin.js'
 import { componentFolders, isFolder } from './components.js'
 import { inkFileFor, validateInk, normalizeInk, orphanIds } from '../core/ink.js'
+import { resolveBibliography } from './bibliography.js'
 
 export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath, 'utf8')) {
   const deck = parseSlides(source)
@@ -39,4 +40,15 @@ export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath
     }
   }
   return { deck, diagnostics }
+}
+
+// What the deck's references cannot use: missing or unreadable files, an
+// unknown style or language, citations of keys the files do not have.
+export async function bibliographyDiagnostics(slidesPath, source = readFileSync(slidesPath, 'utf8')) {
+  const bibliography = await resolveBibliography(slidesPath, source)
+  return (bibliography?.diagnostics ?? []).map(d => {
+    const at = d.code === 'citation-unknown' ? source.indexOf('@' + d.message.match(/@(\S+)/)?.[1]) : -1
+    const line = at < 0 ? 1 : source.slice(0, at).split('\n').length
+    return { ...d, line, column: 1 }
+  })
 }

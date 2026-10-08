@@ -1,0 +1,21 @@
+# The same deck can draw on a Typst (Hayagriva) file as well.
+freeman2014:
+  type: Article
+  title: Active learning increases student performance in science, engineering, and mathematics
+  author:
+    - Freeman, Scott
+    - Eddy, Sarah L.
+    - McDonough, Miles
+    - Smith, Michelle K.
+    - Okoroafor, Nnadozie
+    - Jordt, Hannah
+    - Wenderoth, Mary Pat
+  date: 2014
+  page-range: 8410-8415
+  serial-number:
+    doi: 10.1073/pnas.1319030111
+  parent:
+    type: Periodical
+    title: Proceedings of the National Academy of Sciences
+    volume: 111
+    issue: 23

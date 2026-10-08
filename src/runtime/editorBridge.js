@@ -38,7 +38,9 @@ export function createEditorBridge({ parse, validate = () => [], loadTheme, setE
   }
 
   // Renders are serialized; while one is in flight only the newest request waits.
+  let latest = null
   function render(source, options = {}) {
+    latest = { source, options }
     if (running) { pending = { source, options }; return running }
     running = run(source, options).finally(() => {
       running = null
@@ -54,5 +56,9 @@ export function createEditorBridge({ parse, validate = () => [], loadTheme, setE
     return true
   }
 
-  return { render, handleMessage, current: () => current }
+  // The newest request again, with its preview settings, e.g. after the
+  // references were reformatted.
+  const refresh = () => latest ? render(latest.source, latest.options) : null
+
+  return { render, refresh, handleMessage, current: () => current }
 }
