@@ -5,6 +5,7 @@ import Poll from '../components/Poll.jsx'
 import Question from '../components/Question.jsx'
 import WordCloud from '../components/WordCloud.jsx'
 import Scale from '../components/Scale.jsx'
+import Numeric from '../components/Numeric.jsx'
 import Bibliography from '../components/Bibliography.jsx'
 import deckComponents from 'virtual:deck-components'
 
@@ -23,6 +24,7 @@ export const registry = {
   question: Question,
   wordcloud: WordCloud,
   scale: Scale,
+  numeric: Numeric,
   bibliography: Bibliography,
   ...deckComponents,
 }

@@ -94,3 +94,8 @@ deck-stage[data-follower] .poll.is-results-hidden .poll-fill, deck-stage[data-fo
 @media print {
   .poll-join, .poll-reset, .poll-dot, .poll-control { display: none !important; }
 }
+
+/* <numeric>: the most frequent answers; Other for the rest. */
+.poll-row.is-other .poll-label { color: var(--muted, #666); font-style: italic; }
+.poll--numeric .poll-label { font-variant-numeric: tabular-nums; }
+.poll .numeric-answer { margin: 24px 0 0; font-weight: 600; color: var(--poll-correct, #16a34a); }

@@ -233,7 +233,7 @@ export function stripNotes(source) {
 // The live activities, and the code to join them (<qrcode join />): a slide
 // with one of them is left out of shared builds. <qrcode follow /> and other
 // QR codes stay.
-const ACTIVITY_RE = /<(poll|question|wordcloud|scale)\b/i
+const ACTIVITY_RE = /<(poll|question|wordcloud|scale|numeric)\b/i
 const JOIN_RE = /<qrcode\b[^>]*?\sjoin(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|\{?([^\s/>}]*)\}?))?(?=[\s/>])/i
 const joins = text => { const m = JOIN_RE.exec(text); return !!m && !/^(false|no|off|0)$/i.test(m[1] ?? m[2] ?? m[3] ?? '') }
 export function hasActivity(slide) {
@@ -242,7 +242,7 @@ export function hasActivity(slide) {
 }
 
 // Removes every slide with a live activity (<poll>, <question>, <wordcloud>,
-// <scale>) for shared builds: a reader cannot vote, and the results belong to
+// <scale>, <numeric>) for shared builds: a reader cannot vote, and the results belong to
 // the talk. Returns { source, ids, removed }: `ids` maps each kept slide's id
 // to its id afterwards (an automatic `slide-N` moves up), `removed` the ids
 // that are gone, so saved drawings can follow their slides.

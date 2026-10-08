@@ -441,7 +441,7 @@ try {
   // Relay mode: the projector announces the poll on screen, the phone opens the
   // server's own answer page at /<code>, and its vote reaches the slide.
   const pollDeck = resolve(temp, 'poll.md')
-  writeFileSync(pollDeck, '---\ntheme: neue\nlang: de\nmeta:\n  title: Poll check\nsession:\n  code: 424242\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n\n---\n# Pace?\n\n<scale room="pace" min="1" max="5" qr="false" />\n\n---\n# Anything else?\n\n<question room="ask" qr="false" />\n\n---\n# One word?\n\n<wordcloud room="mood" qr="false" />\n\n---\n# Join\n\n<qrcode join />\n\n---\n# Primes\n\n<poll room="primes" question="Which are prime?" options="2|4|5" answer="2|5" multiple buttons="letters" qr="false" />\n')
+  writeFileSync(pollDeck, '---\ntheme: neue\nlang: de\nmeta:\n  title: Poll check\nsession:\n  code: 424242\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n\n---\n# Pace?\n\n<scale room="pace" min="1" max="5" qr="false" />\n\n---\n# Anything else?\n\n<question room="ask" qr="false" />\n\n---\n# One word?\n\n<wordcloud room="mood" qr="false" />\n\n---\n# Join\n\n<qrcode join />\n\n---\n# Primes\n\n<poll room="primes" question="Which are prime?" options="2|4|5" answer="2|5" multiple buttons="letters" qr="false" />\n\n---\n# Half\n\n<numeric room="half" question="Half of $x$, for $x > 0$ and $x = 1$?" answer="1/2" qr="false" />\n')
   const pollConfig = baseConfig(pollDeck)
   pollDev = await createServer({ ...pollConfig, plugins: [...pollConfig.plugins, livePlugin()], server: { ...pollConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await pollDev.listen()
@@ -487,7 +487,18 @@ try {
   assert.equal(await projector.evaluate("[...document.querySelectorAll('[data-deck-active] .poll-count')].map(e => e.textContent).join()"), '1,0,1', 'a vote after closing does not count')
   await projector.evaluate("document.querySelector('[data-deck-active] .poll-solve').click()")
   await until(phone, "document.querySelector('.answer-verdict')?.classList.contains('is-right')")
-  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room (also with a standalone server for the polls).')
+  // A number, typed: 0,5 counts as 1/2; words are refused on the phone.
+  await projector.evaluate("document.querySelector('deck-stage').goTo(6)")
+  await until(phone, "!!document.querySelector('.answer-number input') && !!document.querySelector('.answer h1 math')")
+  await phone.evaluate("document.querySelector('.answer-number input').value = 'half'; document.querySelector('.answer-number button').click()")
+  await until(phone, "document.querySelector('.answer-status').textContent.includes('Zahl')")
+  await phone.evaluate("document.querySelector('.answer-number input').value = '0,5'; document.querySelector('.answer-number button').click()")
+  await until(projector, "document.querySelector('[data-deck-active] .poll-label')?.textContent === '0,5' && document.querySelector('[data-deck-active] .poll-count').textContent === '1'")
+  assert.equal(await projector.evaluate("!!document.querySelector('[data-deck-active] .numeric-answer')"), false, 'the answer stays hidden until it is shown')
+  await projector.evaluate("document.querySelector('[data-deck-active] .poll-solve').click()")
+  await until(projector, "document.querySelector('[data-deck-active] .numeric-answer')?.textContent.includes('1 richtig') && !!document.querySelector('[data-deck-active] .poll-row.is-correct')")
+  await until(phone, "document.querySelector('.answer-verdict')?.classList.contains('is-right')")
+  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, numbers, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room (also with a standalone server for the polls).')
 } finally {
   await browser?.close()
   await tablet2?.close()
