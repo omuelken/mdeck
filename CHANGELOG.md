@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.4.0 — 2026-10-08
 
 - What follows a list has room above it in every theme, so a sentence after a list no longer sits right against its last item.
 - Fixed: a bullet list inside a numbered list took numbers too, and in some themes the number sat on top of the bullet; it also pushed the numbering of the items after it. Every built-in theme now styles only a list's own items.
