@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import QrCode from './QrCode.jsx'
 import { Icon } from './Icon.jsx'
 import { t } from '../core/labels.js'
+import { keepAnswers } from '../live/client.js'
 import { slideHtml } from './inlineText.js'
 import 'katex/dist/katex.min.css'
 
@@ -63,6 +64,16 @@ export function useControls(room, live, { results = true, solution = null } = {}
   }
   // The answers that count: once closed, those that came before.
   const counted = messages => controls.closed ? messages.filter(message => message.n <= controls.upTo) : messages
+  // They are kept beside the deck while `mdeck run` runs. A room that
+  // starts empty (a new server) leaves what was kept alone; one that was
+  // reset takes it out.
+  const answered = useRef(false)
+  const counting = counted(live.messages)
+  useEffect(() => {
+    if (!live.canReset || !live.connected || live.offline || (!counting.length && !answered.current)) return
+    answered.current = true
+    keepAnswers(room, counting, { closed: controls.closed })
+  }, [room, counting.length, counting.at(-1)?.n, controls.closed, live.canReset, live.connected])
   const close = messages => change(controls.closed ? { closed: false } : { closed: true, upTo: Math.max(0, ...messages.map(message => message.n)) })
   // Reset starts over: open, the answer and results as at the start.
   const reset = () => { change({ closed: false, upTo: 0, revealed: false, results }); return live.reset() }
@@ -94,7 +105,8 @@ export function ActivityFooter({ count, connected, canReset, reset, offline, pre
   // Followers count as phones too; with more answers than phones, some left.
   const of = perPhone && !offline && present > 0 && present >= count ? present : null
   return <p class="poll-total">
-    <span class={`poll-dot${connected ? ' is-live' : ''}`} title={connected ? t('poll.live') : t('poll.offline')} />
+    {/* The answers kept in the talk, without a server: no live dot. */}
+    {!offline && <span class={`poll-dot${connected ? ' is-live' : ''}`} title={connected ? t('poll.live') : t('poll.offline')} />}
     {of != null ? t('poll.answeredOf', { n: count, of }) : count === 1 ? t('poll.answer') : t('poll.answers', { n: count })}
     {closed && <span class="poll-closed">{t('poll.closed')}</span>}
     <span class="poll-spacer" />

@@ -16,6 +16,7 @@ import { livePlugin } from '../src/live/server.js'
 import { sessionCode } from '../src/live/code.js'
 import { parseSlides } from '../src/core/parseSlides.js'
 import { inkPlugin } from '../src/build/inkPlugin.js'
+import { resultsPlugin } from '../src/build/resultsPlugin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-browser-check-'))
@@ -443,7 +444,7 @@ try {
   const pollDeck = resolve(temp, 'poll.md')
   writeFileSync(pollDeck, '---\ntheme: neue\nlang: de\nmeta:\n  title: Poll check\nsession:\n  code: 424242\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n\n---\n# Pace?\n\n<scale room="pace" min="1" max="5" qr="false" />\n\n---\n# Anything else?\n\n<question room="ask" qr="false" />\n\n---\n# One word?\n\n<wordcloud room="mood" qr="false" />\n\n---\n# Join\n\n<qrcode join />\n\n---\n# Primes\n\n<poll room="primes" question="Which are prime?" options="2|4|5" answer="2|5" multiple buttons="letters" qr="false" />\n\n---\n# Half\n\n<numeric room="half" question="Half of $x$, for $x > 0$ and $x = 1$?" answer="1/2" qr="false" />\n')
   const pollConfig = baseConfig(pollDeck)
-  pollDev = await createServer({ ...pollConfig, plugins: [...pollConfig.plugins, livePlugin()], server: { ...pollConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  pollDev = await createServer({ ...pollConfig, plugins: [...pollConfig.plugins, livePlugin(), resultsPlugin(pollDeck)], server: { ...pollConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await pollDev.listen()
   const pollBase = pollDev.resolvedUrls.local[0]
   const projector = await open(new URL('?view=deck', pollBase).href)
@@ -498,7 +499,23 @@ try {
   await projector.evaluate("document.querySelector('[data-deck-active] .poll-solve').click()")
   await until(projector, "document.querySelector('[data-deck-active] .numeric-answer')?.textContent.includes('1 richtig') && !!document.querySelector('[data-deck-active] .poll-row.is-correct')")
   await until(phone, "document.querySelector('.answer-verdict')?.classList.contains('is-right')")
-  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, numbers, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room (also with a standalone server for the polls).')
+  // The answers are kept beside the deck, with the phones numbered and the
+  // late vote left out, and a build shows them without a server.
+  const resultsFile = resolve(temp, 'poll.results.json')
+  const kept = () => { try { return JSON.parse(readFileSync(resultsFile, 'utf8')).rooms } catch { return {} } }
+  for (let i = 0; i < 100 && !kept().half; i++) await delay(50)
+  const rooms = kept()
+  assert.deepEqual(rooms.lunch.answers.map(answer => [answer.phone, answer.value]), [[1, 'Thai']], 'the poll kept')
+  assert.deepEqual(rooms.primes.answers.map(answer => answer.value), [['2'], ['2', '5']], 'several picks kept, the late vote left out')
+  assert.equal(rooms.primes.closed, true)
+  assert.deepEqual(rooms.half.answers.map(answer => answer.value), ['0,5'], 'the number kept')
+  execFileSync(process.execPath, ['bin/mdeck.js', 'build', pollDeck, '-o', resolve(temp, 'poll-built.html')], { cwd: root, stdio: 'pipe' })
+  const record = await open('poll-built.html')
+  await until(record, "document.querySelectorAll('[data-deck-active] .poll-count').length === 2")
+  await until(record, "[...document.querySelectorAll('[data-deck-active] .poll-count')].map(e => e.textContent).join() === '0,1' && !document.querySelector('[data-deck-active] .poll-dot')")
+  // A page left open in front would keep the later checks' pages in the background.
+  await record.close()
+  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room (also with a standalone server for the polls).')
 } finally {
   await browser?.close()
   await tablet2?.close()

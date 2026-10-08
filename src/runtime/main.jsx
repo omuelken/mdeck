@@ -13,7 +13,7 @@ import { S, PaletteSwatches } from './chrome.jsx'
 import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
 import { createEditorBridge } from './editorBridge.js'
 import { ReaderView } from './ReaderView.jsx'
-import { configureLive, announce, setLookSource, actAsPresenter, useSteering } from '../live/client.js'
+import { configureLive, announce, setLookSource, actAsPresenter, useSteering, setSavedResults } from '../live/client.js'
 import { registry } from './registry'
 import { followActiveRooms } from '../live/follow.js'
 import { createOrder } from './syncOrder.js'
@@ -24,6 +24,7 @@ import { startFollowing } from './follow.js'
 import { claimPairing } from '../live/pairing.js'
 import { strokePath } from '../core/ink.js'
 import { inkFileName } from 'virtual:deck-ink'
+import savedResults from 'virtual:deck-results'
 import { roomsIn, roomsOnSlide, findRoomTag, slideTitleFor } from '../live/roomTag.js'
 import './reader.css'
 import { SlideRenderer, manifests } from '../layouts/renderSlide'
@@ -693,6 +694,7 @@ async function init() {
   setDeckLanguage(deckConfig)
   document.documentElement.lang = deckLanguage()
   configureLive(deckConfig)
+  setSavedResults(savedResults)
   const { slides } = parsed
   const presenterMode = view === 'presenter'
   const audienceMode  = view === 'audience'

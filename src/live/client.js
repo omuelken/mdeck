@@ -9,7 +9,8 @@
 // answers.
 import { useCallback, useEffect, useState } from 'preact/hooks'
 import { sessionCode } from './code.js'
-import { pairToken } from './pairing.js'
+import { pairToken, pairHeaders } from './pairing.js'
+import { keptAnswers, answersAsMessages } from '../core/results.js'
 import { devPath } from '../core/devPath.js'
 import { t, deckLanguage } from '../core/labels.js'
 
@@ -132,6 +133,24 @@ const localFollowUrl = () => `${window.location.origin}${devPath('')}?view=follo
 // show no join code, so a quick capture never shows a passing warning.
 const reach = info => ({ known: info.reachable != null, offline: info.reachable === false })
 
+// The answers kept in the talk (<deck>.results.json), set by the runtime: a
+// build shows them where no room server answers, instead of no answers.
+let savedRooms = {}
+export function setSavedResults(results) { savedRooms = results?.rooms ?? {} }
+
+// While `mdeck run` runs, the presenter's screens keep each activity's
+// answers in that file (src/build/resultsPlugin.js), a moment after the last
+// one came in. Elsewhere there is nothing to keep them in.
+const keeping = new Map()
+export function keepAnswers(room, messages, { closed = false } = {}) {
+  if (!import.meta.env?.DEV) return
+  clearTimeout(keeping.get(room))
+  keeping.set(room, setTimeout(() => {
+    keeping.delete(room)
+    fetch(devPath('__mdeck/results'), { method: 'POST', headers: pairHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ room, closed, answers: keptAnswers(messages) }) }).catch(() => {})
+  }, 800))
+}
+
 /**
  * Follow a room's answers on a slide.
  *   messages  every answer so far: { n, at, from, data: { value } }
@@ -145,7 +164,8 @@ const reach = info => ({ known: info.reachable != null, offline: info.reachable 
  *   connected false until the live stream is open
  *   offline   no room server answered: a PDF, a file sent to readers or a
  *             build hosted without one. Activities then show their question
- *             as a record of the talk, without a join code.
+ *             as a record of the talk, without a join code, and `messages`
+ *             are the answers kept in the talk, if any.
  * Off the current slide the room keeps its last messages but disconnects.
  */
 export function useRoom(room) {
@@ -187,7 +207,8 @@ export function useRoom(room) {
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error ?? 'Could not change the room')
   }, [room])
 
-  return { messages, reset, state, setState, present, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
+  const kept = info.reachable === false ? savedRooms[room] : null
+  return { messages: kept ? answersAsMessages(kept.answers) : messages, reset, state, setState, present, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
 }
 
 /** The deck's join link alone, for a slide that only invites people in (<qrcode join />). */

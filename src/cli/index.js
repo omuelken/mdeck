@@ -1,5 +1,5 @@
 import { createServer, build, preview } from 'vite'
-import { existsSync, copyFileSync, mkdtempSync, readFileSync, statSync } from 'fs'
+import { existsSync, copyFileSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'fs'
 import { chmod, rm, mkdir, writeFile } from 'fs/promises'
 import { resolve, dirname, basename, relative, isAbsolute } from 'path'
 import { tmpdir } from 'os'
@@ -15,6 +15,7 @@ import { homePlugin } from '../build/homePlugin.js'
 import { checkDeck, bibliographyDiagnostics } from '../build/check.js'
 import { livePlugin, startLiveServer } from '../live/server.js'
 import { inkPlugin } from '../build/inkPlugin.js'
+import { resultsPlugin } from '../build/resultsPlugin.js'
 import { createPairing, pairingPlugin } from '../build/pairing.js'
 import { isAllowedRequest } from '../build/editorPlugin.js'
 import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
@@ -27,6 +28,7 @@ import { parseSlides } from '../core/parseSlides.js'
 import { stripNotes as stripNotesFrom, stripActivities as stripActivitiesFrom } from '../core/editDeck.js'
 import { parseArgs, parseSlideNumbers, validateServerOrigin } from './args.js'
 import { assertDrawings } from '../build/drawings.js'
+import { resultsFileFor, normalizeResults, resultsCsv } from '../core/results.js'
 import { createRelayAccess } from '../build/relayAccess.js'
 import { sessionCode } from '../live/code.js'
 import { migrateDeck } from './migrate.js'
@@ -331,6 +333,7 @@ const HELP = `
       --no-pdf               do not render the PDF inside
     ${c.green}mdeck pdf${c.reset} [slides.md] [-o talk.pdf]       A PDF, one page per slide
       --no-drawings          for build, send and pdf: leave out <slides>.drawings.json
+      --no-results           for build, send and pdf: leave out <slides>.results.json (the answers kept in the talk)
     ${c.green}mdeck preview${c.reset} [folder]                    Preview a built folder (default: dist)
 
   ${c.dim}Check and look things up${c.reset}
@@ -341,6 +344,7 @@ const HELP = `
     ${c.green}mdeck snapshot${c.reset} [slides.md]                Pictures of slides as PNG files (default: .mdeck-snapshots/)
       --slide <numbers>      only these slides: 3, 3,5 or 2-4
       --dark | --light       in this appearance instead of the deck's own   -o <folder>
+    ${c.green}mdeck results${c.reset} [slides.md] [-o answers.csv]  The answers kept in the talk, as CSV (room, phone, time, answer)
     ${c.green}mdeck list${c.reset} [layouts|themes|palettes] [slides.md] [--json]
                                               List built-in and deck-local layouts, themes and palettes
     ${c.green}mdeck starter${c.reset} <layout> [slides.md]        Print starter Markdown for a layout
@@ -466,6 +470,15 @@ if (command === 'new') {
     else if (hasFlag('--dry-run')) tip('No files changed. Run without --dry-run to apply these changes.')
   } catch (error) { err(error.message); process.exitCode = 1 }
 
+} else if (command === 'results') {
+  const input = requireInput('results')
+  const file = resultsFileFor(resolve(input))
+  if (!existsSync(file)) { err(`No answers kept for ${basename(input)} yet: ${basename(file)} appears beside it once people answer during mdeck run.`); process.exit(1) }
+  let csv
+  try { csv = resultsCsv(normalizeResults(JSON.parse(readFileSync(file, 'utf8')))) } catch (error) { err(`${basename(file)}: ${error.message}`); process.exit(1) }
+  const out = outputOption()
+  if (out) { writeFileSync(out, csv); ok(`Saved ${relative(process.cwd(), resolve(out))}`) }
+  else process.stdout.write(csv)
 } else if (command === 'check') {
   const input = requireInput('check')
   const registry = registryFor(input)
@@ -562,7 +575,7 @@ if (command === 'new') {
     ...base,
     // A paired iPad may save ink and steer the rooms, like this computer.
     ...(relay ? { base: relay.base } : {}),
-    plugins: [...(relay ? [stripRelayBase(relay.base)] : []), ...base.plugins, homePlugin(abs, { services, pairing, relay, server: relay?.server ?? null }), pairingPlugin(pairing), livePlugin({ pairing, upstream, key: process.env.MDECK_SERVER_KEY, session: () => sessionCode(parseSlides(readFileSync(abs, 'utf8')).deckConfig) }), inkPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) })],
+    plugins: [...(relay ? [stripRelayBase(relay.base)] : []), ...base.plugins, homePlugin(abs, { services, pairing, relay, server: relay?.server ?? null }), pairingPlugin(pairing), livePlugin({ pairing, upstream, key: process.env.MDECK_SERVER_KEY, session: () => sessionCode(parseSlides(readFileSync(abs, 'utf8')).deckConfig) }), inkPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) }), resultsPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) })],
     publicDir: dirname(abs),
     server: {
       ...base.server,
@@ -687,7 +700,7 @@ if (command === 'new') {
   try {
     await build({
       ...baseConfig(input, { selfContained, defaultView: reader ? 'reader' : 'deck' }),
-      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: selfContained, inlineMedia: selfContained, embedFonts: selfContained, stripNotes, stripActivities, ink: !hasFlag('--no-drawings'), deckLook: reader }), viteSingleFile()],
+      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: selfContained, inlineMedia: selfContained, embedFonts: selfContained, stripNotes, stripActivities, ink: !hasFlag('--no-drawings'), results: !hasFlag('--no-results'), deckLook: reader }), viteSingleFile()],
       build: {
         outDir,
         emptyOutDir: !tempDir,
@@ -759,7 +772,7 @@ if (command === 'new') {
   try {
     await build({
       ...baseConfig(input, { selfContained: true }),
-      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true, embedFonts: true, stripActivities: hasFlag('--no-polls'), ink: !hasFlag('--no-drawings'), deckLook: true }), viteSingleFile()],
+      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true, embedFonts: true, stripActivities: hasFlag('--no-polls'), ink: !hasFlag('--no-drawings'), results: !hasFlag('--no-results'), deckLook: true }), viteSingleFile()],
       build: { outDir: tempDir, emptyOutDir: true, target: 'esnext', assetsInlineLimit: 100 * 1024 * 1024 },
       logLevel: 'warn',
     })

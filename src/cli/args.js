@@ -1,7 +1,7 @@
 // Parse the entire command before it can start a server or change any files.
 const value = 'value', flag = 'flag', optional = 'optional'
 const common = { '--port': value, '--no-open': flag }
-const output = { '--output': value, '-o': '--output', '--no-drawings': flag }
+const output = { '--output': value, '-o': '--output', '--no-drawings': flag, '--no-results': flag }
 const commands = {
   new: { max: 0 },
   run: { ...common, '--network': flag, '--server': optional, max: 1 },
@@ -21,6 +21,7 @@ const commands = {
   server: { '--port': value, '--host': optional, max: 0 },
   skill: { '--print': flag, '--install': 'list', '--project': flag, max: 0 },
   migrate: { '--dry-run': flag, max: 1 },
+  results: { '--output': value, '-o': '--output', max: 1 },
 }
 
 export function validateServerOrigin(address) {

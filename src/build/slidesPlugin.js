@@ -8,6 +8,7 @@ import { embedFonts } from './fonts.js'
 import { stripNotes as stripNotesFrom, stripActivities as stripActivitiesFrom } from '../core/editDeck.js'
 import { componentFolders, componentFiles } from './components.js'
 import { inkFileFor, normalizeInk, emptyInk } from '../core/ink.js'
+import { resultsFileFor, normalizeResults } from '../core/results.js'
 import { isOwnWrite } from './ownWrites.js'
 import { fileURLToPath } from 'node:url'
 import { assertDrawings } from './drawings.js'
@@ -27,6 +28,8 @@ const SVGS_ID = 'virtual:deck-svgs'
 const RESOLVED_SVGS_ID = '\0virtual:deck-svgs'
 const BIB_ID = 'virtual:bibliography'
 const RESOLVED_BIB_ID = '\0virtual:bibliography'
+const RESULTS_ID = 'virtual:deck-results'
+const RESOLVED_RESULTS_ID = '\0virtual:deck-results'
 
 const MIME_BY_EXT = {
   '.png': 'image/png',
@@ -216,7 +219,7 @@ export function deckLookOnly(registry, deckConfig = {}) {
 // extension changes are announced instead of forcing a reload. `source` is
 // the deck's text where there is no file (`mdeck design`, on the sample deck);
 // `slidesPath` then only says where its folder is.
-export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, stripActivities = false, ink = true, embedFonts: embedThemeFonts = false, deckLook = false, source: given = null } = {}) {
+export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, stripActivities = false, ink = true, results = true, embedFonts: embedThemeFonts = false, deckLook = false, source: given = null } = {}) {
   const abs = resolve(slidesPath)
   const readDeck = () => given ?? readFileSync(abs, 'utf-8')
   const watchDeck = context => { if (given === null) context.addWatchFile(abs) }
@@ -225,6 +228,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     return stripActivities ? stripActivitiesFrom(shared).source : shared
   }
   const inkPath = inkFileFor(abs)
+  const resultsPath = resultsFileFor(abs)
   const extensionDirs = extensionRoots(abs).map(root => root.dir)
   let componentDirs = componentFolders(abs, readDeck()).map(folder => folder.dir)
   const watchDirs = () => [...extensionDirs, ...componentDirs]
@@ -284,6 +288,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       if (id === INK_ID) return RESOLVED_INK_ID
       if (id === SVGS_ID) return RESOLVED_SVGS_ID
       if (id === BIB_ID) return RESOLVED_BIB_ID
+      if (id === RESULTS_ID) return RESOLVED_RESULTS_ID
     },
     load(id) {
       if (id === RESOLVED_ID) {
@@ -322,6 +327,16 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
           } catch {}
         }
         return `export default ${JSON.stringify(data)}\nexport const inkFileName = ${JSON.stringify(basename(inkPath))}`
+      }
+      // The answers kept in the talk (<deck>.results.json): builds show them
+      // where no room server is (src/live/client.js). `mdeck run` shows the
+      // live answers, and writes the file, so it does not read it here.
+      if (id === RESOLVED_RESULTS_ID) {
+        let data = normalizeResults({})
+        if (results && !serving && existsSync(resultsPath)) {
+          try { data = normalizeResults(JSON.parse(readFileSync(resultsPath, 'utf-8'))) } catch (error) { this.warn(`${resultsPath}: ${error.message}; showing no results`) }
+        }
+        return `export default ${JSON.stringify(data)}`
       }
       if (id === RESOLVED_SVGS_ID) {
         watchDeck(this)
@@ -385,6 +400,8 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       }
       // mdeck's own writes (saved ink, a new slide id) must not reload the
       // windows mid-talk: the pages refresh their ink on `mdeck:ink` instead.
+      // The results file is written during the talk and read only by builds.
+      if (changed === resultsPath) return []
       const own = [inkPath, abs].includes(changed) && (() => { try { return isOwnWrite(changed, readFileSync(changed, 'utf-8')) } catch { return false } })()
       if (own) {
         invalidate(server, changed === abs ? SOURCE_IDS : [RESOLVED_INK_ID])
