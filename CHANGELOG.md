@@ -6,6 +6,7 @@
 - Fixed: a drawing on two slides lost its arrowheads, gradients and `<use>` copies on the second, because `url(#…)` found the copy on the hidden first slide. Each copy in the page now gets ids of its own.
 - `mdeck check` looks at the deck's SVG drawings: palette names without a fallback, fixed colours that stay the same in every palette and in dark mode, style rules that reach the rest of the page, numbered and bare steps in one drawing, and `data-step` or `data-hotspot` in a drawing that uses no palette colour and so is shown as a picture.
 - The slide-writing skill draws diagrams as SVG in the palette's colours, builds them up with numbered steps and checks them in light and dark.
+- `--slide 3,5-7` for `mdeck send`, `mdeck build` and `mdeck pdf` keeps only these slides, for example the part of a deck shown in one lecture, with their drawings. The numbers count the slides as written, like `mdeck snapshot --slide` and `mdeck check --render`. A `<style>` written on a slide that is left out moves to the first slide kept, since it styles the whole deck; the same now holds for slides left out with `--no-polls`.
 
 ## 3.10.1 — 2026-10-11
 
