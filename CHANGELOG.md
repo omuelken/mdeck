@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fixed: a stroke or laser trail drawn on a paired iPad could stop short in the audience window. Two batches of ink could be on their way at once and arrive in the other order, and a batch lost to the network was gone; the window then dropped that piece and everything after it. Batches now go one after another, a lost one is sent again, and a piece that arrives early waits for the one before it.
+- Ink and the laser drawn on a paired iPad reach the audience window sooner: about 60 ms after the pen instead of 100 to 150 ms.
 
 ## 3.7.1 — 2026-10-09
 

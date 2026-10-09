@@ -9,7 +9,9 @@
 import { stageRoom } from '../../live/client.js'
 import { presenceQuery } from '../../live/presence.js'
 
-const BATCH_MS = 80
+// Live ink waits this long to gather a batch; with one request at a time the
+// network sets the pace, so a short wait adds little load and little lag.
+const BATCH_MS = 25
 
 /**
  * An ink bus transport through the stage room; `listen` only when `receive`.
@@ -25,7 +27,8 @@ export function roomTransport({ receive = false, view = null, onPresence = null 
     if (!queue.length || sending) return
     sending = true
     try { await deliver() } finally { sending = false }
-    if (queue.length) timer ??= setTimeout(flush, BATCH_MS)
+    // What came in meanwhile has waited already: send it right away.
+    if (queue.length) timer ??= setTimeout(flush, 0)
   }
 
   async function deliver() {

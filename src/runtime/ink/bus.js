@@ -5,7 +5,7 @@
 //
 // Messages, the same on every transport:
 //   { type: 'segment', key, slideId, tool, color, size, from, points }
-//       points `from` index on, every ~60 ms while drawing
+//       points `from` index on, every ~25 ms while drawing
 //   { type: 'end', key, fade, stroke? }  the stroke is finished; a laser
 //       trail (tool 'laser', never saved) retracts on its own
 //   { type: 'dot', key, slideId, point } the laser's dot (null: hidden), as
@@ -21,7 +21,7 @@
 import { changeInk, renameSlide } from './store.js'
 import { joinSegment } from './segments.js'
 
-const SEGMENT_MS = 60
+const SEGMENT_MS = 25
 const DOT_MS = 50
 
 export function broadcastTransport(name) {
