@@ -48,6 +48,7 @@ title = "Blue notebook"
 "--rule" = "#dbe3ee"
 "--accent" = "#2455c7"
 "--accent-2" = "#17625c"
+"--accent-3" = "#c99700"
 "--on-accent" = "#ffffff"
 
 [dark]
@@ -59,6 +60,7 @@ title = "Blue notebook"
 "--rule" = "#24354d"
 "--accent" = "#7aa2ff"
 "--accent-2" = "#5ec4b6"
+"--accent-3" = "#f2c94c"
 "--on-accent" = "#0f1a2b"
 ```
 
@@ -76,11 +78,12 @@ The folder must be called `notebook` to match `id`. Use it with `palette: notebo
 | `--ink-soft` | Body text |
 | `--muted` | Secondary labels |
 | `--rule` | Borders |
-| `--accent` | Main highlight |
-| `--accent-2` | Secondary highlight |
+| `--accent` | Emphasis; notes, tips and important callouts |
+| `--accent-2` | The accent's companion: gradients, a contrast to the accent |
+| `--accent-3` | Attention: warnings and cautions. Use it sparingly, for bars and shapes, never as text: it may be a yellow |
 | `--on-accent` | Text placed on an accent background |
 
-A theme has no colours of its own: it uses these, and mixes of them, so every palette repaints it. For an inverted slide it uses the palette's other version, as `--inverse-bg`, `--inverse-ink`, `--inverse-accent` and so on:
+A theme has no colours of its own: it uses these, and mixes of them, so every palette repaints it. Give each accent the job its name says: a theme that colours callouts colours note, tip and important with `--accent` and warning and caution with `--accent-3`. For an inverted slide it uses the palette's other version, as `--inverse-bg`, `--inverse-ink`, `--inverse-accent` and so on:
 
 ```css
 .slide--focus {

@@ -83,6 +83,7 @@ description = "Deep blue with a warm highlight."
 "--rule" = "#c9d7e2"
 "--accent" = "#0a6aa8"
 "--accent-2" = "#b45309"
+"--accent-3" = "#c99700"
 "--on-accent" = "#ffffff"
 
 [dark]
@@ -94,6 +95,7 @@ description = "Deep blue with a warm highlight."
 "--rule" = "#24384b"
 "--accent" = "#ffbd69"
 "--accent-2" = "#7cc4ff"
+"--accent-3" = "#f2c94c"
 "--on-accent" = "#102030"
 ```
 

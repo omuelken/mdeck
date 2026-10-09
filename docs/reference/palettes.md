@@ -23,7 +23,7 @@ The presenter view and the reader view switch palette and light or dark without 
 | `swiss` | white, black and signal red | black, white and red |
 | `nordic` | ice grey, deep navy and a cool steel blue | polar night with ice blue |
 | `cobalt` | strong ultramarine on white, vivid orange | midnight blue, bright blue and orange |
-| `greyscale` | black, white and greys only, code and callouts too | the same, inverted |
+| `greyscale` | black, white and greys only, code too | the same, inverted |
 | `lagoon` | teal on warm stone, orange second accent | deep teal-black, bright teal |
 | `paper` | off-white paper and near-black ink with one orange accent | charcoal with a softer orange |
 
@@ -35,7 +35,7 @@ More palettes are in the [theme repository](https://github.com/tilman-schieber/m
 
 ## Colours
 
-Every variant sets all nine:
+Every variant sets all ten (a palette without `--accent-3` gets an amber, and `mdeck check` suggests setting one):
 
 | Colour | Role |
 |---|---|
@@ -45,8 +45,9 @@ Every variant sets all nine:
 | `--ink-soft` | Body text |
 | `--muted` | Small labels: headers, footers, captions |
 | `--rule` | Lines and dividers |
-| `--accent` | The highlight: emphasis, markers, chapter slides |
-| `--accent-2` | A second highlight for themes that pair two |
+| `--accent` | Emphasis: highlighted words, markers, chapter slides; notes, tips and important callouts |
+| `--accent-2` | The accent's companion: gradients, a contrast to the accent, definitions |
+| `--accent-3` | Attention: warnings and cautions, and a colour that pops, used sparingly. It marks things (bars, shapes) and need not be readable as text, so it may be a yellow |
 | `--on-accent` | Text set on the accent, such as a chapter slide's title |
 
 Themes may mix them (for example a light tint of the accent), and read the other variant as `--inverse-bg`, `--inverse-ink`, `--inverse-accent` and so on.
@@ -71,6 +72,7 @@ description = "Sea blue and rust on chalk white."
 "--rule" = "#c9d7e2"
 "--accent" = "#0a6aa8"
 "--accent-2" = "#b45309"
+"--accent-3" = "#c99700"
 "--on-accent" = "#ffffff"
 
 [dark]
@@ -82,6 +84,7 @@ description = "Sea blue and rust on chalk white."
 "--rule" = "#24384b"
 "--accent" = "#5fb3f0"
 "--accent-2" = "#f59e5b"
+"--accent-3" = "#f2c94c"
 "--on-accent" = "#0d1a24"
 ```
 

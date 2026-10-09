@@ -448,11 +448,8 @@ strong { font-weight: 600; color: var(--ink); }
   margin: 0 0 8px 0;
 }
 .slide-body .callout p { padding-left: 0; margin: 0; color: var(--ink); }
-.slide-body .callout-note { --bar: var(--callout-note); }
-.slide-body .callout-tip { --bar: var(--callout-tip); }
-.slide-body .callout-important { --bar: var(--callout-important); }
-.slide-body .callout-warning { --bar: var(--callout-warning); }
-.slide-body .callout-caution { --bar: var(--callout-caution); }
+.slide-body :is(.callout-note, .callout-tip, .callout-important) { --bar: var(--accent); }
+.slide-body :is(.callout-warning, .callout-caution) { --bar: var(--accent-3); }
 .slide-body .callout-definition { --bar: var(--accent-2); }
 
 /* ─────────────────────────────────────────────

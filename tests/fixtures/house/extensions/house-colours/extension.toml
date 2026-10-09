@@ -14,6 +14,7 @@ description = "Only for the house theme."
 "--rule" = "#cdd8e1"
 "--accent" = "#1f6f9f"
 "--accent-2" = "#7a5c9e"
+"--accent-3" = "#d99a00"
 "--on-accent" = "#ffffff"
 
 [dark]
@@ -25,4 +26,5 @@ description = "Only for the house theme."
 "--rule" = "#22343f"
 "--accent" = "#7cc4ea"
 "--accent-2" = "#c3a8e6"
+"--accent-3" = "#ffd166"
 "--on-accent" = "#0e1a24"

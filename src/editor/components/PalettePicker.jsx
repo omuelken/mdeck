@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon.jsx'
 
 export function Swatches({ tokens = {} }) {
-  return <span class="swatches">{['--bg', '--surface', '--rule', '--accent', '--accent-2', '--ink'].map(key => tokens[key] ? <i key={key} style={{ background: tokens[key] }} /> : null)}</span>
+  return <span class="swatches">{['--bg', '--surface', '--rule', '--accent', '--accent-2', '--accent-3', '--ink'].map(key => tokens[key] ? <i key={key} style={{ background: tokens[key] }} /> : null)}</span>
 }
 
 // The palettes a theme offers, each with its colours in the light or dark

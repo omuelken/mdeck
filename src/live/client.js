@@ -237,7 +237,7 @@ export function latestByDevice(messages) {
 // The deck's look as the answer page needs it: theme variables, font
 // stylesheets and the style of a slide heading, read from the page that shows
 // the slides (the presenter's current-slide frame, or the deck itself).
-const LOOK_TOKENS = ['--bg', '--ink', '--ink-soft', '--muted', '--rule', '--surface', '--accent', '--accent-2', '--on-accent', '--font-body', '--font-display']
+const LOOK_TOKENS = ['--bg', '--ink', '--ink-soft', '--muted', '--rule', '--surface', '--accent', '--accent-2', '--accent-3', '--on-accent', '--font-body', '--font-display']
 let lookSource = () => document
 export function setLookSource(source) { lookSource = source }
 export function captureLook(doc = lookSource()) {

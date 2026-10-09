@@ -4,7 +4,7 @@
 import { existsSync } from 'node:fs'
 import { resolve, relative, isAbsolute, sep } from 'node:path'
 import { parse as parseToml, TomlError } from 'smol-toml'
-import { TOKEN_NAME_RE, COLOR_ROLES, APPEARANCES } from './tokens.js'
+import { TOKEN_NAME_RE, COLOR_ROLES, COLOR_FALLBACKS, APPEARANCES } from './tokens.js'
 import { propertyErrors } from '../layouts/layoutProps.js'
 
 export const SCHEMA_VERSION = 1
@@ -247,12 +247,16 @@ function validateGuide(table, fail) {
 function validatePalette(raw, shared, fail) {
   if (raw.theme != null && (typeof raw.theme !== 'string' || !ID_RE.test(raw.theme))) fail('theme must be the id of the only theme that may use this palette', 'theme')
   const variants = {}
+  const fallbacks = new Set()
   for (const appearance of APPEARANCES) {
     if (!isPlainObject(raw[appearance])) fail(`a [${appearance}] table with the ${appearance} colours is required`, appearance)
     const tokens = validateTokens(raw[appearance], appearance, fail, { required: true })
-    const missing = COLOR_ROLES.filter(role => !Object.hasOwn(tokens, role))
+    const missing = COLOR_ROLES.filter(role => !Object.hasOwn(tokens, role) && !COLOR_FALLBACKS[role])
     if (missing.length) fail(`missing colours: ${missing.join(', ')}`, appearance)
+    for (const [role, values] of Object.entries(COLOR_FALLBACKS)) {
+      if (!Object.hasOwn(tokens, role)) { tokens[role] = values[appearance]; fallbacks.add(role) }
+    }
     variants[appearance] = tokens
   }
-  return { ...shared, ...(raw.theme ? { theme: raw.theme } : {}), light: variants.light, dark: variants.dark }
+  return { ...shared, ...(raw.theme ? { theme: raw.theme } : {}), light: variants.light, dark: variants.dark, ...(fallbacks.size ? { fallbacks: [...fallbacks] } : {}) }
 }

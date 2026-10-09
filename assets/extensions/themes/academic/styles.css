@@ -476,11 +476,9 @@ strong { color: var(--ink); font-weight: 700; }
 .slide-body .callout p { color: var(--ink); }
 .slide-body .callout :is(ul, ol) { gap: 8px; }
 
-.slide-body :is(.callout-theorem, .callout-lemma, .callout-corollary, .callout-proposition, .callout-tip, .callout-important) { --block: var(--accent); }
+.slide-body :is(.callout-theorem, .callout-lemma, .callout-corollary, .callout-proposition, .callout-note, .callout-tip, .callout-important) { --block: var(--accent); }
 .slide-body :is(.callout-definition) { --block: var(--accent-2); }
-.slide-body .callout-note { --block: var(--callout-note); }
-.slide-body .callout-warning { --block: var(--callout-warning); }
-.slide-body .callout-caution { --block: var(--callout-caution); }
+.slide-body :is(.callout-warning, .callout-caution) { --block: var(--accent-3); }
 .slide-body :is(.callout-theorem, .callout-lemma, .callout-corollary, .callout-proposition) > :not(.callout-title) {
   font-family: var(--font-serif);
   font-style: italic;

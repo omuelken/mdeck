@@ -1,11 +1,6 @@
-:root {
-  --callout-note:      #0969da;
-  --callout-tip:       #1a7f37;
-  --callout-important: #8250df;
-  --callout-warning:   #eab308;
-  --callout-caution:   #cf222e;
-}
-
+/* Callouts take the palette's accents by what they mean: a note, a tip and
+   something important are emphasis, in the accent; a warning and a caution
+   call for attention, in the third accent. */
 .callout {
   border-left: 4px solid var(--rule);
   padding: 20px 28px;
@@ -21,20 +16,15 @@
 }
 .callout p { margin: 0; color: var(--ink-soft); padding-left: 28px; }
 
-.callout-note      { border-left-color: var(--callout-note); }
-.callout-tip       { border-left-color: var(--callout-tip); }
-.callout-important { border-left-color: var(--callout-important); }
-.callout-warning   { border-left-color: var(--callout-warning); }
-.callout-caution   { border-left-color: var(--callout-caution); }
+.callout:is(.callout-note, .callout-tip, .callout-important) { border-left-color: var(--accent); }
+.callout:is(.callout-warning, .callout-caution)              { border-left-color: var(--accent-3); }
 
-/* Titles are text: the signal colour mixed with the text colour, darker on
-   light slides and lighter on dark ones, so they can be read on both. The
-   yellow of a warning needs more of the text colour. */
-.callout-note      .callout-title { color: color-mix(in oklab, var(--callout-note) 65%, var(--ink)); }
-.callout-tip       .callout-title { color: color-mix(in oklab, var(--callout-tip) 65%, var(--ink)); }
-.callout-important .callout-title { color: color-mix(in oklab, var(--callout-important) 65%, var(--ink)); }
-.callout-warning   .callout-title { color: color-mix(in oklab, var(--callout-warning) 45%, var(--ink)); }
-.callout-caution   .callout-title { color: color-mix(in oklab, var(--callout-caution) 65%, var(--ink)); }
+/* Titles are text: the accent mixed with the text colour, darker on light
+   slides and lighter on dark ones, so they can be read on both. The third
+   accent is a marker colour that need not be readable as text (a yellow, say),
+   so it gets more of the text colour. */
+.callout:is(.callout-note, .callout-tip, .callout-important) .callout-title { color: color-mix(in oklab, var(--accent) 65%, var(--ink)); }
+.callout:is(.callout-warning, .callout-caution) .callout-title              { color: color-mix(in oklab, var(--accent-3) 45%, var(--ink)); }
 
 /* Blocks for lectures, in every theme. Theorems, lemmas and corollaries in
    the accent with the statement in italics, definitions in the second

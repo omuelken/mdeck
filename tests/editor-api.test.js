@@ -136,7 +136,7 @@ test('deck-local extensions can be read, written and removed; built-ins are read
   assert.equal((await api('/extension/palette/nope')).status, 404)
   assert.equal((await api('/extension/thing/paper')).status, 400)
 
-  const toml = 'schema = 1\nkind = "palette"\nid = "ocean"\ntitle = "Ocean"\n[light]\n\"--bg\" = \"#f4f8fb\"\n\"--surface\" = \"#e6eef4\"\n\"--ink\" = \"#0b1d2a\"\n\"--ink-soft\" = \"#22394a\"\n\"--muted\" = \"#4f6474\"\n\"--rule\" = \"#c9d7e2\"\n\"--accent\" = \"#0a6aa8\"\n\"--accent-2\" = \"#b45309\"\n\"--on-accent\" = \"#ffffff\"\n[dark]\n\"--bg\" = \"#102030\"\n\"--surface\" = \"#17293b\"\n\"--ink\" = \"#eef4f8\"\n\"--ink-soft\" = \"#c8d6e0\"\n\"--muted\" = \"#8ea3b3\"\n\"--rule\" = \"#24384b\"\n\"--accent\" = \"#ffbd69\"\n\"--accent-2\" = \"#7cc4ff\"\n\"--on-accent\" = \"#102030\"\n'
+  const toml = 'schema = 1\nkind = "palette"\nid = "ocean"\ntitle = "Ocean"\n[light]\n\"--bg\" = \"#f4f8fb\"\n\"--surface\" = \"#e6eef4\"\n\"--ink\" = \"#0b1d2a\"\n\"--ink-soft\" = \"#22394a\"\n\"--muted\" = \"#4f6474\"\n\"--rule\" = \"#c9d7e2\"\n\"--accent\" = \"#0a6aa8\"\n\"--accent-2\" = \"#b45309\"\n\"--accent-3\" = \"#d99a00\"\n\"--on-accent\" = \"#ffffff\"\n[dark]\n\"--bg\" = \"#102030\"\n\"--surface\" = \"#17293b\"\n\"--ink\" = \"#eef4f8\"\n\"--ink-soft\" = \"#c8d6e0\"\n\"--muted\" = \"#8ea3b3\"\n\"--rule\" = \"#24384b\"\n\"--accent\" = \"#ffbd69\"\n\"--accent-2\" = \"#7cc4ff\"\n\"--accent-3\" = \"#d99a00\"\n\"--on-accent\" = \"#102030\"\n'
   const created = await api('/extension/palette/ocean', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': toml } }) })
   const createdText = await created.text()
   assert.equal(created.status, 200, createdText)

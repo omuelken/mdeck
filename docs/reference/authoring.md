@@ -686,7 +686,7 @@ A local SVG whose source contains `var(--…)` is drawn inline instead of as an
 layout's `image` (`title`, `chapter`, `image-text`, `full-bleed-image`, and
 local layouts that render it with `Picture` from `mdeck/layout`). It can use the
 palette's custom properties (`--bg`, `--surface`, `--ink`, `--ink-soft`,
-`--muted`, `--rule`, `--accent`, `--accent-2`, `--on-accent`) and follows the
+`--muted`, `--rule`, `--accent`, `--accent-2`, `--accent-3`, `--on-accent`) and follows the
 theme, palette and appearance. Give each a fallback (`var(--accent, #1f3fd1)`)
 for places that show the file on its own, set `fit: contain` to keep the whole
 drawing, prefix class names in its `<style>` because inline styles apply to the

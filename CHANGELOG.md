@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Palettes have a third accent, `--accent-3`, and the three accents mean something: `--accent` is emphasis, `--accent-2` its companion (gradients, a contrast to the accent), `--accent-3` attention, used sparingly. `--accent-3` marks things and need not be readable as text, so it may be a yellow; `mdeck check` asks only that it can be seen (1.5:1 against the background). A palette without `--accent-3` keeps working and gets an amber (`#d99a00`, at night `#f5c542`); `mdeck check` suggests giving it its own. All built-in palettes and those in the theme repository set it (the repository requires it); `mdeck palettes update` brings installed ones up to date.
+- Callouts take their colours from the palette: note, tip and important the accent, warning and caution the third accent. The five callout colours (`--callout-note` … `--callout-caution`) are gone, and with them the green, purple and blue that matched no palette. The built-in themes follow.
+
 ## 3.6.2 — 2026-10-09
 
 - The docs home page and the README start with what mdeck does: drawing from an iPad, polls from phones, citations, themes, running code and sending one file, each with a picture (`npm run feature-images` renders them). The docs' example deck is now a short tour of mdeck, with its own control bar and drawing, and a picker of every built-in theme as a picture, with light or dark.

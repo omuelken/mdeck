@@ -27,7 +27,7 @@ function looksOf(registry, catalogue) {
   const palettes = manifestsOf(registry, 'palette')
   // Each theme's icon for the gallery's list (see renderPreviews).
   const icons = new Map(catalogue.themes.map(entry => [entry.id, entry.icon]))
-  const colours = tokens => Object.fromEntries(['--bg', '--surface', '--ink', '--accent', '--accent-2'].map(key => [key, tokens?.[key] ?? null]))
+  const colours = tokens => Object.fromEntries(['--bg', '--surface', '--ink', '--accent', '--accent-2', '--accent-3'].map(key => [key, tokens?.[key] ?? null]))
   return {
     mdeck: VERSION,
     themes: Object.values(manifestsOf(registry, 'theme')).map(theme => ({ id: theme.id, title: theme.title, description: theme.description ?? '', builtIn: builtIn.has(theme.id + ':t'),

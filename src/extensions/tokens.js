@@ -9,8 +9,16 @@ export function tokensToCss(tokens = {}, selector = ':root') {
 }
 
 // The colours every palette variant defines. Themes use only these (and
-// mixes of them), so any palette fits any theme.
-export const COLOR_ROLES = ['--bg', '--surface', '--ink', '--ink-soft', '--muted', '--rule', '--accent', '--accent-2', '--on-accent']
+// mixes of them), so any palette fits any theme. The three accents mean
+// something: --accent is emphasis (and notes, tips, important callouts),
+// --accent-2 its companion (gradients, a contrast to the accent), --accent-3
+// attention (warnings and cautions), used sparingly; it marks things and
+// need not be readable as text.
+export const COLOR_ROLES = ['--bg', '--surface', '--ink', '--ink-soft', '--muted', '--rule', '--accent', '--accent-2', '--accent-3', '--on-accent']
+// Colours a palette may leave out, and what it gets instead: palettes made
+// before the third accent get an amber that calls for attention in light and
+// dark alike (`mdeck check` suggests setting one's own).
+export const COLOR_FALLBACKS = { '--accent-3': { light: '#d99a00', dark: '#f5c542' } }
 export const APPEARANCES = ['light', 'dark']
 
 /**

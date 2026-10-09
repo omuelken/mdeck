@@ -74,6 +74,9 @@ export function checkPackage({ kind, id, files }, { published = false } = {}) {
   }
   if (record.kind !== kind) fail(`${id}/extension.toml says kind = "${record.kind}", but it is in the ${kind}s`)
   if (published) for (const key of ['version', 'author', 'license']) if (!record.package?.[key]) fail(`The ${kind} ${id}: ${key} is required in the theme repository`)
+  // Palettes made before a colour existed get mdeck's fallback; a new one in
+  // the repository sets every colour itself.
+  if (published && record.manifest.fallbacks?.length) fail(`The palette ${id}: ${record.manifest.fallbacks.join(', ')} is required in the theme repository`)
   if (kind === 'theme') {
     for (const url of record.manifest.fonts) if (!FONT_HOSTS.some(host => url.startsWith(host))) fail(`The theme ${id} loads fonts from ${url}; allowed are ${FONT_HOSTS.join(', ')}`)
     checkCss(files['styles.css'] ?? '', `The theme ${id}: styles.css`)

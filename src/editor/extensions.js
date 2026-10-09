@@ -7,8 +7,8 @@ export const ID_RE = /^[a-z][a-z0-9-]*$/
 export { COLOR_ROLES as CORE_TOKENS } from '../extensions/tokens.js'
 // Readable colours a new palette starts from.
 const STARTER_COLORS = {
-  light: { '--bg': '#ffffff', '--surface': '#f2f2f2', '--ink': '#111111', '--ink-soft': '#333333', '--muted': '#666666', '--rule': '#dadada', '--accent': '#0b6bcb', '--accent-2': '#c2410c', '--on-accent': '#ffffff' },
-  dark: { '--bg': '#111111', '--surface': '#1e1e1e', '--ink': '#f2f2f2', '--ink-soft': '#cfcfcf', '--muted': '#8f8f8f', '--rule': '#2e2e2e', '--accent': '#6aaeff', '--accent-2': '#fb923c', '--on-accent': '#111111' },
+  light: { '--bg': '#ffffff', '--surface': '#f2f2f2', '--ink': '#111111', '--ink-soft': '#333333', '--muted': '#666666', '--rule': '#dadada', '--accent': '#0b6bcb', '--accent-2': '#c2410c', '--accent-3': '#e0a100', '--on-accent': '#ffffff' },
+  dark: { '--bg': '#111111', '--surface': '#1e1e1e', '--ink': '#f2f2f2', '--ink-soft': '#cfcfcf', '--muted': '#8f8f8f', '--rule': '#2e2e2e', '--accent': '#6aaeff', '--accent-2': '#fb923c', '--accent-3': '#f5c542', '--on-accent': '#111111' },
 }
 
 const entries = table => Object.entries(table ?? {}).map(([name, value]) => ({ name, ...(value && typeof value === 'object' && !Array.isArray(value) ? value : { value }) }))

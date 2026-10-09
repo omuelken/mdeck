@@ -8,8 +8,8 @@ author = "Tilman Schieber"
 license = "MIT"
 
 # No colour anywhere: emphasis is black against the softer body text, the
-# second accent a mid grey; code and callouts use greys instead of their
-# usual colours.
+# second accent a mid grey, the third (warnings) a lighter grey; code uses
+# greys instead of its usual colours.
 [light]
 "--bg" = "#ffffff"
 "--surface" = "#f0f0f0"
@@ -19,6 +19,7 @@ license = "MIT"
 "--rule" = "#d4d4d4"
 "--accent" = "#000000"
 "--accent-2" = "#6e6e6e"
+"--accent-3" = "#9a9a9a"
 "--on-accent" = "#ffffff"
 "--token-default" = "#141414"
 "--token-comment" = "#6b6b6b"
@@ -27,11 +28,6 @@ license = "MIT"
 "--token-keyword" = "#000000"
 "--token-function" = "#2a2a2a"
 "--token-operator" = "#555555"
-"--callout-note" = "#4a4a4a"
-"--callout-tip" = "#4a4a4a"
-"--callout-important" = "#000000"
-"--callout-warning" = "#7a7a7a"
-"--callout-caution" = "#000000"
 
 [dark]
 "--bg" = "#121212"
@@ -42,6 +38,7 @@ license = "MIT"
 "--rule" = "#303030"
 "--accent" = "#ffffff"
 "--accent-2" = "#a6a6a6"
+"--accent-3" = "#6e6e6e"
 "--on-accent" = "#121212"
 "--token-default" = "#f2f2f2"
 "--token-comment" = "#9a9a9a"
@@ -50,8 +47,3 @@ license = "MIT"
 "--token-keyword" = "#ffffff"
 "--token-function" = "#e0e0e0"
 "--token-operator" = "#b0b0b0"
-"--callout-note" = "#b8b8b8"
-"--callout-tip" = "#b8b8b8"
-"--callout-important" = "#ffffff"
-"--callout-warning" = "#8c8c8c"
-"--callout-caution" = "#ffffff"

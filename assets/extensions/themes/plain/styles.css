@@ -418,8 +418,7 @@ strong { font-weight: 600; color: var(--ink); }
 }
 .slide-body .callout p { padding-left: 0; margin: 0; color: var(--ink-soft); }
 .slide-body .callout :is(.callout-title) { color: var(--ink); }
-.slide-body .callout:is(.callout-warning, .callout-caution) { border-left-color: var(--callout-warning); }
-.slide-body .callout.callout-caution { border-left-color: var(--callout-caution); }
+.slide-body .callout:is(.callout-warning, .callout-caution) { border-left-color: var(--accent-3); }
 .slide-body .callout.callout-proof { background: none; border: 0; padding: 0; }
 
 /* ─────────────────────────────────────────────

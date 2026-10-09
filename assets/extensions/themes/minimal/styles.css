@@ -297,11 +297,8 @@ strong { color: var(--ink); font-weight: 600; }
   margin: 32px 0 0;
   max-width: 1200px;
 }
-.slide-body .callout-tip { border-left-color: var(--accent); }
-.slide-body .callout-note { border-left-color: var(--callout-note); }
-.slide-body .callout-important { border-left-color: var(--callout-important); }
-.slide-body .callout-warning { border-left-color: var(--callout-warning); }
-.slide-body .callout-caution { border-left-color: var(--callout-caution); }
+.slide-body :is(.callout-note, .callout-tip, .callout-important) { border-left-color: var(--accent); }
+.slide-body :is(.callout-warning, .callout-caution) { border-left-color: var(--accent-3); }
 .slide-body .callout-title { margin-bottom: 8px; }
 .slide-body .callout p { padding-left: 0; color: var(--ink); font-size: var(--fs-body); }
 /* Lecture blocks: theorems in the accent, definitions in the second */

@@ -16,6 +16,7 @@ license = "MIT"
 "--rule" = "#e0deda"
 "--accent" = "#0d9488"
 "--accent-2" = "#c2410c"
+"--accent-3" = "#ca8a04"
 "--on-accent" = "#ffffff"
 
 [dark]
@@ -27,4 +28,5 @@ license = "MIT"
 "--rule" = "#23332f"
 "--accent" = "#2dd4bf"
 "--accent-2" = "#fb923c"
+"--accent-3" = "#facc15"
 "--on-accent" = "#062b26"

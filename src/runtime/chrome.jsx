@@ -43,7 +43,7 @@ export const S = {
 }
 
 export function PaletteSwatches({ tokens }) {
-  const keys = ['--bg', '--surface', '--rule', '--accent', '--accent-2', '--ink']
+  const keys = ['--bg', '--surface', '--rule', '--accent', '--accent-2', '--accent-3', '--ink']
   return (
     <div style={{ display: 'flex', gap: '2px', alignItems: 'center', flexShrink: 0 }}>
       {keys.map(k => tokens[k]

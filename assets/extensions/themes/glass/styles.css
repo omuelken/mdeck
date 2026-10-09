@@ -640,13 +640,9 @@ deck-stage[data-deck-static] .slide { animation: none; }
   box-shadow: 0 0 10px currentColor;
 }
 .slide-body .callout p { padding-left: 0; margin: 0; color: var(--ink); }
-.slide-body .callout-note { --tint: var(--callout-note); }
-.slide-body .callout-tip { --tint: var(--callout-tip); }
-.slide-body .callout-important { --tint: var(--callout-important); }
-.slide-body .callout-warning { --tint: var(--callout-warning); }
-.slide-body .callout-caution { --tint: var(--callout-caution); }
+.slide-body :is(.callout-note, .callout-tip, .callout-important) { --tint: var(--accent); }
+.slide-body :is(.callout-warning, .callout-caution) { --tint: var(--accent-3); }
 .slide-body .callout-definition { --tint: var(--accent-2); }
-.slide-body .callout-tip .callout-title { color: color-mix(in oklab, var(--callout-tip) 60%, var(--ink)); }
 .slide-body :is(.callout-theorem, .callout-lemma, .callout-corollary) .callout-title { color: var(--em); }
 .slide-body .callout-definition .callout-title { color: light-dark(color-mix(in oklab, var(--accent-2) 80%, var(--ink)), var(--accent-2)); }
 

@@ -35,6 +35,8 @@ const RULES = [
   ['--muted', '--bg', 4.5, 'muted text'],
   ['--accent', '--bg', 3, 'the accent'],
   ['--accent-2', '--bg', 3, 'the second accent'],
+  // A marker (bars, shapes), not text: it has to be seen, not read.
+  ['--accent-3', '--bg', 1.5, 'the third accent'],
   ['--on-accent', '--accent', 3, 'text on the accent'],
 ]
 
@@ -48,7 +50,7 @@ export function paletteProblems(palette) {
   for (const appearance of ['light', 'dark']) {
     const tokens = palette[appearance] ?? {}
     for (const [fore, back, minimum, what] of RULES) {
-      if (palette.theme && (fore === '--accent' || fore === '--accent-2')) continue
+      if (palette.theme && (fore === '--accent' || fore === '--accent-2' || fore === '--accent-3')) continue
       const ratio = contrast(tokens[fore], tokens[back])
       if (ratio != null && ratio < minimum) problems.push(`${appearance}: ${what} (${fore} on ${back}) has a contrast of ${ratio.toFixed(1)}:1; at least ${minimum}:1 is needed`)
     }

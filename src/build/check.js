@@ -26,6 +26,7 @@ export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath
   for (const record of Object.values(registry.palettes)) {
     if (record.source !== 'local') continue
     for (const problem of paletteProblems(record.manifest)) diagnostics.push({ severity: 'warning', code: 'palette-contrast', message: `Palette "${record.id}", ${problem}`, line: 1, column: 1 })
+    for (const role of record.manifest.fallbacks ?? []) diagnostics.push({ severity: 'warning', code: 'palette-fallback', message: `Palette "${record.id}" sets no ${role}, so it gets mdeck's amber; give it a colour of its own in [light] and [dark]`, line: 1, column: 1 })
   }
   // The deck's drawings file: readable, and only for slides that still exist.
   const inkPath = inkFileFor(resolve(slidesPath))

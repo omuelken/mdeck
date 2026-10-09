@@ -29,7 +29,7 @@ function fixture(files) {
   return { dir, slides: resolve(dir, 'slides.md'), remove: () => rmSync(dir, { recursive: true, force: true }) }
 }
 
-const PALETTE = 'schema = 1\nkind = "palette"\nid = "ocean"\ntitle = "Ocean"\n[light]\n"--bg" = "#f4f8fb"\n"--surface" = "#e6eef4"\n"--ink" = "#0b1d2a"\n"--ink-soft" = "#22394a"\n"--muted" = "#4f6474"\n"--rule" = "#c9d7e2"\n"--accent" = "#0a6aa8"\n"--accent-2" = "#b45309"\n"--on-accent" = "#ffffff"\n[dark]\n"--bg" = "#102030"\n"--surface" = "#17293b"\n"--ink" = "#eef4f8"\n"--ink-soft" = "#c8d6e0"\n"--muted" = "#8ea3b3"\n"--rule" = "#24384b"\n"--accent" = "#ffbd69"\n"--accent-2" = "#7cc4ff"\n"--on-accent" = "#102030"\n'
+const PALETTE = 'schema = 1\nkind = "palette"\nid = "ocean"\ntitle = "Ocean"\n[light]\n"--bg" = "#f4f8fb"\n"--surface" = "#e6eef4"\n"--ink" = "#0b1d2a"\n"--ink-soft" = "#22394a"\n"--muted" = "#4f6474"\n"--rule" = "#c9d7e2"\n"--accent" = "#0a6aa8"\n"--accent-2" = "#b45309"\n"--accent-3" = "#d99a00"\n"--on-accent" = "#ffffff"\n[dark]\n"--bg" = "#102030"\n"--surface" = "#17293b"\n"--ink" = "#eef4f8"\n"--ink-soft" = "#c8d6e0"\n"--muted" = "#8ea3b3"\n"--rule" = "#24384b"\n"--accent" = "#ffbd69"\n"--accent-2" = "#7cc4ff"\n"--accent-3" = "#d99a00"\n"--on-accent" = "#102030"\n'
 const THEME = 'schema = 1\nkind = "theme"\nid = "plain"\ntitle = "Plain"\npalette = "lagoon"\nfonts = ["https://example.test/font.css"]\n[tokens]\n"--font-body" = "serif"\n[params.fontBody]\ntoken = "--font-body"\ntitle = "Body font"\n'
 const GUIDE = '[guide]\nsuits = [" team updates ", "short points"]\navoid = ["wide tables"]\nwriting = """\nKeep headings short.   \nThree or four points.\n"""\n'
 const LAYOUT_TOML = 'schema = 1\nkind = "layout"\nid = "box"\ntitle = "Box"\n[regions.body]\n[properties.size]\ntype = "integer"\nminimum = 1\ndefault = 2\n'
@@ -238,4 +238,15 @@ test('mdeck check warns about a misspelled callout type, but not about known blo
   assert.deepEqual(warnings('# A\n\n:::columns\n::: Theorem Satz 1\nx\n:::\n+++\n:::steps\n- a\n:::\n:::\n\n:::notes\nn\n:::\n'), [])
   assert.deepEqual(warnings('---\ncallouts:\n  hint: Hinweis\n---\n# A\n\n::: hint\nx\n:::\n'), [], 'a type with a title under callouts: is intended')
   assert.equal(warnings('# A\n\n```markdown\n::: nonsense\n```\n').length, 0, 'code examples are not blocks')
+})
+
+test('a palette without the third accent gets the amber, and says so', () => {
+  const old = PALETTE.replace(/"--accent-3" = "#[0-9a-f]+"\n/g, '')
+  assert.ok(!old.includes('--accent-3'))
+  const record = validateManifest(parseManifestText(old, 'extension.toml'), { file: 'extension.toml', dir: '/x/ocean', folderName: 'ocean', fileExists: () => true })
+  assert.equal(record.manifest.light['--accent-3'], '#d99a00')
+  assert.equal(record.manifest.dark['--accent-3'], '#f5c542')
+  assert.deepEqual(record.manifest.fallbacks, ['--accent-3'])
+  const full = validateManifest(parseManifestText(PALETTE, 'extension.toml'), { file: 'extension.toml', dir: '/x/ocean', folderName: 'ocean', fileExists: () => true })
+  assert.equal(full.manifest.fallbacks, undefined)
 })
