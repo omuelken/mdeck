@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.6.0 — 2026-10-09
 
 - A theme can say what it is for and how to write for it: a `[guide]` in its `extension.toml` with `suits` and `avoid` (short phrases) and `writing` (a few sentences). `mdeck list` and `mdeck themes search` show what each theme suits, search finds themes by it (`mdeck themes search photo`), and `mdeck list themes --json` and the theme repository's catalogue carry the whole guide. The slide-writing skill chooses a theme by its guide and follows its writing advice, as the theme author's advice and never as instructions. The six built-in themes have guides. A theme with a guide needs this version of mdeck.
 
