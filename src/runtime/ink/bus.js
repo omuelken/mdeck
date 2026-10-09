@@ -14,6 +14,8 @@
 //       window shows (stage zoom), at most every ~50 ms
 //   { type: 'controls', key, room, controls }  an activity closed or opened,
 //       its right answer or results shown or hidden (components/activity.jsx)
+//   { type: 'media', key, video, action, time }  a video in the deck played,
+//       paused or moved to `time` (components/VideoPlayer.jsx)
 //   { type: 'op', op }                  a change of the saved ink (applyOp)
 // Keys start with the sending window's id, so strokes never mix.
 import { changeInk, renameSlide } from './store.js'
@@ -52,6 +54,8 @@ export function createInkBus(stage, transports) {
       stage.liveStroke(message.key, known)
     } else if (message.type === 'controls') {
       stage.dispatchEvent(new CustomEvent('pollcontrols', { detail: { room: message.room, controls: message.controls } }))
+    } else if (message.type === 'media') {
+      stage.dispatchEvent(new CustomEvent('mediacontrol', { detail: { video: message.video, action: message.action, time: message.time } }))
     } else if (message.type === 'zoom') {
       if (message.slideId && message.slideId === stage._inkSlideId()) stage.setZoom(message.scale > 1 ? message : null, 'remote', { announce: false })
     } else if (message.type === 'dot') {
@@ -103,6 +107,11 @@ export function createInkBus(stage, transports) {
   // An activity's controls changed here: the others follow.
   stage.addEventListener('pollcontrols', ({ detail }) => {
     if (detail?.local) send({ type: 'controls', key: `${me}:controls`, room: detail.room, controls: detail.controls })
+  })
+
+  // A video played, paused or moved here: the others do the same.
+  stage.addEventListener('mediacontrol', ({ detail }) => {
+    if (detail?.local && detail.video) send({ type: 'media', key: `${me}:media`, video: detail.video, action: detail.action, time: detail.time })
   })
 
   // The zoom: the latest view, not every step of a pinch.

@@ -40,6 +40,8 @@ Use its audience-window button to open a separate view of the slides. If you hav
 
 The two windows follow the same slide and reveal position: navigate in either window and the other follows. This works between windows in the same browser and between your laptop and a paired iPad. To connect the iPad, see [Draw on your slides](drawing.html#present-from-an-ipad).
 
+A video file you play, pause or move in the presenter view does the same in the audience window, which plays the sound; the presenter view's copy stays silent while the audience window is open. Click the audience window once before the talk, so the browser lets it play sound.
+
 Small icons next to **Speaker View** show what is connected to the deck: presenter views, audience windows and, for decks with polls, how many phones. Point at them to see on which devices, such as "Presenter view on an iPad". The launch page shows the same under **Present**, and marks each view that is open.
 
 For a single screen, switch the presenter view to its slide-only layout. **F** or the fullscreen button fills the screen in either the presenter view or the audience window; fullscreen does not select another view.

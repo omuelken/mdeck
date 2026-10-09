@@ -50,6 +50,10 @@ if (requestedView(controlUrl) === 'presenter' && !controlUrl.searchParams.has('s
   history.replaceState(null, '', controlUrl)
 }
 const DECK_CHANNEL = `deck-control:${controlUrl.pathname}:${controlUrl.searchParams.get('session') ?? 'default'}`
+// An audience window says it is there this often, and counts as gone when
+// it has not said so for this long (or says so as it closes).
+const SCREEN_SAY_MS = 3000
+const SCREEN_GONE_MS = 8000
 
 function withConfigOverrides(deckConfig) {
   const url = new URL(window.location.href)
@@ -788,11 +792,33 @@ async function init() {
     followStageRoom(inkStage)
     announceStagePosition(inkStage)
   }
+  // Whether another screen shows the deck, so that a video played in the
+  // presenter view is silent there and its sound comes from that screen
+  // (components/VideoPlayer.jsx). The server says who is connected; an
+  // audience window also says so to the windows of its own browser, for a
+  // deck opened without a server (a built folder).
+  const screens = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(`mdeck-screens:${inkStorageKey}`) : null
+  let watchedOnServer = false, audienceHere = 0
+  const markWatched = () => inkStage?.toggleAttribute('data-others-watching', watchedOnServer || Date.now() - audienceHere < SCREEN_GONE_MS)
+  if (screens && audienceMode) {
+    const say = message => screens.postMessage(message)
+    say('audience')
+    setInterval(() => say('audience'), SCREEN_SAY_MS)
+    window.addEventListener('pagehide', () => say('gone'))
+  } else if (screens && embedded && drawHere) {
+    screens.onmessage = ({ data }) => { audienceHere = data === 'audience' ? Date.now() : 0; markWatched() }
+    setInterval(markWatched, SCREEN_SAY_MS)
+  }
+
   if (inkStage && drawHere) {
     attachInk(inkStage, {
       storageKey: inkStorageKey,
       // The presenter's main frame tells the presenter view who is connected.
-      transports: [roomTransport({ receive: true, view: embedded ? 'presenter' : 'deck', onPresence: embedded ? presence => window.parent.postMessage({ presence }, window.location.origin) : null })],
+      transports: [roomTransport({ receive: true, view: embedded ? 'presenter' : 'deck', onPresence: embedded ? presence => {
+        watchedOnServer = (presence?.views ?? []).some(entry => entry.view === 'audience' || entry.view === 'deck')
+        markWatched()
+        window.parent.postMessage({ presence }, window.location.origin)
+      } : null })],
       onMode: inking => { if (embedded) window.parent.postMessage({ inkMode: inking }, window.location.origin) },
     })
     // Drawing turns itself on, with the laser and the toolbar folded into

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- A video file on a slide (`<videoplayer src="…" />`) follows the presenter view, on the laptop or a paired iPad: play, pause and a jump there do the same in the audience window, which plays the sound while the presenter view's copy stays silent. This works without a server too, in a built folder. An audience window that nobody has clicked yet plays silently and offers **Click for sound** (German: **Klicken für Ton**). Online videos from YouTube, Vimeo or SwitchTube still play only where they are started; the iPad guide says so.
+
 ## 3.7.0 — 2026-10-09
 
 - Palettes have a third accent, `--accent-3`, and the three accents mean something: `--accent` is emphasis, `--accent-2` its companion (gradients, a contrast to the accent), `--accent-3` attention, used sparingly. `--accent-3` marks things and need not be readable as text, so it may be a yellow; `mdeck check` asks only that it can be seen (1.5:1 against the background). A palette without `--accent-3` keeps working and gets an amber (`#d99a00`, at night `#f5c542`); `mdeck check` suggests giving it its own. All built-in palettes and those in the theme repository set it (the repository requires it); `mdeck palettes update` brings installed ones up to date.

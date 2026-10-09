@@ -3,7 +3,7 @@
 //   npm run test:browser
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, copyFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -20,7 +20,7 @@ import { resultsPlugin } from '../src/build/resultsPlugin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-browser-check-'))
-let browser, dev, pollDev, inkDev, stageDev, tablet2
+let browser, dev, pollDev, inkDev, stageDev, videoDev, tablet2
 try {
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-layouts/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   browser = await launchChrome({ dir: temp, timeout: 45000 })
@@ -399,6 +399,51 @@ try {
   await ipad.evaluate(`${ipadFrame}.querySelector('deck-stage').setZoom({ scale: 2, x: 600, y: 400 })`)
   await until(projector2, "document.querySelector('deck-stage').zoom.scale === 2")
 
+  // A video file played, paused or moved on the iPad does the same on the
+  // projector, which plays it (silently, with a sound button, if nobody has
+  // clicked it yet); the iPad's own copy goes silent while the projector
+  // shows the deck.
+  const videoDeck = resolve(temp, 'video.md')
+  copyFileSync(resolve(root, 'tests/fixtures/video/clip.webm'), resolve(temp, 'clip.webm'))
+  writeFileSync(videoDeck, '---\ntheme: neue\n---\n\n---\n# A clip\n\n<videoplayer src="./clip.webm" />\n')
+  const videoConfig = baseConfig(videoDeck)
+  // The deck's own files, as mdeck run serves them.
+  videoDev = await createServer({ ...videoConfig, publicDir: temp, plugins: [...videoConfig.plugins, livePlugin(), inkPlugin(videoDeck)], server: { ...videoConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  await videoDev.listen()
+  const videoBase = videoDev.resolvedUrls.local[0]
+  const videoScreen = await open(new URL('?view=audience&session=video-check', videoBase).href)
+  await until(videoScreen, "document.querySelector('[data-deck-active] video')?.readyState >= 1")
+  const videoIpad = await tablet2.open(new URL('?view=presenter', videoBase).href)
+  const videoOnIpad = `${ipadFrame}?.querySelector('[data-deck-active] video')`
+  await until(videoIpad, `${videoOnIpad}?.readyState >= 1`)
+  await until(videoIpad, `${ipadFrame}.querySelector('deck-stage').hasAttribute('data-others-watching')`)
+  const projectorVideo = "document.querySelector('[data-deck-active] video')"
+  await videoIpad.evaluate(`(() => { const video = ${videoOnIpad}; video.muted = true; video.currentTime = 4; return video.play().then(() => true) })()`)
+  await until(videoScreen, `!${projectorVideo}.paused && Math.abs(${projectorVideo}.currentTime - 4) < 1.5`)
+  assert.equal(await videoScreen.evaluate(`${projectorVideo}.muted === !!document.querySelector('.video-player-sound')`), true, 'a projector that may not start sound plays silently and offers it')
+  await videoIpad.evaluate(`${videoOnIpad}.pause()`)
+  await until(videoScreen, `${projectorVideo}.paused`)
+  await videoIpad.evaluate(`(${videoOnIpad}).currentTime = 9`)
+  await until(videoScreen, `${projectorVideo}.paused && Math.abs(${projectorVideo}.currentTime - 9) < 0.5`)
+  // Without a server (a built folder), the presenter view learns from the
+  // audience window in the same browser that it is there: its own copy is
+  // silent, and the audience window plays.
+  execFileSync(process.execPath, ['bin/mdeck.js', 'build', videoDeck, '-o', resolve(temp, 'video-built/index.html')], { cwd: root, stdio: 'pipe' })
+  const builtAudience = await open('video-built/index.html?view=audience')
+  await until(builtAudience, `${projectorVideo}?.readyState >= 1`)
+  const builtPresenter = await open('video-built/index.html?view=presenter')
+  const builtFrame = "document.querySelector('iframe')?.contentWindow?.document"
+  await until(builtPresenter, `${builtFrame}?.querySelector('[data-deck-active] video')?.readyState >= 1`)
+  await until(builtPresenter, `${builtFrame}.querySelector('deck-stage').hasAttribute('data-others-watching')`)
+  // A click in each window, as before a talk: a page may start sound only after one.
+  await builtAudience.send('Runtime.evaluate', { expression: 'document.body.click()', userGesture: true })
+  await builtPresenter.send('Runtime.evaluate', { expression: `${builtFrame}.querySelector('[data-deck-active] video').play()`, userGesture: true, awaitPromise: true })
+  await until(builtAudience, `!${projectorVideo}.paused`)
+  assert.equal(await builtPresenter.evaluate(`${builtFrame}.querySelector('[data-deck-active] video').muted`), true, 'the presenter view plays silently while the audience window shows the deck')
+  assert.equal(await builtAudience.evaluate(`${projectorVideo}.muted`), false, 'the audience window plays the sound')
+  await builtAudience.close()
+  await until(builtPresenter, `!${builtFrame}.querySelector('deck-stage').hasAttribute('data-others-watching')`)
+
   // With a standalone server for the polls (controls passed on with its
   // key), the stage room stays on mdeck run: here the server cannot be
   // reached at all, and the projector still follows the iPad's slide and
@@ -526,7 +571,7 @@ try {
   await until(record, "[...document.querySelectorAll('[data-deck-active] .poll-count')].map(e => e.textContent).join() === '0,1' && !document.querySelector('[data-deck-active] .poll-dot')")
   // A page left open in front would keep the later checks' pages in the background.
   await record.close()
-  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room (also with a standalone server for the polls).')
+  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, and in one browser without a server (also with a standalone server for the polls).')
 } finally {
   await browser?.close()
   await tablet2?.close()
@@ -534,5 +579,6 @@ try {
   await pollDev?.close()
   await inkDev?.close()
   await stageDev?.close()
+  await videoDev?.close()
   rmSync(temp, { recursive: true, force: true })
 }

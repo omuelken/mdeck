@@ -86,6 +86,8 @@ To start a video when its slide appears, add `play="auto"`:
 
 Automatic playback is muted. Leaving the slide stops the local video; automatic videos also return to the beginning.
 
+Presenting from an iPad paired with your laptop? Play, pause or jump in the video on the iPad, and the audience window on the projector does the same, with the sound; see [Present from an iPad](drawing.html#present-from-an-ipad).
+
 ## Show an online video
 
 Use `url` instead of `src` for a YouTube, Vimeo, or SwitchTube address:
@@ -94,7 +96,7 @@ Use `url` instead of `src` for a YouTube, Vimeo, or SwitchTube address:
 <videoplayer url="https://www.youtube.com/watch?v=YOUR_VIDEO_ID" />
 ```
 
-Replace the example address with your video's address. Online videos need an internet connection and permission from the video service to appear in another page. Test them before your talk.
+Replace the example address with your video's address. Online videos need an internet connection and permission from the video service to appear in another page. Test them before your talk. They play only where you start them: a paired iPad cannot start one on the projector, as it can a video file.
 
 ## If a picture does not appear
 

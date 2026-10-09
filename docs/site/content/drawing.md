@@ -48,7 +48,11 @@ There are two ways.
 
 1. Start `mdeck run my-talk.md --network`, so the iPad in the same network can reach your laptop.
 2. On the launch page, under **Present from an iPad**, choose **Show pairing code** and scan it with the iPad's camera. The presenter view opens on the iPad, paired with your laptop, so it may save drawings and steer the phones of a poll. It is the same presenter view as on the laptop; pairing only gives it these rights. Once it is open, the launch page says so.
-3. On the laptop, open the **audience window** from the same place and move it to the projector. It follows the iPad: slides, revealed points, and drawings as you draw them. Navigation in the audience window also updates the iPad's slide, notes and next-slide preview.
+3. On the laptop, open the **audience window** from the same place and move it to the projector. It follows the iPad: slides, revealed points, drawings as you draw them, and videos. Navigation in the audience window also updates the iPad's slide, notes and next-slide preview.
+
+**Videos.** A video file on a slide (`<videoplayer src="…" />`) plays, pauses and jumps on the projector as you tap it on the iPad. The sound comes from the projector: while the audience window is open, the iPad's copy plays silently. Browsers start sound only on a page someone has clicked, so click the audience window once before the talk (going full screen counts); otherwise the video plays there without sound and shows **Click for sound**.
+
+Online videos (`<videoplayer url="…" />` from YouTube, Vimeo or SwitchTube) do not follow the iPad. They run inside the video service's own player, which mdeck cannot start or stop, so they play only on the screen where you start them. For a talk from the iPad, start them in the audience window on the laptop, or download the video and use a video file.
 
 A pairing code works once, for ten minutes. **Unpair** on the launch page ends every pairing; so does stopping `mdeck run`. Scan a new code afterwards.
 

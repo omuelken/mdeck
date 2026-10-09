@@ -1,5 +1,6 @@
 import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
+import { t } from '../core/labels.js'
 import './video-player.css'
 
 function getEmbedUrl(rawUrl, autoplay = false) {
@@ -58,6 +59,66 @@ export default function VideoPlayer({ src, url, play = 'click', aspect, muted })
     return () => stage.removeEventListener('slidechange', onSlideChange)
   }, [play, src])
 
+  // Local video between the screens of a talk: play, pause or a jump on one
+  // (an iPad presenting) does the same on the others (the projector),
+  // through the stage event `mediacontrol`, which the ink bus carries
+  // (src/runtime/ink/bus.js). A video is known by its slide and its place on
+  // it. Only the slide on screen follows, and a phone following the talk
+  // does not. The presenter view's own copy goes silent while another
+  // screen shows the deck, so the sound comes from there. A screen that may
+  // not start sound yet (nobody clicked it) plays silently and offers sound.
+  const [offerSound, setOfferSound] = useState(false)
+  useEffect(() => {
+    const video = videoRef.current
+    const stage = containerRef.current?.closest('deck-stage')
+    if (!src || !video || !stage || new URLSearchParams(location.search).get('view') === 'follow') return
+    const slide = () => containerRef.current?.closest('deck-stage > *')
+    const key = () => {
+      const own = slide()
+      if (!own) return null
+      return `${[...stage.children].indexOf(own)}:${[...own.querySelectorAll('.video-player-container')].indexOf(containerRef.current)}`
+    }
+    // Changes made to follow another screen are not sent back.
+    let following = 0
+    const tell = action => {
+      if (Date.now() < following || !slide()?.hasAttribute('data-deck-active')) return
+      if (action === 'play' && stage.hasAttribute('data-others-watching')) video.muted = true
+      stage.dispatchEvent(new CustomEvent('mediacontrol', { detail: { video: key(), action, time: video.currentTime, local: true } }))
+    }
+    const onPlay = () => tell('play')
+    const onPause = () => tell('pause')
+    const onSeeked = () => tell(video.paused ? 'pause' : 'play')
+    const follow = ({ detail }) => {
+      if (!detail || detail.local || detail.video !== key() || !slide()?.hasAttribute('data-deck-active')) return
+      following = Date.now() + 600
+      if (Number.isFinite(detail.time) && Math.abs(video.currentTime - detail.time) > 0.4) video.currentTime = detail.time
+      if (detail.action === 'pause') { video.pause(); return }
+      // Only a refusal to start sound is retried silently; a pause that came
+      // in while it was starting cancels it (AbortError) and stays.
+      video.play().catch(error => {
+        if (error?.name !== 'NotAllowedError') return
+        following = Date.now() + 600
+        video.muted = true
+        setOfferSound(true)
+        return video.play()
+      }).catch(() => {})
+    }
+    video.addEventListener('play', onPlay)
+    video.addEventListener('pause', onPause)
+    video.addEventListener('seeked', onSeeked)
+    stage.addEventListener('mediacontrol', follow)
+    return () => {
+      video.removeEventListener('play', onPlay)
+      video.removeEventListener('pause', onPause)
+      video.removeEventListener('seeked', onSeeked)
+      stage.removeEventListener('mediacontrol', follow)
+    }
+  }, [src])
+  const turnSoundOn = () => {
+    if (videoRef.current) videoRef.current.muted = false
+    setOfferSound(false)
+  }
+
   // Web video auto mode: clear/restore src on slide change to stop/start playback
   useEffect(() => {
     if (play !== 'auto' || !url) return
@@ -112,12 +173,15 @@ export default function VideoPlayer({ src, url, play = 'click', aspect, muted })
               style={{ width: '100%', height: fixedAspect ? '100%' : 'auto', aspectRatio: fixedAspect ? undefined : '16 / 9', border: '0', display: 'block' }} />
           : <div class="video-player-placeholder" />
       ) : (
-        <video
-          ref={videoRef}
-          src={src}
-          controls
-          style={{ width: '100%', height: fixedAspect ? '100%' : 'auto', display: 'block' }}
-        />
+        <>
+          <video
+            ref={videoRef}
+            src={src}
+            controls
+            style={{ width: '100%', height: fixedAspect ? '100%' : 'auto', display: 'block' }}
+          />
+          {offerSound && <button type="button" class="video-player-sound" onClick={turnSoundOn}>{t('video.sound')}</button>}
+        </>
       )}
     </div>
   )
