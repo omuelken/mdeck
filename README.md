@@ -96,7 +96,7 @@ layout: title
 # Rate depends on substrate
 
 - Michaelis–Menten describes saturation
-- *K*<sub>m</sub> is the half-saturation point
+- $K_m$ is the half-saturation point
 
 :::notes
 Ask who has seen the curve before.
