@@ -1,20 +1,41 @@
 ---
-theme: academic
+theme: neue
+meta:
+  title: "A short tour of mdeck"
 show:
   organization: none
   author: none
----
-
+bibliography: references.bib
 ---
 :::meta
 layout: title
+image: ./mdeck.svg
+fit: contain
+alt: "A Markdown file turning into a stack of slides"
 id: hello
 :::
-# Write it down.
-## Why every lab keeps a notebook
+# Slides from a text file.
+## A short tour of mdeck
 
 :::notes
-Ask who has ever repeated an experiment because nobody remembered how it was done.
+These notes are only for you: they show in the presenter view.
+:::
+
+---
+:::meta
+id: how-it-works
+:::
+# From your material to a talk
+
+:::steps
+- Hand your slides, papers or notes to an AI assistant
+- It writes one Markdown file with your content
+- mdeck presents it in the browser
+- Send it as one file, or as a PDF
+:::
+
+:::notes
+Press Next: the points appear one at a time.
 :::
 
 ---
@@ -22,33 +43,112 @@ Ask who has ever repeated an experiment because nobody remembered how it was don
 layout: split
 props:
   ratio: [1, 1]
+id: write-this
 :::
-# A notebook answers three questions.
+# Write this, get a slide
 
-- What did I do?
-- What did I see?
-- What would I change?
+:::slot left
+```markdown
+# Three ideas
 
-:::notes
-Everything else in a good notebook serves one of these three questions.
+- Start small
+- Show an example
+- Ask a question
+```
+:::
+
+:::slot right
+A `#` makes the heading, a dash a point, and `---` starts the next slide. Your assistant writes it; you can read and change every word.
 :::
 
 ---
 :::meta
 layout: focus
-attribution: "A saying in many labs"
 :::
-# If it is not written down, it did not happen.
+# Your talk is a text file: you can read it, change it and keep it.
+
+---
+
+:::meta
+layout: chapter
+number: 1
+part: "In the room"
+:::
+# Present it, live.
+
+Draw, ask the room, cite and run code, right on the slides.
+
+---
+:::meta
+layout: image-text
+image: ./chart.svg
+alt: "A bar chart with one bar much taller than the others"
+id: draw
+:::
+# Draw while you talk
+
+- Circle, underline, point with a laser
+- From an iPad paired with the laptop
+- Saved with the slide, also in the PDF
+
+:::notes
+The circle and the arrow were drawn on this slide and stay with it.
+:::
+
+---
+:::meta
+id: first
+:::
+# Which will you try first?
+
+<poll room="first" options="Drawing on slides|Polls from phones|Citations|A new theme" />
+
+:::notes
+People answer on their phones and the bars grow live. These answers are kept from a talk.
+:::
+
+---
+:::meta
+id: cite
+:::
+# Cite like in a paper
+
+Slides are Markdown, a plain text format meant to read well as it is [@gruber2004]. Text and code kept together is an old idea [@knuth1984].
+
+Citations use Pandoc's syntax [@pandoc] and any citation style; each slide lists its references at its foot.
+
+---
+:::meta
+id: references
+:::
+# References
+
+<bibliography />
+
+---
+:::meta
+id: run
+:::
+# Run code on the slide
+
+```python live editable
+features = ["drawing", "polls", "citations", "themes"]
+print(", ".join(name.capitalize() for name in features))
+```
+
+:::tip
+Press Run, change the list, run it again.
+:::
 
 ---
 :::meta
 layout: chapter
-number: 1
-part: "Good habits"
+number: 2
+part: "The look"
 :::
-# Write as you work.
+# Content and style, apart.
 
-Two habits that make a notebook useful a year later.
+The file holds what you say. A theme decides how it looks.
 
 ---
 :::meta
@@ -56,33 +156,23 @@ layout: split
 props:
   ratio: [1, 1]
 :::
-# Two habits that pay off
+# One file, many looks
 
 :::slot left
-## Date every page
-The date and the experiment's name come first, before anything else.
+## Themes
+Six come with mdeck, more are one command away. Try the pictures below this deck.
 :::
 
 :::slot right
-## Record what went wrong
-Failed runs explain the successful ones. Never tear out a page.
+## Light or dark
+Every palette has both. Switch while presenting, without touching the file.
 :::
-
----
-:::meta
-layout: image-text
-image: ./notebook.svg
-alt: "An open lab notebook with written steps, a results table and a plot"
-:::
-# One page per experiment
-
-Aim, materials, steps, results and a short conclusion. Glue in printouts so nothing gets lost.
 
 ---
 :::meta
 layout: full-bleed-image
-image: ./notebook.svg
-alt: "An open lab notebook with written steps, a results table and a plot"
+image: ./contours.jpg
+alt: "Contour lines like those on a map"
 overlay: true
 :::
-# Your future self will thank you.
+# Make your next presentation.

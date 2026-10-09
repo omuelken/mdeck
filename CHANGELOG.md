@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The docs home page and the README start with what mdeck does: drawing from an iPad, polls from phones, citations, themes, running code and sending one file, each with a picture (`npm run feature-images` renders them). The docs' example deck is now a short tour of mdeck, with its own control bar and drawing, and a picker of every built-in theme as a picture, with light or dark.
+- An embedded deck (`?embedded=1`) shows its control bar with `?controls=1`.
 - The reader view has a **Drawings** button when the deck has drawings: it hides and shows them on the slides, in Read and in **Save as PDF**, and the browser remembers the choice. A file made with `mdeck send` opens there, so whoever gets it can see the slides clean.
 
 ## 3.6.1 — 2026-10-09

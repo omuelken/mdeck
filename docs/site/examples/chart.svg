@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 900"><rect width="820" height="900" fill="var(--surface, #f2f2f2)"/>
+<g stroke="var(--rule, #ddd)" stroke-width="2"><path d="M60 760H780"/><path d="M60 585H780"/><path d="M60 410H780"/><path d="M60 235H780"/></g>
+<rect x="90" y="550" width="70" height="210" rx="5" fill="var(--muted, #888)"/><rect x="205" y="480" width="70" height="280" rx="5" fill="var(--muted, #888)"/><rect x="320" y="130" width="70" height="630" rx="5" fill="var(--accent, #888)"/><rect x="435" y="410" width="70" height="350" rx="5" fill="var(--muted, #888)"/><rect x="550" y="550" width="70" height="210" rx="5" fill="var(--muted, #888)"/><rect x="665" y="620" width="70" height="140" rx="5" fill="var(--muted, #888)"/>
+<g fill="var(--muted, #666)" font-family="sans-serif" font-size="30" text-anchor="middle"><text x="125" y="815">A</text><text x="240" y="815">B</text><text x="355" y="815">C</text><text x="470" y="815">D</text><text x="585" y="815">E</text><text x="700" y="815">F</text></g>
+</svg>

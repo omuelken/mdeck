@@ -14,6 +14,47 @@
   <a href="LICENSE">MIT license</a>
 </p>
 
+## What you can do with it
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<a href="docs/site/images/features/drawing.webp"><img src="docs/site/images/features/drawing.webp" alt="The presenter view on an iPad with circles, an arrow and a highlight drawn on a chart slide, and the projector behind it showing the same strokes"></a>
+<p><b><a href="https://gh.tschieber.de/mdeck/drawing.html">Draw on your slides, from an iPad if you like</a></b><br>
+Circle a number, underline a phrase, point with a laser. Pair an iPad by scanning a code, and it becomes your presenter screen and drawing pad while the laptop drives the projector: every stroke shows on the big screen as you draw.</p>
+</td>
+<td width="50%" valign="top">
+<a href="docs/site/images/features/polls.webp"><img src="docs/site/images/features/polls.webp" alt="A poll slide with live bars and a QR code, and a phone showing the same question with one answer picked"></a>
+<p><b><a href="https://gh.tschieber.de/mdeck/audience.html">Ask the room, and show the answers on the slide</a></b><br>
+Polls, scales, word clouds, open questions and numbers to guess. People scan the code and answer on their phones, no app needed, and the bars grow as votes come in. Close the vote, discuss, reveal the right answer.</p>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="docs/site/images/features/citations.webp"><img src="docs/site/images/features/citations.webp" alt="A slide with author–year citations and the full references at its foot, over a slide that lists all references"></a>
+<p><b><a href="https://gh.tschieber.de/mdeck/more-content.html#cite-a-source">Cite your sources properly</a></b><br>
+Cite as in a paper, <code>[@knuth1984, p. 97]</code>, from the BibTeX, CSL-JSON or Hayagriva file you already keep. Each slide lists what it cites at its foot, in APA, Vancouver, Harvard or any CSL style.</p>
+</td>
+<td width="50%" valign="top">
+<a href="docs/site/images/features/themes.webp"><img src="docs/site/images/features/themes.webp" alt="The same chart slide in six themes: neue, plain, work, academic, minimal and glass"></a>
+<p><b><a href="https://gh.tschieber.de/mdeck/appearance.html">Write the content once, change the look anytime</a></b><br>
+The file holds what you say; a theme and a palette decide how it looks. One line changes every slide, light or dark. Six themes come with mdeck, more are in the <a href="https://gh.tschieber.de/mdeck-themes/">theme repository</a>.</p>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<a href="docs/site/images/features/code.webp"><img src="docs/site/images/features/code.webp" alt="A slide with a short Python example and its output below it"></a>
+<p><b><a href="https://gh.tschieber.de/mdeck/more-content.html#show-a-code-example">Run code on the slide</a></b><br>
+Give a Python or JavaScript example a Run button, change it in front of the audience and run it again. Python runs in the browser, NumPy and pandas included.</p>
+</td>
+<td width="50%" valign="top">
+<a href="docs/site/images/features/reader.webp"><img src="docs/site/images/features/reader.webp" alt="The reader view of a talk on a laptop, with an outline of the slides, and on a phone in reading mode"></a>
+<p><b><a href="https://gh.tschieber.de/mdeck/sharing.html">Send one file that anyone can open</a></b><br>
+<code>mdeck send</code> makes a single HTML file: an outline, a reading mode for phones, light and dark, and the PDF inside. It opens in any browser, offline too, without your speaker notes.</p>
+</td>
+</tr>
+</table>
+
 ## Start from what you have
 
 ```text
@@ -117,12 +158,13 @@ mdeck send talk.md           # one file to email, with a PDF inside
 ## What you get
 
 - **Layouts:** title, chapter, big statement, image and text, split, full-bleed image, and plain content slides, with points that appear one at a time.
-- **Looks:** four built-in themes and five colour palettes, each light or dark, changeable without touching the slides. Install more from the [theme repository](https://gh.tschieber.de/mdeck-themes/) with `mdeck themes install`, or make your own as small `extension.toml` folders beside the deck.
+- **Looks:** six built-in themes and six colour palettes, each light or dark, changeable without touching the slides. Install more from the [theme repository](https://gh.tschieber.de/mdeck-themes/) with `mdeck themes install`, or make your own as small `extension.toml` folders beside the deck.
 - **One launch page:** `mdeck run` opens a page with a live preview, the presenter and audience views, the deck and reader views, the editor, the guides, one-click builds and PDF, the deck's check results, and for decks with a server its health and the presenter code.
 - **Presenting:** a presenter view with notes and timer, and an audience window that stays in sync.
-- **Drawing on slides:** pen with pressure, highlighter and a fading marker, with a mouse, a finger or an iPad pencil (`D`). Drawings are saved in `<deck>.drawings.json` beside the deck and appear in every view, build and PDF. An iPad can present on its own, or pair with the laptop through a QR code on the launch page while the laptop's audience window follows it.
+- **Drawing on slides:** pen with pressure, highlighter and a laser pointer, with a mouse, a finger or an iPad pencil (`D`). Drawings are saved in `<deck>.drawings.json` beside the deck and appear in every view, build and PDF. An iPad can present on its own, or pair with the laptop through a QR code on the launch page while the laptop's audience window follows it.
 - **Audience questions:** `<poll room="lunch" options="A|B|C" />` shows live results and a QR code; people vote on their phones. `<scale>`, `<wordcloud>` and `<question>` ask for a rating, words or open answers, and `<qrcode join />` shows the join code once for all of them. Rooms run inside `mdeck run --network` or on a small server (`mdeck server`).
 - **Sharing:** a reader view with an outline, a phone-friendly Read mode and a PDF download; speaker notes are stripped from shared builds, and interactive slides appear in their finished state.
+- **Citations:** cite with `[@key]` from BibTeX, CSL-JSON or Hayagriva files; each slide lists its references at its foot, `<bibliography />` lists them all, in any CSL style.
 - **Content:** pictures, video, tables, callouts, code with syntax highlighting and live execution, formulas, QR codes, and your own Preact components, kept with one deck or shared between decks.
 - **New designs on request:** ask your assistant for a palette, theme, layout or interactive component; it keeps them as small folders beside the deck.
 - **Editing in the browser:** `mdeck edit talk.md` opens an editor with a live preview and forms for slides and settings, and `mdeck design` shows themes and palettes on a sample deck for fine-tuning. It writes back into your text file.

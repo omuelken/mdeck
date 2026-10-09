@@ -54,7 +54,8 @@
     "playground": "vite --config playground/vite.config.js",
     "playground:build": "vite build --config playground/vite.config.js",
     "readme-images": "node tools/readme-images.mjs",
-    "theme-images": "node tools/theme-images.mjs"
+    "theme-images": "node tools/theme-images.mjs",
+    "feature-images": "node tools/feature-images.mjs"
   },
   "dependencies": {
     "@citation-js/core": "^0.9.0",

@@ -89,7 +89,11 @@ import { inkPaint, snapAngle } from '../core/ink.js'
   // Zoom: up to this many times the fitted size.
   const ZOOM_MAX = 6;
   const VALIDATE_ATTR = 'no_overflowing_text,no_overlapping_text,slide_sized_text';
+  // An embedded deck (the presenter view's frames, a preview) hides its
+  // controls, unless the page embedding it asks for them with ?controls=1, as
+  // the docs' example deck does.
   const isEmbedded = new URLSearchParams(location.search).has('embedded');
+  const hideControls = isEmbedded && !new URLSearchParams(location.search).has('controls');
 
   const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -742,7 +746,7 @@ import { inkPaint, snapAngle } from '../core/ink.js'
     }
 
     _flashOverlay() {
-      if (!this._overlay || isEmbedded) return;
+      if (!this._overlay || hideControls) return;
       this._overlay.setAttribute('data-visible', '');
       if (this._hideTimer) clearTimeout(this._hideTimer);
       this._hideTimer = setTimeout(() => {

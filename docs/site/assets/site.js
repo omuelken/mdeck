@@ -79,21 +79,31 @@ for (const button of document.querySelectorAll('[data-copy]')) {
 
 for (const example of document.querySelectorAll('[data-preview]')) {
   const frame = example.querySelector('iframe')
-  const output = example.querySelector('output')
   let index = 0
-  for (const button of example.querySelectorAll('[data-control]')) {
-    button.addEventListener('click', () => frame.contentWindow.postMessage({ deckControl: { command: button.dataset.control } }, location.origin))
+  // Theme pictures and light or dark: the deck reloads in the new look on
+  // the same slide. Light or dark starts on each theme's own.
+  const themes = [...example.querySelectorAll('[data-theme]')]
+  const switches = [...example.querySelectorAll('[data-set-appearance]')]
+  let theme = themes.find(button => button.getAttribute('aria-checked') === 'true') ?? themes[0]
+  let appearance = theme?.dataset.appearance ?? 'light'
+  const show = () => {
+    for (const button of themes) button.setAttribute('aria-checked', String(button === theme))
+    for (const button of switches) button.setAttribute('aria-checked', String(button.dataset.setAppearance === appearance))
   }
-  example.querySelector('select').addEventListener('change', event => {
+  const reload = () => {
     const url = new URL(frame.src)
-    url.searchParams.set('theme', event.target.value)
+    url.searchParams.set('theme', theme.dataset.theme)
+    url.searchParams.set('appearance', appearance === theme.dataset.appearance ? '' : appearance)
     url.hash = String(index + 1)
     frame.src = url.toString()
-  })
+    show()
+  }
+  for (const button of themes) button.addEventListener('click', () => { theme = button; appearance = button.dataset.appearance; reload() })
+  for (const button of switches) button.addEventListener('click', () => { appearance = button.dataset.setAppearance; reload() })
+  show()
   window.addEventListener('message', event => {
     if (event.source !== frame.contentWindow || event.origin !== location.origin || !event.data?.deckStateChanged) return
     index = event.data.deckStateChanged.index
-    output.textContent = `Slide ${index + 1}`
   })
 }
 

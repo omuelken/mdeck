@@ -38,11 +38,19 @@ function navigation(current) {
 
 const exampleFiles = { 'first-talk': resolve(docsRoot, 'examples/first-talk.md'), 'custom-layouts': resolve(projectRoot, 'examples/custom-layouts/slides.md') }
 
-// The theme picker lists every registered theme and starts on the example's own design.
-function themeOptions(exampleFile) {
+// The theme picker: every registered theme as a picture of the example's
+// chart slide in it (images/themes/<theme>-thumb.webp, from
+// tools/feature-images.mjs), the example's own theme first and chosen; and light
+// or dark, starting on the theme's own.
+function themePicker(exampleFile) {
   const current = parseSlides(readFileSync(exampleFile, 'utf8')).deckConfig.theme ?? 'neue'
-  const themes = loadRegistry(exampleFile).themes
-  return Object.values(themes).map(theme => `<option value="${theme.id}"${theme.id === current ? ' selected' : ''}>${escape(theme.title)}</option>`).join('')
+  const themes = Object.values(loadRegistry(exampleFile).themes).sort((x, y) => (y.id === current) - (x.id === current))
+  const buttons = themes.map(theme => {
+    const thumb = `images/themes/${theme.id}-thumb.webp`
+    const picture = existsSync(resolve(docsRoot, thumb)) ? `<img src="${thumb}" alt="" width="160" height="90" loading="lazy">` : ''
+    return `<button type="button" role="radio" aria-checked="${theme.id === current}" data-theme="${theme.id}" data-appearance="${theme.manifest.appearance ?? 'light'}">${picture}<span>${escape(theme.title)}</span></button>`
+  }).join('')
+  return `<div class="theme-picker" role="radiogroup" aria-label="Theme">${buttons}</div>`
 }
 
 function preview(page) {
@@ -50,8 +58,9 @@ function preview(page) {
   const custom = page.preview === 'custom-layouts'
   return `<figure class="slide-example" data-preview>
     <figcaption><span>${custom ? 'A reusable comparison design' : 'A presentation you can try'}</span><a href="examples/${page.preview}.html?palette=&amp;appearance=" target="_blank" rel="noopener">Open slides</a></figcaption>
-    <iframe title="${custom ? 'Comparison slide example' : 'Example presentation'}" src="examples/${page.preview}.html?embedded=1&amp;palette=&amp;appearance=" loading="lazy"></iframe>
-    <div class="preview-controls"><div><button type="button" data-control="prev" aria-label="Previous slide or point">Previous</button><button type="button" data-control="next" aria-label="Next slide or point">Next</button><output aria-live="polite">Slide 1</output></div><label>Look <select aria-label="Example theme">${themeOptions(exampleFiles[page.preview])}</select></label></div>
+    <iframe title="${custom ? 'Comparison slide example' : 'Example presentation'}" src="examples/${page.preview}.html?embedded=1&amp;controls=1&amp;draw=1&amp;palette=&amp;appearance=" loading="lazy"></iframe>
+    <div class="preview-controls"><span>Move the pointer over the slides for their controls, or use the arrow keys. Press D to draw.</span><div class="appearance-switch" role="radiogroup" aria-label="Light or dark"><button type="button" role="radio" data-set-appearance="light">Light</button><button type="button" role="radio" data-set-appearance="dark">Dark</button></div></div>
+    ${themePicker(exampleFiles[page.preview])}
   </figure>`
 }
 
