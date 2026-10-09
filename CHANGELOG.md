@@ -6,6 +6,7 @@
 - Fixed: a drawing on two slides lost its arrowheads, gradients and `<use>` copies on the second, because `url(#…)` found the copy on the hidden first slide. Each copy in the page now gets ids of its own.
 - `mdeck check` looks at the deck's SVG drawings: palette names without a fallback, fixed colours that stay the same in every palette and in dark mode, style rules that reach the rest of the page, numbered and bare steps in one drawing, and `data-step` or `data-hotspot` in a drawing that uses no palette colour and so is shown as a picture.
 - The slide-writing skill draws diagrams as SVG in the palette's colours, builds them up with numbered steps and checks them in light and dark.
+- Fixed: a YouTube video in `<videoplayer>` showed "This video is unavailable" on a device that opened the deck through a server, such as a paired iPad. Such pages send no referrer, which YouTube requires of embedded players; the player now sends the deck's origin (never its path).
 
 ## 3.10.1 — 2026-10-11
 
