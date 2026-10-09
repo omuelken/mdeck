@@ -82,7 +82,7 @@ license = "MIT"
 mdeck = ">=3.1.0"
 ```
 
-   A theme names its default palette (`palette = "harbour-night"`); it must be in the repository or come with mdeck, and is installed along with the theme.
+   A theme names its default palette (`palette = "harbour-night"`); it must be in the repository or come with mdeck, and is installed along with the theme. Give a theme a `[guide]` too, saying what it suits and how to write for it ([Say what it is for](theme-authoring.html#say-what-it-is-for)); it needs `mdeck = ">=3.6.0"`.
 
 3. Check it the way the repository will: `mdeck themes build . -o site --check` shows every theme and palette on every kind of slide, light and dark, and fails on text that does not fit or is hard to read.
 4. Open a pull request. Once it is merged, `mdeck themes search` or `mdeck palettes search` lists it. For a new version, raise `version`.

@@ -55,3 +55,15 @@ title = "Body font"
 [params.band]
 token = "--band"
 title = "Height of the band along the top (0px for none)"
+
+# What this theme is for and how to write for it: shown in listings, and read
+# by assistants that write slides as the theme author's advice.
+[guide]
+suits = ["company and team presentations", "project updates and reviews", "agendas, tables and decisions"]
+avoid = ["photo essays", "playful or artistic talks"]
+writing = """
+An everyday company template: set meta.organization (or meta.logo) and pick
+the company's palette. Every content slide has its heading at the top and the
+content below; split the talk into sections with numbered chapter slides
+(layout: chapter, number: 2). Tables, short lists and callouts suit it well.
+"""

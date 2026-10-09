@@ -54,3 +54,16 @@ title = "Body font"
 [params.fontSerif]
 token = "--font-serif"
 title = "Serif for theorems and quotes"
+
+# What this theme is for and how to write for it: shown in listings, and read
+# by assistants that write slides as the theme author's advice.
+[guide]
+suits = ["lectures and seminars", "mathematics and science", "conference talks with citations"]
+avoid = ["keynotes with few words", "photo-led talks"]
+writing = """
+Slides may hold more than in other themes: a definition, a formula, a few
+points. Use the lecture blocks for mathematics (::: definition, ::: theorem,
+::: lemma, ::: proof), footnotes and citations ([@key]) for sources, and
+tables for numbers; they are set as in papers. Headings stay in a fixed place
+at the top, so keep them to one line.
+"""

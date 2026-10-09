@@ -518,7 +518,11 @@ if (command === 'new') {
   } else for (const kind of KINDS) {
     if (word && KIND_WORDS[word] !== kind) continue
     console.log(`\n  ${c.bold}${kind}s${c.reset}`)
-    for (const record of Object.values(registry[`${kind}s`])) console.log(`    ${c.cyan}${record.id}${c.reset} — ${record.title} ${c.dim}(${record.source})${record.description ? ' ' + record.description : ''}${c.reset}`)
+    for (const record of Object.values(registry[`${kind}s`])) {
+      console.log(`    ${c.cyan}${record.id}${c.reset} — ${record.title} ${c.dim}(${record.source})${record.description ? ' ' + record.description : ''}${c.reset}`)
+      // What a theme suits, from its guide; --json has the whole guide.
+      if (record.manifest?.guide?.suits) console.log(`      ${c.dim}Suits: ${record.manifest.guide.suits.join(' · ')}${c.reset}`)
+    }
   }
 
 } else if (command === 'starter') {

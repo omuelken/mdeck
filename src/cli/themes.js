@@ -31,7 +31,9 @@ function looksOf(registry, catalogue) {
   return {
     mdeck: VERSION,
     themes: Object.values(manifestsOf(registry, 'theme')).map(theme => ({ id: theme.id, title: theme.title, description: theme.description ?? '', builtIn: builtIn.has(theme.id + ':t'),
-      palette: theme.palette, appearance: theme.appearance ?? 'light', palettes: palettesFor(theme, palettes).map(p => p.id),
+      // The oldest mdeck it works with, for the gallery's install note.
+      ...(registry.themes[theme.id]?.package?.mdeck ? { mdeck: registry.themes[theme.id].package.mdeck } : {}),
+      palette: theme.palette, appearance: theme.appearance ?? 'light', palettes: palettesFor(theme, palettes).map(p => p.id), ...(theme.guide ? { guide: theme.guide } : {}),
       ...(icons.get(theme.id) ? { icon: icons.get(theme.id) } : {}) })),
     palettes: Object.values(palettes).map(palette => ({ id: palette.id, title: palette.title, description: palette.description ?? '', builtIn: builtIn.has(palette.id + ':p'),
       ...(palette.theme ? { theme: palette.theme } : {}), light: colours(palette.light), dark: colours(palette.dark) })),
@@ -50,7 +52,7 @@ export async function runPackages({ kind, positionals, flag, output, ui: { ok, e
       warnOffline(catalogue)
       const words = rest.map(word => word.toLowerCase())
       const forEvery = installedPackages(userExtensionsDir()), here = installedPackages(resolve('extensions')), hidden = removedBuiltIns()
-      const found = catalogue.entries.filter(entry => entry.kind === kind && words.every(word => [entry.id, entry.title, entry.description, entry.palette ?? '', entry.theme ?? ''].join(' ').toLowerCase().includes(word)))
+      const found = catalogue.entries.filter(entry => entry.kind === kind && words.every(word => [entry.id, entry.title, entry.description, entry.palette ?? '', entry.theme ?? '', ...(entry.guide?.suits ?? [])].join(' ').toLowerCase().includes(word)))
       if (!found.length) return tip(`No ${kind} matches${words.length ? ` "${words.join(' ')}"` : ''}`)
       for (const entry of found) {
         const key = keyOf(kind, entry.id)
@@ -60,6 +62,7 @@ export async function runPackages({ kind, positionals, flag, output, ui: { ok, e
           : entry.builtInVersion ? ` ${c.yellow}(comes with mdeck as ${entry.builtInVersion}, update available)${c.reset}` : ''
         console.log(`\n  ${c.cyan}${entry.id}${c.reset} ${entry.version} — ${entry.title}${state}`)
         if (entry.description) console.log(`    ${entry.description}`)
+        if (entry.guide?.suits) console.log(`    Suits: ${entry.guide.suits.join(' · ')}`)
         const facts = [kind === 'theme' ? `palette: ${entry.palette}` : entry.theme ? `only for the theme ${entry.theme}` : '', entry.author ? `by ${entry.author}` : '', entry.license].filter(Boolean)
         if (facts.length) console.log(`    ${c.dim}${facts.join(' · ')}${c.reset}`)
       }

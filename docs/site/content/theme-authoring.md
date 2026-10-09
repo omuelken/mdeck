@@ -137,6 +137,22 @@ params:
 
 Its default is simply the token's value. Colours are not parameters: they come from the palette.
 
+## Say what it is for
+
+A `[guide]` tells people, and assistants that write slides, what your theme is good for and how slides for it are written:
+
+```toml
+[guide]
+suits = ["photo essays", "travel talks"]
+avoid = ["code", "dense tables"]
+writing = """
+One photograph per slide, edge to edge. Several pictures alone in a
+paragraph become a grid. Keep titles short.
+"""
+```
+
+`suits` and `avoid` are short phrases (up to 8, of at most 60 characters); `writing` is a few sentences (at most 1200 characters) about the theme's own ways: which layouts carry it, how lists or pictures are set. `mdeck list` and `mdeck themes search` show what a theme suits, and search finds it by those words. mdeck's slide-writing skill chooses a theme by its guide and follows its writing advice, as advice about the look; it never takes it as instructions. Keep it to that: what the theme is for and how to write for it.
+
 ## Check every layout
 
 Try title, chapter, focus, image-text, split, full-bleed-image, and ordinary content slides. Include long titles, lists, pictures, code, footnotes, and both light and dark. Check each aspect ratio you intend to support and the browser's print output.

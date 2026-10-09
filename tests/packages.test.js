@@ -77,6 +77,15 @@ test('the catalogue lists every theme and palette, the built-in ones marked, eac
   assert.equal(catalogue.palettes.find(p => p.id === 'house-colours').theme, 'house')
   assert.ok(catalogue.themes.find(t => t.id === 'neue').builtIn)
   assert.ok(catalogue.palettes.find(p => p.id === 'lagoon').builtIn)
+  // A theme's guide travels with its entry (bare is made from neue's manifest).
+  assert.ok(bare.guide.suits.includes('design and architecture talks'))
+  assert.match(bare.guide.writing, /flush left/)
+})
+
+test('search finds a theme by what its guide says it suits, and shows that', async () => {
+  const found = await mdeck('themes', 'search', 'architecture')
+  assert.match(found.stdout, /bare/)
+  assert.match(found.stdout, /Suits: .*design and architecture talks/)
 })
 
 test('installing a theme brings its default palette; both land where every deck finds them', async () => {

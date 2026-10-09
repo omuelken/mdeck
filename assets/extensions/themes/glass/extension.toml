@@ -57,3 +57,15 @@ title = "Body font"
 [params.glassBlur]
 token = "--glass-blur"
 title = "How much the glass blurs"
+
+# What this theme is for and how to write for it: shown in listings, and read
+# by assistants that write slides as the theme author's advice.
+[guide]
+suits = ["product launches and keynotes", "tech and design talks", "dark rooms and big screens"]
+avoid = ["dense tables", "slides mostly read on paper"]
+writing = """
+Dark by default. The look is carried by the title and chapter slides (a glass
+pane and a glass lens for the chapter number), so give the talk a title slide
+and numbered chapters. Content slides are calm: a heading and a few points.
+Emphasis in a heading shines in both accents: use it for one word.
+"""

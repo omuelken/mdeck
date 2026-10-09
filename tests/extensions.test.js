@@ -31,6 +31,7 @@ function fixture(files) {
 
 const PALETTE = 'schema = 1\nkind = "palette"\nid = "ocean"\ntitle = "Ocean"\n[light]\n"--bg" = "#f4f8fb"\n"--surface" = "#e6eef4"\n"--ink" = "#0b1d2a"\n"--ink-soft" = "#22394a"\n"--muted" = "#4f6474"\n"--rule" = "#c9d7e2"\n"--accent" = "#0a6aa8"\n"--accent-2" = "#b45309"\n"--on-accent" = "#ffffff"\n[dark]\n"--bg" = "#102030"\n"--surface" = "#17293b"\n"--ink" = "#eef4f8"\n"--ink-soft" = "#c8d6e0"\n"--muted" = "#8ea3b3"\n"--rule" = "#24384b"\n"--accent" = "#ffbd69"\n"--accent-2" = "#7cc4ff"\n"--on-accent" = "#102030"\n'
 const THEME = 'schema = 1\nkind = "theme"\nid = "plain"\ntitle = "Plain"\npalette = "lagoon"\nfonts = ["https://example.test/font.css"]\n[tokens]\n"--font-body" = "serif"\n[params.fontBody]\ntoken = "--font-body"\ntitle = "Body font"\n'
+const GUIDE = '[guide]\nsuits = [" team updates ", "short points"]\navoid = ["wide tables"]\nwriting = """\nKeep headings short.   \nThree or four points.\n"""\n'
 const LAYOUT_TOML = 'schema = 1\nkind = "layout"\nid = "box"\ntitle = "Box"\n[regions.body]\n[properties.size]\ntype = "integer"\nminimum = 1\ndefault = 2\n'
 const LAYOUT = "import { h } from 'preact'\nimport { MarkdownRegion } from 'mdeck/layout'\nexport default ({ regions }) => <MarkdownRegion class=\"slide-body\" region={regions.body} />\n"
 
@@ -44,6 +45,9 @@ test('manifests of every kind normalize to shared records', () => {
   assert.equal(theme.manifest.appearance, 'light')
   assert.equal(theme.manifest.params.fontBody.default, 'serif', 'param defaults derive from tokens')
   assert.deepEqual(theme.files.styles, ['/x/plain/styles.css'])
+  assert.equal(theme.manifest.guide, undefined, 'a guide is optional')
+  const guided = validateManifest(parseManifestText(THEME + GUIDE, 't.toml'), { file: 't.toml', dir: '/x/plain', folderName: 'plain', fileExists: exists })
+  assert.deepEqual(guided.manifest.guide, { suits: ['team updates', 'short points'], avoid: ['wide tables'], writing: 'Keep headings short.\nThree or four points.' })
   const template = validateManifest(parseManifestText(LAYOUT_TOML, 'e.toml'), { file: 'e.toml', dir: '/x/box', folderName: 'box', fileExists: exists })
   assert.equal(template.manifest.frame, 'standard')
   assert.equal(template.files.layout, '/x/box/layout.jsx')
@@ -75,6 +79,13 @@ test('common manifest mistakes fail with the file, setting path and reason', () 
   check(THEME.replace('palette = "lagoon"', 'palette = "lagoon"\ndark = true'), /dark: dark is now appearance = "dark"/)
   check(THEME.replace('palette = "lagoon"', 'palette = "lagoon"\npalettes = ["swiss"]'), /palettes: palettes must include the default palette "lagoon"/)
   check(THEME.replace('token = "--font-body"', 'token = "--missing"'), /params.fontBody.token: token must name an entry of \[tokens\]/)
+  check(THEME + GUIDE.replace('avoid', 'never'), /guide.never: Unknown guide setting. Allowed: suits, avoid, writing/)
+  check(THEME + GUIDE.replace('"wide tables"', '"' + 'x'.repeat(61) + '"'), /guide.avoid\[0\]: must be a phrase of one line, at most 60 characters/)
+  check(THEME + GUIDE.replace('"wide tables"', '"wide\\ntables"'), /guide.avoid\[0\]: must be a phrase of one line/)
+  check(THEME + GUIDE.replace('avoid = ["wide tables"]', 'avoid = []'), /guide.avoid: must be a list of 1 to 8 short phrases/)
+  check(THEME + GUIDE.replace('Keep headings short.', 'x'.repeat(1201)), /guide.writing: must be at most 1200 characters/)
+  check(THEME + '[guide]\n', /guide: guide must say what the theme suits/)
+  check(PALETTE.replace('[light]', '[guide]\nsuits = ["x"]\n[light]'), /guide: Unknown setting for a palette/)
   check(THEME + '[files]\nstyles = "../other.css"\n', /files.styles: "\.\.\/other.css" leaves the extension folder/)
   check(THEME + '[files]\nstyles = "missing.css"\n', /files.styles: "missing.css" does not exist/, { fileExists: () => false })
   check(LAYOUT_TOML.replace('[regions.body]\n', ''), /regions must include a \[regions.body\]/)

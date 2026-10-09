@@ -195,7 +195,8 @@ function entryOf(kind, record) {
     kind, id: record.id, title: record.title, description: record.description ?? '',
     version: record.package?.version ?? '0.0.0', ...(record.package?.author ? { author: record.package.author } : {}), ...(record.package?.license ? { license: record.package.license } : {}),
     ...(record.package?.homepage ? { homepage: record.package.homepage } : {}), ...(record.package?.mdeck ? { mdeck: record.package.mdeck } : {}),
-    ...(kind === 'theme' ? { palette: record.manifest.palette, ...(record.manifest.palettes?.length ? { palettes: record.manifest.palettes } : {}), appearance: record.manifest.appearance ?? 'light' } : {}),
+    ...(kind === 'theme' ? { palette: record.manifest.palette, ...(record.manifest.palettes?.length ? { palettes: record.manifest.palettes } : {}), appearance: record.manifest.appearance ?? 'light',
+      ...(record.manifest.guide ? { guide: record.manifest.guide } : {}) } : {}),
     ...(kind === 'palette' && record.manifest.theme ? { theme: record.manifest.theme } : {}),
   }
 }

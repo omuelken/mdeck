@@ -46,3 +46,13 @@ title = "Display font"
 [params.fontBody]
 token = "--font-body"
 title = "Body font"
+
+# What this theme is for and how to write for it: shown in listings, and read
+# by assistants that write slides as the theme author's advice.
+[guide]
+suits = ["any content, when in doubt", "talks that must work offline", "plain internal talks"]
+writing = """
+Nothing but the content: no rules, bars or boxes, so structure comes from
+headings, short lists and space. Keep slides light. It uses the system's own
+fonts, so it looks the same with no network.
+"""

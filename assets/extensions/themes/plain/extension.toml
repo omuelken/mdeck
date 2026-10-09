@@ -56,3 +56,17 @@ title = "Body font"
 [params.side]
 token = "--side"
 title = "Width of the heading column"
+
+# What this theme is for and how to write for it: shown in listings, and read
+# by assistants that write slides as the theme author's advice.
+[guide]
+suits = ["product and design reviews", "team updates", "talks of short points"]
+avoid = ["long running text", "wide tables"]
+writing = """
+On a content slide the heading stands in a narrow column at the left: keep it
+to a few words. A list item that starts in bold, "- **First thing** One line
+about it.", shows as a short title with a line under it; three or four such
+items make a good slide. A statement (layout: focus) with an eyebrow puts the
+eyebrow at the left as its heading and the text beside it. A split slide with
+a heading puts the heading at the left and the two columns beside it.
+"""

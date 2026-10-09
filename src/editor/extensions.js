@@ -68,8 +68,16 @@ export function toRuntimeManifest(model) {
   if (model.kind === 'theme') return {
     ...shared, palette: model.palette, ...(model.palettes?.length ? { palettes: model.palettes } : {}), appearance: model.appearance ?? 'light', fonts: model.fonts ?? [], tokens,
     params: table(model.params ?? [], param => ({ token: param.token, default: tokens[param.token] ?? '', ...(param.title ? { title: param.title } : {}) })),
+    ...(model.extra?.guide ? { guide: runtimeGuide(model.extra.guide) } : {}),
   }
   return shared
+}
+
+// A theme's guide as validateManifest normalizes it (the forms do not edit it;
+// it is kept with the other settings they do not know).
+function runtimeGuide(guide) {
+  const phrases = list => list?.map(phrase => String(phrase).trim())
+  return clean({ suits: phrases(guide.suits), avoid: phrases(guide.avoid), writing: guide.writing?.trim().replace(/[ \t]+\n/g, '\n') })
 }
 
 // Starting points for new extensions. `from` is a registry manifest to copy;

@@ -47,3 +47,15 @@ title = "Display font"
 [params.fontBody]
 token = "--font-body"
 title = "Body font"
+
+# What this theme is for and how to write for it: shown in listings, and read
+# by assistants that write slides as the theme author's advice.
+[guide]
+suits = ["keynotes and strong arguments", "design and architecture talks", "talks with few words per slide"]
+avoid = ["dense tables", "long code listings"]
+writing = """
+Headings are set large and flush left: make them short statements, one idea
+per slide. Chapter slides set their title in the accent and statement slides
+(layout: focus) invert, so the talk gets a rhythm; use them for turns and
+conclusions. Emphasis (*word*) shows in the accent: one key word, not phrases.
+"""

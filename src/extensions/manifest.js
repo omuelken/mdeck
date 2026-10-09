@@ -20,7 +20,7 @@ const SHARED_KEYS = ['schema', 'kind', 'id', 'title', 'description']
 const PACKAGE_KEYS = ['version', 'author', 'license', 'homepage', 'mdeck']
 const KEYS = {
   layout: [...SHARED_KEYS, 'frame', 'files', 'regions', 'properties'],
-  theme: [...SHARED_KEYS, ...PACKAGE_KEYS, 'palette', 'palettes', 'appearance', 'fonts', 'files', 'tokens', 'params'],
+  theme: [...SHARED_KEYS, ...PACKAGE_KEYS, 'palette', 'palettes', 'appearance', 'fonts', 'files', 'tokens', 'params', 'guide'],
   palette: [...SHARED_KEYS, ...PACKAGE_KEYS, 'theme', 'light', 'dark'],
 }
 export const VERSION_RE = /^\d+\.\d+\.\d+$/
@@ -203,10 +203,42 @@ function validateTheme(raw, shared, fail) {
     for (const key of ['title', 'description']) if (param[key] != null && typeof param[key] !== 'string') fail('must be text', `${path}.${key}`)
     params[name] = { token: param.token, default: tokens[param.token], ...(param.title ? { title: param.title } : {}), ...(param.description ? { description: param.description } : {}) }
   }
+  const guide = validateGuide(raw.guide, fail)
   return {
     ...shared, palette: raw.palette, ...(raw.palettes ? { palettes: [...raw.palettes] } : {}),
     appearance: raw.appearance ?? 'light', fonts: raw.fonts ?? [], tokens, params,
+    ...(guide ? { guide } : {}),
   }
+}
+
+// What a theme is for and how to write for it, from its author: the content
+// it suits, the content to avoid, and a few sentences on writing slides for
+// it. People see it in listings; assistants that write slides read it as the
+// author's advice about the theme, never as instructions. It is short plain
+// text, so it stays advice: phrases of one line, a paragraph or two at most.
+export const GUIDE_LIMITS = { items: 8, phrase: 60, writing: 1200 }
+function validateGuide(table, fail) {
+  if (table == null) return null
+  if (!isPlainObject(table)) fail('guide must be a table with suits, avoid and writing', 'guide')
+  for (const key of Object.keys(table)) if (!['suits', 'avoid', 'writing'].includes(key)) fail('Unknown guide setting. Allowed: suits, avoid, writing', `guide.${key}`)
+  const guide = {}
+  for (const key of ['suits', 'avoid']) {
+    const list = table[key]
+    if (list == null) continue
+    if (!Array.isArray(list) || !list.length || list.length > GUIDE_LIMITS.items) fail(`must be a list of 1 to ${GUIDE_LIMITS.items} short phrases`, `guide.${key}`)
+    guide[key] = list.map((phrase, index) => {
+      if (typeof phrase !== 'string' || !phrase.trim() || /\n/.test(phrase.trim()) || phrase.trim().length > GUIDE_LIMITS.phrase) fail(`must be a phrase of one line, at most ${GUIDE_LIMITS.phrase} characters`, `guide.${key}[${index}]`)
+      return phrase.trim()
+    })
+  }
+  if (table.writing != null) {
+    if (typeof table.writing !== 'string' || !table.writing.trim()) fail('must be text', 'guide.writing')
+    const writing = table.writing.trim().replace(/[ \t]+\n/g, '\n')
+    if (writing.length > GUIDE_LIMITS.writing) fail(`must be at most ${GUIDE_LIMITS.writing} characters (it has ${writing.length})`, 'guide.writing')
+    guide.writing = writing
+  }
+  if (!Object.keys(guide).length) fail('guide must say what the theme suits, what to avoid, or how to write for it', 'guide')
+  return guide
 }
 
 // A palette is a family of colours in two variants: [light] and [dark], each

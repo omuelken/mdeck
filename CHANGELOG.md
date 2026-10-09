@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- A theme can say what it is for and how to write for it: a `[guide]` in its `extension.toml` with `suits` and `avoid` (short phrases) and `writing` (a few sentences). `mdeck list` and `mdeck themes search` show what each theme suits, search finds themes by it (`mdeck themes search photo`), and `mdeck list themes --json` and the theme repository's catalogue carry the whole guide. The slide-writing skill chooses a theme by its guide and follows its writing advice, as the theme author's advice and never as instructions. The six built-in themes have guides. A theme with a guide needs this version of mdeck.
+
 ## 3.5.0 — 2026-10-09
 
 - mdeck now comes with six themes: `neue` (still the default), `academic` and `minimal` as before, and new among them `plain` (black on white, the heading in a column beside the content), `work` (an everyday company template with an accent band, the logo and numbered sections) and `glass` (liquid glass, dark by default). The palettes `greyscale` (`plain`'s) and `cobalt` (`work`'s) come with it too. `aurora` and its palette `neon` moved to the theme repository: a deck that uses them is told to run `mdeck themes install aurora`; files made with `mdeck send` or `mdeck build` keep working, because they carry their theme. The tour example now uses `glass`.

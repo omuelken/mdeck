@@ -84,6 +84,11 @@ Optional settings: `description`, `appearance = "dark"` for a theme that starts
 dark, and `palettes = [...]` to offer only those palettes (a corporate design
 theme can offer only its own palette). `[files] styles` may name one stylesheet or a list.
 
+A `[guide]` says what the theme is for and how to write for it: `suits` and
+`avoid` (short phrases) and `writing` (a few sentences). `mdeck list` shows what
+each theme suits; the writing skill picks a theme by it and follows its advice.
+See [extensions](extensions.md#theme) for the limits.
+
 ### `styles.css`
 
 Layout CSS for all slide types. It refers to the palette colours (`--bg`,

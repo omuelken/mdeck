@@ -180,6 +180,13 @@ styles = "styles.css"        # one stylesheet or a list of them
 [params.fontBody]
 token = "--font-body"
 title = "Body font"
+
+[guide]
+suits = ["team updates", "talks of short points"]
+avoid = ["wide tables"]
+writing = """
+Keep headings to a few words; three or four points make a good slide.
+"""
 ```
 
 - `palette` names the palette the theme uses unless the deck sets one. A theme
@@ -197,6 +204,14 @@ title = "Body font"
   `--single-file`) and PDFs embed their Latin character sets, so they look the
   same offline. The fallbacks named in the token values apply when a font
   cannot be fetched.
+- `guide` says what the theme is for and how to write for it, all optional:
+  `suits` and `avoid` are lists of up to 8 phrases of one line (at most 60
+  characters), `writing` a few sentences (at most 1200 characters) on writing
+  slides for the theme: which layouts carry it, how lists or pictures are set.
+  `mdeck list` and `mdeck themes search` show what it suits, and search finds
+  it by those words; `mdeck list themes --json` has the whole guide. Assistants
+  that write slides with mdeck's skill choose a theme by it and follow its
+  writing advice, as advice from the theme's author, never as instructions.
 
 Values are applied in this order: the palette's colours (the deck's variant,
 and the other as `--inverse-*`), the theme's tokens, then deck `params`.
