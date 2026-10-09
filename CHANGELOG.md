@@ -6,6 +6,7 @@
 - Fixed: a drawing on two slides lost its arrowheads, gradients and `<use>` copies on the second, because `url(#…)` found the copy on the hidden first slide. Each copy in the page now gets ids of its own.
 - `mdeck check` looks at the deck's SVG drawings: palette names without a fallback, fixed colours that stay the same in every palette and in dark mode, style rules that reach the rest of the page, numbered and bare steps in one drawing, and `data-step` or `data-hotspot` in a drawing that uses no palette colour and so is shown as a picture.
 - The slide-writing skill draws diagrams as SVG in the palette's colours, builds them up with numbered steps and checks them in light and dark.
+- Fixed: a stroke or laser trail drawn on a paired iPad could stop short in the audience window. Two batches of ink could be on their way at once and arrive in the other order, and a batch lost to the network was gone; the window then dropped that piece and everything after it. Batches now go one after another, a lost one is sent again, and a piece that arrives early waits for the one before it.
 
 ## 3.10.1 — 2026-10-11
 
