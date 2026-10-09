@@ -14,6 +14,7 @@
 - `--slide 3,5-7` for `mdeck send`, `mdeck build` and `mdeck pdf` keeps only these slides, for example the part of a deck shown in one lecture, with their drawings. The numbers count the slides as written, like `mdeck snapshot --slide` and `mdeck check --render`. A `<style>` written on a slide that is left out moves to the first slide kept, since it styles the whole deck; the same now holds for slides left out with `--no-polls`.
 - Fixed: a stroke or laser trail drawn on a paired iPad could stop short in the audience window. Two batches of ink could be on their way at once and arrive in the other order, and a batch lost to the network was gone; the window then dropped that piece and everything after it. Batches now go one after another, a lost one is sent again, and a piece that arrives early waits for the one before it. While the network or the server is gone, the iPad tries again less and less often, up to every five seconds, and keeps only the laser's and the zoom's last position.
 - Ink and the laser drawn on a paired iPad reach the audience window sooner: about 60 ms after the pen instead of 100 to 150 ms.
+- The laser's trail stays on the screen as long as the pen is down, also in the audience window and on paired devices, so a circle or an underline can be shown while you talk about it. Lifted, it retracts as before.
 
 ## 3.10.1 — 2026-10-11
 
