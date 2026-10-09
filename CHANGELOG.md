@@ -6,6 +6,7 @@
 - Fixed: a drawing on two slides lost its arrowheads, gradients and `<use>` copies on the second, because `url(#…)` found the copy on the hidden first slide. Each copy in the page now gets ids of its own.
 - `mdeck check` looks at the deck's SVG drawings: palette names without a fallback, fixed colours that stay the same in every palette and in dark mode, style rules that reach the rest of the page, numbered and bare steps in one drawing, and `data-step` or `data-hotspot` in a drawing that uses no palette colour and so is shown as a picture.
 - The slide-writing skill draws diagrams as SVG in the palette's colours, builds them up with numbered steps and checks them in light and dark.
+- Fixed: in a deck with polls, every slide change in the presenter view read the whole deck several times over to find out whether it has any. On an iPad presenting a large deck, slides changed noticeably slower than in the audience window. The answer is now kept until the deck changes.
 
 ## 3.10.1 — 2026-10-11
 
