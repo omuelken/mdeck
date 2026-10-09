@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The reader view has a **Drawings** button when the deck has drawings: it hides and shows them on the slides, in Read and in **Save as PDF**, and the browser remembers the choice. A file made with `mdeck send` opens there, so whoever gets it can see the slides clean.
+
 ## 3.6.1 — 2026-10-09
 
 - `mdeck snapshot --sheet` saves one picture of the slides in a grid, each under its number and heading (`my-talk-sheet.png`): a whole deck at a glance, for you or an assistant. It works with `--slide` and `--dark`.

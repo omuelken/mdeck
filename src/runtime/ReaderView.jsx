@@ -10,22 +10,24 @@ import './reader.css'
 import { t, stageLabels } from '../core/labels.js'
 import { followActiveRooms } from '../live/follow.js'
 import { Icon } from '../components/Icon.jsx'
+import { currentInk, onInkChange } from './ink/store.js'
 
 // The reader view for decks sent around by email: outline, the slides at a
-// comfortable size or stacked for reading, light or dark, PDF and a way back
-// into the full-screen deck. The theme and palette stay the sender's: a sent
+// comfortable size or stacked for reading, light or dark, the drawings shown
+// or hidden, PDF and a way back into the full-screen deck. The theme and palette stay the sender's: a sent
 // file carries only those, with their fonts.
 
 const lookKey = deckConfig => `mdeck-reader-look:${deckConfig.meta?.title ?? location.pathname}`
 
-// The reader's choice of light or dark, '' for the deck's own.
-function restoreAppearance(deckConfig) {
-  try {
-    const stored = JSON.parse(localStorage.getItem(lookKey(deckConfig)) ?? 'null')
-    if (['light', 'dark'].includes(stored?.appearance)) return stored.appearance
-  } catch {}
-  return ''
+// The reader's choices: light or dark ('' for the deck's own), and whether
+// the drawings show.
+function restoreLook(deckConfig) {
+  let stored = null
+  try { stored = JSON.parse(localStorage.getItem(lookKey(deckConfig)) ?? 'null') } catch {}
+  return { appearance: ['light', 'dark'].includes(stored?.appearance) ? stored.appearance : '', drawings: stored?.drawings !== false }
 }
+
+const hasInk = () => Object.values(currentInk()?.slides ?? {}).some(strokes => strokes?.length)
 
 // Every button carries an icon so the bar reads at a glance.
 const ReaderIcon = ({ name }) => <Icon name={name} class="reader-icon" />
@@ -57,7 +59,10 @@ function ReadPage({ slide, index, total, deckConfig, width, height, scale, showN
 export function ReaderView({ deck, deckConfig }) {
   const { slides } = deck
   const width = deckConfig.width ?? 1920, height = deckConfig.height ?? 1080
-  const [appearance, setAppearance] = useState(() => restoreAppearance(deckConfig))
+  const [appearance, setAppearance] = useState(() => restoreLook(deckConfig).appearance)
+  // Drawings come with the file; a reader may hide them, also for printing.
+  const [drawings, setDrawings] = useState(() => restoreLook(deckConfig).drawings)
+  const [inked, setInked] = useState(hasInk)
   const [mode, setMode] = useState('slides')
   const [index, setIndex] = useState(() => initialIndex(slides))
   const [navOpen, setNavOpen] = useState(false)
@@ -75,8 +80,11 @@ export function ReaderView({ deck, deckConfig }) {
 
   useEffect(() => {
     loadTheme({ ...deckConfig, appearance: shown }).catch(error => console.warn(error.message))
-    try { localStorage.setItem(lookKey(deckConfig), JSON.stringify({ appearance })) } catch {}
   }, [appearance])
+  useEffect(() => {
+    try { localStorage.setItem(lookKey(deckConfig), JSON.stringify({ appearance, drawings })) } catch {}
+  }, [appearance, drawings])
+  useEffect(() => onInkChange(() => setInked(hasInk())), [])
 
   useEffect(() => {
     const stage = stageRef.current
@@ -145,7 +153,7 @@ export function ReaderView({ deck, deckConfig }) {
   const metaLine = [meta.author, meta.organization, meta.date].filter(Boolean).join(' · ')
   const other = shown === 'dark' ? 'light' : 'dark'
 
-  return <div class="reader-view">
+  return <div class={`reader-view${drawings ? '' : ' is-ink-hidden'}`}>
     <header class="reader-top">
       <button class="reader-btn reader-nav-toggle" onClick={() => setNavOpen(open => !open)} aria-label={t('reader.outline')}><ReaderIcon name="menu" /></button>
       <h1>{meta.title ?? t('reader.untitled')}</h1>
@@ -155,6 +163,7 @@ export function ReaderView({ deck, deckConfig }) {
       <button class={`reader-btn${mode === 'slides' ? ' is-active' : ''}`} onClick={() => switchMode('slides')}><ReaderIcon name="slides" />{t('reader.slides')}</button>
       <button class={`reader-btn${mode === 'read' ? ' is-active' : ''}`} onClick={() => switchMode('read')}><ReaderIcon name="read" />{t('reader.read')}</button>
       {toggleAllowed && <button class="reader-btn" onClick={() => setAppearance(other === ownAppearance ? '' : other)} title={t('reader.appearance')}><ReaderIcon name={other === 'dark' ? 'moon' : 'sun'} />{t(other === 'dark' ? 'reader.dark' : 'reader.light')}</button>}
+      {inked && <button class="reader-btn" onClick={() => setDrawings(on => !on)} aria-pressed={drawings} title={t(drawings ? 'reader.hideDrawings' : 'reader.showDrawings')}><ReaderIcon name={drawings ? 'eye' : 'eye-off'} />{t('reader.drawings')}</button>}
       {pdf
         ? <a class="reader-btn" href={pdf} download={`${(meta.title ?? 'slides').replace(/[^\w.-]+/g, '-')}.pdf`}><ReaderIcon name="download" />{t('reader.downloadPdf')}</a>
         : <button class="reader-btn" onClick={savePdf} title={t('reader.savePdfHint')}><ReaderIcon name="download" />{t('reader.savePdf')}</button>}

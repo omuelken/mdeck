@@ -32,7 +32,7 @@ Drawings live in a file next to your slides: `my-talk.drawings.json` for `my-tal
 - The first save of a session keeps a copy of the previous file in `.mdeck-backups`, next to your slides.
 - **Opened from a built folder or a single file**, the page has nowhere to save. Drawings are kept in that browser, and the toolbar's download button saves them as the drawings file, to put next to your slides. Safari may clear such browser data after a week without use, so download it after drawing.
 
-Builds and PDFs include the drawings. To leave them out, add `--no-drawings`:
+Builds and PDFs include the drawings. In the reader view, which a file from `mdeck send` opens in, a **Drawings** button hides and shows them, also for **Save as PDF**; the browser remembers the choice. To leave them out of a build altogether, add `--no-drawings`:
 
 ```sh
 mdeck pdf my-talk.md --no-drawings
