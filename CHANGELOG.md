@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- `mdeck snapshot --sheet` saves one picture of the slides in a grid, each under its number and heading (`my-talk-sheet.png`): a whole deck at a glance, for you or an assistant. It works with `--slide` and `--dark`.
+- Fixed: pictures and PDFs could show a slide in its fallback font. mdeck now waits for the theme's font stylesheets and for every face the slides use before it takes a picture, renders a PDF or measures a slide, so `mdeck snapshot`, `mdeck pdf`, `mdeck check --render`, the theme check and the theme repository's previews show the theme's own fonts. Without a network it does not wait.
+
 ## 3.6.0 — 2026-10-09
 
 - A theme can say what it is for and how to write for it: a `[guide]` in its `extension.toml` with `suits` and `avoid` (short phrases) and `writing` (a few sentences). `mdeck list` and `mdeck themes search` show what each theme suits, search finds themes by it (`mdeck themes search photo`), and `mdeck list themes --json` and the theme repository's catalogue carry the whole guide. The slide-writing skill chooses a theme by its guide and follows its writing advice, as the theme author's advice and never as instructions. The six built-in themes have guides. A theme with a guide needs this version of mdeck.

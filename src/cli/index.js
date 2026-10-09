@@ -343,6 +343,7 @@ const HELP = `
                              does not fit, text cut off or hard to read, errors on the page
     ${c.green}mdeck snapshot${c.reset} [slides.md]                Pictures of slides as PNG files (default: .mdeck-snapshots/)
       --slide <numbers>      only these slides: 3, 3,5 or 2-4
+      --sheet                one picture of them all in a grid, each under its number and heading
       --dark | --light       in this appearance instead of the deck's own   -o <folder>
     ${c.green}mdeck results${c.reset} [slides.md] [-o answers.csv]  The answers kept in the talk, as CSV (room, phone, time, answer)
     ${c.green}mdeck list${c.reset} [layouts|themes|palettes] [slides.md] [--json]
@@ -503,7 +504,7 @@ if (command === 'new') {
     const outDir = resolve(outputOption() ?? resolve(dirname(resolve(input)), '.mdeck-snapshots'))
     const appearance = hasFlag('--dark') ? 'dark' : hasFlag('--light') ? 'light' : ''
     const { snapshot } = await import('../build/renderCheck.js')
-    for (const file of await snapshot(input, { slides, outDir, appearance })) console.log(relative(process.cwd(), file))
+    for (const file of await snapshot(input, { slides, outDir, appearance, sheet: hasFlag('--sheet') })) console.log(relative(process.cwd(), file))
   } catch (error) { err(error.message); process.exitCode = 1 }
 
 } else if (command === 'list') {

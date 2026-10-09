@@ -32,6 +32,32 @@ export function serveDirectory(root) {
   })
 }
 
+// Runs in a deck page once it is up: the theme's fonts, loaded before any
+// picture or measurement. document.fonts.status is already 'loaded' before
+// a font stylesheet arrives (nothing is pending yet), and a face is only
+// fetched once text uses it, so a slide could be captured, or measured, in
+// its fallback font. This waits for every stylesheet to load or fail, then
+// asks for each face that text on any slide (hidden ones too) uses, and
+// waits for them and two frames. A font that cannot be fetched (offline)
+// does not hold it up for longer than `limit` milliseconds.
+export const FONTS_READY = `(async (limit = 8000) => {
+  const timeout = new Promise(done => setTimeout(done, limit))
+  // A stylesheet that already failed has no sheet and fires nothing more; its
+  // request is finished all the same.
+  const sheets = [...document.querySelectorAll('link[rel="stylesheet"]')].filter(link => !link.sheet && !performance.getEntriesByName(link.href).length)
+    .map(link => new Promise(done => { link.addEventListener('load', done, { once: true }); link.addEventListener('error', done, { once: true }) }))
+  await Promise.race([Promise.all(sheets), timeout])
+  const faces = new Set()
+  for (const element of document.querySelectorAll('deck-stage *')) {
+    if (![...element.childNodes].some(node => node.nodeType === 3 && node.textContent.trim())) continue
+    const style = getComputedStyle(element)
+    faces.add(style.fontStyle + ' ' + style.fontWeight + ' 32px ' + style.fontFamily)
+  }
+  await Promise.race([Promise.all([...faces].map(face => document.fonts.load(face).catch(() => null))).then(() => document.fonts.ready), timeout])
+  await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))
+  return true
+})()`
+
 // Starts Chrome and a static server for `dir`. `open(path)` returns a page
 // with evaluate(), send() and waitFor(); call close() when done.
 export async function launchChrome({ dir, chrome = findChrome(), timeout = 90000 } = {}) {
@@ -110,8 +136,13 @@ export async function launchChrome({ dir, chrome = findChrome(), timeout = 90000
           }
           return false
         },
-        // Waits until the deck stage exists, fonts are loaded and images decoded.
-        waitForDeck: () => page.waitFor("document.querySelector('deck-stage')?.length > 0 && document.fonts.status === 'loaded' && [...document.images].every(image => image.complete)"),
+        // Waits until the deck stage exists, images are decoded and the
+        // theme's fonts are loaded (FONTS_READY).
+        async waitForDeck() {
+          const ready = await page.waitFor("document.querySelector('deck-stage')?.length > 0 && document.fonts.status === 'loaded' && [...document.images].every(image => image.complete)")
+          if (ready) await page.evaluate(FONTS_READY)
+          return ready
+        },
         async screenshot({ width = 1600, height = 900, scale = 1, format = 'png' } = {}) {
           await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: scale, mobile: false }, sessionId)
           await delay(150)

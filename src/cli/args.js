@@ -14,7 +14,7 @@ const commands = {
   pdf: { ...output, '--no-polls': flag, max: 1 },
   preview: { ...common, max: 1 },
   check: { '--strict': flag, '--render': flag, max: 1 },
-  snapshot: { '--output': value, '-o': '--output', '--slide': value, '--dark': flag, '--light': flag, max: 1 },
+  snapshot: { '--output': value, '-o': '--output', '--slide': value, '--dark': flag, '--light': flag, '--sheet': flag, max: 1 },
   list: { '--json': flag, max: 2 },
   starter: { max: 2 },
   docs: { ...common, '--build': flag, max: 1 },

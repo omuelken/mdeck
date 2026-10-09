@@ -141,9 +141,10 @@ The check takes a few seconds and needs Chrome or Chromium; set `MDECK_CHROME` t
 ```sh
 mdeck snapshot my-talk.md
 mdeck snapshot my-talk.md --slide 3,5-7 --dark
+mdeck snapshot my-talk.md --sheet
 ```
 
-This saves each slide, with all steps revealed, as a 1280×720 PNG file in `.mdeck-snapshots/` beside the deck (`-o` for another folder), named `my-talk-03.png` and so on, and prints the paths. `--slide` picks slides by number; `--dark` and `--light` show that appearance instead of the deck's own. An AI assistant that reads pictures can use them to look at what it wrote. If you keep your slides in Git, add `.mdeck-snapshots/` to your `.gitignore`.
+This saves each slide, with all steps revealed, as a 1280×720 PNG file in `.mdeck-snapshots/` beside the deck (`-o` for another folder), named `my-talk-03.png` and so on, and prints the paths. `--slide` picks slides by number; `--dark` and `--light` show that appearance instead of the deck's own. `--sheet` saves one picture instead, `my-talk-sheet.png`: the slides in a grid, each under its number and heading, to see a whole deck at a glance. An AI assistant that reads pictures can use them to look at what it wrote. If you keep your slides in Git, add `.mdeck-snapshots/` to your `.gitignore`.
 
 ## Layouts, themes and palettes
 

@@ -79,20 +79,51 @@ export function renderCheck(slidesPath) {
 }
 
 // Pictures of slides (numbers from 1; all when none are given) as PNG files
-// in `outDir`, named <deck>-<number>.png. Returns the files written.
-export async function snapshot(slidesPath, { slides = [], outDir, width = 1280, height = 720, appearance = '' } = {}) {
+// in `outDir`, named <deck>-<number>.png. With `sheet`, one picture instead,
+// <deck>-sheet.png: the slides in a grid, each under its number and heading,
+// so a person or an assistant sees the whole deck at once. Returns the files
+// written.
+export async function snapshot(slidesPath, { slides = [], outDir, width = 1280, height = 720, appearance = '', sheet = false } = {}) {
   const name = basename(slidesPath).replace(/\.md$/i, '')
+  const labels = sheet ? slideLabels(readFileSync(slidesPath, 'utf8')) : []
   mkdirSync(outDir, { recursive: true })
   return withDeckPage(slidesPath, { appearance, width, height }, async ({ page, count, show }) => {
     const wanted = slides.length ? slides : Array.from({ length: count }, (_, i) => i + 1)
-    const files = []
+    const files = [], shots = []
     for (const number of wanted) {
       if (number < 1 || number > count) throw new Error(`There is no slide ${number}; the deck has ${count}`)
       await show(number - 1)
+      const picture = await page.screenshot({ width, height })
+      if (sheet) { shots.push({ number, heading: labels[number - 1]?.heading ?? '', picture }); continue }
       const file = resolve(outDir, `${name}-${String(number).padStart(2, '0')}.png`)
-      writeFileSync(file, await page.screenshot({ width, height }))
+      writeFileSync(file, picture)
       files.push(file)
     }
-    return files
+    if (!sheet) return files
+    const file = resolve(outDir, `${name}-sheet.png`)
+    writeFileSync(file, await contactSheet(page, shots))
+    return [file]
   })
+}
+
+// The slides' pictures in a grid on a dark page, each at half size under its
+// number and heading; drawn by the page that took them, as its last task.
+const CELL = { width: 640, height: 360, label: 30, gap: 24 }
+async function contactSheet(page, shots) {
+  const columns = shots.length <= 1 ? 1 : shots.length <= 4 ? 2 : shots.length <= 9 ? 3 : 4
+  const rows = Math.ceil(shots.length / columns)
+  const width = columns * CELL.width + (columns + 1) * CELL.gap
+  const height = rows * (CELL.height + CELL.label) + (rows + 1) * CELL.gap
+  const escape = text => String(text).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch])
+  const cells = shots.map(({ number, heading, picture }) => `<figure><figcaption><b>${String(number).padStart(2, '0')}</b> ${escape(heading)}</figcaption><img src="data:image/png;base64,${picture.toString('base64')}"></figure>`).join('')
+  const html = `<!doctype html><meta charset="utf-8"><style>
+    html, body { margin: 0; background: #1c1c1c; }
+    main { display: grid; grid-template-columns: repeat(${columns}, ${CELL.width}px); gap: ${CELL.gap}px; padding: ${CELL.gap}px; }
+    figure { margin: 0; }
+    figcaption { height: ${CELL.label}px; font: 15px/1.2 system-ui, sans-serif; color: #c8c8c8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    figcaption b { color: #fff; margin-right: 6px; font-variant-numeric: tabular-nums; }
+    img { display: block; width: ${CELL.width}px; height: ${CELL.height}px; outline: 1px solid #3a3a3a; }
+  </style><main>${cells}</main>`
+  await page.evaluate(`document.open(); document.write(${JSON.stringify(html)}); document.close(); Promise.all([...document.images].map(image => image.decode())).then(() => true)`)
+  return page.screenshot({ width, height })
 }

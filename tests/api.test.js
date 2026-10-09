@@ -33,6 +33,7 @@ test('snapshot takes slide numbers, single, listed or as a range', () => {
   assert.deepEqual(parseSlideNumbers(''), [])
   for (const text of ['0', '4-2', '2x', '-3']) assert.throws(() => parseSlideNumbers(text))
   assert.throws(() => parseArgs('snapshot', ['--dark', '--light']))
+  assert.deepEqual(parseArgs('snapshot', ['a.md', '--sheet', '--slide', '2-4']).options, { '--sheet': true, '--slide': '2-4' })
   assert.deepEqual(parseArgs('check', ['a.md', '--render']).options, { '--render': true })
 })
 
