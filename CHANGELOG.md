@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.7.1 — 2026-10-09
 
 - A video file on a slide (`<videoplayer src="…" />`) follows the presenter view, on the laptop or a paired iPad: play, pause and a jump there do the same in the audience window, which plays the sound while the presenter view's copy stays silent. This works without a server too, in a built folder. An audience window that nobody has clicked yet plays silently and offers **Click for sound** (German: **Klicken für Ton**). Online videos from YouTube, Vimeo or SwitchTube still play only where they are started; the iPad guide says so.
 
