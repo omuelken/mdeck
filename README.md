@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="assets/logo/logo-light.svg" alt="mdeck" width="280">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/logo-dark.svg">
+    <img src="assets/logo/logo-light.svg" alt="mdeck" width="280">
+  </picture>
 </p>
 
 <p align="center"><b>Hand your slides, papers and notes to an AI assistant. Get a clean deck to present in the browser. Share it as one HTML file or a PDF.</b></p>
