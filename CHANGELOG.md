@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.6.1 — 2026-10-09
 
 - `mdeck snapshot --sheet` saves one picture of the slides in a grid, each under its number and heading (`my-talk-sheet.png`): a whole deck at a glance, for you or an assistant. It works with `--slide` and `--dark`.
 - Fixed: pictures and PDFs could show a slide in its fallback font. mdeck now waits for the theme's font stylesheets and for every face the slides use before it takes a picture, renders a PDF or measures a slide, so `mdeck snapshot`, `mdeck pdf`, `mdeck check --render`, the theme check and the theme repository's previews show the theme's own fonts. Without a network it does not wait.
