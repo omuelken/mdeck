@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.6.2 — 2026-10-09
 
 - The docs home page and the README start with what mdeck does: drawing from an iPad, polls from phones, citations, themes, running code and sending one file, each with a picture (`npm run feature-images` renders them). The docs' example deck is now a short tour of mdeck, with its own control bar and drawing, and a picker of every built-in theme as a picture, with light or dark.
 - An embedded deck (`?embedded=1`) shows its control bar with `?controls=1`.
