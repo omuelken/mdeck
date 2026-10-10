@@ -27,7 +27,7 @@
 .slide-logo {
   position: absolute;
   top: var(--pad-y);
-  left: var(--pad-x);
+  inset-inline-start: var(--pad-x);
   height: 48px;
   width: auto;
   max-width: 280px;
@@ -153,25 +153,25 @@ strong { font-weight: 600; color: var(--ink); }
   grid-row: 1 / span 40;
   align-self: center;
   margin: 0;
-  padding-right: 24px;
+  padding-inline-end: 24px;
 }
 .slide-body > :last-child { margin-bottom: 0; }
 
 /* ─────────────────────────────────────────────
    LISTS — a short title with a line under it; plain lines otherwise
    ───────────────────────────────────────────── */
-.slide-body ul > li { line-height: 1.45; padding-left: 34px; }
+.slide-body ul > li { line-height: 1.45; padding-inline-start: 34px; }
 .slide-body ul > li::before {
   content: '\2013';
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0;
   color: var(--muted);
 }
 /* An item that starts in bold: the bold part is a title on its own line,
    the rest a smaller description under it, and no marker. */
 .slide-body ul > li:has(> strong:first-child) {
-  padding-left: 0;
+  padding-inline-start: 0;
   font-size: calc(var(--fs-body) * 0.86);
   line-height: 1.45;
   color: var(--ink-soft);
@@ -184,11 +184,11 @@ strong { font-weight: 600; color: var(--ink); }
   color: var(--ink);
   margin-bottom: 4px;
 }
-.slide-body ol > li { line-height: 1.45; padding-left: 46px; }
+.slide-body ol > li { line-height: 1.45; padding-inline-start: 46px; }
 .slide-body ol > li::before {
   content: counter(slide-ol) '.';
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0;
   font-variant-numeric: tabular-nums;
   color: var(--accent);
@@ -309,10 +309,10 @@ strong { font-weight: 600; color: var(--ink); }
   column-gap: 96px;
   align-content: center;
   align-items: start;
-  text-align: left;
+  text-align: start;
 }
 .slide--focus .slide-body:has(> .focus-eyebrow) > * { grid-column: 2; }
-.slide--focus .slide-body:has(> .focus-eyebrow) > .focus-eyebrow { grid-column: 1; grid-row: 1 / span 2; align-self: center; padding-right: 24px; }
+.slide--focus .slide-body:has(> .focus-eyebrow) > .focus-eyebrow { grid-column: 1; grid-row: 1 / span 2; align-self: center; padding-inline-end: 24px; }
 .slide--focus .slide-body:has(> .focus-eyebrow) .focus-content { align-items: flex-start; }
 .slide--focus .slide-body:has(> .focus-eyebrow) :is(.focus-statement, .focus-content h1, .focus-content p) {
   font-family: var(--font-body);
@@ -321,7 +321,7 @@ strong { font-weight: 600; color: var(--ink); }
   line-height: 1.4;
   letter-spacing: -0.005em;
   max-width: 900px;
-  text-align: left;
+  text-align: start;
 }
 
 /* ─────────────────────────────────────────────
@@ -368,7 +368,7 @@ strong { font-weight: 600; color: var(--ink); }
   column-gap: 80px;
   align-items: center;
 }
-.slide--split .split-heading { margin: 0; padding-right: 24px; }
+.slide--split .split-heading { margin: 0; padding-inline-end: 24px; }
 .slide--split .split-heading h1 { margin: 0; }
 .slide--split .slide-body:has(> .split-heading) .split-columns { align-self: stretch; }
 
@@ -402,7 +402,7 @@ strong { font-weight: 600; color: var(--ink); }
 .slide-body .callout {
   background: var(--surface);
   border: 0;
-  border-left: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--accent);
   border-radius: 0 8px 8px 0;
   padding: 20px 28px 22px;
   margin: 0 0 16px;
@@ -416,9 +416,9 @@ strong { font-weight: 600; color: var(--ink); }
   color: var(--ink);
   margin: 0 0 4px 0;
 }
-.slide-body .callout p { padding-left: 0; margin: 0; color: var(--ink-soft); }
+.slide-body .callout p { padding-inline-start: 0; margin: 0; color: var(--ink-soft); }
 .slide-body .callout :is(.callout-title) { color: var(--ink); }
-.slide-body .callout:is(.callout-warning, .callout-caution) { border-left-color: var(--accent-3); }
+.slide-body .callout:is(.callout-warning, .callout-caution) { border-inline-start-color: var(--accent-3); }
 .slide-body .callout.callout-proof { background: none; border: 0; padding: 0; }
 
 /* ─────────────────────────────────────────────
@@ -444,7 +444,7 @@ strong { font-weight: 600; color: var(--ink); }
 .slide-body .code-block-wrapper { margin: 0 0 var(--gap-item); }
 
 .slide-body table { font-size: calc(var(--fs-body) * 0.9); font-variant-numeric: tabular-nums; }
-.slide-body :is(th, td) { padding: 12px 24px 12px 0; }
+.slide-body :is(th, td) { padding-block: 12px; padding-inline: 0 24px; }
 .slide-body th { font-weight: 600; color: var(--ink); border-bottom: 1px solid var(--ink); }
 .slide-body td { border-bottom: 1px solid var(--rule); }
 
@@ -464,7 +464,7 @@ strong { font-weight: 600; color: var(--ink); }
    FOOTNOTES, MATH, AUDIENCE QUESTIONS
    ───────────────────────────────────────────── */
 .slide-footnotes, .slide-citations { font-family: var(--font-body); }
-.slide .katex-display { font-size: var(--fs-sub); margin: 24px 0; overflow-x: auto; overflow-y: hidden; text-align: left; }
+.slide .katex-display { font-size: var(--fs-sub); margin: 24px 0; overflow-x: auto; overflow-y: hidden; text-align: start; }
 .slide .poll-track, .slide .scale-track { border-radius: 4px; background: var(--surface); }
 .slide .poll-fill, .slide .scale-fill { border-radius: 4px; background: var(--accent); }
-.slide .question-cards li { border-radius: 8px; border-left: 0; background: var(--surface); }
+.slide .question-cards li { border-radius: 8px; border-inline-start: 0; background: var(--surface); }

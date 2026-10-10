@@ -26,7 +26,7 @@
 .slide-logo {
   position: absolute;
   top: var(--pad-y);
-  right: var(--pad-x);
+  inset-inline-end: var(--pad-x);
   height: 128px;
   width: auto;
   max-width: 480px;
@@ -35,7 +35,7 @@
   transform: translateY(calc(var(--fs-eyebrow) * 0.5 - 50%));
   /* The rule across the top stops before the logo instead of crossing it. */
   background: var(--bg);
-  padding-left: 32px;
+  padding-inline-start: 32px;
 }
 
 .slide-footer {
@@ -167,7 +167,7 @@ strong { color: var(--ink); font-weight: 600; }
 }
 .chapter-num {
   position: absolute;
-  right: var(--pad-x);
+  inset-inline-end: var(--pad-x);
   bottom: calc(var(--pad-y) + 120px);
   font-family: var(--font-display);
   font-size: 600px;
@@ -222,7 +222,7 @@ strong { color: var(--ink); font-weight: 600; }
   justify-content: flex-end;
   align-items: flex-start;
 }
-.slide--chapter.has-image .chapter-num { right: auto; left: calc(var(--pad-x) - 40px); }
+.slide--chapter.has-image .chapter-num { inset-inline-end: auto; inset-inline-start: calc(var(--pad-x) - 40px); }
 .slide--chapter.has-image .chapter-image {
   width: 100%;
   height: 100%;
@@ -256,7 +256,7 @@ strong { color: var(--ink); font-weight: 600; }
 .slide--focus .slide-body {
   justify-content: center;
   align-items: flex-start;
-  text-align: left;
+  text-align: start;
 }
 .focus-eyebrow {
   font-family: var(--font-body);
@@ -279,7 +279,7 @@ strong { color: var(--ink); font-weight: 600; }
   max-width: 1560px;
   margin: 0;
   text-wrap: balance;
-  text-align: left;
+  text-align: start;
 }
 .focus-content {
   display: flex;
@@ -339,13 +339,13 @@ strong { color: var(--ink); font-weight: 600; }
 .slide-body ul > li {
   font-weight: 400;
   line-height: 1.32;
-  padding-left: 44px;
+  padding-inline-start: 44px;
   position: relative;
 }
 .slide-body ul > li::before {
   content: '';
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0.42em;
   width: 14px;
   height: 14px;
@@ -353,13 +353,13 @@ strong { color: var(--ink); font-weight: 600; }
 }
 .slide-body ol > li {
   counter-increment: slide-ol;
-  padding-left: 64px;
+  padding-inline-start: 64px;
   position: relative;
 }
 .slide-body ol > li::before {
   content: counter(slide-ol, decimal-leading-zero);
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0.05em;
   font-family: var(--font-display);
   font-size: var(--fs-body);
@@ -428,7 +428,7 @@ strong { color: var(--ink); font-weight: 600; }
    ───────────────────────────────────────────── */
 .slide-body .callout {
   background: none;
-  border-left: 0;
+  border-inline-start: 0;
   border-top: 6px solid var(--rule);
   padding: 20px 0 0;
   margin: 40px 0 0;
@@ -438,7 +438,7 @@ strong { color: var(--ink); font-weight: 600; }
 .slide-body .callout-tip .callout-title { color: var(--accent); }
 .slide-body :is(.callout-warning, .callout-caution) { border-top-color: var(--accent-3); }
 .slide-body .callout-title { letter-spacing: 0.12em; margin-bottom: 10px; }
-.slide-body .callout p { padding-left: 0; color: var(--ink); font-size: var(--fs-body); }
+.slide-body .callout p { padding-inline-start: 0; color: var(--ink); font-size: var(--fs-body); }
 /* Lecture blocks: theorems under a rule in the accent, definitions in the second */
 .slide-body :is(.callout-theorem, .callout-lemma, .callout-corollary) { border-top-color: var(--accent); }
 .slide-body .callout-definition { border-top-color: var(--accent-2); }
@@ -491,9 +491,9 @@ strong { color: var(--ink); font-weight: 600; }
    ───────────────────────────────────────────── */
 .slide-body blockquote {
   margin: 0 0 var(--gap-item);
-  padding: 2px 0 2px 32px;
+  padding-block: 2px; padding-inline: 32px 0;
   border: 0;
-  border-left: 6px solid var(--accent);
+  border-inline-start: 6px solid var(--accent);
   max-width: 1200px;
   color: var(--ink);
 }

@@ -2,7 +2,7 @@
    something important are emphasis, in the accent; a warning and a caution
    call for attention, in the third accent. */
 .callout {
-  border-left: 4px solid var(--rule);
+  border-inline-start: 4px solid var(--rule);
   padding: 20px 28px;
   background: var(--surface, var(--bg));
   margin: var(--gap-item) 0;
@@ -14,10 +14,10 @@
   text-transform: uppercase;
   margin: 0 0 8px 0;
 }
-.callout p { margin: 0; color: var(--ink-soft); padding-left: 28px; }
+.callout p { margin: 0; color: var(--ink-soft); padding-inline-start: 28px; }
 
-.callout:is(.callout-note, .callout-tip, .callout-important) { border-left-color: var(--accent); }
-.callout:is(.callout-warning, .callout-caution)              { border-left-color: var(--accent-3); }
+.callout:is(.callout-note, .callout-tip, .callout-important) { border-inline-start-color: var(--accent); }
+.callout:is(.callout-warning, .callout-caution)              { border-inline-start-color: var(--accent-3); }
 
 /* Titles are text: the accent mixed with the text colour, darker on light
    slides and lighter on dark ones, so they can be read on both. The third
@@ -32,8 +32,8 @@
    into its text, and a square ends it. Themes with their own callout style
    colour these blocks their way; the proof is shared, and themes that set
    it differently (academic, sketch) use the same selectors. */
-.callout:is(.callout-theorem, .callout-lemma, .callout-corollary) { border-left-color: var(--accent); }
-.callout.callout-definition { border-left-color: var(--accent-2); }
+.callout:is(.callout-theorem, .callout-lemma, .callout-corollary) { border-inline-start-color: var(--accent); }
+.callout.callout-definition { border-inline-start-color: var(--accent-2); }
 .callout:is(.callout-theorem, .callout-lemma, .callout-corollary) .callout-title { color: color-mix(in oklab, var(--accent) 75%, var(--ink)); }
 .callout.callout-definition .callout-title { color: color-mix(in oklab, var(--accent-2) 75%, var(--ink)); }
 .callout:is(.callout-theorem, .callout-lemma, .callout-corollary) > :not(.callout-title) { font-style: italic; }
@@ -50,8 +50,8 @@
 .slide-body .callout.callout-proof::before { display: none; }
 .slide-body .callout.callout-proof .callout-title {
   display: inline;
-  float: left;
-  margin: 0 0.4em 0 0;
+  float: inline-start;
+  margin-block: 0; margin-inline: 0 0.4em;
   padding: 0;
   background: none;
   font-size: inherit;
@@ -64,5 +64,5 @@
 }
 .slide-body .callout.callout-proof .callout-title::before { content: none; }
 .slide-body .callout.callout-proof .callout-title::after { content: '.'; }
-.slide-body .callout.callout-proof > :not(.callout-title) { padding-left: 0; font-style: normal; }
-.slide-body .callout.callout-proof > :last-child::after { content: '\220E'; margin-left: 0.6em; color: var(--ink); }
+.slide-body .callout.callout-proof > :not(.callout-title) { padding-inline-start: 0; font-style: normal; }
+.slide-body .callout.callout-proof > :last-child::after { content: '\220E'; margin-inline-start: 0.6em; color: var(--ink); }

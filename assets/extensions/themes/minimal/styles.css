@@ -18,7 +18,7 @@
 .slide-logo {
   position: absolute;
   top: var(--pad-y);
-  right: var(--pad-x);
+  inset-inline-end: var(--pad-x);
   height: 96px;
   width: auto;
   max-width: 420px;
@@ -215,21 +215,21 @@ strong { color: var(--ink); font-weight: 600; }
 /* ─────────────────────────────────────────────
    LISTS — a short dash, plain numbers
    ───────────────────────────────────────────── */
-.slide-body ul > li { line-height: 1.4; padding-left: 40px; position: relative; }
+.slide-body ul > li { line-height: 1.4; padding-inline-start: 40px; position: relative; }
 .slide-body ul > li::before {
   content: '';
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0.72em;
   width: 16px;
   height: 2px;
   background: var(--muted);
 }
-.slide-body ol > li { padding-left: 52px; position: relative; }
+.slide-body ol > li { padding-inline-start: 52px; position: relative; }
 .slide-body ol > li::before {
   content: counter(slide-ol) '.';
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -291,19 +291,19 @@ strong { color: var(--ink); font-weight: 600; }
    ───────────────────────────────────────────── */
 .slide-body .callout {
   background: none;
-  border-left: 3px solid var(--rule);
+  border-inline-start: 3px solid var(--rule);
   border-radius: 0;
-  padding: 4px 0 4px 32px;
+  padding-block: 4px; padding-inline: 32px 0;
   margin: 32px 0 0;
   max-width: 1200px;
 }
-.slide-body :is(.callout-note, .callout-tip, .callout-important) { border-left-color: var(--accent); }
-.slide-body :is(.callout-warning, .callout-caution) { border-left-color: var(--accent-3); }
+.slide-body :is(.callout-note, .callout-tip, .callout-important) { border-inline-start-color: var(--accent); }
+.slide-body :is(.callout-warning, .callout-caution) { border-inline-start-color: var(--accent-3); }
 .slide-body .callout-title { margin-bottom: 8px; }
-.slide-body .callout p { padding-left: 0; color: var(--ink); font-size: var(--fs-body); }
+.slide-body .callout p { padding-inline-start: 0; color: var(--ink); font-size: var(--fs-body); }
 /* Lecture blocks: theorems in the accent, definitions in the second */
-.slide-body :is(.callout-theorem, .callout-lemma, .callout-corollary) { border-left-color: var(--accent); }
-.slide-body .callout-definition { border-left-color: var(--accent-2); }
+.slide-body :is(.callout-theorem, .callout-lemma, .callout-corollary) { border-inline-start-color: var(--accent); }
+.slide-body .callout-definition { border-inline-start-color: var(--accent-2); }
 
 /* ─────────────────────────────────────────────
    CODE — on the surface, no frame
@@ -344,8 +344,8 @@ strong { color: var(--ink); font-weight: 600; }
    ───────────────────────────────────────────── */
 .slide-body blockquote {
   margin: 0 0 var(--gap-item);
-  padding: 2px 0 2px 28px;
+  padding-block: 2px; padding-inline: 28px 0;
   border: 0;
-  border-left: 3px solid var(--muted);
+  border-inline-start: 3px solid var(--muted);
   color: var(--ink-soft);
 }

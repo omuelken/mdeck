@@ -41,11 +41,11 @@ test('stripActivities leaves a deck without activities, or of nothing else, as i
 })
 
 test('the examples stay valid without their activities, also with the notes stripped', () => {
-  for (const name of ['showcase', 'python', 'poll']) {
-    const example = readFileSync(new URL(`../examples/${name}/slides.md`, import.meta.url), 'utf8')
+  for (const name of ['showcase/slides', 'python/slides.en', 'python/slides.de', 'python/slides.hi', 'python/slides.fa', 'poll/slides']) {
+    const example = readFileSync(new URL(`../examples/${name}.md`, import.meta.url), 'utf8')
     const { source } = stripActivities(stripNotes(example))
     const after = parseSlides(source)
     assert.ok(after.slides.every(slide => !/<(poll|question|wordcloud|scale)\b/i.test(slide.content.replace(/```[\s\S]*?```/g, ''))), name)
-    assert.deepEqual(validateDeck(after, { layouts: layoutManifests(`examples/${name}/slides.md`) }).filter(d => d.severity === 'error'), [], name)
+    assert.deepEqual(validateDeck(after, { layouts: layoutManifests(`examples/${name}.md`) }).filter(d => d.severity === 'error'), [], name)
   }
 })

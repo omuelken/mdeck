@@ -21,7 +21,7 @@ body { min-height: 100vh; display: flex; flex-direction: column; font: 18px/1.45
 .answer-scale { grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); }
 .answer button {
   padding: 18px 20px; border: 2px solid var(--rule); border-radius: 14px; background: var(--bg); color: var(--ink);
-  font: inherit; font-size: 20px; font-weight: 600; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  font: inherit; font-size: 20px; font-weight: 600; text-align: start; cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 .answer-scale button { padding: 16px 0; text-align: center; }
 .answer button:hover { border-color: color-mix(in srgb, var(--accent) 60%, var(--rule)); }
@@ -39,7 +39,7 @@ footer { padding: 16px 20px; text-align: center; color: var(--muted); font-size:
 .answer-keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 12px; }
 .answer .answer-keys button { padding: 22px 0; text-align: center; font-size: 28px; }
 /* `multiple`: a box that is ticked when picked. */
-.answer-check { display: inline-block; width: 1em; height: 1em; margin-right: 12px; border: 2px solid currentColor; border-radius: 4px; vertical-align: -.12em; opacity: .6; }
+.answer-check { display: inline-block; width: 1em; height: 1em; margin-inline-end: 12px; border: 2px solid currentColor; border-radius: 4px; vertical-align: -.12em; opacity: .6; }
 .answer button.is-picked .answer-check { opacity: 1; background: currentColor; box-shadow: inset 0 0 0 2px var(--accent); }
 /* Closed: no more answers. */
 .answer button:disabled, .answer textarea:disabled, .answer input:disabled { opacity: .45; cursor: default; }

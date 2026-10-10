@@ -18,8 +18,8 @@
 .slide-citations .csl-bib-body { display: flex; flex-direction: column; gap: 4px; }
 
 /* Entries hang; numeric styles put the number in a margin column. */
-.csl-entry { line-height: 1.4; padding-left: 1.5em; text-indent: -1.5em; overflow-wrap: anywhere; }
-.csl-entry:has(.csl-left-margin) { display: grid; grid-template-columns: auto 1fr; column-gap: 0.6em; padding-left: 0; text-indent: 0; }
+.csl-entry { line-height: 1.4; padding-inline-start: 1.5em; text-indent: -1.5em; overflow-wrap: anywhere; }
+.csl-entry:has(.csl-left-margin) { display: grid; grid-template-columns: auto 1fr; column-gap: 0.6em; padding-inline-start: 0; text-indent: 0; }
 .csl-left-margin { color: var(--muted); font-variant-numeric: tabular-nums; }
 .csl-entry a { color: inherit; text-decoration: none; }
 

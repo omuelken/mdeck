@@ -42,14 +42,13 @@ export const S = {
   },
 }
 
+// A palette as the theme gallery shows it (mdeck-themes): one chip of its
+// background, accent and second accent.
 export function PaletteSwatches({ tokens }) {
-  const keys = ['--bg', '--surface', '--rule', '--accent', '--accent-2', '--accent-3', '--ink']
+  const stripe = key => <i style={{ display: 'block', background: tokens[key] ?? tokens['--accent'] ?? 'transparent' }} />
   return (
-    <div style={{ display: 'flex', gap: '2px', alignItems: 'center', flexShrink: 0 }}>
-      {keys.map(k => tokens[k]
-        ? <div key={k} style={{ width: '10px', height: '10px', borderRadius: '2px', background: tokens[k], border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }} />
-        : null
-      )}
-    </div>
+    <span aria-hidden="true" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', width: '30px', height: '18px', borderRadius: '999px', overflow: 'hidden', border: '1px solid rgba(127,127,127,0.35)', flexShrink: 0 }}>
+      {stripe('--bg')}{stripe('--accent')}{stripe('--accent-2')}
+    </span>
   )
 }

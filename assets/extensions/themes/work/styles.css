@@ -15,8 +15,8 @@
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   height: var(--band);
   background: var(--accent);
   z-index: 3;
@@ -47,7 +47,7 @@
 .slide-logo {
   position: absolute;
   top: var(--pad-y);
-  left: var(--pad-x);
+  inset-inline-start: var(--pad-x);
   height: 72px;
   width: auto;
   max-width: 360px;
@@ -181,29 +181,29 @@ strong { font-weight: 600; color: var(--ink); }
 /* ─────────────────────────────────────────────
    LISTS — square bullets, numbers in the accent
    ───────────────────────────────────────────── */
-.slide-body ul > li { line-height: 1.4; padding-left: 40px; }
+.slide-body ul > li { line-height: 1.4; padding-inline-start: 40px; }
 .slide-body ul > li::before {
   content: '';
   position: absolute;
-  left: 2px;
+  inset-inline-start: 2px;
   top: calc(0.7em - 6px);
   width: 12px;
   height: 12px;
   background: var(--accent);
 }
 /* A point inside a point: a dash. */
-.slide-body li ul > li { padding-left: 34px; }
+.slide-body li ul > li { padding-inline-start: 34px; }
 .slide-body li ul > li::before {
   top: calc(0.7em - 1.5px);
   width: 16px;
   height: 3px;
   background: var(--muted);
 }
-.slide-body ol > li { line-height: 1.4; padding-left: 52px; }
+.slide-body ol > li { line-height: 1.4; padding-inline-start: 52px; }
 .slide-body ol > li::before {
   content: counter(slide-ol) '.';
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -238,7 +238,7 @@ strong { font-weight: 600; color: var(--ink); }
 .slide--title.has-image .title-image {
   position: absolute;
   top: 0;
-  right: 0;
+  inset-inline-end: 0;
   bottom: 0;
   width: 40%;
   height: 100%;
@@ -248,7 +248,7 @@ strong { font-weight: 600; color: var(--ink); }
 }
 .slide--title.has-image .slide-header > span:last-child:not(.brand) { visibility: hidden; }
 /* The footer's hairline stops short of the picture (40% of 1920px, and a gap). */
-:is(.slide--title, .slide--chapter).has-image .slide-footer { margin-right: 712px; }
+:is(.slide--title, .slide--chapter).has-image .slide-footer { margin-inline-end: 712px; }
 
 /* ─────────────────────────────────────────────
    LAYOUT: CHAPTER — a section divider: the number in the accent, a broader band
@@ -262,7 +262,7 @@ strong { font-weight: 600; color: var(--ink); }
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
   color: var(--accent);
-  margin: 0 0 40px -6px;
+  margin-block: 0 40px; margin-inline: -6px 0;
 }
 .chapter-meta {
   font-family: var(--font-body);
@@ -298,7 +298,7 @@ strong { font-weight: 600; color: var(--ink); }
 .slide--chapter.has-image .chapter-image {
   position: absolute;
   top: 0;
-  right: 0;
+  inset-inline-end: 0;
   bottom: 0;
   width: 40%;
   height: 100%;
@@ -319,14 +319,14 @@ strong { font-weight: 600; color: var(--ink); }
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent);
-  margin: 0 0 32px 58px;
+  margin-block: 0 32px; margin-inline: 58px 0;
 }
 .focus-content {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  border-left: 10px solid var(--accent);
-  padding: 6px 0 10px 48px;
+  border-inline-start: 10px solid var(--accent);
+  padding-block: 6px 10px; padding-inline: 48px 0;
 }
 .focus-statement,
 .slide--focus .focus-content h1,
@@ -345,7 +345,7 @@ strong { font-weight: 600; color: var(--ink); }
   font-family: var(--font-body);
   font-size: var(--fs-body);
   color: var(--muted);
-  margin: 32px 0 0 58px;
+  margin-block: 32px 0; margin-inline: 58px 0;
 }
 
 /* ─────────────────────────────────────────────
@@ -386,8 +386,8 @@ strong { font-weight: 600; color: var(--ink); }
    ───────────────────────────────────────────── */
 .split-columns { gap: 0; }
 .slide--split :is(.split-left, .split-right) { padding: 0 56px; }
-.slide--split .split-left { padding-left: 0; border-right: 1px solid var(--rule); }
-.slide--split .split-right { padding-right: 0; }
+.slide--split .split-left { padding-inline-start: 0; border-inline-end: 1px solid var(--rule); }
+.slide--split .split-right { padding-inline-end: 0; }
 
 /* ─────────────────────────────────────────────
    LAYOUT: FULL-BLEED IMAGE — the title on a label at the lower left
@@ -407,8 +407,8 @@ strong { font-weight: 600; color: var(--ink); }
   letter-spacing: -0.015em;
   color: var(--ink);
   background: var(--bg);
-  border-left: 10px solid var(--accent);
-  padding: 28px 44px 32px 40px;
+  border-inline-start: 10px solid var(--accent);
+  padding-block: 28px 32px; padding-inline: 40px 44px;
   margin: 0;
   max-width: 1300px;
   text-wrap: balance;
@@ -433,7 +433,7 @@ strong { font-weight: 600; color: var(--ink); }
   --bar: var(--accent);
   background: var(--surface);
   border: 0;
-  border-left: 8px solid var(--bar);
+  border-inline-start: 8px solid var(--bar);
   border-radius: 0 4px 4px 0;
   padding: 22px 32px 24px;
   margin: 14px 0 0;
@@ -447,7 +447,7 @@ strong { font-weight: 600; color: var(--ink); }
   text-transform: uppercase;
   margin: 0 0 8px 0;
 }
-.slide-body .callout p { padding-left: 0; margin: 0; color: var(--ink); }
+.slide-body .callout p { padding-inline-start: 0; margin: 0; color: var(--ink); }
 .slide-body :is(.callout-note, .callout-tip, .callout-important) { --bar: var(--accent); }
 .slide-body :is(.callout-warning, .callout-caution) { --bar: var(--accent-3); }
 .slide-body .callout-definition { --bar: var(--accent-2); }
@@ -479,7 +479,7 @@ strong { font-weight: 600; color: var(--ink); }
 .slide-body blockquote {
   position: relative;
   margin: 0 0 var(--gap-item);
-  padding: 0 0 0 64px;
+  padding-block: 0; padding-inline: 64px 0;
   border: 0;
   max-width: 1300px;
   font-size: calc(var(--fs-body) * 1.1);
@@ -490,7 +490,7 @@ strong { font-weight: 600; color: var(--ink); }
 .slide-body blockquote::before {
   content: '\201C';
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: -0.12em;
   font-family: var(--font-display);
   font-size: 104px;
@@ -503,7 +503,7 @@ strong { font-weight: 600; color: var(--ink); }
    FOOTNOTES, MATH, AUDIENCE QUESTIONS
    ───────────────────────────────────────────── */
 .slide-footnotes, .slide-citations { font-family: var(--font-body); }
-.slide .katex-display { font-size: var(--fs-sub); margin: 32px 0; overflow-x: auto; overflow-y: hidden; text-align: left; }
+.slide .katex-display { font-size: var(--fs-sub); margin: 32px 0; overflow-x: auto; overflow-y: hidden; text-align: start; }
 .slide .poll-track, .slide .scale-track { border-radius: 2px; background: var(--surface); }
 .slide .poll-fill, .slide .scale-fill { border-radius: 2px; background: var(--accent); }
-.slide .question-cards li { border-radius: 4px; border-left: 6px solid var(--accent); background: var(--surface); }
+.slide .question-cards li { border-radius: 4px; border-inline-start: 6px solid var(--accent); background: var(--surface); }

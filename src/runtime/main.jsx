@@ -3,7 +3,7 @@ import { h, render } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { marked } from 'marked'
 import { renderCitations, onBibliography } from './citations.js'
-import deckFileContent from 'virtual:slides'
+import deckFileContent, { language as fileLanguage, languages as deckLanguages } from 'virtual:slides'
 import { parseSlides } from '../core/parseSlides'
 import { validateDeck } from '../core/validateDeck'
 import { loadTheme, setExtensionOverrides, THEME_NAMES, THEME_METAS, PALETTES } from './themeLoader'
@@ -31,6 +31,7 @@ import './reader.css'
 import { SlideRenderer, manifests } from '../layouts/renderSlide'
 import { setCalloutLabels } from './markedSetup'
 import { setDeckLanguage, deckLanguage, stageLabels, t } from '../core/labels.js'
+import { textDirection } from '../core/languages.js'
 import { Icon } from '../components/Icon.jsx'
 import { ConnectedViews } from '../components/ConnectedViews.jsx'
 import './deck-stage.js'
@@ -79,6 +80,24 @@ function withConfigOverrides(deckConfig) {
 // The deck's text: the file's, or on the dev server with ?sample=1 the sample
 // deck, which the design page's pictures show.
 let slidesContent = deckFileContent
+// The deck's languages under `mdeck run`, one file each (talk.en.md beside
+// talk.de.md); a deck in one language has none and shows no switch. The
+// presenter view switches every window, keeping the slide and step: slides
+// match by their place in the deck.
+const LANGUAGES = Object.keys(deckLanguages)
+let deckLang = fileLanguage
+function chooseLanguage(lang) {
+  if (!LANGUAGES.includes(lang)) return false
+  deckLang = lang
+  slidesContent = deckLanguages[lang]
+  return true
+}
+// A deck without `lang` is in the language its file name gives.
+const withFileLanguage = config => config.lang || !deckLang ? config : { ...config, lang: deckLang }
+// A language's name in that language, for the switch's tooltip.
+function languageName(lang) {
+  try { return new Intl.DisplayNames([lang], { type: 'language' }).of(lang) } catch { return lang }
+}
 const hasActivities = () => roomsIn(slidesContent).length > 0
 // What the phones show for the activity on a slide: its component's `phone`
 // description, from the tag's attributes and the slide's heading.
@@ -185,8 +204,15 @@ function usePresence() {
   return presence
 }
 
-function PresenterView({ deckConfig, slides }) {
+function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [index, setIndex] = useState(0)
+  // The notes, slide count and phones follow the language shown.
+  const [lang, setLang] = useState(deckLang)
+  const { slides, deckConfig } = useMemo(() => {
+    if (!chooseLanguage(lang)) return { slides: firstSlides, deckConfig: firstConfig }
+    const parsed = parseSlides(slidesContent)
+    return { slides: parsed.slides, deckConfig: { ...firstConfig, ...withFileLanguage(parsed.deckConfig) } }
+  }, [lang])
   const [theme, setTheme] = useState(deckConfig.theme ?? 'neue')
   // '' means the theme's own default, for both.
   const [palette, setPalette] = useState(deckConfig.palette ?? '')
@@ -246,6 +272,8 @@ function PresenterView({ deckConfig, slides }) {
   const orderRef = useRef(null)
   orderRef.current ??= createOrder()
   const indexRef = useRef(0)
+  const langRef = useRef(lang)
+  langRef.current = lang
   const stateRef = useRef({ index: 0, step: -1 })
   const paletteDropRef = useRef(null)
   indexRef.current = index
@@ -255,7 +283,7 @@ function PresenterView({ deckConfig, slides }) {
   useEffect(() => {
     announceSlide({ slides, deckConfig }, index, { initial: !announcedOnce.current })
     announcedOnce.current = true
-  }, [index])
+  }, [index, lang])
 
   const themeMeta = THEME_METAS[theme]
   // The palettes this theme offers, and what the deck shows right now.
@@ -289,17 +317,28 @@ function PresenterView({ deckConfig, slides }) {
   useEffect(() => {
     function onMessage({ data, source }) {
       if (source === previewRef.current?.contentWindow) {
-        if (data?.deckStateChanged && data.reason === 'init') sendTo(source, 'goTo', indexRef.current + 1)
+        // A preview that (re)loaded, such as after the last slide, opens in
+        // the deck file's language: it gets the one shown.
+        if (data?.deckStateChanged && data.reason === 'init') {
+          sendTo(source, 'goTo', indexRef.current + 1)
+          if (LANGUAGES.length) sendTo(source, 'setLanguage', langRef.current)
+        }
         return
       }
       if (source !== iframeRef.current?.contentWindow) return
       if (typeof data?.inkMode === 'boolean') { setInking(data.inkMode); return }
+      // Another screen (a paired iPad) switched the language; the notes follow.
+      if (LANGUAGES.includes(data?.deckLanguage)) { setLang(data.deckLanguage); return }
       if (!data?.deckStateChanged) return
       const state = data.deckStateChanged
       const i = state.index
       // Theme reloads must not reset the current reveal position.
+      // A reloaded frame opens in the deck file's language; after its place
+      // is back, it gets the one shown.
+      const keepLanguage = () => { if (data.reason === 'init' && LANGUAGES.length) sendTo(iframeRef.current?.contentWindow, 'setLanguage', langRef.current) }
       if (data.reason === 'init' && stateRef.current.index === i) {
         sendTo(iframeRef.current?.contentWindow, 'setState', stateRef.current)
+        keepLanguage()
         return
       }
       stateRef.current = state
@@ -308,6 +347,7 @@ function PresenterView({ deckConfig, slides }) {
         bcRef.current?.postMessage({ deckControl: { command: 'setState', value: state, order: orderRef.current.stamp() } })
       }
       sendTo(previewRef.current?.contentWindow, 'goTo', i + 1)
+      keepLanguage()
     }
     window.addEventListener('message', onMessage)
     // The frame may have started drawing before this listener was there.
@@ -328,6 +368,7 @@ function PresenterView({ deckConfig, slides }) {
         (e.key === 'd' || e.key === 'D')                                  ? 'ink' : null
       if ((e.key === 'f' || e.key === 'F') && fullscreen?.available()) { e.preventDefault(); fullscreen.toggle(); return }
       if (e.key === 'n' || e.key === 'N') { e.preventDefault(); setDrawerOpen(open => !open); return }
+      if ((e.key === 'l' || e.key === 'L') && LANGUAGES.length) { e.preventDefault(); nextLanguage(); return }
       if (!cmd) return
       e.preventDefault()
       sendTo(iframeRef.current?.contentWindow, cmd, cmd === 'ink' ? 'toggle' : undefined)
@@ -370,6 +411,19 @@ function PresenterView({ deckConfig, slides }) {
   useEffect(() => {
     bcRef.current?.postMessage({ deckControl: { command: 'setTheme', theme, palette, appearance } })
   }, [theme, palette, appearance])
+
+  // Another language: every window swaps its slides in place. The address
+  // keeps it, for a reload and for windows opened later.
+  const langOnce = useRef(false)
+  useEffect(() => {
+    if (!langOnce.current) { langOnce.current = true; return }
+    const url = new URL(window.location.href)
+    url.searchParams.set('lang', lang)
+    history.replaceState(null, '', url)
+    for (const win of [iframeRef.current?.contentWindow, previewRef.current?.contentWindow]) sendTo(win, 'setLanguage', lang)
+    bcRef.current?.postMessage({ deckControl: { command: 'setLanguage', value: lang } })
+  }, [lang])
+  const nextLanguage = () => setLang(current => LANGUAGES[(LANGUAGES.indexOf(current) + 1) % LANGUAGES.length])
 
   // Nav buttons drive the presenter iframe; audience follows via slideIndexChanged
   function navCommand(cmd) {
@@ -479,7 +533,7 @@ function PresenterView({ deckConfig, slides }) {
               style={{ width: '80px', accentColor: '#444', cursor: 'pointer', opacity: 0.6 }}
             />
           </div>
-          <div class="notes-md" style={{
+          <div class="notes-md" dir={textDirection(deckConfig.lang) === 'rtl' ? 'rtl' : undefined} style={{
             flex: 1,
             margin: 0,
             padding: '10px 12px',
@@ -501,17 +555,17 @@ function PresenterView({ deckConfig, slides }) {
         </div>
 
         {!lookFolded && <div class="presenter-look" style={{ flexShrink: 0, display: 'flex', gap: '6px', marginBottom: '8px', alignItems: 'flex-end' }}>
-          <label style={{ flex: 1 }}>
+          <label style={{ flex: '1 1 auto', minWidth: 0 }}>
             <span style={S.label}>Theme</span>
             <button
               onClick={() => setThemeModalOpen(true)}
               style={{ ...S.select, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', cursor: 'pointer' }}
             >
-              <span>{theme}</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{theme}</span>
               <span style={{ opacity: 0.5, flexShrink: 0 }}><PresenterIcon name="grid" size={13} /></span>
             </button>
           </label>
-          <label style={{ flex: 1 }}>
+          <label style={{ flex: '1 1 auto', minWidth: 0 }}>
             <span style={S.label}>Palette</span>
             <div ref={paletteDropRef} style={{ position: 'relative' }}>
               <button
@@ -519,22 +573,22 @@ function PresenterView({ deckConfig, slides }) {
                 onClick={() => setPaletteOpen(o => !o)}
                 style={{ ...S.select, display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', textAlign: 'left' }}
               >
-                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shown.palette?.title ?? ''}</span>
                 <PaletteSwatches tokens={shown.palette?.[shown.appearance] ?? {}} />
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shown.palette?.title ?? ''}</span>
                 <span style={{ opacity: 0.5, flexShrink: 0 }}><PresenterIcon name="dropdown" size={13} /></span>
               </button>
               {paletteOpen && (
-                <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, right: 0, background: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '5px', zIndex: 100, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.6)' }}>
+                <div style={{ position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, minWidth: '100%', whiteSpace: 'nowrap', background: '#1a1a1a', border: '1px solid #2e2e2e', borderRadius: '5px', zIndex: 100, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.6)' }}>
                   {offered.map(p => (
                     <div
                       key={p.id}
                       class="presenter-palette-option"
                       title={p.description}
                       onClick={() => { setPalette(p.id === themeMeta?.palette ? '' : p.id); setPaletteOpen(false) }}
-                      style={{ padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', fontSize: '13px', color: shown.palette?.id === p.id ? '#f0f0f0' : '#aaa', background: shown.palette?.id === p.id ? '#2a2a2a' : 'transparent' }}
+                      style={{ padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: shown.palette?.id === p.id ? '#f0f0f0' : '#aaa', background: shown.palette?.id === p.id ? '#2a2a2a' : 'transparent' }}
                     >
-                      <span>{p.title}{p.id === themeMeta?.palette ? <span style={{ color: '#666' }}> · theme default</span> : null}</span>
                       <PaletteSwatches tokens={p[shown.appearance] ?? {}} />
+                      <span>{p.title}{p.id === themeMeta?.palette ? <span style={{ color: '#666' }}> · theme default</span> : null}</span>
                     </div>
                   ))}
                 </div>
@@ -542,7 +596,7 @@ function PresenterView({ deckConfig, slides }) {
             </div>
           </label>
           <label style={{ flexShrink: 0 }}>
-            <span style={S.label}>Light or dark</span>
+            <span style={S.label}>Mode</span>
             <div class="presenter-appearance" role="group" aria-label="Light or dark" style={{ display: 'flex', gap: '2px', height: '28px' }}>
               {['light', 'dark'].map(mode => (
                 <button
@@ -556,6 +610,20 @@ function PresenterView({ deckConfig, slides }) {
               ))}
             </div>
           </label>
+          {LANGUAGES.length > 0 && <label style={{ flexShrink: 0 }}>
+            <span style={S.label}>Language</span>
+            <div class="presenter-language" role="group" aria-label="Language" style={{ display: 'flex', gap: '2px', height: '28px' }}>
+              {LANGUAGES.map(code => (
+                <button
+                  key={code}
+                  aria-pressed={lang === code}
+                  title={`${languageName(code)} (L switches)`}
+                  onClick={() => setLang(code)}
+                  style={{ ...S.btn, padding: '3px 7px', ...(lang === code ? { background: '#2a2a2a', color: '#f0f0f0', borderColor: '#444' } : {}) }}
+                >{code.toUpperCase()}</button>
+              ))}
+            </div>
+          </label>}
           <button class="presenter-look-fold" title="Fold theme and palette" aria-label="Fold theme and palette" onClick={() => foldLook(true)}
             style={{ ...S.btn, padding: 0, width: '28px', height: '28px', flexShrink: 0, background: 'none', borderColor: 'transparent', color: '#888' }}
           ><PresenterIcon name="fold" size={16} /></button>
@@ -682,8 +750,8 @@ async function init() {
   if (import.meta.env.DEV && url.searchParams.get('sample') === '1') {
     const { sampleDeck, sampleDataUrl } = await import('../editor/sampleDeck.js')
     slidesContent = sampleDeck(sampleDataUrl())
-  }
-  const parsed = parseSlides(slidesContent)
+  } else chooseLanguage(url.searchParams.get('lang'))
+  let parsed = parseSlides(slidesContent)
   const editorMode = url.searchParams.get('editor') === '1'
   // One switch selects the view: deck, reader, presenter or audience.
   const defaultView = typeof __MDECK_DEFAULT_VIEW__ !== 'undefined' ? __MDECK_DEFAULT_VIEW__ : 'deck'
@@ -694,7 +762,7 @@ async function init() {
     document.body.style.whiteSpace = 'pre-wrap'
     return
   }
-  const deckConfig = withConfigOverrides(parsed.deckConfig)
+  const deckConfig = withConfigOverrides(withFileLanguage(parsed.deckConfig))
   setCalloutLabels(deckConfig)
   setDeckLanguage(deckConfig)
   document.documentElement.lang = deckLanguage()
@@ -722,11 +790,11 @@ async function init() {
     s.textContent = `
       .notes-md p { margin: 0 0 6px; }
       .notes-md p:last-child { margin-bottom: 0; }
-      .notes-md ul, .notes-md ol { margin: 0 0 6px; padding-left: 1.4em; }
+      .notes-md ul, .notes-md ol { margin: 0 0 6px; padding-inline-start: 1.4em; }
       .notes-md li { margin-bottom: 2px; }
       .notes-md strong, .notes-md b { color: #f0f0f0; font-weight: 600; }
       .notes-md em, .notes-md i { font-style: italic; color: #bbb; }
-      .notes-md code { font-family: ui-monospace, monospace; font-size: 0.9em; background: #222; padding: 1px 4px; border-radius: 3px; }
+      .notes-md code { direction: ltr; unicode-bidi: isolate; font-family: ui-monospace, monospace; font-size: 0.9em; background: #222; padding: 1px 4px; border-radius: 3px; }
       .notes-md a { color: #aaa; }
     `
     document.head.appendChild(s)
@@ -743,7 +811,29 @@ async function init() {
     else if (ctrl.command === 'reset') stage.reset()
     else if (ctrl.command === 'goTo' && Number.isInteger(ctrl.value)) stage.goTo(ctrl.value)
     else if (ctrl.command === 'setState') stage.setState(ctrl.value)
+    else if (ctrl.command === 'setLanguage') switchLanguage(ctrl.value)
     else if (ctrl.command === 'ink' && drawHere) stage.inking = ctrl.value === 'toggle' ? !stage.inking : !!ctrl.value
+  }
+
+  // The same slide and step in another language, its words and mdeck's own;
+  // or `state`, where the screen that switched is: that screen tells the
+  // others, not the ones that follow it. Says whether it switched.
+  let announceLanguage = null
+  function switchLanguage(lang, { state = document.querySelector('deck-stage')?.state, announce = true } = {}) {
+    if (lang === deckLang || !chooseLanguage(lang)) return false
+    const stage = document.querySelector('deck-stage')
+    parsed = parseSlides(slidesContent)
+    const config = withConfigOverrides(withFileLanguage(parsed.deckConfig))
+    setCalloutLabels(config)
+    setDeckLanguage(config)
+    document.documentElement.lang = deckLanguage()
+    // Explicit slide ids may differ between the files; the place does not.
+    mountDeck({ deck: parsed, deckConfig: config })
+    if (state) setTimeout(() => document.querySelector('deck-stage')?.setState({ ...state, slideId: undefined }), 0)
+    if (!embedded && !followMode && stage) announceSlide(parsed, stage.index)
+    if (announce) announceLanguage?.()
+    if (embedded) window.parent.postMessage({ deckLanguage: lang }, window.location.origin)
+    return true
   }
 
   // Editor preview: the editor pushes whole sources; render best effort and
@@ -789,8 +879,8 @@ async function init() {
   // Main slide frames and audience windows both send and follow navigation.
   // Share their position connection with ink; previews stay on local channels.
   if (inkStage && (drawHere || audienceMode)) {
-    followStageRoom(inkStage)
-    announceStagePosition(inkStage)
+    followStageRoom(inkStage, { onLanguage: (lang, state) => switchLanguage(lang, { state, announce: false }) })
+    announceLanguage = announceStagePosition(inkStage, { language: () => LANGUAGES.length ? deckLang : null })
   }
   // Whether another screen shows the deck, so that a video played in the
   // presenter view is silent there and its sound comes from that screen
@@ -839,6 +929,7 @@ async function init() {
   } else if (inkStage && followMode) {
     // The presenter's slide and ink, read from the stage room; counted as a phone.
     inkStage.setAttribute('data-follower', '')
+    onStagePosition(position => { if (position.lang) switchLanguage(position.lang, { announce: false }) })
     startFollowing(inkStage, { onStagePosition, words: { live: t('follow.live'), back: t('follow.back'), waiting: t('follow.waiting') } })
     watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true, view: 'phone' })] })
   } else if (inkStage && audienceMode) {

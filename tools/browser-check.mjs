@@ -20,7 +20,7 @@ import { resultsPlugin } from '../src/build/resultsPlugin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-browser-check-'))
-let browser, dev, pollDev, inkDev, stageDev, videoDev, tablet2
+let browser, dev, pollDev, inkDev, stageDev, videoDev, langDev, tablet2
 try {
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-layouts/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   browser = await launchChrome({ dir: temp, timeout: 45000 })
@@ -571,7 +571,70 @@ try {
   await until(record, "[...document.querySelectorAll('[data-deck-active] .poll-count')].map(e => e.textContent).join() === '0,1' && !document.querySelector('[data-deck-active] .poll-dot')")
   // A page left open in front would keep the later checks' pages in the background.
   await record.close()
-  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, and in one browser without a server (also with a standalone server for the polls).')
+
+  // A deck in three languages (talk.en.md, talk.de.md, talk.fa.md): the presenter switches
+  // every window in place, at the same slide; the notes, mdeck's own words and
+  // a follower in the room switch too. One language shows no switch.
+  const langDeck = resolve(temp, 'talk.en.md')
+  writeFileSync(langDeck, '---\ntheme: neue\n---\n# Enzyme kinetics\n\n---\n\n# Rate\n\n:::notes\nENGLISH_NOTES\n:::\n\n---\n\n::: tip\nMeasure early.\n:::\n')
+  writeFileSync(resolve(temp, 'talk.de.md'), '---\ntheme: neue\n---\n# Enzymkinetik\n\n---\n\n# Geschwindigkeit\n\n:::notes\nDEUTSCHE_NOTIZEN\n:::\n\n---\n\n::: tip\nFrüh messen.\n:::\n')
+  writeFileSync(resolve(temp, 'talk.fa.md'), '---\ntheme: neue\n---\n# سینتیک آنزیم\n\n---\n\n# سرعت\n\n:::notes\nیادداشت_فارسی\n:::\n\n---\n\n```python\nrate = 2\n```\n')
+  const langConfig = baseConfig(langDeck)
+  langDev = await createServer({ ...langConfig, plugins: [...langConfig.plugins, livePlugin()], server: { ...langConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  await langDev.listen()
+  const langBase = langDev.resolvedUrls.local[0]
+  const langPresenter = await open(new URL('?view=presenter', langBase).href)
+  const langFrame = "document.querySelector('iframe').contentDocument.querySelector('deck-stage')"
+  await until(langPresenter, `!!document.querySelector('.presenter-language') && ${langFrame}?.length === 3`)
+  const langSession = new URL(await langPresenter.evaluate('location.href')).searchParams.get('session')
+  const langAudience = await open(new URL(`?view=audience&session=${langSession}`, langBase).href)
+  const langFollower = await open(new URL('?view=follow', langBase).href)
+  await until(langAudience, "document.querySelector('deck-stage')?.length === 3")
+  await until(langFollower, "document.querySelector('deck-stage')?.length === 3")
+  await delay(500)
+  await langPresenter.evaluate(`${langFrame}.next()`)
+  await until(langAudience, "document.querySelector('deck-stage').index === 1")
+  await until(langPresenter, "document.querySelector('.notes-md').textContent.includes('ENGLISH_NOTES')")
+  await langPresenter.evaluate("[...document.querySelectorAll('.presenter-language button')].find(b => b.textContent === 'DE').click()")
+  for (const page of [langAudience, langFollower]) await until(page, "document.querySelector('deck-stage').textContent.includes('Geschwindigkeit') && document.documentElement.lang === 'de'")
+  await until(langPresenter, `${langFrame}.textContent.includes('Geschwindigkeit') && document.querySelector('.notes-md').textContent.includes('DEUTSCHE_NOTIZEN')`)
+  assert.equal(await langAudience.evaluate("document.querySelector('deck-stage').index"), 1, 'the audience stays on its slide')
+  assert.equal(new URL(await langPresenter.evaluate('location.href')).searchParams.get('lang'), 'de', 'a reload keeps the language')
+  await langPresenter.evaluate(`${langFrame}.next()`)
+  await until(langAudience, "document.querySelector('deck-stage').index === 2 && document.querySelector('deck-stage').textContent.includes('Tipp')")
+  // L goes round the languages: German, Farsi, English.
+  await langPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'l' }))")
+  await until(langAudience, "document.querySelector('deck-stage').textContent.includes('rate = 2') && document.querySelector('deck-stage').index === 2")
+  await langPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'l' }))")
+  await until(langAudience, "document.querySelector('deck-stage').textContent.includes('Measure early') && document.querySelector('deck-stage').index === 2")
+  // A second presenter view (a paired iPad) follows a switch made in the first, notes and all.
+  const langIpad = await open(new URL('?view=presenter', langBase).href)
+  await until(langIpad, "!!document.querySelector('.presenter-language') && !!document.querySelector('iframe')?.contentDocument?.querySelector('deck-stage')?.textContent.includes('Measure early')")
+  await langPresenter.evaluate("[...document.querySelectorAll('.presenter-language button')].find(b => b.textContent === 'DE').click()")
+  await until(langIpad, `${langFrame}.textContent.includes('Früh messen') && document.querySelector('.presenter-language button[aria-pressed=true]').textContent === 'DE'`)
+  // Farsi runs from right to left: the slides and the notes, not the code
+  // or mdeck's controls around them.
+  await langPresenter.evaluate("[...document.querySelectorAll('.presenter-language button')].find(b => b.textContent === 'FA').click()")
+  await until(langAudience, "document.querySelector('deck-stage').textContent.includes('rate = 2') && document.querySelector('section.slide[dir=rtl] pre') !== null")
+  assert.equal(await langAudience.evaluate("getComputedStyle(document.querySelector('section.slide pre')).direction"), 'ltr', 'code reads from left to right')
+  assert.equal(await langAudience.evaluate("getComputedStyle(document.querySelector('deck-stage')).direction"), 'ltr', "mdeck's controls keep their direction")
+  await langPresenter.evaluate(`${langFrame}.prev()`)
+  await until(langPresenter, "document.querySelector('.notes-md[dir=rtl]')?.textContent.includes('یادداشت_فارسی')")
+  // The next-slide preview goes away on the last slide; back from there it
+  // opens again in the language shown, not the file's.
+  await langPresenter.evaluate(`${langFrame}.next()`)
+  await until(langPresenter, "!document.querySelector('iframe[title=\"Next slide preview\"]')")
+  await langPresenter.evaluate(`${langFrame}.prev()`)
+  await until(langPresenter, "document.querySelector('iframe[title=\"Next slide preview\"]')?.contentDocument?.querySelector('deck-stage')?.textContent.includes('rate = 2') && document.querySelector('iframe[title=\"Next slide preview\"]').contentDocument.documentElement.lang === 'fa'")
+  await langIpad.close()
+  await langAudience.close()
+  await langFollower.close()
+  await langPresenter.close()
+  const oneLanguage = await open(new URL('?view=presenter', inkDev.resolvedUrls.local[0]).href)
+  await until(oneLanguage, "!!document.querySelector('.presenter-look')")
+  assert.equal(await oneLanguage.evaluate("!!document.querySelector('.presenter-language')"), false, 'one language shows no switch')
+  await oneLanguage.close()
+  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls).')
 } finally {
   await browser?.close()
   await tablet2?.close()
@@ -580,5 +643,6 @@ try {
   await inkDev?.close()
   await stageDev?.close()
   await videoDev?.close()
+  await langDev?.close()
   rmSync(temp, { recursive: true, force: true })
 }

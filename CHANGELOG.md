@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- A talk in several languages is one file per language, side by side and named for it: `talk.en.md`, `talk.de.md`, `talk.hi.md`. `mdeck run` finds them and the presenter view gets a **Language** switch (**L** for the next language): the slides, the notes and mdeck's own words change in every window, the audience window, a paired iPad and phones following the talk, at the same slide and step. A file named this way needs no `lang`. A deck in one language shows no switch.
+- A deck in a language written from right to left (`lang: fa`, `ar`, `he` …) runs its slides and notes from right to left in every theme; code, maths and mdeck's controls stay left to right. The Python example comes in German, Hindi and Farsi too.
+- The presenter view calls the light and dark switch **Mode**.
+- The presenter view's next-slide preview keeps the language shown after the last slide or a reload, instead of going back to the file's.
+- The presenter view shows a palette as the theme gallery does: one chip of its background and two accents, in front of its name.
+
 ## 3.7.1 — 2026-10-09
 
 - A video file on a slide (`<videoplayer src="…" />`) follows the presenter view, on the laptop or a paired iPad: play, pause and a jump there do the same in the audience window, which plays the sound while the presenter view's copy stays silent. This works without a server too, in a built folder. An audience window that nobody has clicked yet plays silently and offers **Click for sound** (German: **Klicken für Ton**). Online videos from YouTube, Vimeo or SwitchTube still play only where they are started; the iPad guide says so.

@@ -15,6 +15,7 @@ import { assertDrawings } from './drawings.js'
 import { marked } from 'marked'
 import { scanTags, replaceTagsIn, withAttribute } from '../core/tags.js'
 import { resolveBibliography, sampleBibliography } from './bibliography.js'
+import { languageOfFile, languageFiles } from '../core/languages.js'
 
 const VIRTUAL_ID = 'virtual:slides'
 const RESOLVED_ID = '\0virtual:slides'
@@ -217,12 +218,19 @@ export function deckLookOnly(registry, deckConfig = {}) {
   return { ...registry, themes: { [theme.id]: theme }, palettes: palette ? { [palette.id]: registry.palettes[palette.id] } : {} }
 }
 
+// The same deck in its other languages (talk.en.md beside talk.de.md), for
+// the presenter view's language switch: `[{ lang, file }]`, or none.
+export function deckLanguages(abs) {
+  try { return languageFiles(basename(abs), readdirSync(dirname(abs))).map(({ lang, file }) => ({ lang, file: resolve(dirname(abs), file) })) } catch { return [] }
+}
+
 // `editor` keeps the page alive while `mdeck edit` rewrites the deck: deck
 // changes only invalidate the module, validation errors are warnings, and
 // extension changes are announced instead of forcing a reload. `source` is
 // the deck's text where there is no file (`mdeck design`, on the sample deck);
-// `slidesPath` then only says where its folder is.
-export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, stripActivities = false, ink = true, results = true, embedFonts: embedThemeFonts = false, deckLook = false, source: given = null } = {}) {
+// `slidesPath` then only says where its folder is. `languages` also brings
+// the deck's other languages along, for `mdeck run`; a built file has one.
+export function slidesPlugin(slidesPath, { languages = false, inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, stripActivities = false, ink = true, results = true, embedFonts: embedThemeFonts = false, deckLook = false, source: given = null } = {}) {
   const abs = resolve(slidesPath)
   const readDeck = () => given ?? readFileSync(abs, 'utf-8')
   const watchDeck = context => { if (given === null) context.addWatchFile(abs) }
@@ -231,6 +239,10 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
     return stripActivities ? stripActivitiesFrom(shared).source : shared
   }
   const inkPath = inkFileFor(abs)
+  // The language the file name gives, for a deck that sets no `lang`.
+  const fileLanguage = given === null ? languageOfFile(basename(abs))?.lang ?? null : null
+  const otherLanguages = () => languages && given === null ? deckLanguages(abs).filter(({ file }) => file !== abs) : []
+  let languageWatch = []
   const resultsPath = resultsFileFor(abs)
   const extensionDirs = extensionRoots(abs).map(root => root.dir)
   let componentDirs = componentFolders(abs, readDeck()).map(folder => folder.dir)
@@ -306,7 +318,20 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
         if (errors.length && !editor) throw new Error(formatDiagnostics(errors, abs))
         if (diagnostics.length) this.warn(formatDiagnostics(diagnostics, abs))
         const source = maybeInlineAssets(sourceFor(raw), abs, { inlineImages, inlineMedia })
-        return `export default ${JSON.stringify(source)}`
+        // The other languages are read as they are: `mdeck check` checks each file.
+        const others = otherLanguages()
+        languageWatch = others.map(({ file }) => file)
+        for (const file of languageWatch) this.addWatchFile(file)
+        for (const { file } of others) {
+          const found = validateDeck(parseSlides(readFileSync(file, 'utf-8')), {
+            layouts: manifestsOf(registry, 'layout'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette'),
+          })
+          if (found.length) this.warn(formatDiagnostics(found, file))
+        }
+        const translations = others.length && fileLanguage
+          ? { [fileLanguage]: source, ...Object.fromEntries(others.map(({ lang, file }) => [lang, maybeInlineAssets(sourceFor(readFileSync(file, 'utf-8')), file, { inlineImages, inlineMedia })])) }
+          : {}
+        return `export default ${JSON.stringify(source)}\nexport const language = ${JSON.stringify(fileLanguage)}\nexport const languages = ${JSON.stringify(translations)}`
       }
       // The deck's saved ink (<deck>.drawings.json), scaled to its design size.
       // Builds bundle it, so the reader view and PDFs show it too.
@@ -385,7 +410,7 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       if (!/(^|[\/])index\.html$/.test(context.filename ?? context.path ?? '')) return html
       let config = {}
       try { config = parseSlides(readDeck()).deckConfig ?? {} } catch {}
-      const lang = config.lang
+      const lang = config.lang ?? fileLanguage
       if (typeof lang === 'string' && /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(lang)) html = html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`)
       if (embedThemeFonts) {
         const theme = loadRegistry(abs).themes[config.theme ?? 'neue']?.manifest
@@ -412,6 +437,11 @@ export function slidesPlugin(slidesPath, { inlineImages = false, inlineMedia = f
       }
       if (changed === inkPath) {
         reload(server, [RESOLVED_INK_ID], changed)
+        return []
+      }
+      if (languageWatch.includes(changed)) {
+        invalidate(server, [RESOLVED_ID])
+        if (!editor) server.ws.send({ type: 'full-reload' })
         return []
       }
       if (bibFiles.includes(changed)) {

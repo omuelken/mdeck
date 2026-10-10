@@ -61,10 +61,24 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | I | Hide or show the drawings |
 | F | Full screen, where the browser allows it |
 | N | Open or close the notes drawer, in the presenter view's slide-only layout |
+| L | Switch to the talk's next language, for a talk written in several (see below) |
 
 Click the slide area if your keys are not controlling it. Keys behave normally while you are typing in a text field.
 
 The timer is for your own reference; you can start, pause, and reset it in the presenter view.
+
+## One talk in several languages
+
+To give a talk in English, German or another language as the room needs, write it once per language, in files side by side named for it:
+
+```text
+talk.en.md
+talk.de.md
+```
+
+Start either with `mdeck run talk.en.md`: the presenter view gets a **Language** switch, and **L** goes to the next language. Switching changes the slides, your notes and the words mdeck shows in every window, including the audience window, a paired iPad and phones following along, and keeps your place, the step on the slide and the drawings. Slides match by their place in the deck, so keep the same slides in the same order in every file. A talk in one language shows no switch.
+
+`mdeck send talk.de.md` makes the German file to hand out; each file is a complete deck of its own.
 
 ## Reveal points one at a time
 

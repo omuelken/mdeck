@@ -9,14 +9,14 @@
 .poll-row { display: grid; grid-template-columns: minmax(120px, 28%) 1fr 3ch; gap: 24px; align-items: center; }
 .poll-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* buttons="letters|numbers": the key phones show, before the option. */
-.poll-key { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; margin-right: .5em; padding: 0 .3em; border-radius: .4em; background: color-mix(in srgb, var(--accent, #0d9488) 14%, transparent); color: var(--accent, #0d9488); font-weight: 700; font-size: .8em; vertical-align: .1em; }
+.poll-key { display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; margin-inline-end: .5em; padding: 0 .3em; border-radius: .4em; background: color-mix(in srgb, var(--accent, #0d9488) 14%, transparent); color: var(--accent, #0d9488); font-weight: 700; font-size: .8em; vertical-align: .1em; }
 /* A picture as an option: a thumbnail beside its bar. */
 .poll-label:has(img) { white-space: normal; }
 .poll-label img { max-height: 3.2em; max-width: 100%; vertical-align: middle; }
 .poll .poll-several { margin: -20px 0 24px; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
 .poll-track { height: 1.1em; background: color-mix(in srgb, var(--ink, #111) 8%, transparent); border-radius: 6px; overflow: hidden; }
 .poll-fill { display: block; height: 100%; background: var(--accent, #0d9488); border-radius: 6px; transition: width .6s cubic-bezier(.2, .8, .2, 1); }
-.poll-count { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.poll-count { text-align: end; font-variant-numeric: tabular-nums; font-weight: 600; }
 .poll .poll-total { display: flex; align-items: center; gap: 14px; margin: 36px 0 0; font-size: var(--fs-small, 24px); color: var(--muted, #666); }
 .poll-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted, #999); opacity: .5; }
 .poll-dot.is-live { background: #16a34a; opacity: 1; }
@@ -44,16 +44,16 @@ deck-stage[data-follower] .poll.is-results-hidden .poll-fill, deck-stage[data-fo
 .poll-link { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 20px; color: var(--muted, #555); }
 /* The join code in the slide's own colours (see QrCode.jsx). */
 .poll-join { flex: none; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 18px; border: 1px solid var(--rule, rgba(0,0,0,.12)); border-radius: 12px; color: var(--ink, #111); text-decoration: none; font-size: var(--fs-small, 24px); }
-.poll-join--local { display: block; max-width: 460px; text-align: left; line-height: 1.4; color: var(--ink-soft, var(--ink, #333)); }
+.poll-join--local { display: block; max-width: 460px; text-align: start; line-height: 1.4; color: var(--ink-soft, var(--ink, #333)); }
 .poll-join--local code { display: inline; font-size: .9em; }
 .poll-join--local a { color: var(--accent, #0d9488); }
 
 /* <question>: the newest answers as cards */
 .question-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
 .slide-body .question-cards li::before, .question-cards li::before, .question-cards li::marker { content: none; display: none; }
-.slide-body .question-cards li { padding-left: 22px; }
-.question-cards li { margin: 0; padding: 18px 22px; border-radius: 10px; background: var(--surface, color-mix(in srgb, var(--ink, #111) 5%, transparent)); border-left: 5px solid var(--accent, #0d9488); font-size: .8em; line-height: 1.35; overflow-wrap: anywhere; animation: poll-in .4s ease both; }
-.question-cards li:first-child { border-left-color: var(--accent-2, var(--accent, #0d9488)); }
+.slide-body .question-cards li { padding-inline-start: 22px; }
+.question-cards li { margin: 0; padding: 18px 22px; border-radius: 10px; background: var(--surface, color-mix(in srgb, var(--ink, #111) 5%, transparent)); border-inline-start: 5px solid var(--accent, #0d9488); font-size: .8em; line-height: 1.35; overflow-wrap: anywhere; animation: poll-in .4s ease both; }
+.question-cards li:first-child { border-inline-start-color: var(--accent-2, var(--accent, #0d9488)); }
 .question-empty { margin: 0; color: var(--muted, #666); font-style: italic; }
 @keyframes poll-in { from { opacity: 0; transform: translateY(8px); } }
 

@@ -118,7 +118,7 @@ id: poll-the-type-of-a-p-value
 <poll room="p-value" options="int|float|str|bool" answer="float" />
 
 :::notes
-A quick check before moving on. Phones join with the QR code; start the deck with `mdeck run slides.md --network` so they can reach this computer.
+A quick check before moving on. Phones join with the QR code; start the deck with `mdeck run slides.en.md --network` so they can reach this computer.
 
 Answer: `float`; the tick button under the bars marks it. If many chose `bool`, they are thinking of the *significance flag* computed from it (`p < 0.05`): a good moment to show that comparisons produce booleans.
 :::

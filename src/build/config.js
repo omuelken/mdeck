@@ -38,7 +38,7 @@ export function baseConfig(slidesPath, { selfContained = false, defaultView = 'd
   return {
     configFile: false,
     root: runtimeRoot,
-    plugins: [preact(), slidesPlugin(abs, source === undefined ? {} : { source })],
+    plugins: [preact(), slidesPlugin(abs, source === undefined ? { languages: true } : { source })],
     // Deck-local components live outside the framework root and have no
     // node_modules of their own, so their preact imports must resolve back to
     // the framework's copy — and to the *same* instance, or hooks break.

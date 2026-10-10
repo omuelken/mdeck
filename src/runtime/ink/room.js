@@ -67,13 +67,19 @@ export function roomTransport({ receive = false, view = null, onPresence = null 
 // Position followers, attached before the transport listens.
 const stateListeners = new Set()
 
-/** Follow navigation from another device in either kind of main slide window. */
-export function followStageRoom(stage) {
+/**
+ * Follow navigation from another device in either kind of main slide window.
+ * `onLanguage(lang, state)` switches a deck in several languages to the one
+ * shown there, at that state, and says whether it did.
+ */
+export function followStageRoom(stage, { onLanguage } = {}) {
   stateListeners.add(state => {
     if (!state || state.screen === stageRoom().screen || !Number.isInteger(state.index)) return
+    const position = { index: state.index, step: state.step ?? -1, slideId: state.slideId }
+    if (state.lang && onLanguage?.(state.lang, position)) return
     const current = stage.state
     if (current?.index === state.index && current?.step === state.step) return
-    stage.setState({ index: state.index, step: state.step ?? -1, slideId: state.slideId })
+    stage.setState(position)
   })
 }
 
@@ -81,17 +87,22 @@ export function followStageRoom(stage) {
 export function onStagePosition(listener) {
   stateListeners.add(state => {
     if (!state || state.screen === stageRoom().screen || !Number.isInteger(state.index)) return
-    listener({ index: state.index, step: state.step ?? -1, slideId: state.slideId })
+    listener({ index: state.index, step: state.step ?? -1, slideId: state.slideId, lang: state.lang })
   })
 }
 
-/** Publish navigation made here; received positions never echo back. */
-export function announceStagePosition(stage) {
+/**
+ * Publish navigation made here; received positions never echo back.
+ * `language()` names the language shown, in a deck that has several. Returns
+ * a function to call when that changes.
+ */
+export function announceStagePosition(stage, { language = () => null } = {}) {
   const room = stageRoom()
   let allowed = null, last = null
   async function post(event) {
     const { index, step, slideId } = stage.state
-    const key = `${slideId}:${index}:${step}`
+    const lang = language() ?? undefined
+    const key = `${slideId}:${index}:${step}:${lang}`
     if (event?.detail.reason === 'sync') { last = key; return }
     if (key === last || allowed === false) return
     // Opening a window must not move the projector; only changes count.
@@ -102,8 +113,9 @@ export function announceStagePosition(stage) {
       allowed = info.reachable && !!info.canReset
       if (!allowed) return
     }
-    fetch(`${room.url}/state`, { method: 'POST', headers: room.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state: { index, step, slideId, at, screen: room.screen } }) }).catch(() => {})
+    fetch(`${room.url}/state`, { method: 'POST', headers: room.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state: { index, step, slideId, lang, at, screen: room.screen } }) }).catch(() => {})
   }
   stage.addEventListener('statechange', post)
   post()
+  return () => post({ detail: { reason: 'language' } })
 }

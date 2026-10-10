@@ -41,7 +41,7 @@
 .slide-logo {
   position: absolute;
   top: calc(var(--pad-y) - 20px);
-  right: var(--pad-x);
+  inset-inline-end: var(--pad-x);
   height: 72px;
   width: auto;
   max-width: 320px;
@@ -183,12 +183,12 @@ strong { color: var(--ink); font-weight: 700; }
 .slide-body ul > li,
 .slide-body ol > li {
   line-height: 1.45;
-  padding-left: 44px;
+  padding-inline-start: 44px;
 }
 .slide-body ul > li::before {
   content: '';
   position: absolute;
-  left: 4px;
+  inset-inline-start: 4px;
   top: 0.5em;
   width: 0.42em;
   height: 0.5em;
@@ -198,7 +198,7 @@ strong { color: var(--ink); font-weight: 700; }
 .slide-body ol > li::before {
   content: counter(slide-ol) '.';
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   top: 0;
   font-weight: 700;
   color: var(--accent);
@@ -259,11 +259,11 @@ strong { color: var(--ink); font-weight: 700; }
   grid-template-columns: 1.2fr 1fr;
   column-gap: 96px;
   align-items: center;
-  text-align: left;
+  text-align: start;
 }
 .slide--title.has-image .title-text { align-items: flex-start; }
 .slide--title.has-image .display { font-size: calc(var(--fs-display) * 0.82); }
-.slide--title.has-image .display::after { margin-left: 0; }
+.slide--title.has-image .display::after { margin-inline-start: 0; }
 .slide--title.has-image .title-image { width: 100%; height: 100%; max-height: 720px; object-fit: contain; }
 .slide--title.has-image .slide-footer { justify-content: flex-start; }
 
@@ -291,8 +291,8 @@ strong { color: var(--ink); font-weight: 700; }
   line-height: 0.9;
   letter-spacing: -0.04em;
   color: var(--accent);
-  padding-right: 56px;
-  border-right: 4px solid var(--accent);
+  padding-inline-end: 56px;
+  border-inline-end: 4px solid var(--accent);
   font-variant-numeric: lining-nums;
   user-select: none;
 }
@@ -349,9 +349,9 @@ strong { color: var(--ink); font-weight: 700; }
 }
 .slide--focus .slide-body > * {
   background: var(--accent-soft);
-  border-left: 8px solid var(--accent);
-  padding-left: 64px;
-  padding-right: 80px;
+  border-inline-start: 8px solid var(--accent);
+  padding-inline-start: 64px;
+  padding-inline-end: 80px;
 }
 .slide--focus .slide-body > :first-child { padding-top: 48px; }
 .slide--focus .slide-body > :last-child { padding-bottom: 48px; }
@@ -384,7 +384,7 @@ strong { color: var(--ink); font-weight: 700; }
   font-size: var(--fs-small);
   font-weight: 600;
   color: var(--muted);
-  text-align: right;
+  text-align: end;
   padding-top: 28px;
 }
 
@@ -452,7 +452,7 @@ strong { color: var(--ink); font-weight: 700; }
   --block: var(--muted);
   background: color-mix(in oklab, var(--block) 7%, var(--bg));
   border: 0;
-  border-left: 6px solid var(--block);
+  border-inline-start: 6px solid var(--block);
   border-radius: 0 4px 4px 0;
   padding: 0;
   margin: var(--gap-item) 0;
@@ -488,7 +488,7 @@ strong { color: var(--ink); font-weight: 700; }
 /* Examples and remarks: no fill, the label in small capitals */
 .slide-body :is(.callout-example, .callout-remark) {
   background: none;
-  border-left-width: 3px;
+  border-inline-start-width: 3px;
 }
 .slide-body :is(.callout-example, .callout-remark) .callout-title {
   background: none;
@@ -509,10 +509,10 @@ strong { color: var(--ink); font-weight: 700; }
 }
 .slide-body .callout.callout-proof > * { padding: 0; }
 .slide-body .callout.callout-proof .callout-title {
-  float: left;
+  float: inline-start;
   background: none;
   padding: 0;
-  margin-right: 0.35em;
+  margin-inline-end: 0.35em;
   font-family: var(--font-body);
   font-size: var(--fs-body);
   font-style: italic;
@@ -522,11 +522,11 @@ strong { color: var(--ink); font-weight: 700; }
 }
 .slide-body .callout.callout-proof .callout-title::after { content: '.'; }
 .slide-body .callout.callout-proof > .callout-title + * { margin-top: 0; }
-.slide-body .callout.callout-proof p { padding-left: 0; color: var(--ink-soft); }
+.slide-body .callout.callout-proof p { padding-inline-start: 0; color: var(--ink-soft); }
 .slide-body .callout.callout-proof > :last-child { margin-bottom: 0; }
 .slide-body .callout.callout-proof > :last-child::after {
   content: '\220E';
-  margin-left: 0.6em;
+  margin-inline-start: 0.6em;
   color: var(--ink);
 }
 
@@ -545,7 +545,7 @@ strong { color: var(--ink); font-weight: 700; }
 }
 .slide-body th,
 .slide-body td {
-  padding: 10px 28px 10px 0;
+  padding-block: 10px; padding-inline: 0 28px;
   border: 0;
 }
 .slide-body th {
@@ -570,7 +570,7 @@ strong { color: var(--ink); font-weight: 700; }
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   width: 280px;
   height: 1px;
   background: var(--ink-soft);
@@ -587,7 +587,7 @@ strong { color: var(--ink); font-weight: 700; }
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   width: 280px;
   height: 1px;
   background: var(--ink-soft);
@@ -602,7 +602,7 @@ strong { color: var(--ink); font-weight: 700; }
   --code-size: 24px;
   background: var(--code-bg);
   border-radius: 4px;
-  border-left: 4px solid var(--hairline);
+  border-inline-start: 4px solid var(--hairline);
   padding: 24px 32px;
   margin: 0;
   overflow: hidden;

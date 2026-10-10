@@ -537,6 +537,16 @@ A title written after the type on the `:::` line still wins over both.
 
 The presenter view, the launch page and the editor are tools for the author and always stay English.
 
+### One talk in several languages
+
+Write the talk once per language, in files named for it, side by side: `talk.en.md`, `talk.de.md`, `talk.hi.md` and so on. The language is a two-letter code after the name, with a region if needed (`talk.de-CH.md`). A file named this way needs no `lang`: its name gives it.
+
+`mdeck run talk.en.md` finds the other files with the same name and adds a **Language** switch to the presenter view (**L** goes to the next language). Switching changes the slides, your notes and mdeck's own words in every window: the audience window, a paired iPad and the phones following the talk. Your place stays, as do the step on the slide, the drawings and the poll results: slides match by their place in the deck, so keep the same slides in the same order in every language. A deck in one language shows no switch.
+
+A language written from right to left, such as Farsi (`fa`), Arabic or Hebrew, sets its slides and your notes from right to left: the text, lists, quotations, tables and the place of the header and the page number. Code and maths stay left to right, as do mdeck's own controls.
+
+Each file is a complete deck: `mdeck check`, `mdeck edit` and `mdeck send` work on one language at a time, and drawings and results are kept beside the file you run.
+
 To change single words, name them under `labels`:
 
 ```yaml

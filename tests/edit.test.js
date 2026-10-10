@@ -117,8 +117,8 @@ test('slides can be inserted, removed and moved without disturbing neighbours', 
 })
 
 test('inserting and removing a slide at any position restores the original bytes', () => {
-  for (const name of ['custom-layouts', 'showcase', 'python', 'poll']) {
-    const source = readFileSync(new URL(`../examples/${name}/slides.md`, import.meta.url), 'utf8')
+  for (const name of ['custom-layouts/slides', 'showcase/slides', 'python/slides.en', 'python/slides.de', 'python/slides.hi', 'python/slides.fa', 'poll/slides']) {
+    const source = readFileSync(new URL(`../examples/${name}.md`, import.meta.url), 'utf8')
     const deck = clean(source, name)
     for (let index = 0; index <= deck.slides.length; index++) {
       const inserted = insertSlide(deck, index, ':::meta\nlayout: focus\nid: probe\n:::\n# Probe\n')

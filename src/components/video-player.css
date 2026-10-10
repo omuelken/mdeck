@@ -18,7 +18,7 @@
 .video-player-sound {
   position: absolute;
   top: 12px;
-  right: 12px;
+  inset-inline-end: 12px;
   padding: 8px 14px;
   border: 0;
   border-radius: 999px;

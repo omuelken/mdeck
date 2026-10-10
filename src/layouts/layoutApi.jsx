@@ -5,6 +5,7 @@ import { marked, Parser } from 'marked'
 import { registry } from '../runtime/registry'
 import { scanTags, closeTags } from '../core/tags.js'
 import { expandPollLists } from '../core/pollList.js'
+import { textDirection } from '../core/languages.js'
 import { InkLayer } from '../runtime/ink/InkLayer.jsx'
 import themedSvgs from 'virtual:deck-svgs'
 import { renderCitations, citationsHtml as referencesOf, bibliographyOf } from '../runtime/citations.js'
@@ -222,7 +223,10 @@ export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, 
   const classes = ['slide', layout && 'slide--' + String(layout).replace(/[^a-zA-Z0-9_-]/g, '-'),
     image && ['title', 'chapter'].includes(layout) && 'has-image',
     layout === 'full-bleed-image' && props.overlay && 'has-overlay'].filter(Boolean).join(' ')
-  return <section class={classes} data-slide-id={id} data-label={`${slideNum(index)} ${manifest.title}`}>
+  // A deck in Farsi, Arabic or Hebrew runs from right to left; mdeck's own
+  // controls around the slides keep their direction.
+  const dir = textDirection(deckConfig.lang) === 'rtl' ? 'rtl' : undefined
+  return <section class={classes} dir={dir} data-slide-id={id} data-label={`${slideNum(index)} ${manifest.title}`}>
     {frame !== 'none' && <SlideHeader deckConfig={deckConfig} logo={title ? deckConfig.meta?.logo : undefined}
       isTitle={title} right={frame === 'chapter' ? meta.part ?? '' : meta.section ?? ''} />}
     {children}

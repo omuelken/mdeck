@@ -21,13 +21,13 @@ test('stripNotes removes notes blocks but nothing else', () => {
   assert.equal(stripNotes('# Many notes\n' + ':::notes\nsecret\n:::\n'.repeat(12)), '# Many notes\n')
   assert.equal(stripNotes(':::notes\nsecret\n:::\n'), '')
   assert.equal(stripNotes(':::notes\nsecret\n:::\n---\n# Next\n\n:::notes\nmore\n:::\n'), '---\n# Next\n')
-  for (const name of ['showcase', 'python', 'poll']) {
-    const example = readFileSync(new URL(`../examples/${name}/slides.md`, import.meta.url), 'utf8')
+  for (const name of ['showcase/slides', 'python/slides.en', 'python/slides.de', 'python/slides.hi', 'python/slides.fa', 'poll/slides']) {
+    const example = readFileSync(new URL(`../examples/${name}.md`, import.meta.url), 'utf8')
     const before = parseSlides(example), after = parseSlides(stripNotes(example))
     assert.equal(after.slides.length, before.slides.length, name)
     assert.deepEqual(after.slides.map(s => s.content), before.slides.map(s => s.content), name)
     assert.ok(after.slides.every(slide => !slide.meta.notes), name)
-    assert.deepEqual(validateDeck(after, { layouts: layoutManifests(`examples/${name}/slides.md`) }).filter(d => d.severity === 'error'), [], name)
+    assert.deepEqual(validateDeck(after, { layouts: layoutManifests(`examples/${name}.md`) }).filter(d => d.severity === 'error'), [], name)
   }
 })
 
