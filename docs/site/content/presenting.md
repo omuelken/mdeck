@@ -62,10 +62,41 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | F | Full screen, where the browser allows it |
 | N | Open or close the notes drawer, in the presenter view's slide-only layout |
 | L | Switch to the talk's next language, for a talk written in several (see below) |
+| 1–9 | Zoom in on a part of the slide, with hotspots on (see below); without them, go to slide 1–9 |
+| 0 or Escape | Show the whole slide again |
+| H | Turn hotspots on or off for this talk, in the presenter view |
 
 Click the slide area if your keys are not controlling it. Keys behave normally while you are typing in a text field.
 
 The timer is for your own reference; you can start, pause, and reset it in the presenter view.
+
+## Zoom in on part of a slide
+
+Hotspots let you show one part of a slide large: a picture, a chart, a code block, a table. Turn them on in the deck's settings:
+
+```markdown
+---
+hotspots: auto
+---
+```
+
+The presenter view then puts a small numbered key on each part of the slide you can zoom to. Press its number, or tap the key on an iPad, and the slide zooms smoothly until that part fills the screen. A part of another shape than the screen keeps the slide around it in view. The audience window, a paired iPad and phones following the talk zoom along; only the presenter view shows the keys.
+
+To see the whole slide again, press the same number again, **0** or **Escape**, tap the slide, or use **1:1**. The next point or the next slide shows the whole slide by itself, so you never need an extra key press to move on. Another number while zoomed goes straight to that part.
+
+| Setting | What gets a key |
+|---|---|
+| `hotspots: auto` | Pictures, code blocks, tables, formulas, videos, callouts, columns and polls, and anything marked `data-hotspot` |
+| `hotspots: marked` | Only what you marked with `data-hotspot`; nothing is found by itself |
+| `hotspots: off` | Nothing. This is the default: 1–9 go to slides 1–9 |
+
+A slide can have its own setting in its frontmatter, such as `hotspots: false` for a slide whose numbers you do not want, or `hotspots: auto` on one slide of a deck without hotspots. Mark a part of your own in inline HTML with `data-hotspot`, and keep a found one out with `data-hotspot="off"`:
+
+```markdown
+The rate is <span data-hotspot>**2.4 %** a year</span>, for now.
+```
+
+Parts that nearly fill the slide, or its whole width, get no key, since there is nothing to zoom; what is inside them may. A part inside another one shares its key: a column with a formula and a tip in it is one part. The keys follow reading order, up to nine on a slide. In the editor, the deck's settings and each slide's details have a **Hotspots** choice too. **H**, or the button beside **Draw**, turns hotspots on or off for the rest of the talk without changing the deck; a slide set to `false` stays without them.
 
 ## One talk in several languages
 

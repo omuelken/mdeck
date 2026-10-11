@@ -135,12 +135,13 @@ export function setSlideMeta(deck, slideId, patch) {
     if (yamlText) return edit(deck, [{ ...range, text: yamlText, expected: current }])
     return edit(deck, [{ start: slide.source.start, end: lineEnd(deck.source, range.end), text: '' }])
   }
-  // Legacy `---` metadata: keep its form while a slide key leads, otherwise
+  // Legacy `---` metadata: keep its form while a slide-only key leads, otherwise
   // convert it into an explicit :::meta block (consuming the inner `---`).
   const yamlText = patchYamlMapping(current, patch, { newline: nl, leadKeys: SLIDE_KEYS })
   const end = slide.bodySource ? slide.bodySource.start : range.end
   if (!yamlText) return slide.bodySource ? edit(deck, [{ start: range.start, end, text: '' }]) : removeSlide(deck, slideId).source
-  if (SLIDE_KEYS.has(firstYamlKey(yamlText))) return edit(deck, [{ ...range, text: yamlText, expected: current }])
+  const lead = firstYamlKey(yamlText)
+  if (SLIDE_KEYS.has(lead) && !DECK_KEYS.has(lead)) return edit(deck, [{ ...range, text: yamlText, expected: current }])
   return edit(deck, [{ start: range.start, end, text: block(yamlText) }])
 }
 

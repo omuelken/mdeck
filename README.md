@@ -160,7 +160,7 @@ mdeck send talk.md           # one file to email, with a PDF inside
 - **Layouts:** title, chapter, big statement, image and text, split, full-bleed image, and plain content slides, with points that appear one at a time.
 - **Looks:** six built-in themes and six colour palettes, each light or dark, changeable without touching the slides. Install more from the [theme repository](https://gh.tschieber.de/mdeck-themes/) with `mdeck themes install`, or make your own as small `extension.toml` folders beside the deck.
 - **One launch page:** `mdeck run` opens a page with a live preview, the presenter and audience views, the deck and reader views, the editor, the guides, one-click builds and PDF, the deck's check results, and for decks with a server its health and the presenter code.
-- **Presenting:** a presenter view with notes and timer, and an audience window that stays in sync.
+- **Presenting:** a presenter view with notes and timer, and an audience window that stays in sync. With `hotspots: auto`, the number keys zoom smoothly into a slide's pictures, code and tables, and the audience window zooms along.
 - **Drawing on slides:** pen with pressure, highlighter and a laser pointer, with a mouse, a finger or an iPad pencil (`D`). Drawings are saved in `<deck>.drawings.json` beside the deck and appear in every view, build and PDF. An iPad can present on its own, or pair with the laptop through a QR code on the launch page while the laptop's audience window follows it.
 - **Audience questions:** `<poll room="lunch" options="A|B|C" />` shows live results and a QR code; people vote on their phones. `<scale>`, `<wordcloud>` and `<question>` ask for a rating, words or open answers, and `<qrcode join />` shows the join code once for all of them. Rooms run inside `mdeck run --network` or on a small server (`mdeck server`).
 - **Sharing:** a reader view with an outline, a phone-friendly Read mode and a PDF download; speaker notes are stripped from shared builds, and interactive slides appear in their finished state.
@@ -188,7 +188,7 @@ complete folder.
 
 | Example | Theme | What it demonstrates |
 |---|---|---|
-| [Tour](examples/showcase/slides.md) | Glass | Start here: each slide shows the Markdown beside what it becomes, from headings to layouts, live code, notes, drawing, a poll and sharing |
+| [Tour](examples/showcase/slides.md) | Glass | Start here: each slide shows the Markdown beside what it becomes, from headings to layouts, live code, notes, drawing, zooming into a part, a poll and sharing |
 | [Python](examples/python/slides.en.md) | Academic | A real lesson: live code to try out, points revealed step by step, notes on every slide, a poll to check understanding; in English, [German](examples/python/slides.de.md), [Hindi](examples/python/slides.hi.md) and [Farsi](examples/python/slides.fa.md), switched in the presenter view |
 | [Poll](examples/poll/slides.md) | Neue | A join slide, then a poll, a scale, a word cloud and open questions; start it with `mdeck run slides.md --network` |
 | [Custom layouts](examples/custom-layouts/slides.md) | Neue | A deck-local comparison design and named regions |

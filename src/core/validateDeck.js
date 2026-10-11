@@ -5,6 +5,9 @@ import { LABEL_KEYS, CALLOUT_TYPES } from './labels.js'
 import { resolveLayoutProps, propertyErrors } from '../layouts/layoutProps.js'
 import { movedHint } from '../extensions/moved.js'
 
+// Hotspots (runtime/hotspots.js): the deck's setting and a slide's own.
+const HOTSPOT_SETTINGS = ['auto', 'marked', 'off', true, false]
+
 // `layouts`, `themes` and `palettes` are manifest maps from the extension
 // registry (see src/extensions/discover.js). Checks for a kind are skipped when
 // its map is not supplied.
@@ -47,6 +50,7 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
     for (const key of Object.keys(config.session)) if (!['id', 'code'].includes(key)) add('invalid-config', `session.${key} is not a setting; available: id, code`, deck.configSource?.start, 'warning')
     if (config.session.code != null && !/^\d{4,8}$/.test(String(config.session.code))) add('invalid-config', 'session.code must be 4 to 8 digits', deck.configSource?.start)
   }
+  if (config.hotspots != null && !HOTSPOT_SETTINGS.includes(config.hotspots)) add('invalid-config', 'hotspots must be auto, marked, off, true or false', deck.configSource?.start)
   const enums = { organization: ['title', 'all', 'none'], author: ['title', 'all', 'none'], numbers: ['slides', 'all', 'none'], sections: ['all', 'none'] }
   const switches = ['citations']
   if (isPlainObject(config.show)) {
@@ -84,6 +88,7 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
     }
     if (slide.meta.props != null && !isPlainObject(slide.meta.props)) add('invalid-props', 'props must be a mapping', offset)
     if (slide.meta.overlay != null && typeof slide.meta.overlay !== 'boolean') add('invalid-metadata', 'overlay must be true or false', offset)
+    if (slide.meta.hotspots != null && !HOTSPOT_SETTINGS.includes(slide.meta.hotspots)) add('invalid-metadata', 'hotspots must be auto, marked, off, true or false', offset)
     for (const node of directivesIn(deck.source.slice(slide.source.start, slide.source.end))) {
       if (DIRECTIVES.includes(node.name) || calloutTypes.includes(node.name.toLowerCase())) continue
       const near = closest(node.name.toLowerCase(), [...DIRECTIVES, ...calloutTypes])

@@ -35,6 +35,7 @@ import { textDirection } from '../core/languages.js'
 import { Icon } from '../components/Icon.jsx'
 import { ConnectedViews } from '../components/ConnectedViews.jsx'
 import './deck-stage.js'
+import { normalMode, hotspotMode } from './hotspots.js'
 
 const PresenterIcon = ({ name, size = 18 }) => <Icon name={name} size={size} style={{ display: 'block' }} />
 
@@ -220,6 +221,15 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [audienceConnected, setAudienceConnected] = useState(false)
   const [noteSize, setNoteSize] = useState(13)
   const [inking, setInking] = useState(false)
+  // Hotspots: the deck's setting until the presenter switches them (H).
+  const deckHotspots = (normalMode(deckConfig.hotspots) ?? 'off') !== 'off'
+  const [hotspotsForced, setHotspotsForced] = useState(null)
+  const hotspotsOn = hotspotsForced ?? deckHotspots
+  const hotspotsRef = useRef(null)
+  hotspotsRef.current = hotspotsForced
+  const toggleHotspots = () => setHotspotsForced(forced => !(forced ?? deckHotspots))
+  // Whether the number keys zoom on the slide shown: a slide may have its own setting.
+  const slideHotspots = hotspotMode({ slide: slides[index]?.meta.hotspots, deck: deckConfig.hotspots, forced: hotspotsForced }) !== 'off'
   const presence = usePresence()
   // Drawing in the slide's frame: this page around it must not pan or bounce either.
   useEffect(() => { document.documentElement.classList.toggle('is-inking', inking) }, [inking])
@@ -335,7 +345,12 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       // Theme reloads must not reset the current reveal position.
       // A reloaded frame opens in the deck file's language; after its place
       // is back, it gets the one shown.
-      const keepLanguage = () => { if (data.reason === 'init' && LANGUAGES.length) sendTo(iframeRef.current?.contentWindow, 'setLanguage', langRef.current) }
+      const keepLanguage = () => {
+        if (data.reason !== 'init') return
+        if (LANGUAGES.length) sendTo(iframeRef.current?.contentWindow, 'setLanguage', langRef.current)
+        // A reloaded frame keeps the presenter's hotspots switch too.
+        if (hotspotsRef.current != null) sendTo(iframeRef.current?.contentWindow, 'hotspots', hotspotsRef.current)
+      }
       if (data.reason === 'init' && stateRef.current.index === i) {
         sendTo(iframeRef.current?.contentWindow, 'setState', stateRef.current)
         keepLanguage()
@@ -369,6 +384,9 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       if ((e.key === 'f' || e.key === 'F') && fullscreen?.available()) { e.preventDefault(); fullscreen.toggle(); return }
       if (e.key === 'n' || e.key === 'N') { e.preventDefault(); setDrawerOpen(open => !open); return }
       if ((e.key === 'l' || e.key === 'L') && LANGUAGES.length) { e.preventDefault(); nextLanguage(); return }
+      if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleHotspots(); return }
+      // Digits zoom to hotspots (or jump to slides without them); Escape zooms out.
+      if (/^[0-9]$/.test(e.key) || e.key === 'Escape') { if (e.key !== 'Escape') e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'hotspotKey', e.key); return }
       if (!cmd) return
       e.preventDefault()
       sendTo(iframeRef.current?.contentWindow, cmd, cmd === 'ink' ? 'toggle' : undefined)
@@ -376,6 +394,13 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  // The presenter's hotspots switch goes to the slide frame.
+  const hotspotsOnce = useRef(false)
+  useEffect(() => {
+    if (!hotspotsOnce.current) { hotspotsOnce.current = true; return }
+    sendTo(iframeRef.current?.contentWindow, 'hotspots', hotspotsForced)
+  }, [hotspotsForced])
 
   // Escape to close theme modal
   useEffect(() => {
@@ -462,6 +487,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
           <button style={pill} title="Previous" aria-label="Previous" onClick={() => navCommand('prev')}><PresenterIcon name="prev" /></button>
           <button style={pill} title="Next" aria-label="Next" onClick={() => navCommand('next')}><PresenterIcon name="next" /></button>
           <button class="presenter-draw" title="Draw on the slide (D)" aria-pressed={inking} style={{ ...pill, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }} onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}><PresenterIcon name="pen" /></button>
+          <button class="presenter-hotspots" title={hotspotsOn ? 'Hotspots on: 1–9 zoom in (H)' : 'Hotspots off: 1–9 jump to slides (H)'} aria-label="Hotspots" aria-pressed={hotspotsOn} style={{ ...pill, ...(hotspotsOn ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={toggleHotspots}><PresenterIcon name="hotspots" /></button>
           <button class="presenter-notes" title="Notes (N)" aria-pressed={drawerOpen} style={{ ...pill, ...(drawerOpen ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={() => setDrawerOpen(open => !open)}>Notes</button>
           {canFullscreen && <button class="presenter-fullscreen" style={pill} title={fullscreenLabel} aria-label={fullscreenLabel} aria-pressed={isFullscreen} onClick={() => fullscreen.toggle()}><PresenterIcon name={fullscreenIcon} /></button>}
           <button style={pill} title="Speaker layout: slide, notes and next slide side by side" onClick={() => chooseLayout('speaker')}><PresenterIcon name="speaker" /></button>
@@ -641,6 +667,14 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
               style={{ ...S.btn, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }}
               onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}
             ><PresenterIcon name="pen" size={15} />Draw</button>
+            <button
+              class="presenter-hotspots"
+              title={hotspotsOn ? 'Hotspots on: 1–9 zoom in, 0 shows the whole slide (H)' : 'Hotspots off: 1–9 jump to slides (H)'}
+              aria-pressed={hotspotsOn}
+              aria-label="Hotspots"
+              style={{ ...S.btn, ...(hotspotsOn ? { background: '#2a2a2a', borderColor: '#444', color: '#f0f0f0' } : {}) }}
+              onClick={toggleHotspots}
+            ><PresenterIcon name="hotspots" size={15} /></button>
             {lookFolded && <button
               class="presenter-look-unfold"
               title={`Theme and palette: ${themeMeta?.title ?? theme}, ${shown.palette?.title ?? ''}`}
@@ -663,7 +697,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
             </button>
           </div>
           <div style={{ color: '#444', fontSize: '11px', textAlign: 'center' }}>
-            Arrow keys · Space · PgUp/PgDn · R to reset
+            Arrow keys · Space · PgUp/PgDn · R to reset · H hotspots{slideHotspots ? ' · 1–9 zoom · 0 whole slide' : ''}
           </div>
         </div>
 
@@ -715,7 +749,7 @@ function mountDeck({ deck, deckConfig, selection = null, editor = false }) {
   injectSpeakerNotes(slides)
   const seen = new Map()
   const app = (
-    <deck-stage width={deckConfig.width ?? 1920} height={deckConfig.height ?? 1080}>
+    <deck-stage width={deckConfig.width ?? 1920} height={deckConfig.height ?? 1080} data-hotspots={String(deckConfig.hotspots ?? 'off')}>
       {slides.map((slide, i) => {
         const count = (seen.get(slide.id) ?? 0) + 1
         seen.set(slide.id, count)
@@ -813,6 +847,9 @@ async function init() {
     else if (ctrl.command === 'setState') stage.setState(ctrl.value)
     else if (ctrl.command === 'setLanguage') switchLanguage(ctrl.value)
     else if (ctrl.command === 'ink' && drawHere) stage.inking = ctrl.value === 'toggle' ? !stage.inking : !!ctrl.value
+    // Digits and Escape typed in the presenter view, and its hotspots switch.
+    else if (ctrl.command === 'hotspotKey' && typeof ctrl.value === 'string') stage.hotspotKey(ctrl.value)
+    else if (ctrl.command === 'hotspots') stage.hotspotsForced = ctrl.value
   }
 
   // The same slide and step in another language, its words and mdeck's own;
@@ -900,6 +937,8 @@ async function init() {
     setInterval(markWatched, SCREEN_SAY_MS)
   }
 
+  // The presenter's slide shows the hotspots' keys; no screen the audience sees does.
+  if (inkStage && embedded && drawHere) inkStage.setAttribute('data-hotspot-badges', '')
   if (inkStage && drawHere) {
     attachInk(inkStage, {
       storageKey: inkStorageKey,

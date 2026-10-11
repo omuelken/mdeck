@@ -351,6 +351,39 @@ On an iPad, pair it from the launch page: you draw and steer there while the lap
 :::
 
 ---
+:::meta
+layout: split
+hotspots: auto
+id: zoom-in-on-a-part
+:::
+# Zoom in on a part
+:::slot left
+```markdown
+:::meta
+hotspots: auto
+:::
+```
+
+In the presenter view, press a **number** to zoom into that part. The same number, **0** or **Escape** goes back.
+:::
+:::slot right
+| Layer | Who owns it |
+|---|---|
+| Words | You |
+| Look | The theme |
+
+$$
+A = \pi r^2
+$$
+:::
+
+:::notes
+The numbered keys show on this slide only here in the presenter view, never on the projector. Press 2 for the table, 3 for the formula; the audience window flies along. The arrow keys leave the zoom and move on in one press.
+
+`hotspots: auto` finds pictures, code, tables, formulas and callouts. Put it in the deck's settings at the top to have keys on every slide, or write `marked` to give keys only to parts marked `data-hotspot`. H switches the keys off and on during the talk.
+:::
+
+---
 # Which part will you try first?
 
 <poll room="tour" options="Writing|Layouts|Drawing|Polls" />

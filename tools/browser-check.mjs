@@ -634,7 +634,45 @@ try {
   await until(oneLanguage, "!!document.querySelector('.presenter-look')")
   assert.equal(await oneLanguage.evaluate("!!document.querySelector('.presenter-language')"), false, 'one language shows no switch')
   await oneLanguage.close()
-  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls).')
+  // Hotspots: the presenter's slide shows a key on the picture, the code
+  // and the table, the audience none; 2 flies to the code in both windows,
+  // 2 again back out; a slide with hotspots: false has none, and its digits
+  // stay off the slides.
+  const spotDeck = resolve(temp, 'spots.md')
+  writeFileSync(resolve(temp, 'spot.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300"><rect width="600" height="300" fill="#4a7"/></svg>')
+  writeFileSync(spotDeck, '---\nhotspots: auto\n---\n# Spots\n\n:::columns\n\n![Picture](./spot.svg)\n\n+++\n\n```js\nconst answer = 42\n```\n\n+++\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n:::\n\n---\nhotspots: false\n---\n# None\n\n![Picture](./spot.svg)\n')
+  execFileSync(process.execPath, ['bin/mdeck.js', 'build', spotDeck, '-o', resolve(temp, 'spots.html')], { cwd: root, stdio: 'pipe' })
+  const spotPresenter = await open('spots.html?view=presenter')
+  const spotFrame = "document.querySelector('iframe')?.contentWindow?.document.querySelector('deck-stage')"
+  await until(spotPresenter, `${spotFrame}?.shadowRoot.querySelectorAll('.hotspot').length === 3`)
+  const spotSession = await spotPresenter.evaluate("new URL(location.href).searchParams.get('session')")
+  const spotAudience = await open('spots.html?view=audience&session=' + spotSession)
+  await until(spotAudience, "!!document.querySelector('deck-stage')?.shadowRoot")
+  await delay(300)
+  assert.equal(await spotAudience.evaluate("getComputedStyle(document.querySelector('deck-stage').shadowRoot.querySelector('.hotspots')).display"), 'none', 'the audience sees no keys')
+  const codeSpot = await spotPresenter.evaluate(`${spotFrame}.hotspots[1].zoom`)
+  await spotPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }))")
+  await until(spotPresenter, `${spotFrame}.hotspot === 2 && ${spotFrame}.zoom.scale > 1.5 && !${spotFrame}.hasAttribute('data-zoom-flying')`)
+  assert.ok(Math.abs(await spotPresenter.evaluate(`${spotFrame}.zoom.scale`) - Math.min(6, codeSpot.scale)) < 0.01, 'the frame lands on the code')
+  await until(spotAudience, `Math.abs(document.querySelector('deck-stage').zoom.scale - ${codeSpot.scale}) < 0.01`)
+  assert.equal(await spotPresenter.evaluate(`${spotFrame}.index`), 0, 'a digit does not jump to a slide')
+  await spotPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }))")
+  await until(spotPresenter, `${spotFrame}.zoom.scale === 1 && ${spotFrame}.hotspot === null`)
+  await until(spotAudience, "document.querySelector('deck-stage').zoom.scale === 1")
+  // A badge is a button too; the next slide leaves the hotspot at once.
+  await spotPresenter.evaluate(`${spotFrame}.shadowRoot.querySelector('.hotspot[data-n="1"]').click()`)
+  await until(spotPresenter, `${spotFrame}.hotspot === 1`)
+  await spotPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }))")
+  await until(spotPresenter, `${spotFrame}.index === 1 && ${spotFrame}.zoom.scale === 1 && ${spotFrame}.hotspot === null`)
+  await until(spotAudience, "document.querySelector('deck-stage').index === 1 && document.querySelector('deck-stage').zoom.scale === 1")
+  await until(spotPresenter, `${spotFrame}.hotspotMode === 'off' && ${spotFrame}.shadowRoot.querySelectorAll('.hotspot').length === 0`)
+  // H switches them on for this talk; the slide's own false still wins.
+  await spotPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'h' }))")
+  await until(spotPresenter, "document.querySelector('.presenter-hotspots').getAttribute('aria-pressed') === 'false'")
+  await spotAudience.close()
+  await spotPresenter.close()
+
+  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), and hotspots (keys on the presenter slide, flights the audience follows, leaving them).')
 } finally {
   await browser?.close()
   await tablet2?.close()

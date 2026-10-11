@@ -4,7 +4,9 @@
  * Handles:
  *  (a) speaker notes — reads <script type="application/json" id="speaker-notes">
  *      and posts {slideIndexChanged: N} to the parent window on nav.
- *  (b) keyboard navigation — ←/→, PgUp/PgDn, Space, Home/End, number keys.
+ *  (b) keyboard navigation — ←/→, PgUp/PgDn, Space, Home/End; number keys
+ *      zoom to a slide's hotspots when they are on (see "Hotspots"), and
+ *      jump to slides 1–10 when they are off.
  *  (c) press R to reset to slide 0 (with a tasteful keyboard hint).
  *  (d) bottom-center overlay showing slide count + hints, fades out on idle.
  *  (e) auto-scaling — inner canvas is a fixed design size (default 1920×1080)
@@ -65,6 +67,8 @@
 
 import { iconSvg } from '../core/icons.js'
 import { inkPaint, snapAngle } from '../core/ink.js'
+import { findHotspots, hotspotMode, zoomToCamera, cameraToZoom } from './hotspots.js'
+import { flight, durationFor, ease } from './zoom/camera.js'
 
 (() => {
   const DESIGN_W_DEFAULT = 1920;
@@ -187,6 +191,43 @@ import { inkPaint, snapAngle } from '../core/ink.js'
     .zoom-reset svg { width: 16px; height: 16px; }
     :host([data-zoomed]) .zoom-reset { display: inline-flex; }
     :host([data-follower]) .zoom-reset { display: none; }
+    /* Hotspots: a numbered key at the corner of each part of the slide the
+       presenter can zoom to (in design pixels, inside the canvas; the badge
+       keeps its size on screen). Only the presenter's own slide shows them. */
+    .hotspots { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: none; }
+    :host([data-hotspot-badges]) .hotspots { display: block; }
+    :host([data-zoomed]) .hotspots, :host([data-zoom-flying]) .hotspots, :host([data-deck-static]) .hotspots { display: none; }
+    .hotspot {
+      position: absolute;
+      z-index: 1;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 6px;
+      box-sizing: border-box;
+      transform: scale(var(--hotspot-k, 1)) translate(-35%, -35%);
+      transform-origin: 0 0;
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: 7px;
+      background: rgba(17, 17, 17, 0.82);
+      color: #fff;
+      font: 600 13px/22px ui-monospace, SFMono-Regular, Menlo, monospace;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      cursor: zoom-in;
+      pointer-events: auto;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hotspot:hover { background: #e11d48; border-color: #e11d48; }
+    .hotspot-area {
+      position: absolute;
+      border-radius: 6px;
+      outline: calc(2px * var(--hotspot-k, 1)) dashed #e11d48;
+      outline-offset: calc(4px * var(--hotspot-k, 1));
+      opacity: 0;
+      transition: opacity 0.15s;
+      pointer-events: none;
+    }
+    .hotspot:hover + .hotspot-area { opacity: 1; }
     :host([data-inking][data-ink-tool="eraser"]) { cursor: cell; }
     .ink-laser {
       position: fixed;
@@ -356,7 +397,7 @@ import { inkPaint, snapAngle } from '../core/ink.js'
         break-after: auto;
         page-break-after: auto;
       }
-      .overlay, .ink-input, .ink-live, .ink-laser, .zoom-reset { display: none !important; }
+      .overlay, .ink-input, .ink-live, .ink-laser, .zoom-reset, .hotspots { display: none !important; }
     }
   `;
 
@@ -416,6 +457,14 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       this._lasers = new Map();
       this._inkUpAt = 0;
       this._zoom = null;
+      this._zoomRaf = 0;
+      // Hotspots of the slide shown, the one zoomed to (1-based) and the
+      // presenter's switch (true, false, or null for the deck's setting).
+      this._hotspots = [];
+      this._hotspot = null;
+      this._hotspotsForced = null;
+      this._hotspotRaf = 0;
+      this._queueHotspots = this._queueHotspots.bind(this);
       this._touches = new Map();
       this._onWheel = this._onWheel.bind(this);
       this._onGesture = this._onGesture.bind(this);
@@ -438,7 +487,10 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       this._loadNotes();
       this._syncPrintPageRule();
       window.addEventListener('keydown', this._onKey);
-      if (typeof ResizeObserver !== 'undefined') { this._resizeObserver = new ResizeObserver(() => this._fit()); this._resizeObserver.observe(this); }
+      if (typeof ResizeObserver !== 'undefined') { this._resizeObserver = new ResizeObserver(() => { this._fit(); this._queueHotspots(); }); this._resizeObserver.observe(this); }
+      // Pictures and fonts that arrive late move the hotspots.
+      this.addEventListener('load', this._queueHotspots, true);
+      document.fonts?.ready?.then(this._queueHotspots);
       window.addEventListener('resize', this._onResize);
       window.addEventListener('mousemove', this._onMouseMove, { passive: true });
       window.addEventListener('beforeprint', this._onBeforePrint);
@@ -458,6 +510,10 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       for (const [type, handler] of this._windowInput()) window.removeEventListener(type, handler, { capture: true });
       cancelAnimationFrame(this._laserRaf);
       this._laserRaf = 0;
+      this.removeEventListener('load', this._queueHotspots, true);
+      cancelAnimationFrame(this._hotspotRaf);
+      this._hotspotRaf = 0;
+      this._stopZoomFlight();
       if (this._hideTimer) clearTimeout(this._hideTimer);
       if (this._mouseIdleTimer) clearTimeout(this._mouseIdleTimer);
     }
@@ -496,6 +552,16 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       inkLive.setAttribute('viewBox', `0 0 ${this.designWidth} ${this.designHeight}`);
       inkLive.setAttribute('preserveAspectRatio', 'none');
       canvas.appendChild(inkLive);
+      const hotspots = document.createElement('div');
+      hotspots.className = 'hotspots export-hidden';
+      hotspots.addEventListener('click', e => {
+        const badge = e.target.closest?.('.hotspot');
+        if (!badge) return;
+        e.stopPropagation();
+        this.zoomToHotspot(Number(badge.dataset.n));
+      });
+      canvas.appendChild(hotspots);
+      this._hotspotLayer = hotspots;
       stage.appendChild(canvas);
 
       // Only shown when fingers draw: keeps their touches from scrolling or
@@ -515,7 +581,7 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       zoomReset.setAttribute('aria-label', 'Show the whole slide');
       zoomReset.title = 'Show the whole slide';
       zoomReset.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg>1:1';
-      zoomReset.addEventListener('click', () => this.setZoom(null, 'reset'));
+      zoomReset.addEventListener('click', () => this.wholeSlide());
 
       // Overlay: compact, solid black, with clickable controls.
       const overlay = document.createElement('div');
@@ -674,7 +740,12 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       if (step >= 0) this._stepMap.set(curr, step);
       this._applySteps(curr);
       // Every slide starts whole; each window does this itself.
-      if (curr !== prev && this._zoom) this.setZoom(null, 'slide', { announce: false });
+      if (curr !== prev) {
+        this._stopZoomFlight();
+        this._hotspot = null;
+        if (this._zoom) this.setZoom(null, 'slide', { announce: false });
+      }
+      this._queueHotspots();
       // The live layer sits above every slide: nothing drawn on another
       // slide may stay on it.
       if (curr !== prev) this._clearLive();
@@ -736,6 +807,7 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       const step = Math.max(-1, Math.min(max, state.step));
       if (index === this._index) {
         if (step === this.state.step) return;
+        if (this._hotspot) this.wholeSlide();
         this._stepMap.set(index, step);
         this._applySteps(index);
         this._broadcastState('sync');
@@ -770,6 +842,7 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       const vh = rect.height || window.innerHeight;
       const s = Math.min(vw / this.designWidth, vh / this.designHeight);
       this._fitScale = s;
+      this._hotspotLayer?.style.setProperty('--hotspot-k', String(1 / s));
       const zoom = this._zoom;
       if (!zoom) { this._canvas.style.transform = `scale(${s})`; return; }
       const tx = (this.designWidth / 2 - zoom.x) * s * zoom.scale;
@@ -778,7 +851,7 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       this._kickLaser();
     }
 
-    _onResize() { this._fit(); }
+    _onResize() { this._fit(); this._queueHotspots(); }
 
     _onMouseMove() {
       // Keep overlay visible while mouse moves; hide after idle.
@@ -811,6 +884,8 @@ import { inkPaint, snapAngle } from '../core/ink.js'
         return;
       }
       if (ms > TAP_MS || Math.hypot(dx, dy) > TAP_SLOP) return;
+      // In a hotspot: a tap anywhere on the slide shows the whole slide again.
+      if (this._hotspot) { this.wholeSlide(); return; }
       if (!this.inking) {
         // Not drawing: a tap on the left third goes back, on the right third forward.
         if (this._zoom) return;
@@ -848,10 +923,8 @@ import { inkPaint, snapAngle } from '../core/ink.js'
         toggleFullscreen();
       } else if (key === 'r' || key === 'R') {
         this.reset();
-      } else if (/^[0-9]$/.test(key)) {
-        // 1..9 jump to that slide; 0 jumps to 10.
-        const n = key === '0' ? 9 : parseInt(key, 10) - 1;
-        if (n < this._slides.length) this._go(n, 'keyboard');
+      } else if (/^[0-9]$/.test(key) || key === 'Escape') {
+        handled = this.hotspotKey(key);
       } else {
         handled = false;
       }
@@ -890,6 +963,7 @@ import { inkPaint, snapAngle } from '../core/ink.js'
         i <= curr ? el.setAttribute('data-step-visible', '') : el.removeAttribute('data-step-visible')
       );
       this._updateStepCount(slideIndex);
+      if (slideIndex === this._index) this._queueHotspots();
     }
 
     _updateStepCount(slideIndex) {
@@ -1245,7 +1319,10 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       return this._zoom ? { ...this._zoom } : { scale: 1, x: this.designWidth / 2, y: this.designHeight / 2 };
     }
 
-    setZoom(zoom, reason = 'api', { announce = true } = {}) {
+    setZoom(zoom, reason = 'api', { announce = true, flying = false } = {}) {
+      // A pinch, a pan or another window's zoom takes over from a flight,
+      // and the view is no longer a hotspot's.
+      if (!flying) { this._stopZoomFlight(); this._hotspot = null; }
       const next = this._clampZoom(zoom);
       const same = JSON.stringify(next) === JSON.stringify(this._zoom);
       this._zoom = next;
@@ -1350,6 +1427,164 @@ import { inkPaint, snapAngle } from '../core/ink.js'
     // iPad Safari's own pinch zoom, which would enlarge every bar on the page.
     _onGesture(e) {
       if (this.hasAttribute('data-zoomable') && !this._inInkUi(e)) e.preventDefault();
+    }
+
+    // Hotspots ----------------------------------------------------------------
+    //
+    // The parts of the slide shown that 1–9 zoom to (hotspots.js finds them).
+    // Hotspots are off unless the deck (`data-hotspots` on the stage) or the
+    // slide (`data-hotspots` on its section) turns them on with 'auto' or
+    // 'marked', or the presenter's switch (`hotspotsForced`) does. The same
+    // number again, 0, Escape, a tap on the slide or any step or slide
+    // change shows the whole slide again. Zooms to and from a hotspot fly
+    // (zoom/camera.js), and other windows fly the same way: their
+    // `zoomchange` carries `fly: true` and the view it lands on.
+
+    get hotspotsForced() { return this._hotspotsForced; }
+    set hotspotsForced(value) {
+      this._hotspotsForced = value === true || value === false ? value : null;
+      if (this.hotspotMode === 'off' && this._hotspot) this.wholeSlide();
+      this._refreshHotspots();
+    }
+
+    /** 'off', 'auto' or 'marked', for the slide shown. */
+    get hotspotMode() {
+      return hotspotMode({ slide: this._slides[this._index]?.getAttribute?.('data-hotspots'), deck: this.getAttribute('data-hotspots'), forced: this._hotspotsForced });
+    }
+
+    /** The current slide's hotspots: [{ rect, zoom }], in design pixels. */
+    get hotspots() { return this._hotspots.map(({ rect, zoom }) => ({ rect: { ...rect }, zoom: { ...zoom } })); }
+
+    /** The hotspot zoomed to (1-based), or null. */
+    get hotspot() { return this._hotspot; }
+
+    /** A digit or Escape, as typed in this window or the presenter view's; says whether it was used. */
+    hotspotKey(key) {
+      if (key === 'Escape') {
+        if (!this._zoom || this.inking) return false;
+        this.wholeSlide();
+        return true;
+      }
+      if (!/^[0-9]$/.test(key)) return false;
+      if (this.hotspotMode === 'off') {
+        // Without hotspots: 1..9 jump to that slide; 0 jumps to 10.
+        const n = key === '0' ? 9 : parseInt(key, 10) - 1;
+        if (n < this._slides.length) this._go(n, 'keyboard');
+        return true;
+      }
+      if (key === '0') this.wholeSlide();
+      else this.zoomToHotspot(Number(key));
+      return true;
+    }
+
+    /** Fly to hotspot `n` (1-based); the same one again flies back out. */
+    zoomToHotspot(n) {
+      if (n === this._hotspot) { this.wholeSlide(); return true; }
+      if (!this._hotspot) this._refreshHotspots();
+      const spot = this._hotspots[n - 1];
+      if (!spot) return false;
+      this.flyZoom(spot.zoom, 'hotspot');
+      this._hotspot = n;
+      return true;
+    }
+
+    /** Fly back to the whole slide. */
+    wholeSlide() {
+      this._hotspot = null;
+      if (!this._zoom && !this._zoomRaf) return;
+      this.flyZoom(null, 'hotspot-reset');
+      this._hotspot = null;
+    }
+
+    _queueHotspots() {
+      if (this._hotspotRaf) return;
+      // A hidden page gets no frames: its keys still need the hotspots.
+      if (typeof requestAnimationFrame !== 'function' || document.hidden) { this._refreshHotspots(); return; }
+      this._hotspotRaf = requestAnimationFrame(() => { this._hotspotRaf = 0; this._refreshHotspots(); });
+    }
+
+    // An element's box in design pixels, whatever the canvas's transform.
+    _designRect(element) {
+      const canvas = this._canvas.getBoundingClientRect();
+      const box = element.getBoundingClientRect();
+      if (!canvas.width || !canvas.height) return null;
+      const kx = this.designWidth / canvas.width, ky = this.designHeight / canvas.height;
+      return { x: (box.left - canvas.left) * kx, y: (box.top - canvas.top) * ky, w: box.width * kx, h: box.height * ky };
+    }
+
+    _refreshHotspots() {
+      if (!this._canvas || this._printing) return;
+      const slide = this._slides[this._index];
+      const design = { width: this.designWidth, height: this.designHeight };
+      this._hotspots = findHotspots(slide, { mode: this.hotspotMode, design, max: ZOOM_MAX, rectOf: element => this._designRect(element) });
+      this.toggleAttribute('data-has-hotspots', this._hotspots.length > 0);
+      const layer = this._hotspotLayer;
+      if (!layer) return;
+      layer.replaceChildren(...this._hotspots.flatMap(({ rect }, i) => {
+        const badge = document.createElement('button');
+        badge.type = 'button';
+        badge.className = 'hotspot';
+        badge.dataset.n = String(i + 1);
+        badge.setAttribute('data-ink-ui', '');
+        badge.textContent = String(i + 1);
+        badge.title = `Zoom in (${i + 1})`;
+        badge.setAttribute('aria-label', `Zoom in on part ${i + 1}`);
+        badge.style.left = `${rect.x}px`;
+        badge.style.top = `${rect.y}px`;
+        const area = document.createElement('div');
+        area.className = 'hotspot-area';
+        Object.assign(area.style, { left: `${rect.x}px`, top: `${rect.y}px`, width: `${rect.w}px`, height: `${rect.h}px` });
+        return [badge, area];
+      }));
+    }
+
+    /**
+     * Fly to `zoom` ({ scale, x, y }, or null for the whole slide) along a
+     * smooth zoom path. Announced once, at the start, with `fly: true` and
+     * where it lands, so other windows fly along.
+     */
+    flyZoom(zoom, reason = 'api', { announce = true } = {}) {
+      this._stopZoomFlight();
+      const design = { width: this.designWidth, height: this.designHeight };
+      const whole = { scale: 1, x: design.width / 2, y: design.height / 2 };
+      const to = this._clampZoom(zoom);
+      // Others get the view asked for and keep it on the slide themselves:
+      // their screens may have another shape.
+      if (announce) {
+        const { scale, x, y } = to ? zoom : whole;
+        this.dispatchEvent(new CustomEvent('zoomchange', { detail: { slideId: this._inkSlideId(), scale, x, y, reason, fly: true }, bubbles: true, composed: true }));
+      }
+      const land = () => {
+        this._zoomRaf = 0;
+        this.removeAttribute('data-zoom-flying');
+        this.setZoom(to, reason, { announce: false, flying: true });
+      };
+      const from = zoomToCamera(this.zoom, design), end = zoomToCamera(to ?? whole, design);
+      const path = flight(from, end);
+      // A hidden window gets no animation frames: it lands at once.
+      if (document.hidden || this.hasAttribute('noscale') || typeof requestAnimationFrame !== 'function' || path.length < 1e-3) { land(); return; }
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+        land();
+        this._canvas.animate?.([{ opacity: 0.4 }, { opacity: 1 }], { duration: 250, easing: 'ease-out' });
+        return;
+      }
+      const start = performance.now();
+      const duration = durationFor(path.length);
+      this.setAttribute('data-zoom-flying', '');
+      const frame = now => {
+        const t = (now - start) / duration;
+        if (t >= 1) { land(); return; }
+        this.setZoom(cameraToZoom(path.at(ease(Math.max(0, t))), design), reason, { announce: false, flying: true });
+        this._zoomRaf = requestAnimationFrame(frame);
+      };
+      this._zoomRaf = requestAnimationFrame(frame);
+    }
+
+    _stopZoomFlight() {
+      if (!this._zoomRaf) return;
+      cancelAnimationFrame(this._zoomRaf);
+      this._zoomRaf = 0;
+      this.removeAttribute('data-zoom-flying');
     }
 
     // Laser -------------------------------------------------------------------
@@ -1500,6 +1735,8 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       const steps = this._getSteps(this._slides[this._index]);
       const curr  = this._stepMap.get(this._index) ?? -1;
       if (steps.length > 0 && curr < steps.length - 1) {
+        // The step may appear outside the hotspot: show the whole slide.
+        if (this._hotspot) this.wholeSlide();
         this._stepMap.set(this._index, curr + 1);
         this._applySteps(this._index);
         this._broadcastState(reason);
@@ -1513,6 +1750,7 @@ import { inkPaint, snapAngle } from '../core/ink.js'
       const steps = this._getSteps(this._slides[this._index]);
       const curr  = this._stepMap.get(this._index) ?? -1;
       if (steps.length > 0 && curr >= 0) {
+        if (this._hotspot) this.wholeSlide();
         this._stepMap.set(this._index, curr - 1);
         this._applySteps(this._index);
         this._broadcastState(reason);

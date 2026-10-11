@@ -4,6 +4,8 @@ import vm from 'node:vm'
 import { readFileSync } from 'node:fs'
 import { inkPaint } from '../src/core/ink.js'
 import { iconSvg } from '../src/core/icons.js'
+import { findHotspots, hotspotMode, zoomToCamera, cameraToZoom } from '../src/runtime/hotspots.js'
+import { flight, durationFor, ease } from '../src/runtime/zoom/camera.js'
 
 // Exercise the real stage state machine without a browser layout engine.
 function stageFixture() {
@@ -17,7 +19,16 @@ function stageFixture() {
   vm.runInNewContext(source, {
     iconSvg,
     inkPaint,
-    HTMLElement: class { attachShadow() { return {} } dispatchEvent(event) { events.push(event) } toggleAttribute(name, on) { this[name] = on } },
+    findHotspots, hotspotMode, zoomToCamera, cameraToZoom, flight, durationFor, ease,
+    HTMLElement: class {
+      attachShadow() { return {} }
+      dispatchEvent(event) { events.push(event) }
+      toggleAttribute(name, on) { this[name] = on }
+      getAttribute(name) { return this.attributes?.[name] ?? null }
+      setAttribute(name, value) { (this.attributes ??= {})[name] = String(value) }
+      hasAttribute(name) { return this.attributes?.[name] != null }
+      removeAttribute(name) { delete this.attributes?.[name] }
+    },
     customElements: { get() {}, define(name, value) { Stage = value } },
     location: { search: '', hash: '' }, history: { replaceState() {} },
     URLSearchParams, window, CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail } },
@@ -94,4 +105,54 @@ test('print mode reveals every step and restores the positions afterwards', () =
   assert.equal(stage._slides[0].steps[0].visible, true)
   assert.equal(stage._slides[0].steps[1].visible, false)
   assert.equal(stage._slides[1].steps[0].visible, false)
+})
+
+// Hotspots, with the zoom's flight recorded instead of drawn.
+function hotspotStage(deck = 'auto') {
+  const { stage, messages } = stageFixture()
+  stage.setAttribute('data-hotspots', deck)
+  const flights = []
+  stage.flyZoom = (zoom, reason) => { flights.push({ zoom, reason }); stage._zoom = zoom }
+  stage._hotspots = [1, 2, 3].map(n => ({ rect: { x: n * 100, y: 0, w: 100, h: 100 }, zoom: { scale: 3, x: n * 100 + 50, y: 50 } }))
+  return { stage, flights, messages }
+}
+
+test('with hotspots on, digits zoom to them and the same digit, 0 or Escape zooms out', () => {
+  const { stage, flights } = hotspotStage()
+  const key = k => stage._onKey({ key: k, target: null, preventDefault() {} })
+  key('2')
+  assert.equal(stage.hotspot, 2)
+  assert.deepEqual(flights.at(-1), { zoom: { scale: 3, x: 250, y: 50 }, reason: 'hotspot' })
+  key('3')
+  assert.equal(stage.hotspot, 3, 'another digit goes straight across')
+  key('3')
+  assert.equal(stage.hotspot, null)
+  assert.deepEqual(flights.at(-1), { zoom: null, reason: 'hotspot-reset' })
+  key('1'); key('0')
+  assert.equal(stage.hotspot, null)
+  key('1'); key('Escape')
+  assert.equal(flights.at(-1).zoom, null)
+  key('9')
+  assert.equal(stage.hotspot, null, 'a digit without a hotspot does nothing')
+  assert.equal(stage.index, 0, 'and does not jump to a slide')
+})
+
+test('with hotspots off, digits still jump to slides', () => {
+  const { stage, flights } = hotspotStage('off')
+  stage._onKey({ key: '2', target: null, preventDefault() {} })
+  assert.equal(stage.index, 1)
+  assert.equal(flights.length, 0)
+  // The presenter's switch turns them on for this window.
+  stage._refreshHotspots = () => {}
+  stage.hotspotsForced = true
+  assert.equal(stage.hotspotMode, 'auto')
+})
+
+test('a step on the same slide leaves the hotspot and shows the whole slide', () => {
+  const { stage, flights } = hotspotStage()
+  stage.zoomToHotspot(1)
+  stage.next('keyboard')
+  assert.equal(stage.hotspot, null)
+  assert.deepEqual(flights.at(-1), { zoom: null, reason: 'hotspot-reset' })
+  assert.equal(stage.state.step, 0, 'and the step is shown too')
 })

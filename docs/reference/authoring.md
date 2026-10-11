@@ -67,6 +67,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `csl` | `apa` | Citation style: `apa`, `vancouver`, `harvard1`, or a `.csl` file |
 | `nocite` | — | References to list without citing them; `['*']` lists the whole file |
 | `show.citations` | `true` | `false` leaves out each slide's own references above the footer |
+| `hotspots` | `off` | Number keys zoom in on parts of a slide while presenting: `auto` (pictures, code, tables, formulas, videos, callouts, columns, polls and `data-hotspot` elements), `marked` (only `data-hotspot` elements) or `off` (1–9 go to slides) |
 
 ### Theme params
 
@@ -162,6 +163,7 @@ description: A short description shown under the title.
 | `layout` | Slide layout (see below) |
 | `section` | Section label shown in the slide header (auto-propagated — see below) |
 | `title` | Name in the outline and reader navigation, for slides without a heading (not shown on the slide) |
+| `hotspots` | This slide's own hotspots: `auto`, `marked`, `off` or `false` (see the deck field) |
 
 ### Section labels
 

@@ -9,6 +9,7 @@ import { Diagnostics } from './Diagnostics.jsx'
 import { PalettePicker } from './PalettePicker.jsx'
 import { LookThumbnail } from './LookThumbnail.jsx'
 import { designUrl, DESIGN_TAB } from '../designLink.js'
+import { normalMode } from '../../runtime/hotspots.js'
 
 // What the `show` setting controls: the label for each choice and its values.
 const SHOW = { organization: ['Organization', ['title', 'all', 'none']], author: ['Author and date', ['title', 'all', 'none']], numbers: ['Slide numbers', ['slides', 'all', 'none']], sections: ['Section labels', ['all', 'none']] }
@@ -93,6 +94,9 @@ export function DeckSettings({ state, edit }) {
       {Object.entries(SHOW).map(([key, [label, options]]) => <Field key={key} label={label}>
         <select value={config.show?.[key] ?? ''} onChange={e => show(key, e.currentTarget.value)}><option value="">default</option>{options.map(o => <option key={o} value={o}>{o}</option>)}</select>
       </Field>)}
+      <Field label="Hotspots" hint="1–9 zoom in on a slide's pictures, code, tables and other parts while presenting; marked: only parts marked data-hotspot">
+        <select value={[null, 'off'].includes(normalMode(config.hotspots)) ? '' : normalMode(config.hotspots)} onChange={e => text('hotspots', e.currentTarget.value)}><option value="">off</option>{['auto', 'marked'].map(o => <option key={o} value={o}>{o}</option>)}</select>
+      </Field>
       <Field label="Language" hint="of the deck, e.g. en, de or de-CH"><input type="text" value={config.lang ?? ''} placeholder="en" onInput={e => text('lang', e.currentTarget.value)} /></Field>
     </div>
   </div>

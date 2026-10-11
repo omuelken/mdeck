@@ -57,7 +57,11 @@ export function createInkBus(stage, transports) {
     } else if (message.type === 'media') {
       stage.dispatchEvent(new CustomEvent('mediacontrol', { detail: { video: message.video, action: message.action, time: message.time } }))
     } else if (message.type === 'zoom') {
-      if (message.slideId && message.slideId === stage._inkSlideId()) stage.setZoom(message.scale > 1 ? message : null, 'remote', { announce: false })
+      if (!message.slideId || message.slideId !== stage._inkSlideId()) return
+      const zoom = message.scale > 1 ? { scale: message.scale, x: message.x, y: message.y } : null
+      // A hotspot's zoom flies here too; a pinch follows as it comes.
+      if (message.fly) stage.flyZoom(zoom, 'remote', { announce: false })
+      else stage.setZoom(zoom, 'remote', { announce: false })
     } else if (message.type === 'dot') {
       stage.laserDot(message.key, message.slideId, message.point)
     } else if (message.type === 'end') {
@@ -120,6 +124,13 @@ export function createInkBus(stage, transports) {
   stage.addEventListener('zoomchange', ({ detail }) => {
     if (detail.reason === 'remote') return
     const { slideId, scale, x, y } = detail
+    // A flight is sent at once, with where it lands; the others fly it themselves.
+    if (detail.fly) {
+      clearTimeout(zoomTimer)
+      zoomTimer = zoom = null
+      send({ type: 'zoom', key: `${me}:zoom`, slideId, scale, x, y, fly: true })
+      return
+    }
     zoom = { slideId, scale, x, y }
     zoomTimer ??= setTimeout(sendZoom, scale > 1 ? DOT_MS : 0)
   })

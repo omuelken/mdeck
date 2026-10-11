@@ -226,7 +226,9 @@ export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, 
   // A deck in Farsi, Arabic or Hebrew runs from right to left; mdeck's own
   // controls around the slides keep their direction.
   const dir = textDirection(deckConfig.lang) === 'rtl' ? 'rtl' : undefined
-  return <section class={classes} dir={dir} data-slide-id={id} data-label={`${slideNum(index)} ${manifest.title}`}>
+  // Its own hotspots setting, if any (runtime/hotspots.js).
+  const hotspots = meta.hotspots == null ? undefined : String(meta.hotspots)
+  return <section class={classes} dir={dir} data-slide-id={id} data-label={`${slideNum(index)} ${manifest.title}`} data-hotspots={hotspots}>
     {frame !== 'none' && <SlideHeader deckConfig={deckConfig} logo={title ? deckConfig.meta?.logo : undefined}
       isTitle={title} right={frame === 'chapter' ? meta.part ?? '' : meta.section ?? ''} />}
     {children}

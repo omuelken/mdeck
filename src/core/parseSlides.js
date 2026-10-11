@@ -2,8 +2,8 @@ import yaml from 'js-yaml'
 import { sourceLines, fenceState, scanDirectives, diagnostic } from './source.js'
 export { sourceLines, fenceState } from './source.js'
 
-export const DECK_KEYS = new Set('theme palette appearance params meta width height show lang labels callouts reader components server session bibliography csl nocite'.split(' '))
-export const SLIDE_KEYS = new Set('layout id title section number part description label image alt overlay eyebrow attribution props'.split(' '))
+export const DECK_KEYS = new Set('theme palette appearance params meta width height show lang labels callouts reader components server session bibliography csl nocite hotspots'.split(' '))
+export const SLIDE_KEYS = new Set('layout id title section number part description label image alt overlay eyebrow attribution props hotspots'.split(' '))
 
 // Names from before 2.0. They are still recognised, so that an old deck gets a
 // message naming the new setting (see validateDeck) instead of being read as
@@ -41,6 +41,18 @@ function segmentsOf(source) {
   }
   segments.push({ start, end: source.length, delimiterEnd: source.length })
   return segments.filter(s => source.slice(s.start, s.end).trim())
+}
+
+// The first block is the deck's settings when its first key is only a deck
+// key. A key both may have (hotspots) leaves it to the others: a slide's own
+// key makes it the first slide's, otherwise it is the deck's.
+function isDeckBlock(text) {
+  const keys = sourceLines(text).map(line => line.text.match(/^([\w-]+):/)?.[1]).filter(Boolean)
+  const deckOnly = key => ANY_DECK_KEYS.has(key) && !SLIDE_KEYS.has(key)
+  if (!keys.length || deckOnly(keys[0])) return !!keys.length
+  if (!ANY_DECK_KEYS.has(keys[0])) return false
+  if (keys.some(deckOnly)) return true
+  return !keys.some(key => SLIDE_KEYS.has(key) && !ANY_DECK_KEYS.has(key))
 }
 
 export function looksLikeMeta(text, keys, { frontmatter = false } = {}) {
@@ -109,7 +121,7 @@ export function parseSlides(source) {
   let deckConfig = {}
   let configSource = null
   let i = 0
-  if (segments[0] && /^\s*---[ \t]*\r?\n/.test(source) && looksLikeMeta(text(segments[0]), ANY_DECK_KEYS, { frontmatter: true }) && !looksLikeMeta(text(segments[0]), SLIDE_KEYS)) {
+  if (segments[0] && /^\s*---[ \t]*\r?\n/.test(source) && looksLikeMeta(text(segments[0]), ANY_DECK_KEYS, { frontmatter: true }) && isDeckBlock(text(segments[0]))) {
     deckConfig = readMeta(segments[0])
     configSource = { start: segments[0].start, end: segments[0].end }
     i++
