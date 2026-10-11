@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.10.0 — 2026-10-11
 
 - Glass has a `motion` setting: `motion: 0` holds its light still, for recordings and calm rooms. The guide for theme authors names the settings themes share: `motion` for what moves while presenting and `texture` for grain, paper and scanlines.
 
