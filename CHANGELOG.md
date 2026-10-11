@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Glass has a `motion` setting: `motion: 0` holds its light still, for recordings and calm rooms. The guide for theme authors names the settings themes share: `motion` for what moves while presenting and `texture` for grain, paper and scanlines.
+
 ## 3.9.0 — 2026-10-11
 
 - Theme parameters say what kind of value they take: `type = "size"` (pixels, with `min`, `max` and `step`), `"number"`, `"switch"` (1 or 0), `"choice"` (one of `choices`) or `"font"`. The deck settings show a slider, a box to tick or a list instead of a text box; a deck value that does not fit is left out, so the theme's own value stays, and `mdeck check` says why; a value outside the range is used, with a warning. `mdeck list themes` shows each theme's settings and what they take, and the design page lets a theme's author set the kind. `mdeck themes build` writes each theme's settings into the gallery's `looks.json`. A parameter without a type takes any text, as before. The built-in themes give every parameter a type and a description with its default and range. A theme that uses `type` needs this version of mdeck.

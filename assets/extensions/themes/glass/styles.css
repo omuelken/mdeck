@@ -53,9 +53,9 @@
      to tint. Radial gradients only (no blur filter): they stay vector in a
      PDF and are cheap to draw. */
   background:
-    radial-gradient(circle max(var(--a-r) * 2.8, 720px) at calc(var(--a-x) + var(--dx)) calc(var(--a-y) + var(--dy)), var(--wash-a) 0%, color-mix(in oklab, var(--wash-a) 55%, transparent) 40%, transparent 100%),
-    radial-gradient(circle max(var(--b-r) * 2.8, 640px) at calc(var(--b-x) - var(--dx)) calc(var(--b-y) - var(--dy)), var(--wash-b) 0%, color-mix(in oklab, var(--wash-b) 55%, transparent) 40%, transparent 100%),
-    radial-gradient(circle max(var(--c-r) * 2.6, 520px) at calc(var(--c-x) + var(--dy)) calc(var(--c-y) + var(--dx)), var(--wash-c) 0%, transparent 100%),
+    radial-gradient(circle max(var(--a-r) * 2.8, 720px) at calc(var(--a-x) + var(--dx) * var(--motion)) calc(var(--a-y) + var(--dy) * var(--motion)), var(--wash-a) 0%, color-mix(in oklab, var(--wash-a) 55%, transparent) 40%, transparent 100%),
+    radial-gradient(circle max(var(--b-r) * 2.8, 640px) at calc(var(--b-x) - var(--dx) * var(--motion)) calc(var(--b-y) - var(--dy) * var(--motion)), var(--wash-b) 0%, color-mix(in oklab, var(--wash-b) 55%, transparent) 40%, transparent 100%),
+    radial-gradient(circle max(var(--c-r) * 2.6, 520px) at calc(var(--c-x) + var(--dy) * var(--motion)) calc(var(--c-y) + var(--dx) * var(--motion)), var(--wash-c) 0%, transparent 100%),
     var(--canvas);
 }
 
@@ -526,7 +526,7 @@ strong { font-weight: 650; color: var(--ink); }
 }
 
 /* The light drifts slowly while presenting; never in print or for people
-   who prefer less motion. */
+   who prefer less motion. motion: 0 holds it still. */
 @media (prefers-reduced-motion: no-preference) {
   .slide:is(.slide--title, .slide--chapter, .slide--focus) { animation: glass-drift 22s ease-in-out infinite alternate; }
 }

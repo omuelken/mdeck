@@ -167,6 +167,8 @@ A few habits make parameters easy to use:
 - Turn a feature off with its parameter at zero (`0px`, `0`) rather than a second parameter.
 - Use a switch or a strength by multiplying with it, as in `calc(330px * var(--shapes))`.
 - Let the `description` give the default and a sensible range: the editor shows it under the control, and assistants read it.
+- Offer what people change from one talk to the next, because of the room, the medium or the content, and leave sizes and distances at the values the theme was made with.
+- Use the shared names where they fit, so people learn them once: `motion` (a switch) turns off everything that moves while presenting, for recordings and calm rooms; `texture` (a switch) turns off grain, paper and scanlines, for washed-out projectors and handouts.
 
 ## Say what it is for
 
