@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.10.1 — 2026-10-11
 
 - Theme settings can be text: `type = "text"` for words a theme shows, such as Terminal's prompt. Authors write them as they should appear (`prompt: "~/demo $ "`), spaces included, and mdeck quotes them for the stylesheet; the editor shows a text box with the theme's own words. Before, such words could only be fixed in the theme.
 
