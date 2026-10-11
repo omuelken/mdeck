@@ -34,6 +34,8 @@ function looksOf(registry, catalogue) {
       // The oldest mdeck it works with, for the gallery's install note.
       ...(registry.themes[theme.id]?.package?.mdeck ? { mdeck: registry.themes[theme.id].package.mdeck } : {}),
       palette: theme.palette, appearance: theme.appearance ?? 'light', palettes: palettesFor(theme, palettes).map(p => p.id), ...(theme.guide ? { guide: theme.guide } : {}),
+      // Its settings, for the gallery's controls: token, default, kind and range.
+      ...(Object.keys(theme.params ?? {}).length ? { params: theme.params } : {}),
       ...(icons.get(theme.id) ? { icon: icons.get(theme.id) } : {}) })),
     palettes: Object.values(palettes).map(palette => ({ id: palette.id, title: palette.title, description: palette.description ?? '', builtIn: builtIn.has(palette.id + ':p'),
       ...(palette.theme ? { theme: palette.theme } : {}), light: colours(palette.light), dark: colours(palette.dark) })),

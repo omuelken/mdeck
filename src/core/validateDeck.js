@@ -4,6 +4,7 @@ import { palettesFor } from '../extensions/tokens.js'
 import { LABEL_KEYS, CALLOUT_TYPES } from './labels.js'
 import { resolveLayoutProps, propertyErrors } from '../layouts/layoutProps.js'
 import { movedHint } from '../extensions/moved.js'
+import { paramValue } from '../extensions/params.js'
 
 // Hotspots (runtime/hotspots.js): the deck's setting and a slide's own.
 const HOTSPOT_SETTINGS = ['auto', 'marked', 'off', true, false]
@@ -70,7 +71,13 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
   }
   if (themes && config.params != null && isPlainObject(config.params) && Object.hasOwn(themes, config.theme ?? 'neue')) {
     const theme = themes[config.theme ?? 'neue']
-    for (const name of Object.keys(config.params)) if (!Object.hasOwn(theme.params ?? {}, name)) add('unknown-param', `Theme "${theme.id}" has no parameter "${name}"; available: ${Object.keys(theme.params ?? {}).join(', ') || 'none'}`, deck.configSource?.start, 'warning')
+    for (const [name, value] of Object.entries(config.params)) {
+      const param = theme.params?.[name]
+      if (!param) { add('unknown-param', `Theme "${theme.id}" has no parameter "${name}"; available: ${Object.keys(theme.params ?? {}).join(', ') || 'none'}`, deck.configSource?.start, 'warning'); continue }
+      const result = paramValue(param, value)
+      if (result.problem) add('invalid-param', `params.${name} ${result.problem}; the theme's ${param.default} is used instead`, deck.configSource?.start, 'warning')
+      else if (result.note) add('invalid-param', `params.${name} ${result.note}; ${result.value} may not look right`, deck.configSource?.start, 'warning')
+    }
   }
   // Callout types the deck names under `callouts:` are its own, on purpose.
   const calloutTypes = [...CALLOUT_TYPES, ...(isPlainObject(config.callouts) ? Object.keys(config.callouts).map(key => key.toLowerCase()) : [])]

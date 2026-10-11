@@ -77,8 +77,12 @@ params:
   fontDisplay: "Georgia, serif"
 ```
 
-A parameter's default is its token's value. Unknown parameter names are
-reported by `mdeck check`.
+A parameter's default is its token's value. `type` says what kind of value it
+takes: `size` (pixels, with `min`, `max` and `step`), `number` (with the same
+three), `switch` (1 or 0), `choice` (one of `choices`) or `font`. A deck value
+that does not fit is left out, and `mdeck check` reports it, like unknown
+parameter names; one outside `min` and `max` is used, with a warning. Without
+a `type`, a parameter takes any text.
 
 Optional settings: `description`, `appearance = "dark"` for a theme that starts
 dark, and `palettes = [...]` to offer only those palettes (a corporate design

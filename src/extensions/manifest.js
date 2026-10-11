@@ -6,6 +6,7 @@ import { resolve, relative, isAbsolute, sep } from 'node:path'
 import { parse as parseToml, TomlError } from 'smol-toml'
 import { TOKEN_NAME_RE, COLOR_ROLES, COLOR_FALLBACKS, APPEARANCES } from './tokens.js'
 import { propertyErrors } from '../layouts/layoutProps.js'
+import { paramSettingProblems, paramSettings } from './params.js'
 
 export const SCHEMA_VERSION = 1
 export const KINDS = ['layout', 'theme', 'palette']
@@ -198,10 +199,9 @@ function validateTheme(raw, shared, fail) {
     const path = `params.${name}`
     if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name) || RESERVED_NAMES.includes(name)) fail('parameter names use letters and digits and start with a letter', path)
     if (!isPlainObject(param)) fail('must be a table with a token', path)
-    for (const key of Object.keys(param)) if (!['token', 'title', 'description'].includes(key)) fail('Unknown parameter setting. Allowed: token, title, description', `${path}.${key}`)
     if (typeof param.token !== 'string' || !Object.hasOwn(tokens, param.token)) fail(`token must name an entry of [tokens] (got ${JSON.stringify(param.token)})`, `${path}.token`)
-    for (const key of ['title', 'description']) if (param[key] != null && typeof param[key] !== 'string') fail('must be text', `${path}.${key}`)
-    params[name] = { token: param.token, default: tokens[param.token], ...(param.title ? { title: param.title } : {}), ...(param.description ? { description: param.description } : {}) }
+    for (const [key, message] of paramSettingProblems(param, tokens[param.token])) fail(message, `${path}.${key}`)
+    params[name] = { token: param.token, default: tokens[param.token], ...(param.title ? { title: param.title } : {}), ...(param.description ? { description: param.description } : {}), ...paramSettings(param) }
   }
   const guide = validateGuide(raw.guide, fail)
   return {

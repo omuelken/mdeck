@@ -13,6 +13,9 @@ const STARTER_COLORS = {
 
 const entries = table => Object.entries(table ?? {}).map(([name, value]) => ({ name, ...(value && typeof value === 'object' && !Array.isArray(value) ? value : { value }) }))
 const table = (list, pick) => Object.fromEntries(list.filter(item => item.name).map(item => [item.name, pick(item)]))
+// A parameter's settings as the manifest writes them; the typed ones only with a type.
+const paramSettings = param => clean({ token: param.token, title: param.title, description: param.description,
+  ...(param.type ? { type: param.type, min: param.min, max: param.max, step: param.step, choices: param.choices } : {}) })
 const clean = object => Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined && value !== '' && value !== null && !(Array.isArray(value) && !value.length)))
 
 export function parseManifest(text) {
@@ -39,7 +42,7 @@ export function toToml(model) {
   else if (model.kind === 'theme') raw = {
     ...base, palette: model.palette, ...clean({ palettes: model.palettes }), ...(model.appearance === 'dark' ? { appearance: 'dark' } : {}), fonts: model.fonts ?? [], ...model.extra,
     files: { styles: 'styles.css', ...(model.files ?? {}) }, tokens,
-    params: table(model.params ?? [], param => clean({ token: param.token, title: param.title, description: param.description })),
+    params: table(model.params ?? [], paramSettings),
   }
   else if (model.kind === 'layout') raw = {
     ...base, ...(model.frame && model.frame !== 'standard' ? { frame: model.frame } : {}), ...model.extra, ...(Object.keys(model.files ?? {}).length ? { files: model.files } : {}),
@@ -67,7 +70,7 @@ export function toRuntimeManifest(model) {
   if (model.kind === 'palette') return { ...shared, ...(model.theme ? { theme: model.theme } : {}), light: table(model.light ?? [], token => token.value ?? ''), dark: table(model.dark ?? [], token => token.value ?? '') }
   if (model.kind === 'theme') return {
     ...shared, palette: model.palette, ...(model.palettes?.length ? { palettes: model.palettes } : {}), appearance: model.appearance ?? 'light', fonts: model.fonts ?? [], tokens,
-    params: table(model.params ?? [], param => ({ token: param.token, default: tokens[param.token] ?? '', ...(param.title ? { title: param.title } : {}) })),
+    params: table(model.params ?? [], param => ({ ...paramSettings(param), default: tokens[param.token] ?? '' })),
     ...(model.extra?.guide ? { guide: runtimeGuide(model.extra.guide) } : {}),
   }
   return shared
@@ -89,6 +92,6 @@ export function starterFiles(kind, id, title, from = null, fromFiles = {}) {
     return { [MANIFEST]: toToml({ kind, id, title, description: '', theme: '', light, dark, extra: {} }) }
   }
   if (kind !== 'theme' || !from) throw new Error('A new theme starts as a copy of another one')
-  const params = from.params && Object.fromEntries(Object.entries(from.params).map(([name, param]) => [name, { token: param.token, title: param.title, description: param.description }]))
+  const params = from.params && Object.fromEntries(Object.entries(from.params).map(([name, param]) => [name, paramSettings(param)]))
   return { [MANIFEST]: toToml({ ...toModel({ ...from, kind, params }), id, title, files: {} }), 'styles.css': fromFiles['styles.css'] ?? '' }
 }

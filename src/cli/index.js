@@ -22,6 +22,7 @@ import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
 import { installSkill, readSkill, TARGETS } from './skill.js'
 import { runPackages } from './themes.js'
 import { ManifestError, KINDS } from '../extensions/manifest.js'
+import { paramKind } from '../extensions/params.js'
 
 import { frameworkRoot } from '../paths.js'
 import { parseSlides } from '../core/parseSlides.js'
@@ -523,6 +524,9 @@ if (command === 'new') {
       console.log(`    ${c.cyan}${record.id}${c.reset} — ${record.title} ${c.dim}(${record.source})${record.description ? ' ' + record.description : ''}${c.reset}`)
       // What a theme suits, from its guide; --json has the whole guide.
       if (record.manifest?.guide?.suits) console.log(`      ${c.dim}Suits: ${record.manifest.guide.suits.join(' · ')}${c.reset}`)
+      // The settings a deck may change under params:, with the kind of value each takes.
+      const params = Object.entries(record.manifest?.params ?? {})
+      if (params.length) console.log(`      ${c.dim}Settings: ${params.map(([name, param]) => name + paramKind(param)).join(' · ')}${c.reset}`)
     }
   }
 

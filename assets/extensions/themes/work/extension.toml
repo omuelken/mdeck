@@ -3,7 +3,7 @@ kind = "theme"
 id = "work"
 title = "Work"
 description = "An everyday company template: IBM Plex Sans, an accent band along the top, the logo top left, headings in a fixed place, section dividers with a large number in the accent, a quiet footer with the page number."
-version = "0.1.0"
+version = "0.2.0"
 author = "Tilman Schieber"
 license = "MIT"
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
@@ -47,14 +47,20 @@ styles = "styles.css"
 [params.fontDisplay]
 token = "--font-display"
 title = "Display font"
+type = "font"
 
 [params.fontBody]
 token = "--font-body"
 title = "Body font"
+type = "font"
 
 [params.band]
 token = "--band"
-title = "Height of the band along the top (0px for none)"
+title = "Height of the band along the top"
+type = "size"
+min = 0
+max = 32
+description = "14px by default, up to about 32px; 0px leaves the top without a band."
 
 # What this theme is for and how to write for it: shown in listings, and read
 # by assistants that write slides as the theme author's advice.

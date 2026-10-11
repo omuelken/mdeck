@@ -201,7 +201,11 @@ Keep headings to a few words; three or four points make a good slide.
   `:root` block from them, so the stylesheet only contains rules.
 - `params` name the settings authors may change under `params:` in the deck.
   Each points at a token; its default is the token's value, so nothing is
-  written twice.
+  written twice. `type` (`size`, `number`, `switch`, `choice` or `font`) says
+  what kind of value it takes; `min`, `max` and `step` go with a size (in
+  pixels) or a number, `choices` with a choice. The token's value must be of
+  that type. The editor shows a slider, a box to tick or a list for it, and
+  `mdeck check` reports a deck value that does not fit.
 - `fonts` are stylesheet URLs. Normal builds load them; single files (`mdeck send`,
   `--single-file`) and PDFs embed their Latin character sets, so they look the
   same offline. The fallbacks named in the token values apply when a font

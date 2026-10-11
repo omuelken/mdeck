@@ -7,6 +7,8 @@ import { PalettePicker, Swatches } from './PalettePicker.jsx'
 const isColor = value => /^#[0-9a-f]{3,8}$/i.test(String(value ?? '').trim())
 const update = (list, index, patch) => list.map((item, i) => i === index ? { ...item, ...patch } : item)
 const without = (list, index) => list.filter((_, i) => i !== index)
+// The kinds of value a theme parameter takes (see src/extensions/params.js).
+const PARAM_KINDS = [['', 'text'], ['size', 'size'], ['number', 'number'], ['switch', 'switch'], ['choice', 'choice'], ['font', 'font']]
 
 function Identity({ model, onChange }) {
   return <>
@@ -122,8 +124,18 @@ export function ThemeForm({ model, files, palettes = {}, onChange, onFile }) {
         <input type="text" value={param.name} placeholder="fontBody" onInput={e => onChange({ params: update(model.params, index, { name: e.currentTarget.value }) })} />
         <select value={param.token ?? ''} onChange={e => onChange({ params: update(model.params, index, { token: e.currentTarget.value }) })}><option value="">token…</option>{tokenNames.map(name => <option key={name} value={name}>{name}</option>)}</select>
         <input type="text" value={param.title ?? ''} placeholder="Title" onInput={e => onChange({ params: update(model.params, index, { title: e.currentTarget.value }) })} />
+        <select value={param.type ?? ''} aria-label="Kind of value" title="Kind of value" onChange={e => onChange({ params: update(model.params, index, { type: e.currentTarget.value || undefined }) })}>
+          {PARAM_KINDS.map(([type, label]) => <option key={type} value={type}>{label}</option>)}
+        </select>
         <button class="btn is-small is-icon" title="Remove setting" aria-label="Remove setting" onClick={() => onChange({ params: without(model.params, index) })}><Icon name="close" size={14} /></button>
       </div>
+      {(param.type === 'size' || param.type === 'number') && <div class="row">
+        {['min', 'max', 'step'].map(key => <input key={key} type="number" value={param[key] ?? ''} placeholder={key} aria-label={key}
+          onInput={e => onChange({ params: update(model.params, index, { [key]: e.currentTarget.value === '' ? undefined : Number(e.currentTarget.value) }) })} />)}
+      </div>}
+      {param.type === 'choice' && <input type="text" value={(param.choices ?? []).join(', ')} placeholder="choices, separated by commas"
+        onInput={e => onChange({ params: update(model.params, index, { choices: e.currentTarget.value.split(',').map(choice => choice.trim()).filter(Boolean) }) })} />}
+      <input type="text" value={param.description ?? ''} placeholder="Description: the default and a sensible range" onInput={e => onChange({ params: update(model.params, index, { description: e.currentTarget.value }) })} />
     </div>)}
     <div><button class="btn is-small" onClick={() => onChange({ params: [...model.params, { name: '', token: tokenNames[0] ?? '', title: '' }] })}>+ setting</button></div>
     <details class="advanced">

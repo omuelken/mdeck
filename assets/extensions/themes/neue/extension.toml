@@ -3,7 +3,7 @@ kind = "theme"
 id = "neue"
 title = "Neue"
 description = "Swiss typography: large flush-left type, rules instead of boxes, signal red on white."
-version = "1.0.0"
+version = "1.1.0"
 author = "Tilman Schieber"
 license = "MIT"
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
@@ -43,10 +43,12 @@ styles = "styles.css"
 [params.fontDisplay]
 token = "--font-display"
 title = "Display font"
+type = "font"
 
 [params.fontBody]
 token = "--font-body"
 title = "Body font"
+type = "font"
 
 # What this theme is for and how to write for it: shown in listings, and read
 # by assistants that write slides as the theme author's advice.

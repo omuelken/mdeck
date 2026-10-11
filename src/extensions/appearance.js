@@ -7,6 +7,7 @@
 // Theme tokens (type, spacing, fonts) and theme parameters come on top.
 import { tokensToCss, COLOR_ROLES, APPEARANCES, palettesFor } from './tokens.js'
 import { movedHint } from './moved.js'
+import { paramValue } from './params.js'
 
 // Code highlighting and logos on dark slides, unless the palette says otherwise.
 export const DARK_TOKENS = {
@@ -62,8 +63,11 @@ export function buildAppearance({ theme, palettes = {}, palette, appearance, par
   const overrides = {}
   for (const [name, value] of Object.entries(params ?? {})) {
     const param = theme.params?.[name]
-    if (param) overrides[param.token] = value
-    else warnings.push(`Theme "${theme.id}" has no parameter "${name}"`)
+    if (!param) { warnings.push(`Theme "${theme.id}" has no parameter "${name}"`); continue }
+    // A value that does not fit the parameter's type is left out: the theme's own value stays.
+    const result = paramValue(param, value)
+    if (result.problem) warnings.push(`params.${name} ${result.problem}; the theme's ${param.default} is used`)
+    else overrides[param.token] = result.value
   }
   for (const [key, value] of Object.entries(meta ?? {})) overrides[`--meta-${key}`] = JSON.stringify(String(value))
   const overridesCss = tokensToCss(overrides)

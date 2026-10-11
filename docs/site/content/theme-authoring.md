@@ -140,6 +140,34 @@ params:
 
 Its default is simply the token's value. Colours are not parameters: they come from the palette.
 
+Say what kind of value a parameter takes with `type`, so mdeck can check what authors write and the editor can offer the right control:
+
+```toml
+[params.bar]
+token = "--bar"
+title = "Thickness of the bar under headings"
+type = "size"
+min = 0
+max = 20
+description = "12px by default, from about 6px to 20px; 0px leaves headings without bars."
+```
+
+| `type` | Takes | The editor shows | Settings |
+|---|---|---|---|
+| `size` | pixels: `12px`, or just `12` | a slider | `min`, `max`, `step` in pixels |
+| `number` | a number; a strength from 0 to 1 | a slider | `min`, `max`, `step` |
+| `switch` | `1` or `0` (also `true`/`false`, `on`/`off`) | a box to tick | |
+| `choice` | one of its `choices` | a list | `choices = ["left", "right"]` |
+| `font` | a CSS font list | a text box | |
+
+The token's value must be a value of that type: a `size` is written `"12px"`, a `switch` `"1"`. A value in the deck that does not fit is left out, and the theme's own value stays; `mdeck check` says why. A value outside `min` and `max` is used, with a warning: the range is what the theme was made for. A parameter without a `type` takes any text, as before.
+
+A few habits make parameters easy to use:
+
+- Turn a feature off with its parameter at zero (`0px`, `0`) rather than a second parameter.
+- Use a switch or a strength by multiplying with it, as in `calc(330px * var(--shapes))`.
+- Let the `description` give the default and a sensible range: the editor shows it under the control, and assistants read it.
+
 ## Say what it is for
 
 A `[guide]` tells people, and assistants that write slides, what your theme is good for and how slides for it are written:

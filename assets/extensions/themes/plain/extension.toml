@@ -3,7 +3,7 @@ kind = "theme"
 id = "plain"
 title = "Plain"
 description = "Black on white and lots of room: Inter, the heading in a column of its own beside the content, lists of short titles with a line under each, the accent only in small places; in greyscale, dark is the same, inverted."
-version = "0.1.0"
+version = "0.2.0"
 author = "Tilman Schieber"
 license = "MIT"
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
@@ -48,14 +48,20 @@ styles = "styles.css"
 [params.fontDisplay]
 token = "--font-display"
 title = "Display font"
+type = "font"
 
 [params.fontBody]
 token = "--font-body"
 title = "Body font"
+type = "font"
 
 [params.side]
 token = "--side"
 title = "Width of the heading column"
+type = "size"
+min = 400
+max = 640
+description = "560px of the 1920px slide by default, from about 400px to 640px; the content takes the rest."
 
 # What this theme is for and how to write for it: shown in listings, and read
 # by assistants that write slides as the theme author's advice.

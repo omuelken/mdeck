@@ -3,7 +3,7 @@ kind = "theme"
 id = "academic"
 title = "Academic"
 description = "A lecture: Source Sans and Source Serif, compact slides with the heading in a fixed place, theorem and definition blocks, booktabs tables and a footnote rule."
-version = "1.0.0"
+version = "1.1.0"
 author = "Tilman Schieber"
 license = "MIT"
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
@@ -46,14 +46,17 @@ styles = "styles.css"
 [params.fontDisplay]
 token = "--font-display"
 title = "Display font"
+type = "font"
 
 [params.fontBody]
 token = "--font-body"
 title = "Body font"
+type = "font"
 
 [params.fontSerif]
 token = "--font-serif"
 title = "Serif for theorems and quotes"
+type = "font"
 
 # What this theme is for and how to write for it: shown in listings, and read
 # by assistants that write slides as the theme author's advice.

@@ -3,7 +3,7 @@ kind = "theme"
 id = "glass"
 title = "Glass"
 description = "Liquid glass: soft pools of light behind every slide, content without frames, titles on a frosted pane with a bright rim; capsule labels, glass beads for list markers and a glass lens for chapter numbers; Geist throughout, dark by default."
-version = "0.1.1"
+version = "0.2.0"
 author = "Tilman Schieber"
 license = "MIT"
 # The palette this theme uses unless the deck sets one; colours come only from palettes.
@@ -49,14 +49,20 @@ styles = "styles.css"
 [params.fontDisplay]
 token = "--font-display"
 title = "Display font"
+type = "font"
 
 [params.fontBody]
 token = "--font-body"
 title = "Body font"
+type = "font"
 
 [params.glassBlur]
 token = "--glass-blur"
 title = "How much the glass blurs"
+type = "size"
+min = 0
+max = 48
+description = "28px by default, from 0px (clear glass) to about 48px."
 
 # What this theme is for and how to write for it: shown in listings, and read
 # by assistants that write slides as the theme author's advice.

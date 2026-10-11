@@ -60,7 +60,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `session.id` | from the title | Name the session code is derived from |
 | `session.code` | from `session.id` | The session code itself, 4 to 8 digits; phones join at `<server>/<code>` |
 | `components` | — | Extra folders of Preact components shared between decks, relative to the deck or starting with `~/` |
-| `params` | — | Theme-specific color/font overrides (see below) |
+| `params` | — | The theme's own settings, such as its fonts (see below) |
 | `reader.themes` | `true` | Whether the reader view offers a switch between light and dark (see below) |
 | `reader.notes` | `false` | Whether the reader view shows speaker notes under each slide in Read mode |
 | `bibliography` | — | Reference file, or a list of them, relative to the deck: `.bib`, `.json` (CSL-JSON) or `.yml` (Hayagriva) (see [Citations](#citations-and-references)) |
@@ -71,15 +71,20 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 
 ### Theme params
 
-Some themes expose their fonts as settings. Set them under `params:`:
+Themes offer settings of their own: their fonts, and often the size or
+strength of what makes them look the way they do. Set them under `params:`:
 
 ```yaml
 params:
   fontDisplay: "Georgia, serif"
+  glassBlur: 12px
 ```
 
-Available params depend on the theme; `mdeck list themes` shows them. Colours
-are not params: they come from the palette.
+Available params depend on the theme; `mdeck list themes` shows them with the
+kind of value each takes: a size in pixels, a number, a switch (`1` or `0`), a
+choice or a font. `0` or `0px` turns a feature off. A value that does not fit
+is left out, and `mdeck check` says why. Colours are not params: they come from
+the palette.
 
 ---
 

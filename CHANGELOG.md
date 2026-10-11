@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Theme parameters say what kind of value they take: `type = "size"` (pixels, with `min`, `max` and `step`), `"number"`, `"switch"` (1 or 0), `"choice"` (one of `choices`) or `"font"`. The deck settings show a slider, a box to tick or a list instead of a text box; a deck value that does not fit is left out, so the theme's own value stays, and `mdeck check` says why; a value outside the range is used, with a warning. `mdeck list themes` shows each theme's settings and what they take, and the design page lets a theme's author set the kind. `mdeck themes build` writes each theme's settings into the gallery's `looks.json`. A parameter without a type takes any text, as before. The built-in themes give every parameter a type and a description with its default and range. A theme that uses `type` needs this version of mdeck.
+
 ## 3.8.0 — 2026-10-11
 
 - Hotspots: with `hotspots: auto` in the deck's settings, the presenter view puts a numbered key on each picture, code block, table, formula, video, callout, column and poll of the slide, and **1**–**9** zoom smoothly until that part fills the screen, keeping the slide around a part of another shape in view. The audience window, a paired iPad and phones zoom along; only the presenter view shows the keys, which can also be tapped. The same number, **0**, **Escape**, a tap on the slide or the next point or slide show the whole slide again. `hotspots: marked` keys only parts marked `data-hotspot`; a slide can set its own (`hotspots: false`), and **H** or the presenter view's new button turns hotspots on or off during the talk. Without hotspots, the default, **1**–**9** still go to slides 1–9. The editor has a **Hotspots** choice in the deck's settings and in each slide's details, and the tour deck a slide to try it on.

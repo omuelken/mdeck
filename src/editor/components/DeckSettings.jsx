@@ -10,6 +10,7 @@ import { PalettePicker } from './PalettePicker.jsx'
 import { LookThumbnail } from './LookThumbnail.jsx'
 import { designUrl, DESIGN_TAB } from '../designLink.js'
 import { normalMode } from '../../runtime/hotspots.js'
+import { paramValue } from '../../extensions/params.js'
 
 // What the `show` setting controls: the label for each choice and its values.
 const SHOW = { organization: ['Organization', ['title', 'all', 'none']], author: ['Author and date', ['title', 'all', 'none']], numbers: ['Slide numbers', ['slides', 'all', 'none']], sections: ['Section labels', ['all', 'none']] }
@@ -75,11 +76,9 @@ export function DeckSettings({ state, edit }) {
       <p class="section-title">Theme settings</p>
       {Object.entries(theme.params).map(([key, def]) => {
         const value = config.params?.[key]
-        const color = isColor(def.default)
         return <Field key={key} label={def.title ?? key} hint={def.description}>
           <div class="row">
-            {color ? <input type="color" value={isColor(value) ? value : def.default} onInput={e => param(key, e.currentTarget.value)} style={{ flex: '0 0 auto' }} /> : null}
-            <input type="text" value={value ?? ''} placeholder={def.default} onInput={e => param(key, e.currentTarget.value)} />
+            <ParamInput def={def} value={value} onChange={next => param(key, next)} />
             {value != null && <button class="btn is-small is-icon" title="Back to the default" aria-label="Back to the default" onClick={() => param(key, '')}><Icon name="close" size={14} /></button>}
           </div>
         </Field>
@@ -109,4 +108,35 @@ function DesignLink({ kind, item }) {
   return <a class="btn is-small" target={DESIGN_TAB} href={designUrl(own ? { open: `${kind}:${item.id}` } : { copy: `${kind}:${item.id}` })}>
     {own ? `Edit ${kind}` : `Customise ${kind}`} <span class="muted">{item.title}</span>
   </a>
+}
+
+// The control for one theme parameter, by its type: a slider for a size or a
+// number with a range, a box to tick for a switch, a list for a choice, else
+// text (with a colour picker when the default is a colour). An empty value
+// means the theme's own.
+function ParamInput({ def, value, onChange }) {
+  const current = value != null && !paramValue(def, value).problem ? paramValue(def, value).value : def.default
+  if (def.type === 'switch') return <>
+    <input type="checkbox" checked={current === '1'} aria-label={def.title} onChange={e => onChange(e.currentTarget.checked ? 1 : 0)} style={{ flex: '0 0 auto', width: 'auto' }} />
+    <span class="muted" style={{ flex: '1 1 auto' }}>{current === '1' ? 'On' : 'Off'}</span>
+  </>
+  if (def.type === 'choice') return <select value={value ?? ''} onChange={e => onChange(e.currentTarget.value)}>
+    <option value="">{def.default} (the theme's)</option>
+    {def.choices.filter(choice => choice !== def.default).map(choice => <option key={choice} value={choice}>{choice}</option>)}
+  </select>
+  if ((def.type === 'size' || def.type === 'number') && def.min != null && def.max != null) {
+    const unit = def.type === 'size' ? 'px' : ''
+    const number = parseFloat(current)
+    const step = def.step ?? (def.type === 'size' ? 1 : (def.max - def.min) / 100)
+    return <>
+      <input type="range" min={def.min} max={def.max} step={step} value={number} aria-label={def.title}
+        onInput={e => onChange(unit ? `${e.currentTarget.value}${unit}` : Number(e.currentTarget.value))} />
+      <span class="muted" style={{ flex: '0 0 auto', minWidth: '4em', textAlign: 'end' }}>{number}{unit}</span>
+    </>
+  }
+  const color = isColor(def.default)
+  return <>
+    {color ? <input type="color" value={isColor(value) ? value : def.default} onInput={e => onChange(e.currentTarget.value)} style={{ flex: '0 0 auto' }} /> : null}
+    <input type="text" value={value ?? ''} placeholder={def.default} onInput={e => onChange(e.currentTarget.value)} />
+  </>
 }
