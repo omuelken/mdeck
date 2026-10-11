@@ -159,8 +159,9 @@ description = "12px by default, from about 6px to 20px; 0px leaves headings with
 | `switch` | `1` or `0` (also `true`/`false`, `on`/`off`) | a box to tick | |
 | `choice` | one of its `choices` | a list | `choices = ["left", "right"]` |
 | `font` | a CSS font list | a text box | |
+| `text` | words to show, such as a prompt; the author writes them plain and mdeck quotes them | a text box | |
 
-The token's value must be a value of that type: a `size` is written `"12px"`, a `switch` `"1"`. A value in the deck that does not fit is left out, and the theme's own value stays; `mdeck check` says why. A value outside `min` and `max` is used, with a warning: the range is what the theme was made for. A parameter without a `type` takes any text, as before.
+The token's value must be a value of that type: a `size` is written `"12px"`, a `switch` `"1"`, a `text` as a quoted CSS string, `"'~/talk $ '"`, used as `content: var(--prompt)`. A value in the deck that does not fit is left out, and the theme's own value stays; `mdeck check` says why. A value outside `min` and `max` is used, with a warning: the range is what the theme was made for. A parameter without a `type` takes any text, as before.
 
 A few habits make parameters easy to use:
 

@@ -10,7 +10,7 @@ import { PalettePicker } from './PalettePicker.jsx'
 import { LookThumbnail } from './LookThumbnail.jsx'
 import { designUrl, DESIGN_TAB } from '../designLink.js'
 import { normalMode } from '../../runtime/hotspots.js'
-import { paramValue } from '../../extensions/params.js'
+import { paramValue, paramDefault } from '../../extensions/params.js'
 
 // What the `show` setting controls: the label for each choice and its values.
 const SHOW = { organization: ['Organization', ['title', 'all', 'none']], author: ['Author and date', ['title', 'all', 'none']], numbers: ['Slide numbers', ['slides', 'all', 'none']], sections: ['Section labels', ['all', 'none']] }
@@ -112,8 +112,8 @@ function DesignLink({ kind, item }) {
 
 // The control for one theme parameter, by its type: a slider for a size or a
 // number with a range, a box to tick for a switch, a list for a choice, else
-// text (with a colour picker when the default is a colour). An empty value
-// means the theme's own.
+// a text box (with a colour picker when the default is a colour). An empty
+// value means the theme's own; a text shows the theme's without its quotes.
 function ParamInput({ def, value, onChange }) {
   const current = value != null && !paramValue(def, value).problem ? paramValue(def, value).value : def.default
   if (def.type === 'switch') return <>
@@ -137,6 +137,6 @@ function ParamInput({ def, value, onChange }) {
   const color = isColor(def.default)
   return <>
     {color ? <input type="color" value={isColor(value) ? value : def.default} onInput={e => onChange(e.currentTarget.value)} style={{ flex: '0 0 auto' }} /> : null}
-    <input type="text" value={value ?? ''} placeholder={def.default} onInput={e => onChange(e.currentTarget.value)} />
+    <input type="text" value={value ?? ''} placeholder={paramDefault(def)} onInput={e => onChange(e.currentTarget.value)} />
   </>
 }

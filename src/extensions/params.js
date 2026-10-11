@@ -7,11 +7,13 @@
 //   switch   1 or 0 (also true and false, on and off, yes and no)
 //   choice   one of `choices`
 //   font     a CSS font list
+//   text     words to show, such as a prompt: the author writes them plain,
+//            mdeck quotes them; the theme's own value is a quoted CSS string
 //
 // The manifest check, `mdeck check`, the slides and the editor all use these
 // functions, so they agree on what a value means.
 
-export const PARAM_TYPES = ['size', 'number', 'switch', 'choice', 'font']
+export const PARAM_TYPES = ['size', 'number', 'switch', 'choice', 'font', 'text']
 export const PARAM_KEYS = ['token', 'title', 'description', 'type', 'min', 'max', 'step', 'choices']
 const RANGED = ['size', 'number']
 const NUMBER_RE = /^-?(\d+\.?\d*|\.\d+)$/
@@ -25,6 +27,25 @@ function pixels(value) {
 }
 
 const unit = param => param.type === 'size' ? 'px' : ''
+
+// A CSS string literal ('…' or "…") and the text in it.
+const STRING_RE = /^(['"])((?:\\[^]|(?!\1)[^\\\n])*)\1$/
+
+/** Text as a CSS string: quoted, with backslashes, quotes and line breaks escaped. */
+export function cssString(text) {
+  return '"' + String(text).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, '\\A ') + '"'
+}
+
+/** The text in a CSS string literal, or null when it is not one. */
+export function unquote(css) {
+  const match = STRING_RE.exec(String(css).trim())
+  return match ? match[2].replace(/\\A ?/g, '\n').replace(/\\([^])/g, '$1') : null
+}
+
+/** A parameter's default as an author would write it: a text without its quotes. */
+export function paramDefault(param) {
+  return param.type === 'text' ? unquote(param.default) ?? param.default : param.default
+}
 
 /** The range a parameter was made for, as text ("6px to 20px", "at least 0"), or ''. */
 export function paramRange(param) {
@@ -54,6 +75,8 @@ export function paramValue(param, raw) {
   const type = param.type
   if (raw == null || (typeof raw === 'object')) return { problem: 'needs a single value' }
   if (!type) return { value: String(raw) }
+  // Text keeps its spaces (a prompt ends in one) and may be empty.
+  if (type === 'text') return { value: cssString(raw) }
   const text = String(raw).trim()
   if (!text) return { problem: 'is empty' }
   if (type === 'font') return { value: text }
@@ -98,6 +121,10 @@ export function paramSettingProblems(param, fallback) {
     else if (new Set(choices).size !== choices.length) problems.push(['choices', 'lists a value twice'])
   } else if (param.choices != null) problems.push(['choices', `is for a choice, not a ${type}`])
   if (problems.length || fallback == null) return problems
+  if (type === 'text') {
+    if (unquote(fallback) == null) problems.push(['type', `a text's token is a quoted CSS string, such as "'~/talk $ '" (got ${JSON.stringify(fallback)})`])
+    return problems
+  }
   // The default is the token's value: it has to be a value of this type too.
   const result = paramValue(param, fallback)
   if (result.problem) problems.push(['type', `the token's value ${JSON.stringify(fallback)} ${result.problem}`])

@@ -8,7 +8,7 @@ const isColor = value => /^#[0-9a-f]{3,8}$/i.test(String(value ?? '').trim())
 const update = (list, index, patch) => list.map((item, i) => i === index ? { ...item, ...patch } : item)
 const without = (list, index) => list.filter((_, i) => i !== index)
 // The kinds of value a theme parameter takes (see src/extensions/params.js).
-const PARAM_KINDS = [['', 'text'], ['size', 'size'], ['number', 'number'], ['switch', 'switch'], ['choice', 'choice'], ['font', 'font']]
+const PARAM_KINDS = [['', 'CSS value'], ['size', 'size'], ['number', 'number'], ['switch', 'switch'], ['choice', 'choice'], ['font', 'font'], ['text', 'text']]
 
 function Identity({ model, onChange }) {
   return <>

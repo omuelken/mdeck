@@ -79,7 +79,8 @@ params:
 
 A parameter's default is its token's value. `type` says what kind of value it
 takes: `size` (pixels, with `min`, `max` and `step`), `number` (with the same
-three), `switch` (1 or 0), `choice` (one of `choices`) or `font`. A deck value
+three), `switch` (1 or 0), `choice` (one of `choices`), `font` or `text` (words to show,
+which mdeck quotes; the token's value is a quoted CSS string). A deck value
 that does not fit is left out, and `mdeck check` reports it, like unknown
 parameter names; one outside `min` and `max` is used, with a warning. Without
 a `type`, a parameter takes any text.

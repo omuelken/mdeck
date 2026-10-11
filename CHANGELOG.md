@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Theme settings can be text: `type = "text"` for words a theme shows, such as Terminal's prompt. Authors write them as they should appear (`prompt: "~/demo $ "`), spaces included, and mdeck quotes them for the stylesheet; the editor shows a text box with the theme's own words. Before, such words could only be fixed in the theme.
+
 ## 3.10.0 — 2026-10-11
 
 - Glass has a `motion` setting: `motion: 0` holds its light still, for recordings and calm rooms. The guide for theme authors names the settings themes share: `motion` for what moves while presenting and `texture` for grain, paper and scanlines.

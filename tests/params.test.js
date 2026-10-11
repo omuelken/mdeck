@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { paramValue, paramRange, paramKind, paramSettingProblems } from '../src/extensions/params.js'
+import { paramValue, paramRange, paramKind, paramSettingProblems, paramDefault, cssString, unquote } from '../src/extensions/params.js'
 import { parseManifestText, validateManifest, ManifestError } from '../src/extensions/manifest.js'
 import { loadRegistry, manifestsOf } from '../src/extensions/discover.js'
 import { buildAppearance } from '../src/extensions/appearance.js'
@@ -132,4 +132,21 @@ test('the theme form keeps a parameter\'s type, range and choices', () => {
   const untyped = toModel(parseManifestText(THEME, 'extension.toml'))
   untyped.params = untyped.params.map(param => param.name === 'bar' ? { ...param, type: undefined } : param)
   assert.deepEqual({ ...parseManifestText(toToml(untyped), 'extension.toml').params.bar }, { token: '--bar' })
+})
+
+test('a text is written plain and reaches CSS quoted, its spaces kept', () => {
+  const prompt = { type: 'text', default: "'~/talk $ '" }
+  assert.deepEqual(paramValue(prompt, '~/kubecon $ '), { value: '"~/kubecon $ "' }, 'the space before the heading stays')
+  assert.deepEqual(paramValue(prompt, ''), { value: '""' }, 'an empty text is allowed')
+  assert.deepEqual(paramValue(prompt, 42), { value: '"42"' })
+  assert.equal(cssString('say "hi" \\ there\nnext'), '"say \\"hi\\" \\\\ there\\A next"', 'quotes, backslashes and line breaks are escaped')
+  assert.equal(unquote(cssString('say "hi" \\ there\nnext')), 'say "hi" \\ there\nnext', 'and come back as they were')
+  assert.equal(unquote("'~/talk $ '"), '~/talk $ ')
+  assert.equal(unquote('~/talk'), null)
+  assert.equal(paramDefault(prompt), '~/talk $ ', 'the editor shows the default without quotes')
+  assert.equal(paramKind(prompt), ' (text)')
+  assert.deepEqual(paramSettingProblems({ token: '--prompt', type: 'text' }, "'~/talk $ '"), [])
+  assert.match(paramSettingProblems({ token: '--prompt', type: 'text' }, '~/talk')[0][1], /a text's token is a quoted CSS string/)
+  const theme = load(THEME.replace('"--side" = "left"', '"--side" = "left"\n"--prompt" = "\'~/talk $ \'"') + '[params.prompt]\ntoken = "--prompt"\ntype = "text"\n').manifest
+  assert.match(buildAppearance({ theme, params: { prompt: '~/demo $ ' } }).overridesCss, /--prompt: "~\/demo \$ ";/)
 })
