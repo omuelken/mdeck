@@ -94,15 +94,39 @@ export function inlineThemedPictures(html) {
   return out + html.slice(last)
 }
 
+// A drawing in the page more than once (on two slides, or in a slide shown
+// twice) would repeat its ids, and url(#…) and href="#…" find the first copy,
+// which may be on a hidden slide: each copy gets ids of its own.
+let drawingCopies = 0
+export function ownIds(svg) {
+  const named = svg.querySelectorAll('[id]')
+  if (!named.length || svg.hasAttribute('data-own-ids')) return
+  const suffix = `--${++drawingCopies}`
+  const renamed = new Map([...named].map(element => [element.id, element.id + suffix]))
+  for (const element of named) element.id = renamed.get(element.id)
+  const swap = text => text.replace(/url\(\s*(['"]?)#([^'")\s]+)\1\s*\)/g, (match, quote, id) => renamed.has(id) ? `url(#${renamed.get(id)})` : match)
+  for (const element of svg.querySelectorAll('*')) {
+    for (const attribute of [...element.attributes]) {
+      const local = attribute.value.startsWith('#') && renamed.get(attribute.value.slice(1))
+      if (attribute.localName === 'href' && local) attribute.value = '#' + local
+      else if (attribute.value.includes('url(')) attribute.value = swap(attribute.value)
+    }
+    if (element.localName === 'style') element.textContent = swap(element.textContent)
+  }
+  svg.setAttribute('data-own-ids', '')
+}
+
 // A picture from the slide's settings; `fit: cover` fills its box like a
 // photo, otherwise the drawing fits inside.
 export function Picture({ src, alt, fit, position, class: className, ...attributes }) {
+  const ref = useRef()
   const markup = themedSvg(src)
+  useEffect(() => { const svg = ref.current?.querySelector(':scope > svg'); if (svg) ownIds(svg) }, [markup])
   if (!markup) return <img class={className} src={src} alt={alt} style={{ objectFit: fit, objectPosition: position }} {...attributes} />
   const aspect = fit === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet'
   // The box sets the size; the drawing scales inside it.
   const html = markup.replace(/<svg\b[^>]*>/, tag => tag.replace(/\s(width|height|preserveAspectRatio)="[^"]*"/g, '').replace('<svg', `<svg preserveAspectRatio="${aspect}"`))
-  return <div class={['themed-picture', className].filter(Boolean).join(' ')} role="img" aria-label={alt} dangerouslySetInnerHTML={{ __html: html }} {...attributes} />
+  return <div ref={ref} class={['themed-picture', className].filter(Boolean).join(' ')} role="img" aria-label={alt} dangerouslySetInnerHTML={{ __html: html }} {...attributes} />
 }
 
 // ─── Hydration for inline components ──────────────────────────────────────
@@ -116,6 +140,7 @@ export function HtmlContent({ html, class: className, ...attributes }) {
 
   useEffect(() => {
     if (!ref.current) return
+    ref.current.querySelectorAll('.themed-picture > svg').forEach(ownIds)
     const mounted = []
     for (const [name, Component] of Object.entries(registry)) {
       for (const el of [...ref.current.querySelectorAll(name)]) {

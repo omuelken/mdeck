@@ -709,9 +709,33 @@ palette's custom properties (`--bg`, `--surface`, `--ink`, `--ink-soft`,
 `--muted`, `--rule`, `--accent`, `--accent-2`, `--accent-3`, `--on-accent`) and follows the
 theme, palette and appearance. Give each a fallback (`var(--accent, #1f3fd1)`)
 for places that show the file on its own, set `fit: contain` to keep the whole
-drawing, prefix class names in its `<style>` because inline styles apply to the
-page, and avoid `id`s, since a slide can be shown more than once. Such SVGs stay
-files in single-file builds and travel inside the deck's code instead.
+drawing, and start every rule in its `<style>` with a class of the drawing's
+own (`.flow-box`), because inline styles apply to the page. Each copy in the
+page gets ids of its own, and `url(#…)` and `href="#…"` inside it follow them,
+so markers, gradients and `<use>` work on every slide that shows the drawing;
+`#id` selectors in its `<style>` do not. Such SVGs stay files in single-file
+builds and travel inside the deck's code instead.
+
+Being part of the slide, such a drawing can build up: `data-step` on its parts
+reveals them one press at a time. Numbered parts (`data-step="1"`,
+`data-step="2"` …) appear in the order of their numbers, and parts with the
+same number together, whatever their order in the file, which is also the order
+they are drawn in; the drawing's steps come where its first step is in the
+slide. Bare `data-step` parts appear in document order. With hotspots on,
+`data-hotspot` on a part makes it a hotspot once it is shown.
+
+```svg
+<g data-step="1" data-hotspot>…input…</g>
+<g data-step="1">…output…</g>
+<g data-step="2">…the arrow, drawn under both…</g>
+```
+
+`mdeck check` warns about a palette name without a fallback (`svg-fallback`),
+fixed colours that do not follow the palette or dark mode (`svg-fixed-colour`),
+style rules that reach beyond the drawing (`svg-style`), numbered and bare steps
+in one drawing (`svg-steps`), and `data-step` or `data-hotspot` in an SVG that
+uses no palette colour, which is shown as a picture and so cannot build up
+(`svg-not-inline`).
 
 A normal build copies referenced local images, video, and audio next to the HTML
 while preserving their deck-relative paths. This is the recommended distribution

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- A drawing that uses the palette (an SVG with `var(--…)`) builds up in the order its parts are numbered: `data-step="1"`, `data-step="2"` … reveal one press at a time, parts with the same number together, whatever their order in the file, which is also the order they are drawn in. Bare `data-step` parts still appear in document order. With hotspots on, `data-hotspot` on a part makes it a hotspot once it is shown.
+- Fixed: a drawing on two slides lost its arrowheads, gradients and `<use>` copies on the second, because `url(#…)` found the copy on the hidden first slide. Each copy in the page now gets ids of its own.
+- `mdeck check` looks at the deck's SVG drawings: palette names without a fallback, fixed colours that stay the same in every palette and in dark mode, style rules that reach the rest of the page, numbered and bare steps in one drawing, and `data-step` or `data-hotspot` in a drawing that uses no palette colour and so is shown as a picture.
+- The slide-writing skill draws diagrams as SVG in the palette's colours, builds them up with numbered steps and checks them in light and dark.
+
 ## 3.10.1 — 2026-10-11
 
 - Theme settings can be text: `type = "text"` for words a theme shows, such as Terminal's prompt. Authors write them as they should appear (`prompt: "~/demo $ "`), spaces included, and mdeck quotes them for the stylesheet; the editor shows a text box with the theme's own words. Before, such words could only be fixed in the theme.

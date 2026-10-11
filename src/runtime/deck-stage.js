@@ -68,6 +68,7 @@
 import { iconSvg } from '../core/icons.js'
 import { inkPaint, snapAngle } from '../core/ink.js'
 import { findHotspots, hotspotMode, zoomToCamera, cameraToZoom } from './hotspots.js'
+import { slideSteps } from './steps.js'
 import { flight, durationFor, ease } from './zoom/camera.js'
 
 (() => {
@@ -949,9 +950,8 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     // Step reveal helpers ---------------------------------------------------
 
     _getSteps(slide) {
-      if (!slide) return [];
-      // Multiple and nested reveal blocks follow document order.
-      return [...slide.querySelectorAll('[data-step]')];
+      // Each step is a list of elements that appear together.
+      return slideSteps(slide);
     }
 
     _applySteps(slideIndex) {
@@ -959,9 +959,9 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       if (!slide) return;
       const steps = this._getSteps(slide);
       const curr  = this._printing ? steps.length - 1 : (this._stepMap.get(slideIndex) ?? -1);
-      steps.forEach((el, i) =>
+      steps.forEach((elements, i) => elements.forEach(el =>
         i <= curr ? el.setAttribute('data-step-visible', '') : el.removeAttribute('data-step-visible')
-      );
+      ));
       this._updateStepCount(slideIndex);
       if (slideIndex === this._index) this._queueHotspots();
     }

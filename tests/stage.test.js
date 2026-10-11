@@ -6,6 +6,7 @@ import { inkPaint } from '../src/core/ink.js'
 import { iconSvg } from '../src/core/icons.js'
 import { findHotspots, hotspotMode, zoomToCamera, cameraToZoom } from '../src/runtime/hotspots.js'
 import { flight, durationFor, ease } from '../src/runtime/zoom/camera.js'
+import { slideSteps } from '../src/runtime/steps.js'
 
 // Exercise the real stage state machine without a browser layout engine.
 function stageFixture() {
@@ -19,7 +20,7 @@ function stageFixture() {
   vm.runInNewContext(source, {
     iconSvg,
     inkPaint,
-    findHotspots, hotspotMode, zoomToCamera, cameraToZoom, flight, durationFor, ease,
+    findHotspots, hotspotMode, zoomToCamera, cameraToZoom, flight, durationFor, ease, slideSteps,
     HTMLElement: class {
       attachShadow() { return {} }
       dispatchEvent(event) { events.push(event) }
@@ -34,7 +35,7 @@ function stageFixture() {
     URLSearchParams, window, CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail } },
   })
   const stage = new Stage()
-  const step = () => ({ dataset: { step: '0' }, setAttribute() { this.visible = true }, removeAttribute() { this.visible = false } })
+  const step = () => ({ dataset: { step: '0' }, getAttribute: () => '0', closest: () => null, setAttribute() { this.visible = true }, removeAttribute() { this.visible = false } })
   stage._slides = ['first', 'second'].map(id => {
     const steps = [step(), step()]
     return { dataset: { slideId: id }, steps, querySelectorAll: () => steps, setAttribute() {}, removeAttribute() {} }

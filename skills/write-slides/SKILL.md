@@ -127,6 +127,14 @@ The request is the message that invoked this skill: usually source material to t
 - Keep lists to three to five items; prefer a short bold label plus one sentence over long bullets.
 - Reference pictures under `./img/` and say which files the user still needs to add.
 
+**Diagrams**
+- When a slide explains a process, a structure or a comparison that the material shows as a figure, or that no picture shows yet, draw it as an SVG file in `./img/` and put it on the slide like a picture. Keep a diagram from the material where it is a photograph, a plot of real data or a figure you cannot redraw faithfully.
+- Colour it only with the palette's names, each with a fallback: `fill="var(--accent, #1f3fd1)"`, `var(--ink, #222)` for text and lines, `var(--surface, #eef1fb)` for boxes, `var(--muted, #667)` for what is secondary. Then it follows the theme, the palette and dark mode. Give the background no fill, and text a font size near the slide's (24–36 px at the drawing's own scale), with a `viewBox` and room around the text.
+- Start every rule in its `<style>` with a class of its own (`.flow-box`), never a bare `text` or `rect`: the drawing is part of the page, and such a rule changes every drawing on it. Markers, gradients and `<use>` with ids work.
+- For a diagram that builds up, number its parts with `data-step="1"`, `"2"` …; parts with the same number appear together, in the order of the numbers, not of the file. With `hotspots`, `data-hotspot` on a group lets the presenter zoom to it. Mention the steps in the notes.
+- On a slide of its own, a diagram goes in a layout's `image` with `fit: contain`, or alone in the slide text.
+- `mdeck check` names fixed colours, missing fallbacks and rules that reach the page; fix them. Then look at the slide with `mdeck snapshot`, in light and `--dark`.
+
 ## 4. Check and hand over
 
 Save the deck as a `.md` file named after the topic (for example `enzyme-kinetics.md`), then run:

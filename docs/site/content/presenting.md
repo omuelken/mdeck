@@ -96,6 +96,8 @@ A slide can have its own setting in its frontmatter, such as `hotspots: false` f
 The rate is <span data-hotspot>**2.4 %** a year</span>, for now.
 ```
 
+In a drawing that takes its colours from the theme, `data-hotspot` on a group makes that part of the drawing a hotspot.
+
 Parts that nearly fill the slide, or its whole width, get no key, since there is nothing to zoom; what is inside them may. A part inside another one shares its key: a column with a formula and a tip in it is one part. The keys follow reading order, up to nine on a slide. In the editor, the deck's settings and each slide's details have a **Hotspots** choice too. **H**, or the button beside **Draw**, turns hotspots on or off for the rest of the talk without changing the deck; a slide set to `false` stays without them.
 
 ## One talk in several languages
@@ -125,7 +127,7 @@ Wrap a list in a steps block:
 :::
 ```
 
-Each press of the next key reveals one point. Once all points are visible, the next press moves to the following slide. Printed slides show all the points.
+Each press of the next key reveals one point. Once all points are visible, the next press moves to the following slide. Printed slides show all the points. A drawing can build up the same way; see [A drawing that builds up](media.html#a-drawing-that-builds-up).
 
 ## Before the talk
 

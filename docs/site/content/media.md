@@ -59,13 +59,32 @@ For a cropped picture, use `fit: cover`. You can add `position: "left center"` o
 
 ## Pictures that follow the theme
 
-An SVG drawing can take its colours from the theme, so it matches every theme, palette, and light or dark. Colour it with the palette's names instead of fixed colours, for example `fill: var(--accent, #1f3fd1)`; the colour after the comma is used wherever the picture is shown on its own. The names are `--bg`, `--surface`, `--ink`, `--ink-soft`, `--muted`, `--rule`, `--accent`, `--accent-2` and `--on-accent`.
+An SVG drawing can take its colours from the theme, so it matches every theme, palette, and light or dark. Colour it with the palette's names instead of fixed colours, for example `fill: var(--accent, #1f3fd1)`; the colour after the comma is used wherever the picture is shown on its own. The names are `--bg`, `--surface`, `--ink`, `--ink-soft`, `--muted`, `--rule`, `--accent`, `--accent-2`, `--accent-3` and `--on-accent`.
 
 It works wherever a picture goes: in the slide text (`![…](./img/drawing.svg)`) or as the `image` of a layout. In a layout, add `fit: contain` so the whole drawing shows. The tour example's title picture, `examples/showcase/img/mdeck.svg`, works this way. An AI assistant can draw one for you:
 
 ```prompt
 Draw an SVG title picture for this talk that uses the palette's
 colours, with a transparent background, and put it on the title slide.
+```
+
+### A drawing that builds up
+
+Such a drawing is part of the slide, so its parts can appear one at a time, like the points of a list. Put each part in a group and number it with `data-step`: the parts appear in the order of their numbers, and parts with the same number appear together.
+
+```html
+<g data-step="1">…the first box…</g>
+<g data-step="1">…the second box…</g>
+<g data-step="2">…the arrow between them…</g>
+```
+
+The numbers decide the order, not where a part is in the file, so an arrow can be drawn under the boxes and still appear after them. With hotspots on (see [Zoom in on part of a slide](presenting.html#zoom-in-on-part-of-a-slide)), `data-hotspot` on a group gives it a key of its own. The same drawing can be on several slides; each copy keeps its arrowheads and gradients.
+
+`mdeck check` looks at these drawings: it names colours that stay fixed in dark mode, palette names without a colour after the comma, and styles that would reach the rest of the slide. An assistant can do all of it for you:
+
+```prompt
+Draw the three stages of the pipeline as an SVG in the palette's colours
+that builds up one stage at a time, and make each stage a hotspot.
 ```
 
 ## Add a video file

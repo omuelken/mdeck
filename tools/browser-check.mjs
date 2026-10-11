@@ -671,8 +671,34 @@ try {
   await until(spotPresenter, "document.querySelector('.presenter-hotspots').getAttribute('aria-pressed') === 'false'")
   await spotAudience.close()
   await spotPresenter.close()
+  // A drawing builds up in the order its parts are numbered, parts with the
+  // same number together; a marked part is a hotspot once it is shown.
+  writeFileSync(resolve(temp, 'flow.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" width="900" height="300">'
+    + '<g data-hotspot data-step="2"><rect x="250" y="140" width="80" height="20" fill="var(--accent, #00f)"/></g>'
+    + '<g data-step="1"><rect x="10" y="80" width="240" height="140" fill="var(--surface, #eee)"/></g>'
+    + '<g data-step="1" data-hotspot><rect x="330" y="80" width="240" height="140" fill="url(#flow-fill)"/></g>'
+    + '<defs><linearGradient id="flow-fill"><stop stop-color="var(--accent, #00f)"/></linearGradient></defs></svg>')
+  const flowDeck = resolve(temp, 'flow.md')
+  writeFileSync(flowDeck, '---\nhotspots: marked\n---\n# Flow\n\n![Flow](./flow.svg)\n\n---\n# Again\n\n![Flow](./flow.svg)\n')
+  execFileSync(process.execPath, ['bin/mdeck.js', 'build', flowDeck, '-o', resolve(temp, 'flow.html')], { cwd: root, stdio: 'pipe' })
+  const flow = await open('flow.html')
+  const flowStage = "document.querySelector('deck-stage')"
+  await until(flow, `${flowStage}?.length === 2 && document.querySelectorAll('.themed-picture svg[data-own-ids]').length === 2`)
+  // The same drawing on two slides: each copy has ids of its own and finds its own gradient.
+  const [[id1, fill1], [id2, fill2]] = JSON.parse(await flow.evaluate("JSON.stringify([...document.querySelectorAll('.themed-picture svg')].map(svg => [svg.querySelector('linearGradient').id, svg.querySelector('g:nth-of-type(3) rect').getAttribute('fill')]))"))
+  assert.notEqual(id1, id2)
+  assert.deepEqual([fill1, fill2], [`url(#${id1})`, `url(#${id2})`])
+  const shown = "[...document.querySelector('section.slide svg').querySelectorAll('g')].map(g => g.hasAttribute('data-step-visible') ? 1 : 0).join('')"
+  assert.equal(await flow.evaluate(shown), '000')
+  await flow.evaluate(`${flowStage}.next()`)
+  await until(flow, `${shown} === '011'`)
+  await until(flow, `${flowStage}.hotspots.length === 1`)
+  await flow.evaluate(`${flowStage}.next()`)
+  await until(flow, `${shown} === '111' && ${flowStage}.hotspots.length === 2`)
+  assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
+  await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), and hotspots (keys on the presenter slide, flights the audience follows, leaving them).')
+  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()
