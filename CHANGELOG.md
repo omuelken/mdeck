@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.8.0 — 2026-10-11
 
 - Hotspots: with `hotspots: auto` in the deck's settings, the presenter view puts a numbered key on each picture, code block, table, formula, video, callout, column and poll of the slide, and **1**–**9** zoom smoothly until that part fills the screen, keeping the slide around a part of another shape in view. The audience window, a paired iPad and phones zoom along; only the presenter view shows the keys, which can also be tapped. The same number, **0**, **Escape**, a tap on the slide or the next point or slide show the whole slide again. `hotspots: marked` keys only parts marked `data-hotspot`; a slide can set its own (`hotspots: false`), and **H** or the presenter view's new button turns hotspots on or off during the talk. Without hotspots, the default, **1**–**9** still go to slides 1–9. The editor has a **Hotspots** choice in the deck's settings and in each slide's details, and the tour deck a slide to try it on.
 - A talk in several languages is one file per language, side by side and named for it: `talk.en.md`, `talk.de.md`, `talk.hi.md`. `mdeck run` finds them and the presenter view gets a **Language** switch (**L** for the next language): the slides, the notes and mdeck's own words change in every window, the audience window, a paired iPad and phones following the talk, at the same slide and step. A file named this way needs no `lang`. A deck in one language shows no switch.
