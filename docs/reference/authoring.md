@@ -82,7 +82,10 @@ params:
 
 Available params depend on the theme; `mdeck list themes` shows them with the
 kind of value each takes: a size in pixels, a number, a switch (`1` or `0`), a
-choice or a font. `0` or `0px` turns a feature off. A value that does not fit
+choice or a font. `0` or `0px` turns a feature off.
+A font named this way is not downloaded: it has to be installed on the
+computer that shows the slides, or the browser uses the next font in the
+list; PDFs and single files embed only the theme's own fonts. A value that does not fit
 is left out, and `mdeck check` says why. Colours are not params: they come from
 the palette.
 

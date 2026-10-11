@@ -138,7 +138,7 @@ params:
   fontBody: "Georgia, serif"
 ```
 
-Its default is simply the token's value. Colours are not parameters: they come from the palette.
+Its default is simply the token's value. Colours are not parameters: they come from the palette. A font a deck names this way is not downloaded: it has to be installed on the computer that shows the slides, or the browser uses the next font in the list; PDFs and single files embed only the theme's own fonts.
 
 Say what kind of value a parameter takes with `type`, so mdeck can check what authors write and the editor can offer the right control:
 
