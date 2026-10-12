@@ -6,6 +6,7 @@ import { registry } from '../runtime/registry'
 import { scanTags, closeTags } from '../core/tags.js'
 import { expandPollLists } from '../core/pollList.js'
 import { textDirection } from '../core/languages.js'
+import { sourceLines, fenceState } from '../core/source.js'
 import { InkLayer } from '../runtime/ink/InkLayer.jsx'
 import themedSvgs from 'virtual:deck-svgs'
 import { renderCitations, citationsHtml as referencesOf, bibliographyOf } from '../runtime/citations.js'
@@ -15,19 +16,32 @@ import { renderCitations, citationsHtml as referencesOf, bibliographyOf } from '
 const FN_DEF_RE = /^\[\^([^\]\n]+)\]:\s+([^\n]+)/gm
 const FN_REF_RE = /\[\^([^\]\n]+)\]/g
 
+// `change(text, lineStart)` applied to the prose of `markdown` only: fenced
+// code blocks and `inline code` keep what is written in them.
+function inProse(markdown, change) {
+  let fence = null
+  return sourceLines(markdown).map(line => {
+    const raw = markdown.slice(line.start, line.end)
+    const before = fence
+    fence = fenceState(line.text, fence)
+    if (before || fence) return raw
+    return raw.split(/((`+)[^`]*?\2)/).map((part, i) => i % 3 === 0 ? change(part, i === 0) : i % 3 === 1 ? part : '').join('')
+  }).join('')
+}
+
 function preprocessFootnotes(markdown) {
   const defs = {}
-  const stripped = markdown.replace(FN_DEF_RE, (_, label, text) => {
-    defs[label] = text.trim()
+  const stripped = inProse(markdown, (text, lineStart) => lineStart ? text.replace(FN_DEF_RE, (_, label, note) => {
+    defs[label] = note.trim()
     return ''
-  })
+  }) : text)
 
   let counter = 0
   const labelToNum = {}
-  const processed = stripped.replace(FN_REF_RE, (_, label) => {
+  const processed = inProse(stripped, text => text.replace(FN_REF_RE, (_, label) => {
     if (labelToNum[label] === undefined) labelToNum[label] = ++counter
     return `<sup>${labelToNum[label]}</sup>`
-  })
+  }))
 
   if (counter === 0) return { processed: markdown, footnotesHtml: '' }
 
@@ -222,8 +236,12 @@ export function prepareSlide(slide) {
   const position = region => region.source?.start ?? region.ranges?.[0]?.start ?? 0
   const entries = Object.entries(slide.regions ?? { body: { name: 'body', content: slide.content } })
     .sort((a, b) => position(a[1]) - position(b[1]))
-  let separator = '\u0000mdeck-region\u0000'
-  while (entries.some(([, r]) => r.content.includes(separator))) separator += '\u0000'
+  // The regions are scanned as one text, so numbered citations and footnotes
+  // run on across them. The separator stands on a line of its own: joined
+  // mid-line, a region's closing ``` fence read as an opening one, and the
+  // next region as code.
+  let separator = '\n\u0000mdeck-region\u0000\n'
+  while (entries.some(([, r]) => r.content.includes(separator.trim()))) separator = separator.replace('\u0000\n', '\u0000\u0000\n')
   const bib = bibliographyOf(slide.deckConfig)
   const cited = renderCitations(entries.map(([, r]) => r.content).join(separator), bib)
   const { processed, footnotesHtml } = preprocessFootnotes(cited.markdown)
