@@ -5,9 +5,12 @@ import { LABEL_KEYS, CALLOUT_TYPES } from './labels.js'
 import { resolveLayoutProps, propertyErrors } from '../layouts/layoutProps.js'
 import { movedHint } from '../extensions/moved.js'
 import { paramValue } from '../extensions/params.js'
+import { parseTime } from './timing.js'
 
 // Hotspots (runtime/hotspots.js): the deck's setting and a slide's own.
 const HOTSPOT_SETTINGS = ['auto', 'marked', 'off', true, false]
+// Timing (core/timing.js): how long a slide, or the whole talk, may take.
+const TIME_HINT = value => `time: ${JSON.stringify(value)} is not a time; write it as 90s, 2m, 1m30s or 1.5m`
 
 // `layouts`, `themes` and `palettes` are manifest maps from the extension
 // registry (see src/extensions/discover.js). Checks for a kind are skipped when
@@ -52,6 +55,7 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
     if (config.session.code != null && !/^\d{4,8}$/.test(String(config.session.code))) add('invalid-config', 'session.code must be 4 to 8 digits', deck.configSource?.start)
   }
   if (config.hotspots != null && !HOTSPOT_SETTINGS.includes(config.hotspots)) add('invalid-config', 'hotspots must be auto, marked, off, true or false', deck.configSource?.start)
+  if (config.time != null && parseTime(config.time) == null) add('invalid-config', TIME_HINT(config.time), deck.configSource?.start)
   const enums = { organization: ['title', 'all', 'none'], author: ['title', 'all', 'none'], numbers: ['slides', 'all', 'none'], sections: ['all', 'none'] }
   const switches = ['citations']
   if (isPlainObject(config.show)) {
@@ -96,6 +100,7 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
     if (slide.meta.props != null && !isPlainObject(slide.meta.props)) add('invalid-props', 'props must be a mapping', offset)
     if (slide.meta.overlay != null && typeof slide.meta.overlay !== 'boolean') add('invalid-metadata', 'overlay must be true or false', offset)
     if (slide.meta.hotspots != null && !HOTSPOT_SETTINGS.includes(slide.meta.hotspots)) add('invalid-metadata', 'hotspots must be auto, marked, off, true or false', offset)
+    if (slide.meta.time != null && parseTime(slide.meta.time) == null) add('invalid-metadata', TIME_HINT(slide.meta.time), offset)
     for (const node of directivesIn(deck.source.slice(slide.source.start, slide.source.end))) {
       if (DIRECTIVES.includes(node.name) || calloutTypes.includes(node.name.toLowerCase())) continue
       const near = closest(node.name.toLowerCase(), [...DIRECTIVES, ...calloutTypes])

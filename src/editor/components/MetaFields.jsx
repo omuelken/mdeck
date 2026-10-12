@@ -20,6 +20,7 @@ export function MetaFields({ slide, slideEdit }) {
         slideEdit((deck, id) => setSlideMeta(deck, id, { hotspots: value === '' ? undefined : value === 'off' ? false : value }), { group: 'meta:hotspots' })
       }}><option value="">the deck's</option>{['auto', 'marked', 'off'].map(o => <option key={o} value={o}>{o}</option>)}</select>
     </Field>
+    <Field label="Time" hint="how long to spend on this slide: 90s, 2m or 1m30s; mdeck rehearse measures it">{text('time')}</Field>
     <Field label="Speaker notes"><TextArea rows={4} value={slide.meta.notes ?? ''} onInput={value => slideEdit((deck, id) => setSlideNotes(deck, id, value), { group: 'notes' })} /></Field>
     <details class="more" open={MORE.some(([key]) => meta[key] != null)}>
       <summary>More metadata</summary>

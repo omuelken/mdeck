@@ -16,6 +16,7 @@ import { checkDeck, bibliographyDiagnostics } from '../build/check.js'
 import { livePlugin, startLiveServer } from '../live/server.js'
 import { inkPlugin } from '../build/inkPlugin.js'
 import { resultsPlugin } from '../build/resultsPlugin.js'
+import { timingPlugin } from '../build/timingPlugin.js'
 import { createPairing, pairingPlugin } from '../build/pairing.js'
 import { isAllowedRequest } from '../build/editorPlugin.js'
 import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
@@ -314,6 +315,8 @@ const HELP = `
                              (the address, or the deck's server setting, or MDECK_SERVER;
                               the key in MDECK_SERVER_KEY)
       --no-open   --port <number>
+    ${c.green}mdeck rehearse${c.reset} [slides.md]                Like run, but opens the presenter view rehearsing: it times
+                                              each slide and saves the times into the deck (time: 1m30s)
     ${c.green}mdeck edit${c.reset} [slides.md]                    Edit slides in the browser; saves to the file
     ${c.green}mdeck design${c.reset} [folder | slides.md]         Look at and fine-tune themes and palettes on a sample deck;
                                               saves to the folder's extensions/ (default: this folder)
@@ -402,7 +405,7 @@ if (argv.includes('--help') || argv.includes('-h')) { console.log(HELP); process
 let parsed
 try {
   parsed = parseArgs(command, argv)
-  if (['run', 'server'].includes(command) && Object.hasOwn(process.env, 'MDECK_LIVE_KEY')) throw new Error('MDECK_LIVE_KEY is now MDECK_SERVER_KEY. Rename the environment variable before starting mdeck.')
+  if (['run', 'rehearse', 'server'].includes(command) && Object.hasOwn(process.env, 'MDECK_LIVE_KEY')) throw new Error('MDECK_LIVE_KEY is now MDECK_SERVER_KEY. Rename the environment variable before starting mdeck.')
 } catch (error) {
   err(error.message)
   if (Object.hasOwn(RENAMED_COMMANDS, command)) tip(`mdeck ${command} is now ${RENAMED_COMMANDS[command]}.`)
@@ -538,7 +541,7 @@ if (command === 'new') {
   else process.stdout.write(layouts[name].starter)
 
 // ── run ───────────────────────────────────────────────────────────────────────
-} else if (command === 'run') {
+} else if (command === 'run' || command === 'rehearse') {
   const input = requireInput(command)
   const abs = resolve(input)
   try { assertDrawings(abs) } catch (error) { err(error.message); process.exit(1) }
@@ -584,13 +587,13 @@ if (command === 'new') {
     ...base,
     // A paired iPad may save ink and steer the rooms, like this computer.
     ...(relay ? { base: relay.base } : {}),
-    plugins: [...(relay ? [stripRelayBase(relay.base)] : []), ...base.plugins, homePlugin(abs, { services, pairing, relay, server: relay?.server ?? null }), pairingPlugin(pairing), livePlugin({ pairing, upstream, key: process.env.MDECK_SERVER_KEY, session: () => sessionCode(parseSlides(readFileSync(abs, 'utf8')).deckConfig) }), inkPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) }), resultsPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) })],
+    plugins: [...(relay ? [stripRelayBase(relay.base)] : []), ...base.plugins, homePlugin(abs, { services, pairing, relay, server: relay?.server ?? null }), pairingPlugin(pairing), livePlugin({ pairing, upstream, key: process.env.MDECK_SERVER_KEY, session: () => sessionCode(parseSlides(readFileSync(abs, 'utf8')).deckConfig) }), inkPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) }), resultsPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) }), timingPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) })],
     publicDir: dirname(abs),
     server: {
       ...base.server,
       ...(port ? { port, strictPort: true } : {}),
       host: exposed ? true : base.server.host,
-      open: hasFlag('--no-open') ? false : `${mountBase}home.html`,
+      open: hasFlag('--no-open') ? false : command === 'rehearse' ? `${mountBase}?view=presenter&rehearse=1` : `${mountBase}home.html`,
     },
   })
   await server.listen()
@@ -624,6 +627,7 @@ if (command === 'new') {
   console.log()
   ok(`Launch page: ${c.cyan}${new URL('home.html', local).href}${c.reset}`)
   tip(`Presenter:   ${new URL('?view=presenter', local).href}`)
+  tip(`Rehearse:    ${new URL('?view=presenter&rehearse=1', local).href}`)
   tip(`Audience:    ${new URL('?view=audience', local).href}`)
   // Phones in the room follow the talk (the reader view would show slides ahead).
   if (exposed) for (const url of server.resolvedUrls.network) tip(`Follow:      ${new URL('?view=follow', url).href}`)

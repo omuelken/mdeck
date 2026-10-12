@@ -331,6 +331,7 @@ export function Home() {
         </div>
         <div class="home-tiles">
           <ViewTile icon="presenter" title="Presenter view" text="Present and draw, with notes, timer and next slide. Switch to slides only or fullscreen." href={`${BASE}?view=presenter&session=${SESSION}${code}`} open={openOn('presenter')} />
+          <ViewTile icon="rehearse" title="Rehearse" text="Go through the talk as if giving it: each slide is timed, and the times can be saved into the deck." href={`${BASE}?view=presenter&rehearse=1&session=${SESSION}${code}`} />
           <ViewTile icon="projector" title="Audience window" text="Slides for the projector, without notes. Navigation stays in sync with the presenter." href={`${BASE}?view=audience&session=${SESSION}${code}`} open={openOn('audience')} />
           <ViewTile icon="reader" title="Reader view" text="Outline, reading mode and look picker, as people you send it to see it." href={`${BASE}?view=reader`} />
         </div>

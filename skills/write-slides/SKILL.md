@@ -92,6 +92,7 @@ Right column
 ```
 
 - Slides are separated by `---` on its own line. Settings go in a `:::meta` block at the top of a slide.
+- `time: 2m` in a slide's settings (or `90s`, `1m30s`) is how long to spend on it; `time: 20m` in the deck settings is the length of the talk. Add times only when asked for a talk of a given length.
 - Built-in layouts: `title`, `chapter`, `focus` (one big statement), `image-text`, `split`, `full-bleed-image`, and plain content slides without a `layout:`.
 - Named areas use `:::slot name … :::`; the layout's regions and settings come from `mdeck list layouts --json`.
 - `:::notes … :::` holds speaker notes. `:::steps … :::` reveals list items one at a time. `:::note`, `:::tip`, `:::important`, `:::warning` and `:::caution` are callouts (`mdeck check` warns about other names); for lectures, `:::definition`, `:::theorem`, `:::lemma`, `:::proof`, `:::example` and `:::remark`, numbered in the title (`::: theorem Theorem 2.4 (Lagrange)`). `:::columns … +++ … :::` makes columns inside a slide.

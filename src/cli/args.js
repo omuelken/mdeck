@@ -5,6 +5,7 @@ const output = { '--output': value, '-o': '--output', '--no-drawings': flag, '--
 const commands = {
   new: { max: 0 },
   run: { ...common, '--network': flag, '--server': optional, max: 1 },
+  rehearse: { ...common, '--network': flag, '--server': optional, max: 1 },
   edit: { ...common, max: 1 },
   design: { ...common, max: 1 },
   themes: { '--local': flag, '--force': flag, '--check': flag, '--output': value, '-o': '--output', max: 4 },

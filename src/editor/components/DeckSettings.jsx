@@ -86,6 +86,7 @@ export function DeckSettings({ state, edit }) {
     </>}
     <p class="section-title">About the talk</p>
     {META.map(([key, label]) => <Field key={key} label={label}><input type="text" value={config.meta?.[key] ?? ''} onInput={e => meta(key, e.currentTarget.value)} /></Field>)}
+    <Field label="Length" hint="how long the talk takes, e.g. 20m; slides without a time of their own share what is left"><input type="text" value={config.time ?? ''} placeholder="20m" onInput={e => text('time', e.currentTarget.value.trim())} /></Field>
     <p class="section-title">Slide frame</p>
     <div class="grid-2">
       <Field label="Width"><input type="number" value={config.width ?? 1920} onInput={e => patch({ width: Number(e.currentTarget.value) || undefined }, 'deck:width')} /></Field>

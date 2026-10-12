@@ -793,7 +793,10 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     }
 
     _broadcastState(reason) {
-      const message = { deckStateChanged: this.state, reason };
+      // atEnd: nothing comes after this, which ends a rehearsal (main.jsx).
+      const state = this.state;
+      const atEnd = state.index === this._slides.length - 1 && state.step >= this._getSteps(this._slides[state.index]).length - 1;
+      const message = { deckStateChanged: state, atEnd, reason };
       window.postMessage(message, '*');
       if (window.parent !== window) window.parent.postMessage(message, '*');
       this.dispatchEvent(new CustomEvent('statechange', { detail: { ...this.state, reason } }));

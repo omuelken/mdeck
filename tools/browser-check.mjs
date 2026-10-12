@@ -265,6 +265,34 @@ try {
   await tabletPresenter.evaluate("document.querySelector('.presenter-notes').click()")
   await until(tabletPresenter, "getComputedStyle(document.querySelector('.presenter-aside')).display === 'flex'")
 
+  // Timing: with times in the deck the presenter view counts down each
+  // slide; a rehearsal ends in a summary whose times move in 15 s steps.
+  // A built deck cannot save them into the file.
+  const timedDeck = resolve(temp, 'timed.md')
+  writeFileSync(timedDeck, '---\ntheme: neue\ntime: 3m\n---\n\n---\n:::meta\ntime: 1m\n:::\n# One\n\n---\n# Two\n')
+  execFileSync(process.execPath, ['bin/mdeck.js', 'build', timedDeck, '--single-file', '-o', resolve(temp, 'timed.html')], { cwd: root, stdio: 'pipe' })
+  const timed = await open('timed.html?view=presenter&rehearse=1')
+  const timedStage = "document.querySelector('iframe')?.contentWindow?.document.querySelector('deck-stage')"
+  await until(timed, `${timedStage}?.length === 2`)
+  await delay(200)
+  await until(timed, "!!document.querySelector('.presenter-aside .presenter-rehearsing') && /left/.test(document.querySelector('.presenter-schedule .presenter-slide-time').textContent)")
+  assert.equal(await timed.evaluate("new URL(location.href).searchParams.has('rehearse')"), false, 'a reload does not start another rehearsal')
+  assert.match(await timed.evaluate("document.querySelector('.presenter-schedule').textContent"), /of 1:00/)
+  // A slide counts as rehearsed after a second on it.
+  await delay(1100)
+  await timed.evaluate(`${timedStage}.goTo(1)`)
+  await until(timed, "/of 2:00/.test(document.querySelector('.presenter-schedule').textContent)")
+  await delay(1100)
+  await timed.evaluate("document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))")
+  await until(timed, "!!document.querySelector('.rehearsal-summary')")
+  const newTimes = "[...document.querySelectorAll('.rehearsal-time')].map(e => e.textContent).join(',')"
+  assert.equal(await timed.evaluate(newTimes), '15s,15s', 'times start at the rehearsal, rounded up to 15 s')
+  await timed.evaluate("document.querySelectorAll('.rehearsal-row')[1].querySelector('[aria-label=\"15 seconds more\"]').click()")
+  await until(timed, `${newTimes} === '15s,30s'`)
+  await timed.evaluate("document.querySelectorAll('.rehearsal-row')[0].querySelector('[aria-label=\"Keep the planned time\"]').click()")
+  await until(timed, `${newTimes} === '1m,30s'`)
+  await until(timed, "document.querySelector('.rehearsal-save').disabled && /mdeck run/.test(document.querySelector('.rehearsal-summary [role=status]').textContent)")
+
   const presenter = await open('deck.html?view=presenter')
   const stage = "document.querySelector('iframe')?.contentWindow?.document.querySelector('deck-stage')"
   await until(presenter, `${stage}?.length === 2`)
@@ -478,8 +506,8 @@ try {
   dev = await createServer({ ...config, plugins: [...config.plugins, homePlugin(slides, { services: {} })], server: { ...config.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await dev.listen()
   const home = await open(new URL('home.html', dev.resolvedUrls.local[0]).href)
-  await until(home, "document.querySelectorAll('.home-tile').length === 6 && [...document.querySelectorAll('.home-tile')].some(tile => tile.textContent.includes('Theme editor')) && !!document.querySelector('.home-header h1')?.textContent")
-  assert.deepEqual(await home.evaluate("[...document.querySelectorAll('.home-tile strong')].slice(0, 3).map(e => e.textContent)"), ['Presenter view', 'Audience window', 'Reader view'])
+  await until(home, "document.querySelectorAll('.home-tile').length === 7 && [...document.querySelectorAll('.home-tile')].some(tile => tile.textContent.includes('Theme editor')) && !!document.querySelector('.home-header h1')?.textContent")
+  assert.deepEqual(await home.evaluate("[...document.querySelectorAll('.home-tile strong')].slice(0, 4).map(e => e.textContent)"), ['Presenter view', 'Rehearse', 'Audience window', 'Reader view'])
   assert.equal(await home.evaluate("new URL(document.querySelector('.home-preview-open').href).searchParams.get('view')"), 'audience')
   assert.equal(await home.evaluate("document.querySelectorAll('.home-output').length"), 3)
   assert.equal(await home.evaluate("!!document.querySelector('.home-preview iframe') && !document.querySelector('.home-live')"), true, 'preview, and no polls section without a server setting')
@@ -698,7 +726,7 @@ try {
   assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
   await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
+  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, reveal/undo/reset synchronization, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser, zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()

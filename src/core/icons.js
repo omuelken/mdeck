@@ -26,6 +26,7 @@ export const ICONS = {
   up: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>', // arrow-up
   down: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>', // arrow-down
   add: '<path d="M5 12h14"/><path d="M12 5v14"/>', // plus
+  remove: '<path d="M5 12h14"/>', // minus
   close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', // x
   grid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>', // layout-grid
   menu: '<path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/>', // menu
@@ -60,6 +61,7 @@ export const ICONS = {
   'fullscreen-exit': '<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>', // minimize
   play: '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>', // play
   hotspots: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>', // scan-search
+  rehearse: '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>', // timer
   pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>', // pause
   loading: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>', // loader-circle
 }

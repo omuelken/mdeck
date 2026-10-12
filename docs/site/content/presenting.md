@@ -65,10 +65,43 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | 1–9 | Zoom in on a part of the slide, with hotspots on (see below); without them, go to slide 1–9 |
 | 0 or Escape | Show the whole slide again |
 | H | Turn hotspots on or off for this talk, in the presenter view |
+| T | Start or pause the timer, in the presenter view |
 
 Click the slide area if your keys are not controlling it. Keys behave normally while you are typing in a text field.
 
-The timer is for your own reference; you can start, pause, and reset it in the presenter view.
+The timer is for your own reference; you can start, pause (**T**), and reset it in the presenter view. It keeps running through a reload of the page.
+
+## Time your talk
+
+Give a slide the time you want to spend on it with `time:` in its settings, and the whole talk a length with `time:` in the deck's settings:
+
+```markdown
+---
+time: 20m
+---
+
+---
+:::meta
+time: 2m
+:::
+# The results
+```
+
+Write times as `90s`, `2m`, `1m30s` or `1.5m`. Slides without a time share what the deck's time leaves over; without a deck time, they get none.
+
+Once the deck has times, the presenter view shows under the timer how much time is left on the slide (amber in its last 15 seconds, red once it is over), the length of the talk, and whether you are ahead of or behind your plan. In the slide-only layout the time left on the slide sits beside the timer.
+
+### Rehearse
+
+You do not have to guess the times. Rehearse the talk and mdeck measures them:
+
+```bash
+mdeck rehearse my-talk.md
+```
+
+This opens the presenter view rehearsing: the timer starts, and every second on a slide counts towards it, including when you come back to it. **Rehearse** in the presenter view, and the tile on the launch page, start a rehearsal too. Press **Finish**, or go on past the last slide, and a table shows for each slide the time it has, the time you spent and the new time, rounded to 15 seconds. Change a new time in 15-second steps with **−** and **+** (or **↑** and **↓** on its row), put back the time the slide had, or take the slide's time out. **Save to deck** writes the new times into the slides' settings, so you can see them in the file and change them like any other setting. The open windows do not reload, and the deck is copied to `.mdeck-backups/` first.
+
+Saving needs `mdeck run` or `mdeck rehearse`. A deck you built can still rehearse; **Copy** gives you the times to paste in yourself.
 
 ## Zoom in on part of a slide
 

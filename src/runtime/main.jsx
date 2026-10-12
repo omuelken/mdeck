@@ -36,6 +36,9 @@ import { Icon } from '../components/Icon.jsx'
 import { ConnectedViews } from '../components/ConnectedViews.jsx'
 import './deck-stage.js'
 import { normalMode, hotspotMode } from './hotspots.js'
+import { useTalkTimer } from './useTalkTimer.js'
+import { RehearsalSummary } from './RehearsalSummary.jsx'
+import { planFor, scheduleAt, formatClock } from '../core/timing.js'
 
 const PresenterIcon = ({ name, size = 18 }) => <Icon name={name} size={size} style={{ display: 'block' }} />
 
@@ -286,9 +289,33 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     try { localStorage.setItem('mdeck-presenter-look', folded ? 'folded' : 'open') } catch {}
   }
   const [themeModalOpen, setThemeModalOpen] = useState(false)
-  const [elapsed, setElapsed] = useState(0)
-  const [timerRunning, setTimerRunning] = useState(false)
-  const timerRef = useRef(null)
+  // The clock, and the slides' times (`time:`) to hold it against. Times a
+  // rehearsal saved count at once; the deck file is not read again mid-talk.
+  const [savedTimes, setSavedTimes] = useState({})
+  const plan = useMemo(() => planFor(slides, deckConfig, savedTimes), [slides, deckConfig, savedTimes])
+  const timer = useTalkTimer(`mdeck-timer:${DECK_CHANNEL}`, slides[index]?.id, { rehearse: controlUrl.searchParams.get('rehearse') === '1' })
+  const [summary, setSummary] = useState(null)
+  const [savedNote, setSavedNote] = useState(null)
+  // A reload after the rehearsal must not start another one.
+  useEffect(() => {
+    if (!controlUrl.searchParams.has('rehearse')) return
+    const url = new URL(window.location.href)
+    url.searchParams.delete('rehearse')
+    history.replaceState(null, '', url)
+  }, [])
+  function finishRehearsal() {
+    timer.pause()
+    setSummary(timer.spent())
+  }
+  const timerRef = useRef(timer)
+  timerRef.current = timer
+  // Next at the very end of the deck ends a rehearsal.
+  const atEndRef = useRef(false)
+  const atRehearsalEnd = () => timerRef.current.rehearsing && atEndRef.current
+  const finishRehearsalRef = useRef(finishRehearsal)
+  finishRehearsalRef.current = finishRehearsal
+  const summaryRef = useRef(false)
+  summaryRef.current = !!summary
 
   const iframeRef = useRef(null)
   const previewRef = useRef(null)
@@ -373,6 +400,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         return
       }
       stateRef.current = state
+      atEndRef.current = !!data.atEnd
       setIndex(i)
       if (data.reason !== 'sync') {
         bcRef.current?.postMessage({ deckControl: { command: 'setState', value: state, order: orderRef.current.stamp() } })
@@ -392,6 +420,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     function onKey(e) {
       if (e.target?.matches?.('input, select, textarea')) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (summaryRef.current) return
+      if (e.key === 't' || e.key === 'T') { e.preventDefault(); timerRef.current.toggle(); return }
       const cmd =
         (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') ? 'next' :
         (e.key === 'ArrowLeft'  || e.key === 'PageUp')                    ? 'prev' :
@@ -405,6 +435,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       if (/^[0-9]$/.test(e.key) || e.key === 'Escape') { if (e.key !== 'Escape') e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'hotspotKey', e.key); return }
       if (!cmd) return
       e.preventDefault()
+      if (cmd === 'next' && atRehearsalEnd()) { finishRehearsalRef.current(); return }
       sendTo(iframeRef.current?.contentWindow, cmd, cmd === 'ink' ? 'toggle' : undefined)
     }
     window.addEventListener('keydown', onKey)
@@ -427,15 +458,6 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [themeModalOpen])
-
-  useEffect(() => {
-    if (timerRunning) {
-      timerRef.current = setInterval(() => setElapsed(s => s + 1), 1000)
-    } else {
-      clearInterval(timerRef.current)
-    }
-    return () => clearInterval(timerRef.current)
-  }, [timerRunning])
 
   // Close palette dropdown on outside click
   useEffect(() => {
@@ -468,6 +490,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
 
   // Nav buttons drive the presenter iframe; audience follows via slideIndexChanged
   function navCommand(cmd) {
+    if (cmd === 'next' && atRehearsalEnd()) return finishRehearsal()
     sendTo(iframeRef.current?.contentWindow, cmd)
   }
 
@@ -484,7 +507,15 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const note = notes[index] || ''
   const hasNext = index + 1 < slides.length
 
-  const clock = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`
+  const clock = formatClock(timer.totalElapsed).padStart(5, '0')
+  // With times in the deck: what is left of this slide, and how the talk
+  // stands against the plan (behind when positive).
+  const timed = plan.total > 0
+  const { planned, slideLeft, delta } = scheduleAt(plan, index, timer)
+  const slideColor = !planned ? '#888' : slideLeft <= 0 ? '#f28b82' : slideLeft <= 15 ? '#f5a524' : '#ccc'
+  const slideText = !planned ? 'no time' : slideLeft > 0 ? `${formatClock(slideLeft)} left` : `+${formatClock(-slideLeft)} over`
+  const deltaText = Math.abs(delta) < 30 ? 'on time' : delta > 0 ? `${formatClock(delta)} behind` : `${formatClock(-delta)} ahead`
+  const deltaColor = Math.abs(delta) < 30 ? '#888' : delta > 0 ? '#f28b82' : '#81c995'
   const pill = { ...S.btn, minWidth: '40px', height: '40px', padding: '0 10px', fontSize: '15px' }
 
   return (
@@ -499,7 +530,10 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <div class="presenter-pill" role="toolbar" aria-label="Presenter" style={{ position: 'fixed', top: 'max(10px, env(safe-area-inset-top))', right: 'max(10px, env(safe-area-inset-right))', zIndex: 20, display: 'flex', gap: '4px', alignItems: 'center', padding: '4px', borderRadius: '12px', background: 'rgba(17,17,17,0.88)', border: '1px solid #2a2a2a', color: '#ccc', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
           <span style={{ padding: '0 8px', color: '#888' }}>{index + 1}/{slides.length}</span>
           <ConnectedViews presence={presence} phones={hasActivities()} style={{ color: '#888', padding: '0 6px' }} />
-          <button style={{ ...pill, color: timerRunning ? '#f0f0f0' : '#777' }} title="Start or pause the timer" onClick={() => setTimerRunning(r => !r)}>{clock}</button>
+          {timer.rehearsing && <button class="presenter-rehearsing" style={{ ...pill, color: '#f28b82' }} title="Finish the rehearsal" onClick={finishRehearsal}>● Finish</button>}
+          <button class="presenter-clock" style={{ ...pill, color: timer.running ? '#f0f0f0' : '#777', gap: '8px' }} title="Start or pause the timer (T)" onClick={timer.toggle}>
+            {clock}{timed && <span class="presenter-slide-time" style={{ color: slideColor, fontSize: '12px' }}>{slideText}</span>}
+          </button>
           <button style={pill} title="Previous" aria-label="Previous" onClick={() => navCommand('prev')}><PresenterIcon name="prev" /></button>
           <button style={pill} title="Next" aria-label="Next" onClick={() => navCommand('next')}><PresenterIcon name="next" /></button>
           <button class="presenter-draw" title="Draw on the slide (D)" aria-pressed={inking} style={{ ...pill, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }} onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}><PresenterIcon name="pen" /></button>
@@ -540,16 +574,27 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <SteeringNote />
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '22px', letterSpacing: '0.05em', color: timerRunning ? '#f0f0f0' : '#555', fontWeight: 300 }}>
-            {String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span class="presenter-clock" style={{ fontVariantNumeric: 'tabular-nums', fontSize: '22px', letterSpacing: '0.05em', color: timer.running ? '#f0f0f0' : '#555', fontWeight: 300 }}>{clock}</span>
+            {timed && <span style={{ color: '#666', fontVariantNumeric: 'tabular-nums' }}>of {formatClock(plan.total)}</span>}
           </span>
           <div style={{ display: 'flex', gap: '4px' }}>
-            <button style={S.btn} title={timerRunning ? 'Pause the timer' : 'Start the timer'} aria-label={timerRunning ? 'Pause the timer' : 'Start the timer'} onClick={() => setTimerRunning(r => !r)}>
-              <PresenterIcon name={timerRunning ? 'pause' : 'play'} size={16} />
+            <button style={S.btn} title={timer.running ? 'Pause the timer (T)' : 'Start the timer (T)'} aria-label={timer.running ? 'Pause the timer' : 'Start the timer'} onClick={timer.toggle}>
+              <PresenterIcon name={timer.running ? 'pause' : 'play'} size={16} />
             </button>
-            <button style={S.btn} title="Reset the timer" aria-label="Reset the timer" onClick={() => { setTimerRunning(false); setElapsed(0) }}><PresenterIcon name="reset" size={16} /></button>
+            <button style={S.btn} title="Reset the timer" aria-label="Reset the timer" onClick={timer.reset}><PresenterIcon name="reset" size={16} /></button>
+            {!timer.rehearsing && <button class="presenter-rehearse" style={S.btn} title="Rehearse: time each slide, then save the times into the deck" onClick={timer.startRehearsal}><PresenterIcon name="rehearse" size={16} />Rehearse</button>}
           </div>
         </div>
+        {timed && <div class="presenter-schedule" style={{ display: 'flex', justifyContent: 'space-between', flexShrink: 0, marginTop: '-8px', fontVariantNumeric: 'tabular-nums' }}>
+          <span>Slide <span class="presenter-slide-time" style={{ color: slideColor }}>{slideText}</span>{planned ? <span style={{ color: '#555' }}> of {formatClock(planned)}</span> : null}</span>
+          <span class="presenter-delta" style={{ color: deltaColor }}>{deltaText}</span>
+        </div>}
+        {timer.rehearsing && <div class="presenter-rehearsing" role="status" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: '6px 10px', borderRadius: '5px', border: '1px solid #5c2b28', color: '#f28b82' }}>
+          <span>● Rehearsing{timer.running ? '' : ' (paused)'}: this slide {formatClock(timer.slideElapsed)}</span>
+          <button style={{ ...S.btn, padding: '2px 10px' }} onClick={finishRehearsal}>Finish</button>
+        </div>}
+        {savedNote && <div role="status" style={{ flexShrink: 0, color: '#81c995' }}>{savedNote}</div>}
 
         {hasNext && (
           <div style={{ flexShrink: 0 }}>
@@ -713,12 +758,26 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
             </button>
           </div>
           <div style={{ color: '#444', fontSize: '11px', textAlign: 'center' }}>
-            Arrow keys · Space · PgUp/PgDn · R to reset · H hotspots{slideHotspots ? ' · 1–9 zoom · 0 whole slide' : ''}
+            Arrow keys · Space · PgUp/PgDn · R to reset · T timer · H hotspots{slideHotspots ? ' · 1–9 zoom · 0 whole slide' : ''}
           </div>
         </div>
 
       </aside>
 
+      {summary && <RehearsalSummary
+        slides={slides}
+        plan={plan}
+        spent={summary}
+        onClose={() => { setSummary(null); timer.toggle() }}
+        onDiscard={() => { setSummary(null); timer.endRehearsal() }}
+        onSaved={(times, changed) => {
+          setSummary(null)
+          timer.endRehearsal()
+          setSavedTimes(saved => ({ ...saved, ...Object.fromEntries(Object.entries(times).map(([id, t]) => [id, t ?? undefined])) }))
+          setSavedNote(`Saved the times of ${changed} slide${changed === 1 ? '' : 's'} into the deck.`)
+          setTimeout(() => setSavedNote(null), 6000)
+        }}
+      />}
       {themeModalOpen && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
