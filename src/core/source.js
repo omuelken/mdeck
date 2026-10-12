@@ -24,6 +24,11 @@ export function diagnostic(source, code, message, offset = 0, severity = 'error'
 }
 
 // Balanced directive scanner, shared by the document parser and Markdown lexer.
+// `:::include ./part.md`, alone on a slide, stands for the slides of another
+// deck file (build/include.js puts them in its place). Without a path, `:::include`
+// opens a block as any other name does (a callout of the deck's own).
+export const isIncludeLine = text => /^:::\s*include\s+\S/.test(text)
+
 export function scanDirectives(source) {
   const nodes = []
   const stack = []
@@ -38,7 +43,9 @@ export function scanDirectives(source) {
       const node = { name: open[1], argument: open[2].trim(), start: line.start, bodyStart: line.end, children: [] }
       if (stack.length) stack.at(-1).children.push(node)
       else nodes.push(node)
-      stack.push(node)
+      // :::include is one line: it has no body and no closing fence.
+      if (isIncludeLine(line.text)) Object.assign(node, { bodyEnd: line.end, end: line.end })
+      else stack.push(node)
     } else if (/^:::[ \t]*$/.test(line.text)) {
       const node = stack.pop()
       if (!node) diagnostics.push(diagnostic(source, 'unexpected-close', 'Directive closing fence has no opening fence', line.start))

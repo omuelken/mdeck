@@ -13,6 +13,7 @@ import { BACKUP_DIR } from '../build/editorPlugin.js'
 import { createEditorServer, createDesignServer } from '../build/editorServer.js'
 import { homePlugin } from '../build/homePlugin.js'
 import { checkDeck, bibliographyDiagnostics } from '../build/check.js'
+import { expandedSource } from '../build/include.js'
 import { livePlugin, startLiveServer } from '../live/server.js'
 import { inkPlugin } from '../build/inkPlugin.js'
 import { resultsPlugin } from '../build/resultsPlugin.js'
@@ -196,7 +197,8 @@ async function copyLocalAssets(slidesPath, outDir, { stripNotes = false, stripAc
   const absSlides = resolve(slidesPath)
   const deckDir = dirname(absSlides)
   const absOutDir = resolve(outDir)
-  const raw = readFileSync(absSlides, 'utf-8')
+  // The deck as shown: pictures of included slides are copied too.
+  const raw = expandedSource(absSlides)
   let markdown = stripNotes ? stripNotesFrom(raw) : raw
   if (stripActivities || slides) markdown = shareSlides(markdown, { activities: stripActivities, slides }).source
 

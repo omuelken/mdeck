@@ -113,6 +113,28 @@ then the reader shows them only when `reader.notes` is `true`, so a file can
 carry notes for the presenter view without showing them to readers. The same
 view is reachable in any build through `?view=reader`.
 
+## Including other decks
+
+A slide that is nothing but an `:::include` line, with no settings, stands for the slides of another deck file:
+
+```markdown
+---
+:::include ./lectures/02-graphs.md
+---
+:::include ./lectures/02-graphs.md slides=3-7
+---
+:::include "./lectures/week 3.md"
+```
+
+- The included file is a complete deck and can be presented alone. When it is included, its deck settings are ignored and only its slides are taken; a problem in its settings is not reported for the including deck.
+- `slides=` keeps the slides with these numbers (`3`, `3,5`, `2-4`), counted as the included file shows them, like `--slide`.
+- Local paths (Markdown pictures, `<img>`, `<video>`, `<videoplayer>` and `<audio>` sources, `image:` and `logo:`) are read from the included file's folder. Paths from the root (`/…`) stay as written.
+- Includes may nest. A file that includes itself, directly or through others, is an error, as is a missing file or a slide number beyond the file.
+- In a deck whose file name gives a language (`course.de.md`), `./part.md` is read as `./part.de.md` when that file exists.
+- Ids: slides of the including deck keep the ids they have in it; included slides get the included file's name in front of theirs, without leading digits (`02-graphs.md` → `graphs-slide-3`, `graphs-dijkstra`), with `-2`, `-3` … when the same name comes up again. Drawings made while presenting are saved under these ids, in the including deck's drawings file.
+- Saved rehearsal times go into the file the slide is written in. The editor (`mdeck edit`) shows an include as one card; edit included slides in their own file.
+- Deck-local components, the bibliography and palettes are the including deck's.
+
 ## Available themes
 
 | Key | Description |

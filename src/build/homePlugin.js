@@ -89,7 +89,8 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       theme: config.theme ?? 'neue',
       palette: config.palette ?? null,
       diagnostics: [...(registry?.warnings ?? []).map(message => ({ severity: 'warning', code: 'extension', message })), ...(registryError ? [{ severity: 'error', code: 'extension', message: registryError }] : []), ...diagnostics],
-      live: await live(config, source, { local, network }),
+      // Polls in included slides count too: the deck as shown.
+      live: await live(config, deck.source ?? source, { local, network }),
       presence: presenceUrl(config),
       // Presenting from an iPad needs an address it can reach (`--host`).
       pairing: pairing ? { available: !!relay || !!network[0], devices: pairing.devices } : null,

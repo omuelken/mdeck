@@ -13,8 +13,28 @@ import { launchChrome } from './chrome.js'
 import { frameworkRoot } from '../paths.js'
 import { parseSlides } from '../core/parseSlides.js'
 import { MEASURE, RECORDER, settle } from './themeCheck.js'
+import { expandDeck } from './include.js'
 
 // Each slide's number, line and heading, for messages.
+// The labels of the deck as shown, its includes in place (include.js); a
+// slide from an included file names that file and its line there.
+export function deckLabels(slidesPath) {
+  const abs = resolve(slidesPath)
+  const { source, origins } = expandDeck(abs)
+  const labels = slideLabels(source)
+  if (!origins) return labels
+  const byFile = new Map()
+  const lineIn = (file, id) => {
+    if (!byFile.has(file)) byFile.set(file, slideLabels(readFileSync(file, 'utf8')))
+    return byFile.get(file).find(label => label.id === id)?.line ?? 1
+  }
+  return labels.map(label => {
+    const origin = origins[label.id]
+    if (!origin) return label
+    return { ...label, line: lineIn(origin.file, origin.id), ...(origin.file !== abs ? { file: origin.file } : {}) }
+  })
+}
+
 export function slideLabels(source) {
   return parseSlides(source).slides.map((slide, index) => {
     // The slide's first written line, past its settings and blank lines.
@@ -58,7 +78,7 @@ async function withDeckPage(slidesPath, { appearance = '', width = 1600, height 
 // The problems of each slide, in the deck's own look, as diagnostics
 // ({ severity, code, message, line }) at the line the slide starts.
 export function renderCheck(slidesPath) {
-  const labels = slideLabels(readFileSync(slidesPath, 'utf8'))
+  const labels = deckLabels(slidesPath)
   return withDeckPage(slidesPath, {}, async ({ page, count, show }) => {
     const diagnostics = []
     for (let index = 0; index < count; index++) {
@@ -70,7 +90,7 @@ export function renderCheck(slidesPath) {
       const cut = problems.filter(problem => problem.endsWith(' is cut off at the edge'))
       const shown = problems.filter(problem => !cut.includes(problem))
       if (cut.length) shown.push(cut.length === 1 ? cut[0] : `${cut[0].replace(/ is cut off at the edge$/, '')} and ${cut.length - 1} more ${cut.length === 2 ? 'line is' : 'lines are'} cut off at the edge`)
-      for (const problem of shown) diagnostics.push({ severity: 'warning', code: 'render', message: `${where}: ${problem}`, line: label.line })
+      for (const problem of shown) diagnostics.push({ severity: 'warning', code: 'render', message: `${where}: ${problem}`, line: label.line, ...(label.file ? { file: label.file } : {}) })
     }
     // The deck's own warning about content that does not fit is said above, per slide.
     for (const line of (await page.evaluate('window.__report')).filter(line => !/has more content than fits/.test(line))) diagnostics.push({ severity: line.startsWith('error') ? 'error' : 'warning', code: 'render', message: `the page reported ${line}`, line: 1 })
@@ -85,7 +105,7 @@ export function renderCheck(slidesPath) {
 // written.
 export async function snapshot(slidesPath, { slides = [], outDir, width = 1280, height = 720, appearance = '', sheet = false } = {}) {
   const name = basename(slidesPath).replace(/\.md$/i, '')
-  const labels = sheet ? slideLabels(readFileSync(slidesPath, 'utf8')) : []
+  const labels = sheet ? deckLabels(slidesPath) : []
   mkdirSync(outDir, { recursive: true })
   return withDeckPage(slidesPath, { appearance, width, height }, async ({ page, count, show }) => {
     const wanted = slides.length ? slides : Array.from({ length: count }, (_, i) => i + 1)

@@ -12,9 +12,12 @@ import { componentFolders, isFolder } from './components.js'
 import { inkFileFor, validateInk, normalizeInk, orphanIds } from '../core/ink.js'
 import { resolveBibliography } from './bibliography.js'
 import { svgProblems } from './svgCheck.js'
+import { expandDeck, withoutSettings } from './include.js'
 
-export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath, 'utf8')) {
-  const deck = parseSlides(source)
+// A deck that includes others (include.js) is checked file by file, each
+// message naming its file; `deck` is the deck as shown, every slide in place.
+export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath, 'utf8'), { includes = true } = {}) {
+  let deck = parseSlides(source)
   const diagnostics = validateDeck(deck, { layouts: manifestsOf(registry, 'layout'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette') })
   for (const ref of collectLocalAssetRefs(source)) {
     const file = resolve(dirname(resolve(slidesPath)), ref)
@@ -33,6 +36,18 @@ export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath
     if (record.source !== 'local') continue
     for (const problem of paletteProblems(record.manifest)) diagnostics.push({ severity: 'warning', code: 'palette-contrast', message: `Palette "${record.id}", ${problem}`, line: 1, column: 1 })
     for (const role of record.manifest.fallbacks ?? []) diagnostics.push({ severity: 'warning', code: 'palette-fallback', message: `Palette "${record.id}" sets no ${role}, so it gets mdeck's amber; give it a colour of its own in [light] and [dark]`, line: 1, column: 1 })
+  }
+  if (includes) {
+    const expansion = expandDeck(slidesPath, { source })
+    diagnostics.push(...expansion.diagnostics)
+    // The settings of an included deck count only when it is shown alone; its
+    // palettes and components folders are the including deck's.
+    const ownOnly = new Set(['palette-contrast', 'palette-fallback', 'missing-components'])
+    for (const file of expansion.files) {
+      const text = readFileSync(file, 'utf8')
+      for (const d of withoutSettings(text, checkDeck(file, registry, text, { includes: false }).diagnostics)) if (!ownOnly.has(d.code)) diagnostics.push({ ...d, file: d.file ?? file })
+    }
+    deck = parseSlides(expansion.source)
   }
   // The deck's drawings file: readable, and only for slides that still exist.
   const inkPath = inkFileFor(resolve(slidesPath))

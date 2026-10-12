@@ -5,6 +5,7 @@ import { shareable, resourceKey } from './tunnelClient.js'
 import { collectLocalAssetRefs } from './slidesPlugin.js'
 import { parseSlides } from '../core/parseSlides.js'
 import { sessionCode } from '../live/code.js'
+import { expandedSource } from './include.js'
 
 const canonical = file => { try { return realpathSync(file) } catch { return null } }
 
@@ -20,7 +21,8 @@ export function createRelayAccess(server, slidesPath) {
   let knownSource = null
   return async (address, method) => {
     let source
-    try { source = readFileSync(slidesPath, 'utf8') } catch { return false }
+    // The deck as shown, so the pictures of included slides can be reached too.
+    try { source = expandedSource(slidesPath) } catch { return false }
     if (source !== knownSource) { knownFiles.clear(); knownSource = source }
     const resources = new Set(bootstrap.map(path => resourceKey(at(path))))
     const files = new Map()

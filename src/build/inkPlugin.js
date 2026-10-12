@@ -20,6 +20,7 @@ import { slug } from '../live/code.js'
 import { inkFileFor, normalizeInk, emptyInk, applyOp, serializeInk } from '../core/ink.js'
 import { hashSource, isAllowedRequest, send, readJson, BACKUP_DIR } from './editorPlugin.js'
 import { markOwnWrite } from './ownWrites.js'
+import { expandDeck } from './include.js'
 
 const ID_RE = /^[a-zA-Z][a-zA-Z0-9_-]*$/
 const BACKUPS_KEPT = 10
@@ -119,13 +120,22 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
       const renamed = []
       const seen = deckHash
       const alias = new Map(renames.filter(r => r.before === seen).map(r => [r.from, r.to]))
+      // The slides of files the deck includes (include.js) are not in its
+      // text; their ids carry their file's name and stay where they are.
+      let fromIncludes = null
+      const included = id => {
+        if (!fromIncludes) {
+          try { fromIncludes = new Set(Object.entries(expandDeck(abs, { source }).origins ?? {}).filter(([, origin]) => origin.file !== abs).map(([shown]) => shown)) } catch { fromIncludes = new Set() }
+        }
+        return fromIncludes.has(id)
+      }
       for (const raw of Array.isArray(ops) ? ops : []) {
         const op = { ...raw, slideId: alias.get(raw?.slideId) ?? raw?.slideId }
         if (op.type === 'add') {
           const index = deck.slides.findIndex(slide => slide.id === op.slideId)
-          if (index < 0) return { status: 409, error: `No slide "${op.slideId}" in the deck any more`, deckHash: hash }
+          if (index < 0 && !included(op.slideId)) return { status: 409, error: `No slide "${op.slideId}" in the deck any more`, deckHash: hash }
           const slide = deck.slides[index]
-          if (slide.meta.id == null) {
+          if (slide && slide.meta.id == null) {
             // An id by position: only trusted for the deck the device saw.
             if (deckHash !== hash) return { status: 409, error: 'The deck changed; reload', deckHash: hash }
             const id = newSlideId(deck, slide, index)

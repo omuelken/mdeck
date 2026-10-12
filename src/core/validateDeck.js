@@ -102,6 +102,7 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
     if (slide.meta.hotspots != null && !HOTSPOT_SETTINGS.includes(slide.meta.hotspots)) add('invalid-metadata', 'hotspots must be auto, marked, off, true or false', offset)
     if (slide.meta.time != null && parseTime(slide.meta.time) == null) add('invalid-metadata', TIME_HINT(slide.meta.time), offset)
     for (const node of directivesIn(deck.source.slice(slide.source.start, slide.source.end))) {
+      if (node.name === 'include' && !slide.include) add('misplaced-include', ':::include stands alone on its slide, with no settings or other content: :::include ./part.md, or :::include ./part.md slides=2-5', slide.source.start + node.start, 'warning')
       if (DIRECTIVES.includes(node.name) || calloutTypes.includes(node.name.toLowerCase())) continue
       const near = closest(node.name.toLowerCase(), [...DIRECTIVES, ...calloutTypes])
       add('unknown-callout', `Unknown block "${node.name}"${near ? `; did you mean "${near}"?` : ''} It shows as a plain callout. Known: ${CALLOUT_TYPES.join(', ')}; name your own under callouts: in the settings`, slide.source.start + node.start, 'warning')
@@ -134,7 +135,7 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
 }
 
 // The `:::` blocks mdeck reads itself; any other name is a callout type.
-const DIRECTIVES = ['meta', 'notes', 'slot', 'steps', 'columns']
+const DIRECTIVES = ['meta', 'notes', 'slot', 'steps', 'columns', 'include']
 
 function directivesIn(source) {
   const all = []
@@ -159,6 +160,7 @@ function closest(name, names) {
   return best && best[1] <= 2 ? best[0] : null
 }
 
+// A diagnostic with a `file` of its own (one in an included deck) names it.
 export function formatDiagnostics(diagnostics, filename = 'slides.md') {
-  return diagnostics.map(d => `${filename}:${d.line}:${d.column ?? 1}: ${d.severity} [${d.code}] ${d.message}`).join('\n')
+  return diagnostics.map(d => `${d.file ?? filename}:${d.line}:${d.column ?? 1}: ${d.severity} [${d.code}] ${d.message}`).join('\n')
 }

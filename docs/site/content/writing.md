@@ -107,6 +107,33 @@ Keep the spaces before `title` and `author`: they put those values inside the `m
 
 For a talk in German, add `lang: de` to these settings. The page is then marked as German, which helps screen readers and hyphenation, and the words mdeck adds for your audience, such as the buttons for readers and polls, are German too.
 
+## Put several files together
+
+A course, or a talk built from parts you also give on their own, can be one deck made of others. A slide with nothing but an `:::include` line stands for all the slides of another file:
+
+```markdown
+---
+theme: neue
+meta:
+  title: "Algorithms, autumn term"
+---
+
+---
+# Welcome
+
+---
+:::include ./lectures/01-sorting.md
+
+---
+:::include ./lectures/02-graphs.md slides=3-7
+```
+
+Each included file stays a deck of its own: `mdeck run lectures/02-graphs.md` still presents it alone, with its own theme and settings. Included, only its slides come along; the settings are those of the deck that includes it. `slides=3-7` (or `slides=2`, `slides=1,4-6`) keeps some of them, numbered as that file shows them.
+
+Pictures, videos and drawings in an included file are found from its own folder, wherever it lies. A deck in another language takes the included file in that language where there is one: `course.de.md` including `./lectures/02-graphs.md` shows `02-graphs.de.md` beside it. An included file may include others.
+
+Edit the slides of an included file in that file. The editor shows the include as one card naming the file, and while `mdeck run` is open, a change to that file appears in the deck straight away. Times saved after a rehearsal go into the file each slide is written in. `mdeck check` checks every file, and names the file and line of a problem.
+
 ## Reading older examples
 
 Older decks put slide settings between `---` lines too:
