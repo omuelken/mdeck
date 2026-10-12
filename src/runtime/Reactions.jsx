@@ -4,7 +4,7 @@ import { listenToReactions } from '../live/client.js'
 
 // The reactions phones send (src/core/reactions.js), on the presenter's
 // screen only: each one floats up for a moment, and a tally keeps what came
-// in the last minute, so that four 🐢 still say "slower" after they faded.
+// in the last minute, so that four 🤔 still say so after they faded.
 
 const FLOAT_MS = 2600
 const TALLY_MS = 60000

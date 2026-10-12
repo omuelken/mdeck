@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The default reactions leave out 🐢, which read as both "too slow" and "too fast". A deck can still list it: `reactions: [👍, 🤔, 🐢]`.
+
 ## 3.12.1 — 2026-10-12
 
 - Fixed: on an iPhone the reaction buttons sat below the visible part of the phones' page, behind Safari's bar. The page now fits the visible height. Update your poll server for this one.

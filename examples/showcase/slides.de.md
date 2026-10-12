@@ -494,7 +494,7 @@ time: 1m
 :::
 
 :::notes
-Handys, die bei der Umfrage beigetreten sind, bleiben dabei; **J** zeigt den Beitrittscode für Nachzügler noch einmal. Antworten erscheinen, sobald sie eintreffen. Diese Tour setzt `reactions: true`, darum haben die Handys auch Knöpfe 👍 👏 ❤️ 😮 🤔 🐢: Antippen lässt sie in deiner Referentenansicht aufsteigen, nie auf dem Beamer.
+Handys, die bei der Umfrage beigetreten sind, bleiben dabei; **J** zeigt den Beitrittscode für Nachzügler noch einmal. Antworten erscheinen, sobald sie eintreffen. Diese Tour setzt `reactions: true`, darum haben die Handys auch Knöpfe 👍 👏 ❤️ 😮 🤔: Antippen lässt sie in deiner Referentenansicht aufsteigen, nie auf dem Beamer.
 
 Neben Umfragen und Wortwolken gibt es Bewertungen (`<scale>`), Zahlen mit richtiger Antwort (`<numeric>`) und offene Fragen (`<question>`). Bei mehreren davon zeigt `<qrcode join />` auf einer frühen Folie den Code einmal. `mdeck run` speichert die Antworten in `slides.results.json` neben dem Deck.
 :::

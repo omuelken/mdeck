@@ -136,7 +136,7 @@ reactions: true
 ---
 ```
 
-The phones' answer page then has a row of buttons, 👍 👏 ❤️ 😮 🤔 🐢, below the question or while they wait for the next one. A tap floats up in the corner of your presenter view for a moment, and a small tally keeps what came in the last minute, so a few 🐢 ("slower, please") still show after they faded. The audience window and the projector never show them. Give your own, up to eight emoji or short words: `reactions: [👍, 🤔, 🐢, louder]`. Each phone can react about once a second; reactions are not kept anywhere.
+The phones' answer page then has a row of buttons, 👍 👏 ❤️ 😮 🤔, below the question or while they wait for the next one. A tap floats up in the corner of your presenter view for a moment, and a small tally keeps what came in the last minute, so a few 🤔 still show after they faded. The audience window and the projector never show them. Give your own, up to eight emoji or short words, for example to ask for a pace: `reactions: [👍, 🤔, slower, louder]`. Each phone can react about once a second; reactions are not kept anywhere.
 
 People reach the answer page through the join code: press **J** in the presenter view to show it, also in a deck with reactions and no questions.
 

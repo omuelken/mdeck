@@ -5,8 +5,8 @@
 // room, which the server passes on without keeping (src/live/rooms.js).
 
 export const REACTIONS_ROOM = 'reactions'
-// 🐢: "slower, please".
-export const DEFAULT_REACTIONS = ['👍', '👏', '❤️', '😮', '🤔', '🐢']
+// Only reactions that read one way; a deck can add its own, such as 🐢 or "slower".
+export const DEFAULT_REACTIONS = ['👍', '👏', '❤️', '😮', '🤔']
 const MAX = 8
 const MAX_LENGTH = 16
 
