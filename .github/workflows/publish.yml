@@ -1,6 +1,7 @@
 # Publishes a tagged release to npmjs.com through trusted publishing: npm
 # trusts this workflow, so no token is stored, and the package carries
-# provenance.
+# provenance. Then creates the GitHub release from the CHANGELOG.md entry,
+# unless one was already written by hand.
 name: publish
 
 on:
@@ -8,7 +9,7 @@ on:
     tags: ['v*.*.*']
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -22,3 +23,10 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm publish --provenance --access public
+      - run: |
+          node tools/release-notes.mjs "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 ||
+            gh release create "$GITHUB_REF_NAME" --verify-tag \
+              --title "mdeck ${GITHUB_REF_NAME#v}" --notes-file "$RUNNER_TEMP/notes.md"
+        env:
+          GH_TOKEN: ${{ github.token }}

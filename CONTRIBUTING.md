@@ -79,11 +79,12 @@ writes to `dist/` in the current working folder.
 
 1. Update `CHANGELOG.md` and the version in `package.json`.
 2. Commit, tag `vX.Y.Z`, push the tag.
-3. GitHub Actions runs the tests and publishes the package to npmjs.com
-   (`publish.yml`, trusted publishing with provenance). Every push to `main`
-   deploys the documentation to GitHub Pages (`pages.yml`).
-4. Create a release from the tag on GitHub with the changelog entry:
-   `gh release create vX.Y.Z --notes-file <(…)`.
+3. GitHub Actions runs the tests, publishes the package to npmjs.com
+   (`publish.yml`, trusted publishing with provenance) and creates the GitHub
+   release from the changelog entry (`tools/release-notes.mjs`). Every push to
+   `main` deploys the documentation to GitHub Pages (`pages.yml`).
+4. Optionally give the release a fuller introduction:
+   `gh release edit vX.Y.Z --notes-file …`.
 
 ## License
 
