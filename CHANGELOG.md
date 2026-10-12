@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **?** shows the keys that work at this moment, over the slide in a see-through layer, in the presenter view and in a deck window: the number keys only while the slide shown has hotspots, the drawing keys while drawing, **L** only for a talk in several languages, **N** only in the slide-only layout, **F** only where the browser can go full screen. The list follows along while it is open (press **H** and it changes); **?** again, Escape or a click closes it. In the presenter view, **?** works while the slide has the keyboard too.
+
 ## 3.11.0 — 2026-10-12
 
 - Time your talk. `time: 2m` in a slide's settings is how long to spend on it, `time: 20m` in the deck's the length of the talk; slides without a time share what is left. The presenter view counts down the time left on the slide and shows whether you are ahead of or behind the plan. `mdeck rehearse` (or **Rehearse** in the presenter view and on the launch page) times each slide as you go through the talk; at the end a table offers the times rounded to 15 seconds, to change in 15-second steps, and **Save to deck** writes them into the slides' settings without reloading the open windows. The editor has a Time field for each slide and a Length for the deck, and `mdeck check` reports a time it cannot read.

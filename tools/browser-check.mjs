@@ -738,6 +738,18 @@ try {
   await until(spotAudience, "!!document.querySelector('deck-stage')?.shadowRoot")
   await delay(300)
   assert.equal(await spotAudience.evaluate("getComputedStyle(document.querySelector('deck-stage').shadowRoot.querySelector('.hotspots')).display"), 'none', 'the audience sees no keys')
+  // ? lists the keys that work now, here with the number keys; Escape closes
+  // it and does nothing else; ? in the slide's frame opens it too.
+  const helpText = "(document.querySelector('.key-help')?.textContent ?? '')"
+  const typeKey = (page, key, where = 'document.body') => page.evaluate(`${where}.dispatchEvent(new KeyboardEvent('keydown', { key: '${key}', bubbles: true }))`)
+  await typeKey(spotPresenter, '?')
+  await until(spotPresenter, `${helpText}.includes('Zoom to a part of the slide') && ${helpText}.includes('Start or pause the timer')`)
+  await typeKey(spotPresenter, 'Escape')
+  await until(spotPresenter, "!document.querySelector('.key-help')")
+  await typeKey(spotPresenter, '?', "document.querySelector('iframe').contentWindow.document.body")
+  await until(spotPresenter, "!!document.querySelector('.key-help')")
+  await typeKey(spotPresenter, '?')
+  await until(spotPresenter, "!document.querySelector('.key-help')")
   const codeSpot = await spotPresenter.evaluate(`${spotFrame}.hotspots[1].zoom`)
   await spotPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }))")
   await until(spotPresenter, `${spotFrame}.hotspot === 2 && ${spotFrame}.zoom.scale > 1.5 && !${spotFrame}.hasAttribute('data-zoom-flying')`)
@@ -758,7 +770,18 @@ try {
   // H switches them on for this talk; the slide's own false still wins.
   await spotPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'h' }))")
   await until(spotPresenter, "document.querySelector('.presenter-hotspots').getAttribute('aria-pressed') === 'false'")
+  // Without hotspots on the slide, the help leaves out 1–9.
+  await typeKey(spotPresenter, '?')
+  await until(spotPresenter, `${helpText}.includes('Turn hotspots on') && !${helpText}.includes('1–9')`)
   await spotAudience.close()
+  // A deck window has its own help, with its own keys.
+  const spotWindow = await open('spots.html')
+  await until(spotWindow, "document.querySelector('deck-stage')?.hotspotMode === 'auto'")
+  await typeKey(spotWindow, '?')
+  await until(spotWindow, `${helpText}.includes('Last slide') && ${helpText}.includes('1–9') && !${helpText}.includes('timer')`)
+  await typeKey(spotWindow, 'Escape')
+  await until(spotWindow, "!document.querySelector('.key-help')")
+  await spotWindow.close()
   await spotPresenter.close()
   // A drawing builds up in the order its parts are numbered, parts with the
   // same number together; a marked part is a hotspot once it is shown.
@@ -787,7 +810,7 @@ try {
   assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
   await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
+  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()

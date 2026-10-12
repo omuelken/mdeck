@@ -66,6 +66,7 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | 0 or Escape | Show the whole slide again |
 | H | Turn hotspots on or off for this talk, in the presenter view |
 | T | Start or pause the timer, in the presenter view |
+| ? | Show the keys that work at this moment, over the slide; **?** again or Escape closes the list |
 
 To jump to a slide, tap or click the slide number in the presenter view (beside the arrows on an iPad, at the top of the speaker layout), type the number and press Enter, or Go on an iPad's keyboard. Escape keeps the current slide.
 

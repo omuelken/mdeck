@@ -41,6 +41,8 @@ import { devPath } from '../core/devPath.js'
 import { setView } from './shared.js'
 import { RehearsalSummary } from './RehearsalSummary.jsx'
 import { planFor, scheduleAt, formatClock } from '../core/timing.js'
+import { KeyHelp, useKeyHelp, attachKeyHelp } from './KeyHelp.jsx'
+import { isHelpKey } from './helpKeys.js'
 
 const PresenterIcon = ({ name, size = 18 }) => <Icon name={name} size={size} style={{ display: 'block' }} />
 
@@ -291,6 +293,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [audienceConnected, setAudienceConnected] = useState(false)
   const [noteSize, setNoteSize] = useState(13)
   const [inking, setInking] = useState(false)
+  // The keys that work now, over everything (?).
+  const [helpOpen, setHelpOpen] = useKeyHelp()
   // Hotspots: the deck's setting until the presenter switches them (H).
   const deckHotspots = (normalMode(deckConfig.hotspots) ?? 'off') !== 'off'
   const [hotspotsForced, setHotspotsForced] = useState(null)
@@ -432,6 +436,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       }
       if (source !== iframeRef.current?.contentWindow) return
       if (typeof data?.inkMode === 'boolean') { setInking(data.inkMode); return }
+      // ? typed while the slide's frame had the keyboard.
+      if (data?.keyHelp === 'toggle') { setHelpOpen(open => !open); return }
       // Another screen (a paired iPad) switched the language; the notes follow.
       if (LANGUAGES.includes(data?.deckLanguage)) { setLang(data.deckLanguage); return }
       if (!data?.deckStateChanged) return
@@ -810,12 +816,16 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
             </button>
           </div>
           <div style={{ color: '#444', fontSize: '11px', textAlign: 'center' }}>
-            Arrow keys · Space · PgUp/PgDn · R to reset · T timer · H hotspots{slideHotspots ? ' · 1–9 zoom · 0 whole slide' : ''}
+            Arrow keys · Space · R reset · T timer{slideHotspots ? ' · 1–9 zoom' : ''} · ? all keys
           </div>
         </div>
 
       </aside>
 
+      {helpOpen && <KeyHelp
+        context={{ view: 'presenter', hotspots: slideHotspots, hotspotSwitch: hotspotsOn, inking, fullscreen: canFullscreen, drawer: slideLayout, languages: LANGUAGES.length > 0 }}
+        onClose={() => setHelpOpen(false)}
+      />}
       {summary && <RehearsalSummary
         slides={slides}
         plan={plan}
@@ -1068,6 +1078,16 @@ async function init() {
 
   // The presenter's slide shows the hotspots' keys; no screen the audience sees does.
   if (inkStage && embedded && drawHere) inkStage.setAttribute('data-hotspot-badges', '')
+  // ? lists the keys that work now: in a deck window over the slide; in the
+  // presenter's slide frame it goes to the presenter view, which shows them.
+  if (inkStage && !embedded && !audienceMode && !followMode) attachKeyHelp(inkStage, { canDraw: drawHere })
+  else if (embedded && drawHere) {
+    window.addEventListener('keydown', event => {
+      if (!isHelpKey(event) || event.target?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"]')) return
+      event.preventDefault()
+      window.parent.postMessage({ keyHelp: 'toggle' }, window.location.origin)
+    })
+  }
   if (inkStage && drawHere) {
     attachInk(inkStage, {
       storageKey: inkStorageKey,
