@@ -937,6 +937,39 @@ stays out of every other deck's bundle. Install such dependencies in a
 > hooks from `preact/hooks`. The build resolves those imports back to the
 > framework's own Preact, so the deck folder needs no Preact install.
 
+### Shared state across slides and windows
+
+A component can keep a value that every slide and every window of the talk
+share: the presenter's slide, the audience window, other deck windows in the
+same browser, and a paired iPad. Import it from `mdeck/component`:
+
+```jsx
+import { h } from 'preact'
+import { useShared, useView } from 'mdeck/component'
+
+export default function Counter() {
+  const [count, setCount] = useShared('count', 0)
+  return <button onClick={() => setCount(n => n + 1)}>{count}</button>
+}
+```
+
+- `useShared(name, initial)` returns the value and a function to set it, like
+  `useState`. `initial` stands in until a window sets one. Values must survive
+  JSON (numbers, text, lists, plain objects). The latest change wins.
+- A window opened later, or reloaded, gets the current values from the others.
+  Nothing is saved: when every window of the talk is closed, the values are gone.
+- `useView()` says which window the component is in: `presenter` (the
+  presenter view's slide), `audience`, `deck`, `follow` (a phone following the
+  talk), `preview` (the next-slide preview and the editor) or `reader`.
+  Previews, followers and the reader see shared values but do not change them.
+- Choose names that belong to your component, such as `countdown` or
+  `quiz:round`: every component in the deck shares one set of names.
+
+`mdeck/component` is the part of mdeck that components may rely on; it is
+kept stable across versions. A component renders inside its slide. Anything
+else it reaches, such as the page outside its slide, the `<deck-stage>`, mdeck's
+events or the presenter view, is not part of it and may change without notice.
+
 ---
 
 ## Inline HTML

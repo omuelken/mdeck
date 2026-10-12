@@ -38,6 +38,7 @@ import './deck-stage.js'
 import { normalMode, hotspotMode } from './hotspots.js'
 import { useTalkTimer } from './useTalkTimer.js'
 import { devPath } from '../core/devPath.js'
+import { setView } from './shared.js'
 import { RehearsalSummary } from './RehearsalSummary.jsx'
 import { planFor, scheduleAt, formatClock } from '../core/timing.js'
 
@@ -938,6 +939,8 @@ async function init() {
   // The deck window and the presenter's main frame draw; the audience window
   // and the next-slide preview show what is drawn.
   const drawHere = !audienceMode && !followMode && (!embedded || url.searchParams.get('draw') === '1')
+  // What deck components learn from useView() (component.js).
+  setView(audienceMode ? 'audience' : followMode ? 'follow' : readerMode ? 'reader' : embedded ? (drawHere && !editorMode ? 'presenter' : 'preview') : 'deck')
   const inkStorageKey = `mdeck-ink:${inkFileName}:${location.pathname}`
 
   injectSpeakerNotes(slides)

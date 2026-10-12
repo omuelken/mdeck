@@ -17,9 +17,13 @@
 //   { type: 'media', key, video, action, time }  a video in the deck played,
 //       paused or moved to `time` (components/VideoPlayer.jsx)
 //   { type: 'op', op }                  a change of the saved ink (applyOp)
+//   { type: 'shared', key, name, value, replay? }  a deck component's shared
+//       state (../shared.js); `replay` answers a window that opened later
+//   { type: 'shared-ask', key }         a window that opened asks for it
 // Keys start with the sending window's id, so strokes never mix.
 import { changeInk, renameSlide } from './store.js'
 import { joinSegment } from './segments.js'
+import { connectShared, receiveShared } from '../shared.js'
 
 const SEGMENT_MS = 25
 const DOT_MS = 50
@@ -54,6 +58,8 @@ export function createInkBus(stage, transports) {
       stage.liveStroke(message.key, known)
     } else if (message.type === 'controls') {
       stage.dispatchEvent(new CustomEvent('pollcontrols', { detail: { room: message.room, controls: message.controls } }))
+    } else if (message.type === 'shared' || message.type === 'shared-ask') {
+      receiveShared(message)
     } else if (message.type === 'media') {
       stage.dispatchEvent(new CustomEvent('mediacontrol', { detail: { video: message.video, action: message.action, time: message.time } }))
     } else if (message.type === 'zoom') {
@@ -71,6 +77,8 @@ export function createInkBus(stage, transports) {
     }
   }
   for (const transport of transports) transport.listen(receive)
+  // Deck components' shared state rides along; this window asks for it now.
+  connectShared(message => send({ ...message, key: `${me}:shared` }))
 
   // Own strokes in progress, sent in small pieces.
   const outgoing = new Map()

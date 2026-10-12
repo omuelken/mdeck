@@ -3,7 +3,7 @@
 //   npm run test:browser
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, copyFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync, existsSync, copyFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -295,6 +295,34 @@ try {
   await timed.evaluate("document.querySelectorAll('.rehearsal-row')[0].querySelector('[aria-label=\"Keep the planned time\"]').click()")
   await until(timed, `${newTimes} === '1m,30s'`)
   await until(timed, "document.querySelector('.rehearsal-save').disabled && /mdeck run/.test(document.querySelector('.rehearsal-summary [role=status]').textContent)")
+
+  // A deck component's shared state (mdeck/component): one value on every
+  // slide and in every window; a window opened later gets it; previews only read.
+  const sharedDir = resolve(temp, 'shared')
+  mkdirSync(resolve(sharedDir, 'components'), { recursive: true })
+  writeFileSync(resolve(sharedDir, 'components', 'Counter.jsx'), "import { h } from 'preact'\nimport { useShared, useView } from 'mdeck/component'\nexport default function Counter() {\n  const [n, setN] = useShared('count', 0)\n  return <button class=\"shared-counter\" data-view={useView()} onClick={() => setN(c => c + 1)}>{n}</button>\n}\n")
+  writeFileSync(resolve(sharedDir, 'slides.md'), '---\ntheme: neue\n---\n\n---\n# One\n\n<counter />\n\n---\n# Two\n\n<counter />\n')
+  execFileSync(process.execPath, ['bin/mdeck.js', 'build', resolve(sharedDir, 'slides.md'), '--single-file', '-o', resolve(temp, 'shared.html')], { cwd: root, stdio: 'pipe' })
+  const sharedPresenter = await open('shared.html?view=presenter')
+  const sharedFrame = "document.querySelector('iframe')?.contentWindow?.document"
+  await until(sharedPresenter, `${sharedFrame}?.querySelectorAll('.shared-counter').length === 2`)
+  const sharedSession = await sharedPresenter.evaluate("new URL(location.href).searchParams.get('session')")
+  const sharedAudience = await open('shared.html?view=audience&session=' + sharedSession)
+  await until(sharedAudience, "document.querySelectorAll('.shared-counter').length === 2")
+  assert.equal(await sharedPresenter.evaluate(`${sharedFrame}.querySelector('.shared-counter').dataset.view`), 'presenter')
+  assert.equal(await sharedAudience.evaluate("document.querySelector('.shared-counter').dataset.view"), 'audience')
+  await delay(300)
+  await sharedPresenter.evaluate(`${sharedFrame}.querySelector('.shared-counter').click(); ${sharedFrame}.querySelector('.shared-counter').click()`)
+  await until(sharedAudience, "[...document.querySelectorAll('.shared-counter')].every(b => b.textContent === '2')")
+  assert.equal(await sharedPresenter.evaluate(`[...${sharedFrame}.querySelectorAll('.shared-counter')].map(b => b.textContent).join()`), '2,2', 'the same value on every slide')
+  const lateDeck = await open('shared.html?view=deck&session=' + sharedSession)
+  await until(lateDeck, "[...document.querySelectorAll('.shared-counter')].every(b => b.textContent === '2')")
+  const preview = "document.querySelectorAll('iframe')[1]?.contentWindow?.document"
+  await until(sharedPresenter, `${preview}?.querySelector('.shared-counter')?.dataset.view === 'preview' && ${preview}.querySelector('.shared-counter').textContent === '2'`)
+  await sharedPresenter.evaluate(`${preview}.querySelector('.shared-counter').click()`)
+  await delay(300)
+  assert.equal(await sharedAudience.evaluate("document.querySelector('.shared-counter').textContent"), '2', 'a preview does not change it')
+  await Promise.all([sharedPresenter.close(), sharedAudience.close(), lateDeck.close()])
 
   const presenter = await open('deck.html?view=presenter')
   const stage = "document.querySelector('iframe')?.contentWindow?.document.querySelector('deck-stage')"
@@ -758,7 +786,7 @@ try {
   assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
   await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, reveal/undo/reset synchronization, jumping to a slide by its number, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
+  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()

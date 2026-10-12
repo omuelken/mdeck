@@ -29,6 +29,8 @@ function preactAliases() {
     }
     aliases.push({ find: new RegExp(`^${spec.replace(/\//g, '\\/')}$`), replacement: file })
   }
+  // What deck components may use from mdeck (src/runtime/component.js).
+  aliases.push({ find: /^mdeck\/component$/, replacement: fileURLToPath(new URL('../runtime/component.js', import.meta.url)) })
   return aliases
 }
 
