@@ -8,6 +8,7 @@
 // connections per server.
 import { stageRoom } from '../../live/client.js'
 import { presenceQuery } from '../../live/presence.js'
+import { retryDelay, compactOutbox } from './outbox.js'
 
 // Live ink waits this long to gather a batch; with one request at a time the
 // network sets the pace, so a short wait adds little load and little lag.
@@ -19,7 +20,7 @@ const BATCH_MS = 25
  */
 export function roomTransport({ receive = false, view = null, onPresence = null } = {}) {
   const room = stageRoom()
-  let queue = [], timer = null, allowed = null, listeners = 1, source = null, sending = false
+  let queue = [], timer = null, allowed = null, listeners = 1, source = null, sending = false, failures = 0
 
   // One request at a time: two in flight could arrive in the other order.
   async function flush() {
@@ -27,25 +28,36 @@ export function roomTransport({ receive = false, view = null, onPresence = null 
     if (!queue.length || sending) return
     sending = true
     try { await deliver() } finally { sending = false }
-    // What came in meanwhile has waited already: send it right away.
-    if (queue.length) timer ??= setTimeout(flush, 0)
+    // What came in meanwhile has waited already: send it right away, unless
+    // the last attempt failed; then wait longer each time.
+    if (queue.length) timer ??= setTimeout(flush, retryDelay(failures))
+  }
+
+  // The batch goes back to the front, to be sent again after a wait.
+  function retry(messages) {
+    failures++
+    queue = compactOutbox([...messages, ...queue])
   }
 
   async function deliver() {
     const messages = queue.splice(0, 100)
     if (allowed === null) {
-      const info = await room.info()
+      let info
+      try { info = await room.info() } catch { return retry(messages) }
       allowed = info.reachable ? !!info.canReset : null
       if (!allowed) { queue = []; return }
     }
     try {
       const response = await fetch(`${room.url}/ink`, { method: 'POST', headers: room.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ messages }) })
       if (response.status === 403) { allowed = false; queue = []; return }
+      // A server that is busy or restarting gets them again, as a lost network does.
+      if (response.status >= 500 || response.status === 429) return retry(messages)
+      failures = 0
       if (response.ok) listeners = (await response.json()).listeners ?? 1
     } catch {
       // The network failed (an iPad's WLAN): send them again, or the others
       // keep a gap. A repeated segment only writes the same points again.
-      queue.unshift(...messages)
+      retry(messages)
     }
   }
 
