@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 3.12.1 — 2026-10-12
 
+- Fixed: on an iPhone the reaction buttons sat below the visible part of the phones' page, behind Safari's bar. The page now fits the visible height. Update your poll server for this one.
 - `mdeck --version` (or `-v`) shows which mdeck this is.
 - Fixed: with polls on your own server, the presenter view counted no phones: they join that server, while the presenter view's room stays on your computer. `mdeck run` now asks the server how many phones joined.
 - Shorter status lines in the presenter view: "Poll server needs an update to 3.12.1.", "Phones follow another screen. Change slide to take them back."
