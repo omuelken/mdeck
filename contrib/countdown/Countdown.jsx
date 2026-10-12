@@ -295,7 +295,8 @@ function Panel({ timer, change }) {
       </select>
       <input type="range" min="0" max="1" step="0.05" aria-label="Volume" title="Volume" value={timer.volume ?? 0.8} onChange={event => { const volume = Number(event.currentTarget.value); change(t => ({ ...t, volume })) }} />
       <button title="Play the sound once where the room hears it" disabled={!timer.sound} onClick={() => change(t => ({ ...t, test: (t.test || 0) + 1 }))}>Try</button>
-      <button title="Stop the sound" disabled={!timer.sound} onClick={() => change(t => ({ ...t, quiet: true }))}>Stop</button>
+      {/* At the end, Stop also takes the countdown off the screen. */}
+      <button title={left === 0 ? 'Stop the sound and hide the countdown' : 'Stop the sound'} disabled={!timer.sound && left > 0} onClick={() => change(t => ({ ...t, quiet: true, visible: timeLeft(t) === 0 ? false : t.visible }))}>Stop</button>
     </div>}
   </div>
 }
@@ -318,7 +319,8 @@ function Countdown({ stage, role }) {
     return () => { window.removeEventListener('pointerdown', done, true); window.removeEventListener('keydown', done, true) }
   }, [])
   const left = timeLeft(timer)
-  const showing = timer && (timer.running || timer.visible)
+  // The button shows the time while it counts, and the end until it is stopped.
+  const showing = timer && (timer.visible || (timer.running && !timer.quiet))
   // Taps on the controls must not reach the slides (which would turn the page).
   const keep = event => event.stopPropagation()
   return <>
