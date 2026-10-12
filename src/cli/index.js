@@ -27,7 +27,7 @@ import { paramKind } from '../extensions/params.js'
 
 import { frameworkRoot } from '../paths.js'
 import { parseSlides } from '../core/parseSlides.js'
-import { stripNotes as stripNotesFrom, stripActivities as stripActivitiesFrom, shareSlides } from '../core/editDeck.js'
+import { stripNotes as stripNotesFrom, shareSlides } from '../core/editDeck.js'
 import { parseArgs, parseSlideNumbers, validateServerOrigin } from './args.js'
 import { assertDrawings } from '../build/drawings.js'
 import { resultsFileFor, normalizeResults, resultsCsv } from '../core/results.js'
@@ -768,7 +768,11 @@ if (command === 'new') {
     } finally { await rm(pdfDir, { recursive: true, force: true }) }
   }
   if (stripNotes) tip('Speaker notes were removed from this file (use --notes to keep them).')
-  if (stripActivities && stripActivitiesFrom(readFileSync(resolve(input), 'utf-8')).removed.length) tip('Slides with polls were left out (--no-polls).')
+  // Only polls among the slides chosen with --slide were left out for --no-polls.
+  if (stripActivities) {
+    const raw = readFileSync(resolve(input), 'utf-8')
+    if (shareSlides(raw, { activities: true, slides }).removed.length > (slides ? shareSlides(raw, { slides }).removed.length : 0)) tip('Slides with polls were left out (--no-polls).')
+  }
   if (slides) tip(`Only slides ${parsed.options['--slide']} (--slide).`)
   ok(`${sending ? 'Made' : 'Built'}: ${c.cyan}${htmlFile}${c.reset}${reader ? ' — opens in the reader view' : ''}${selfContained ? ' (single file)' : ' + local assets'}\n`)
 

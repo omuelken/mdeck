@@ -71,3 +71,13 @@ test('a style on a slide left out moves to the first kept slide; one in code doe
   assert.match(only.content, /^# Three[\s\S]*<style>\n {2}\.x \{ color: red; \}\n<\/style>/)
   assert.doesNotMatch(source, /\.code/)
 })
+
+test('a deck shared in part keeps the time its slides were planned to take', () => {
+  const timed = '---\ntheme: neue\ntime: 10m\n---\n\n---\n:::meta\ntime: 4m\n:::\n# One\n\n---\n# Two\n\n---\n# Three\n'
+  // One has 4m; Two and Three share the other 6m.
+  assert.equal(parseSlides(shareSlides(timed, { slides: [1, 3] }).source).deckConfig.time, '7m')
+  assert.equal(parseSlides(shareSlides(timed, { slides: [2] }).source).deckConfig.time, '3m')
+  assert.equal(shareSlides(timed, { slides: [1, 2, 3] }).source, timed)
+  // Without a deck time nothing is added.
+  assert.equal(parseSlides(shareSlides(timed.replace('time: 10m\n', ''), { slides: [1] }).source).deckConfig.time, undefined)
+})

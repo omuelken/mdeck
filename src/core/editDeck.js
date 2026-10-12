@@ -5,6 +5,7 @@
 import { parseSlides, SLIDE_KEYS, DECK_KEYS } from './parseSlides.js'
 import { applySourceEdits, replaceRegion, normalizeBlock, detectNewline, patchYamlMapping, firstYamlKey } from './source.js'
 import { openTagsIn, tagsIn, closingTagOf } from './tags.js'
+import { planFor, formatTime } from './timing.js'
 
 const REGION_RE = /^[a-z][a-z0-9-]*$/
 
@@ -254,7 +255,9 @@ export function stripActivities(source) {
 // written; null for all) and, with `activities`, none with a live activity.
 // A deck of nothing but activities keeps them rather than becoming empty. A
 // <style> on a slide left out styles the whole deck, so it moves to the
-// first kept slide. Returns { source, ids, removed } as stripActivities.
+// first kept slide. The deck's `time` becomes what the kept slides were
+// planned to take, so each keeps its share. Returns { source, ids, removed }
+// as stripActivities.
 export function shareSlides(source, { activities = false, slides = null } = {}) {
   const deck = parseSlides(source)
   const same = () => ({ source, ids: Object.fromEntries(deck.slides.map(slide => [slide.id, slide.id])), removed: [] })
@@ -286,6 +289,11 @@ export function shareSlides(source, { activities = false, slides = null } = {}) 
     const kept = parseSlides(next)
     const nl = detectNewline(next)
     next = appendBlock(kept, kept.slides[0], styles.join(nl) + nl)
+  }
+  if (deck.deckConfig.time != null) {
+    const plan = planFor(deck.slides, deck.deckConfig)
+    const kept = chosen.reduce((sum, slide) => sum + plan.perSlide[deck.slides.indexOf(slide)], 0)
+    if (plan.budget) next = setDeckConfig(parseSlides(next), { time: kept ? formatTime(kept) : undefined })
   }
   const after = parseSlides(next).slides
   return { source: next, ids: Object.fromEntries(chosen.map((slide, i) => [slide.id, after[i]?.id ?? slide.id])), removed: dropped.map(slide => slide.id) }
