@@ -17,17 +17,18 @@
 // Sounds: the audio files in ./sounds beside this file, named after the
 // file (`Gong.mp3` → Gong).
 //
-// Windows tell each other the time left, not a clock time, so an iPad and a
-// laptop whose clocks differ still agree. The messages travel on mdeck's
-// ink bus as the controls of an activity room nobody else uses
-// (`pollcontrols`, room ROOM): between the windows of one browser and,
-// through the deck's stage room, to and from a paired iPad. That event is
-// mdeck's own, not an interface for components: if an mdeck update changes
-// it, only the laptop's own windows still follow each other.
+// The windows share the countdown through `mdeck/component` (useShared,
+// under the name SHARED): the windows of one browser and a paired iPad.
+// They tell each other the time left, not a clock time, so an iPad and a
+// laptop whose clocks differ still agree; the window that set it last
+// repeats it every few seconds, so the others stay in step.
 import { h, render } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
+import { useShared, useView } from 'mdeck/component'
 
-const ROOM = 'mdeck-countdown'
+const SHARED = 'countdown'
+// Tells this window's own changes from the others' when they come back.
+const WINDOW = Math.random().toString(36).slice(2)
 const MINUTE = 60000
 const PRESETS = [1, 3, 5, 10, 15, 30]
 const POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center']
@@ -57,14 +58,9 @@ const TimerIcon = () => <svg viewBox="0 0 24 24" width="20" height="20" fill="no
 
 // --- Which window this is -------------------------------------------------
 
-function windowRole() {
-  const params = new URLSearchParams(location.search)
-  const view = params.get('view') ?? 'deck'
-  if (params.get('embedded') === '1') return params.get('draw') === '1' ? 'presenter' : null
-  if (view === 'audience') return 'audience'
-  if (view === 'deck') return 'deck'
-  return null
-}
+// The presenter's slide gets the controls, the audience and deck windows show
+// the countdown; previews, followers and the reader leave it out.
+const ROLES = new Set(['presenter', 'audience', 'deck'])
 
 // An iPad says it is a Mac, but has a touch screen.
 const onIpad = () => /iPad/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
@@ -146,30 +142,38 @@ function useTick(timer) {
 
 /**
  * The countdown as this window knows it, and `change(fn)` to set it here.
- * The window that set it last repeats it while it runs or shows, so a
- * window that opens later catches up.
+ * The window that set it last repeats it while it runs or shows, and once
+ * after any change, so the shared value soon holds the time left and no
+ * longer says `fresh`: a window that opens later gets it from the others
+ * and does not take an old sound test for a new one.
  */
-function useSharedTimer(stage, controls) {
+function useSharedTimer(controls) {
+  const [shared, setShared] = useShared(SHARED, null)
   const [timer, setTimer] = useState(() => controls ? newTimer() : null)
-  const latest = useRef(timer), owner = useRef(false)
-  const send = (next, fresh) => stage.dispatchEvent(new CustomEvent('pollcontrols', { detail: { room: ROOM, controls: { ...encode(next), fresh }, local: true } }))
+  const latest = useRef(timer), owner = useRef(false), unsent = useRef(false)
+  const send = (next, fresh) => setShared({ ...encode(next), fresh, by: WINDOW })
   useEffect(() => {
-    const hear = event => {
-      if (event.detail?.room !== ROOM || event.detail.local) return
-      const next = decode(event.detail.controls)
-      if (!next) return
-      owner.current = false
-      const fresh = !!event.detail.controls?.fresh
-      setTimer(current => { const shown = follow(current, next); latest.current = shown === current ? current : { ...shown, fresh }; return latest.current })
-    }
-    stage.addEventListener('pollcontrols', hear)
-    const repeat = setInterval(() => { const now = latest.current; if (owner.current && now && (now.running || now.visible)) send(now, false) }, REPEAT_MS)
-    return () => { stage.removeEventListener('pollcontrols', hear); clearInterval(repeat) }
-  }, [stage])
+    // This window's own value, back from useShared, is already shown.
+    if (!shared || shared.by === WINDOW) return
+    const next = decode(shared)
+    if (!next) return
+    owner.current = false
+    setTimer(current => { const shown = follow(current, next); latest.current = shown === current ? current : { ...shown, fresh: !!shared.fresh }; return latest.current })
+  }, [shared])
+  useEffect(() => {
+    const repeat = setInterval(() => {
+      const now = latest.current
+      if (!owner.current || !now || !(now.running || now.visible || unsent.current)) return
+      unsent.current = false
+      send(now, false)
+    }, REPEAT_MS)
+    return () => clearInterval(repeat)
+  }, [])
   const change = fn => {
     const next = { ...fn(latest.current ?? newTimer()), fresh: true }
     latest.current = next
     owner.current = true
+    unsent.current = true
     setTimer(next)
     send(next, true)
   }
@@ -309,16 +313,16 @@ function Panel({ timer, change }) {
   </div>
 }
 
-function Countdown({ stage, role }) {
+function Countdown({ role }) {
   const controls = role === 'presenter'
-  const [timer, change] = useSharedTimer(stage, controls)
+  const [timer, change] = useSharedTimer(controls)
   const [open, setOpen] = useState(false)
   useTick(timer)
   // Where the room hears it: the audience window first, a deck window or the
   // laptop's presenter frame if none of its browser plays it. A paired iPad
   // leaves the sound to the laptop.
   const plays = role === 'audience' || role === 'deck' || (role === 'presenter' && !onIpad())
-  const sound = useEndSound(timer, { plays, first: role === 'audience', lock: `${ROOM}:${location.pathname}` })
+  const sound = useEndSound(timer, { plays, first: role === 'audience', lock: `mdeck-countdown:${location.pathname}` })
   const [, activated] = useState(0)
   useEffect(() => {
     const done = () => activated(n => n + 1)
@@ -425,12 +429,10 @@ let mounted = false
 /** `<countdown />`: starts the countdown for this window; shows nothing itself. */
 export default function CountdownTag() {
   const ref = useRef()
+  const role = useView()
   useEffect(() => {
-    const role = windowRole()
     // Once per window; not in previews, printouts or Read mode.
-    if (mounted || !role || ref.current?.closest('[data-deck-static]')) return
-    const stage = document.querySelector('deck-stage')
-    if (!stage) return
+    if (mounted || !ROLES.has(role) || ref.current?.closest('[data-deck-static]')) return
     mounted = true
     const style = document.createElement('style')
     style.textContent = STYLES
@@ -438,7 +440,7 @@ export default function CountdownTag() {
     const host = document.createElement('div')
     host.className = 'countdown-host export-hidden'
     document.body.appendChild(host)
-    render(<Countdown stage={stage} role={role} />, host)
+    render(<Countdown role={role} />, host)
   }, [])
   return <span ref={ref} hidden />
 }
