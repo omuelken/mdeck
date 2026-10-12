@@ -31,6 +31,18 @@ Polls, scales, word clouds, open questions and numbers to guess. People scan the
 </tr>
 <tr>
 <td width="50%" valign="top">
+<a href="docs/site/images/features/hotspots.webp"><img src="docs/site/images/features/hotspots.webp" alt="The projector zoomed in on a table, and in front of it the presenter view showing the same slide with numbered keys on its code, table and formula"></a>
+<p><b><a href="https://gh.tschieber.de/mdeck/presenting.html#zoom-in-on-part-of-a-slide">Zoom into a chart, a table or a line of code</a></b><br>
+Turn on hotspots, and the presenter view puts a number on each picture, table, formula and code block. Press it, and the slide glides in until that part fills the projector; press it again to see the whole slide. The audience never sees the numbers.</p>
+</td>
+<td width="50%" valign="top">
+<a href="docs/site/images/features/languages.webp"><img src="docs/site/images/features/languages.webp" alt="The same slide with a Python example in English, German, Hindi and Farsi, the Farsi one running right to left"></a>
+<p><b><a href="https://gh.tschieber.de/mdeck/presenting.html#one-talk-in-several-languages">Give the talk in the room's language</a></b><br>
+Keep <code>talk.en.md</code> beside <code>talk.de.md</code>, and press <b>L</b> to switch languages in the middle of the talk: slides, notes and every screen change at once, and you stay on the same slide. Farsi, Arabic and Hebrew run right to left.</p>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
 <a href="docs/site/images/features/citations.webp"><img src="docs/site/images/features/citations.webp" alt="A slide with author–year citations and the full references at its foot, over a slide that lists all references"></a>
 <p><b><a href="https://gh.tschieber.de/mdeck/more-content.html#cite-a-source">Cite your sources properly</a></b><br>
 Cite as in a paper, <code>[@knuth1984, p. 97]</code>, from the BibTeX, CSL-JSON or Hayagriva file you already keep. Each slide lists what it cites at its foot, in APA, Vancouver, Harvard or any CSL style.</p>

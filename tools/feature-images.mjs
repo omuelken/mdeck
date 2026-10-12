@@ -4,8 +4,10 @@
 // projector showing the same strokes), polls.webp (a poll's live results with
 // a phone that voted), citations.webp (citations on a slide and the reference
 // list), themes.webp (one slide in every built-in theme), code.webp (live
-// Python with its output) and reader.webp (the reader view on a laptop and a
-// phone); and the theme picker's thumbnails under the example deck,
+// Python with its output), reader.webp (the reader view on a laptop and a
+// phone), hotspots.webp (the tour's hotspot slide zoomed in on the projector,
+// with the presenter view's numbered keys) and languages.webp (one slide of
+// the Python example in English, German, Hindi and Farsi); and the theme picker's thumbnails under the example deck,
 // docs/site/images/themes/<theme>-thumb.webp. `npm run feature-images`; needs
 // a local Chrome, ImageMagick (`magick`) and, for live Python, an internet
 // connection.
@@ -63,7 +65,7 @@ const device = (file, { width, bezel, radius }) => {
 }
 // Pictures side by side or on a canvas, on a light background.
 const BACKGROUND = '#e9ecef'
-let browser, dev
+let browser, dev, tour
 try {
   build('plain.html')
   browser = await launchChrome({ dir: temp })
@@ -198,6 +200,48 @@ try {
   webp('reader.webp', '-size', '1800x1000', `xc:${BACKGROUND}`, laptop, '-geometry', '+30+40', '-composite', mobile, '-geometry', '+1380+230', '-composite')
   console.log('wrote reader.webp')
 
+  // Hotspots: the presenter view at the tour's hotspot slide with its keys,
+  // in front of the projector zoomed in on the table.
+  cpSync(resolve(root, 'examples/showcase'), t('tour'), { recursive: true })
+  const tourConfig = baseConfig(t('tour/slides.md'))
+  tour = await createServer({ ...tourConfig, plugins: [...tourConfig.plugins, livePlugin()], server: { ...tourConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  await tour.listen()
+  const tourBase = tour.resolvedUrls.local[0]
+  const presenter = await browser.open(new URL('?view=presenter&theme=neue&palette=&appearance=', tourBase).href)
+  await until(presenter, "!!document.querySelector('iframe')?.contentDocument?.querySelector('deck-stage')", 600)
+  await presenter.screenshot({ width: 1440, height: 900 })
+  await delay(1500)
+  const stage = "document.querySelector('iframe').contentDocument.querySelector('deck-stage')"
+  const hotspotSlide = await presenter.evaluate(`[...${stage}.querySelectorAll(':scope > section')].findIndex(s => s.dataset.slideId === 'zoom-in-on-a-part')`)
+  for (let i = 0; i < 60 && await presenter.evaluate(`${stage}.index`) < hotspotSlide; i++) {
+    await presenter.evaluate("[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Next').click(); true")
+    await delay(150)
+  }
+  await until(presenter, `${stage}.index === ${hotspotSlide} && ${stage}.shadowRoot.querySelectorAll('.hotspot').length === 3`)
+  await delay(800)
+  const keys = device(await shot(presenter, t('presenter.png'), { width: 1440, height: 900 }), { width: 880, bezel: 14, radius: 12 })
+  const audience = await browser.open(new URL('?view=deck&embedded=1&theme=neue&palette=&appearance=#zoom-in-on-a-part', tourBase).href)
+  await audience.waitForDeck()
+  await audience.screenshot({ width: 1600, height: 900 })
+  await delay(1500)
+  await audience.evaluate("document.querySelector('deck-stage').zoomToHotspot(2); true")
+  await delay(1500)
+  await audience.evaluate("document.querySelector('deck-stage').shadowRoot.querySelector('.zoom-reset')?.style.setProperty('display', 'none'); true")
+  const zoomed = device(await shot(audience, t('zoomed.png'), { width: 1600, height: 900 }), { width: 1180, bezel: 14, radius: 12 })
+  webp('hotspots.webp', '-size', '1800x1080', `xc:${BACKGROUND}`, zoomed, '-geometry', '+30+20', '-composite', keys, '-geometry', '+830+450', '-composite')
+  console.log('wrote hotspots.webp')
+
+  // Languages: the Python example's first code slide in each of its languages.
+  const languages = ['en', 'de', 'hi', 'fa']
+  const spoken = []
+  for (const lang of languages) {
+    execFileSync(process.execPath, [resolve(root, 'bin/mdeck.js'), 'build', resolve(root, `examples/python/slides.${lang}.md`), '-o', t(`python-${lang}.html`)], { cwd: root, stdio: 'pipe' })
+    spoken.push(await slide(t(`python-${lang}.png`), 'appearance=#4', { width: 1280, height: 720 }, `python-${lang}.html`))
+  }
+  const pair = files => ['(', ...files.flatMap(file => ['(', file, '-resize', '880x', '-bordercolor', BACKGROUND, '-border', '10', ')']), '+append', ')']
+  webp('languages.webp', ...pair(spoken.slice(0, 2)), ...pair(spoken.slice(2)), '-append', '-bordercolor', BACKGROUND, '-border', '10')
+  console.log('wrote languages.webp')
+
   // The theme picker under the docs' example deck: its chart slide in each
   // built-in theme, small.
   const example = resolve(root, 'docs/site/examples/first-talk.md')
@@ -210,5 +254,6 @@ try {
 } finally {
   await browser?.close()
   await dev?.close()
+  await tour?.close()
   rmSync(temp, { recursive: true, force: true })
 }

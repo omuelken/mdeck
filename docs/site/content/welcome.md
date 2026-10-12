@@ -32,6 +32,26 @@ Polls, scales, word clouds, open questions and numbers to guess. People scan the
 
 <section>
 
+[![The projector zoomed in on a table, and in front of it the presenter view showing the same slide with numbered keys on its code, table and formula](images/features/hotspots.webp)](images/features/hotspots.webp)
+
+### Zoom into a chart, a table or a line of code
+
+Turn on hotspots, and the presenter view puts a number on each picture, table, formula and code block. Press it, or tap it on an iPad, and the slide glides in until that part fills the projector; press it again to see the whole slide. Phones following the talk zoom along, and the audience never sees the numbers. [Zoom in on part of a slide](presenting.html#zoom-in-on-part-of-a-slide)
+
+</section>
+
+<section>
+
+[![The same slide with a Python example in English, German, Hindi and Farsi, the Farsi one running right to left](images/features/languages.webp)](images/features/languages.webp)
+
+### Give the talk in the room's language
+
+Keep the talk once per language, `talk.en.md` beside `talk.de.md`, and press **L** to switch in the middle of it: the slides, your notes and every screen change at once, and you stay on the same slide and step. Farsi, Arabic and Hebrew run right to left, with code and formulas left to right. [One talk in several languages](presenting.html#one-talk-in-several-languages)
+
+</section>
+
+<section>
+
 [![A slide with author–year citations and the full references at its foot, next to a slide that lists all references](images/features/citations.webp)](images/features/citations.webp)
 
 ### Cite your sources properly
