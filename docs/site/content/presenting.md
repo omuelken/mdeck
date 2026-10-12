@@ -61,6 +61,7 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | End | Go to the last slide when the slide view has focus |
 | R | Start again and clear the reveals |
 | B or . | Make the audience's screen black, and show the slide again (see below) |
+| J | Show the join code over the slide, on every screen, and hide it again, in the presenter view of a deck with polls ([Ask your audience](audience.html)) |
 | O | Show all slides in a grid, to pick one (see below) |
 | D | Start or stop drawing on the slide ([Draw on your slides](drawing.html)) |
 | I | Hide or show the drawings |

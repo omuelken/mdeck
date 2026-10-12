@@ -60,3 +60,10 @@ test('? opens the help, but not with a modifier', () => {
   assert.equal(isHelpKey({ key: '?', ctrlKey: true }), false)
   assert.equal(isHelpKey({ key: '/' }), false)
 })
+
+test('J shows the join code, in the presenter view of a deck that phones join', () => {
+  assert.ok(!listed({ view: 'presenter' }).some(line => line.startsWith('J:')), 'no J without polls or reactions')
+  assert.ok(listed({ view: 'presenter', join: true }).includes('J: Show the join code over the slide'))
+  assert.ok(listed({ view: 'presenter', join: true, joinShown: true }).includes('J: Hide the join code'))
+  assert.ok(!listed({ view: 'deck', join: true }).some(line => line.startsWith('J:')), 'J is the presenter view’s')
+})

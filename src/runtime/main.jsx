@@ -780,7 +780,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     {blankNote}
     {reacting && <Reactions style={remoteLayout ? { left: '16px', bottom: '100px' } : undefined} />}
     {helpOpen && <KeyHelp
-      context={{ view: 'presenter', blank, overview: overviewOpen, hotspots: slideHotspots, hotspotSwitch: hotspotsOn, inking, fullscreen: canFullscreen, drawer: slideLayout, languages: LANGUAGES.length > 0 }}
+      context={{ view: 'presenter', blank, join: hasActivities() || reacting, joinShown: join, overview: overviewOpen, hotspots: slideHotspots, hotspotSwitch: hotspotsOn, inking, fullscreen: canFullscreen, drawer: slideLayout, languages: LANGUAGES.length > 0 }}
       onClose={() => setHelpOpen(false)}
     />}
     {summaryPanel}
