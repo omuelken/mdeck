@@ -140,7 +140,7 @@ try {
   await until(() => projector.evaluate("document.querySelector('deck-stage')?.index === 2"), 'iPad can move back to its previous position')
   // the launch page under the base path
   const launch = await browser.open(`${home}home.html`)
-  await until(() => launch.evaluate("document.body?.innerText.toLowerCase().includes('present from an ipad')"), 'launch page renders', 8000)
+  await until(() => launch.evaluate("!!document.querySelector('.home-header h1')?.textContent"), 'launch page renders', 8000)
   await until(() => launch.evaluate("document.body?.innerText.toLowerCase().includes('connected to your server')"), 'connection status shown')
   // Loading the iPad's pages asked for nothing that is kept private (the three above were asked for on purpose).
   // Two decks on the same relay keep independent tokens in one browser.

@@ -261,21 +261,6 @@ function LivePolls({ live, presence, onRecheck }) {
   </section>
 }
 
-// Presenting from an iPad, or going through the slides with a phone: the
-// presenter view pairs them (its connections, runtime/PresenterChrome.jsx).
-// Here: whether the server connection is up, and where to pair.
-function Tablet({ pairing, relay, presence }) {
-  const away = (presence?.views ?? []).filter(entry => entry.view === 'presenter' && entry.device !== 'computer')
-  return <section class="home-section home-tablet">
-    <div class="home-section-head"><h2>Present from an iPad or a phone</h2></div>
-    {relay && <p class={`home-note home-relay home-relay--${relay.state}`}>{relay.state === 'up' ? 'Connected to your server: an iPad or a phone can reach this computer from any network.' : relay.state === 'refused' ? `Connecting to the server failed: ${relay.reason}` : relay.state === 'down' ? 'Lost the connection to the server; reconnecting…' : 'Connecting to your server…'}</p>}
-    {away.length > 0 && <p class="home-ok"><HomeIcon name="check" /> Presenter view open on {devicesText(away)}.</p>}
-    {pairing.available
-      ? <p>Open the presenter view and click the icons at its top that show who is connected: there you pair an iPad, to draw and present from, or a phone as a clicker.{pairing.devices > 0 ? ` ${pairing.devices === 1 ? 'One device is' : `${pairing.devices} devices are`} paired.` : ''}</p>
-      : <p class="home-note">Start <code>mdeck run</code> with <code>--network</code>, so an iPad or a phone in the same network can reach it, or with <code>--server</code> to reach it through your server.</p>}
-  </section>
-}
-
 export function Home() {
   const [info, setInfo] = useState(null)
   const [error, setError] = useState('')
@@ -322,6 +307,11 @@ export function Home() {
         <p class="home-meta">{meta.join(' · ')}</p>
         <p class="home-file"><code>{info.file}</code> <button class="home-link" onClick={() => api('/action', { action: 'reveal', output: 'deck' }).catch(e => setError(e.message))}>Show</button></p>
       </div>
+      {/* mdeck run --server: whether the connection to the server is up. */}
+      {info.relay && <span class={`home-health home-relay${info.relay.state === 'up' ? '' : info.relay.state === 'refused' ? ' is-bad' : ' is-warn'}`} title={info.relay.reason ?? info.relay.url}>
+        <HomeIcon name={info.relay.state === 'up' ? 'check' : 'alert'} />
+        {info.relay.state === 'up' ? 'Connected to your server' : info.relay.state === 'refused' ? 'Server refused the connection' : info.relay.state === 'down' ? 'Reconnecting to your server…' : 'Connecting to your server…'}
+      </span>}
       <a class={`home-health${errors ? ' is-bad' : warnings ? ' is-warn' : ''}`} href="#check">
         <HomeIcon name={errors || warnings ? 'alert' : 'check'} />
         {errors ? `${errors} error${errors === 1 ? '' : 's'}` : warnings ? `${warnings} warning${warnings === 1 ? '' : 's'}` : 'All good'}
@@ -339,7 +329,7 @@ export function Home() {
           <ConnectedViews presence={presence} phones={!!info.live} />
         </div>
         <div class="home-tiles">
-          <ViewTile icon="presenter" title="Presenter view" text="Present and draw, with notes, timer and next slide. Switch to slides only or fullscreen." href={`${BASE}?view=presenter&session=${SESSION}${code}`} open={openOn('presenter')} />
+          <ViewTile icon="presenter" title="Presenter view" text="Present and draw, with notes, timer and next slide. Pair an iPad or a phone clicker from it." href={`${BASE}?view=presenter&session=${SESSION}${code}`} open={openOn('presenter')} />
           <ViewTile icon="rehearse" title="Rehearse" text="Go through the talk as if giving it: each slide is timed, and the times can be saved into the deck." href={`${BASE}?view=presenter&rehearse=1&session=${SESSION}${code}`} />
           <ViewTile icon="projector" title="Audience window" text="Slides for the projector, without notes. Navigation stays in sync with the presenter." href={`${BASE}?view=audience&session=${SESSION}${code}`} open={openOn('audience')} />
           <ViewTile icon="reader" title="Reader view" text="Outline, reading mode and look picker, as people you send it to see it." href={`${BASE}?view=reader`} />
@@ -359,7 +349,6 @@ export function Home() {
 
       {info.results?.length > 0 && <Answers results={info.results} file={info.name.replace(/\.md$/i, '') + '.results.json'} onRefresh={load} />}
 
-      {info.pairing && <Tablet pairing={info.pairing} relay={info.relay} presence={presence} />}
 
       <section class="home-section home-section--wide">
         <h2>Share</h2>
