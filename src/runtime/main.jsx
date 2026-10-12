@@ -756,9 +756,12 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         {!timer.rehearsing && <button type="button" class="presenter-rehearse" style={S.btn} title="Time each slide, then save the times into the deck" onClick={timer.startRehearsal}><Icon name="rehearse" size={16} />Rehearse</button>}
       </span>
     </PanelSection>
-    <PanelSection title="Notes">
-      <input type="range" min="11" max="26" step="1" value={noteSize} aria-label="Size of the notes" onInput={e => setNoteSize(Number(e.currentTarget.value))} style={{ accentColor: '#888', cursor: 'pointer' }} />
-    </PanelSection>
+    <label class="presenter-note-size" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span>Size of the notes</span>
+      <span aria-hidden="true" style={{ marginInlineStart: 'auto', fontSize: '11px', color: '#888' }}>A</span>
+      <input type="range" min="11" max="26" step="1" value={noteSize} aria-label="Size of the notes" onInput={e => setNoteSize(Number(e.currentTarget.value))} style={{ width: '96px', accentColor: '#888', cursor: 'pointer' }} />
+      <span aria-hidden="true" style={{ fontSize: '17px', color: '#888' }}>A</span>
+    </label>
     {launchPage && <a class="presenter-home" href={launchPage} style={{ ...S.btn, alignSelf: 'flex-start', boxSizing: 'border-box', textDecoration: 'none' }}><Icon name="home" size={16} />Back to the launch page</a>}
   </Popover>
   const notesBox = <div class="notes-md" dir={notesDir} style={{ flex: 1, minHeight: 0, overflow: 'auto', margin: 0, padding: '12px 14px', lineHeight: 1.55, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', fontSize: `${noteSize}px`, color: note ? '#c8c8c8' : '#3a3a3a' }}
