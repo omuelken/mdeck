@@ -11,7 +11,7 @@ import { loadRegistry } from '../src/extensions/discover.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const out = resolve(root, 'docs/images')
-const deck = resolve(root, 'examples/showcase/slides.md')
+const deck = resolve(root, 'examples/showcase/slides.en.md')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-readme-'))
 mkdirSync(out, { recursive: true })
 try {

@@ -545,7 +545,7 @@ A title written after the type on the `:::` line still wins over both.
 
 ## Language
 
-`lang` is the language of the whole deck. The page is marked with it, so screen readers pronounce the slides correctly and browsers hyphenate them. It also picks the words mdeck itself shows the audience: the reader view's buttons, the deck's control bar, polls on the slide and on phones, and callout titles. German (`de`) and English (`en`) are built in; for any other language the words stay English. A regional code such as `de-CH` uses the German words.
+`lang` is the language of the whole deck. The page is marked with it, so screen readers pronounce the slides correctly and browsers hyphenate them. It also picks the words mdeck itself shows the audience: the reader view's buttons, the deck's control bar, polls on the slide and on phones, and callout titles. English (`en`), German (`de`) and Arabic (`ar`) are built in; for any other language the words stay English. A regional code such as `de-CH` uses the German words.
 
 The presenter view, the launch page and the editor are tools for the author and always stay English.
 

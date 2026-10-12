@@ -5,7 +5,7 @@ import { paletteProblems, contrast } from '../src/extensions/contrast.js'
 import { buildAppearance, resolvePalette } from '../src/extensions/appearance.js'
 import { palettesFor } from '../src/extensions/tokens.js'
 
-const registry = loadRegistry('examples/poll/slides.md', { userRoot: null })
+const registry = loadRegistry('examples/showcase/slides.en.md', { userRoot: null })
 const palettes = manifestsOf(registry, 'palette')
 const themes = manifestsOf(registry, 'theme')
 // Stand-ins: a theme that offers only its own palette, one that starts dark.

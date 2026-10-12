@@ -5,6 +5,7 @@ meta:
   author: "Tilman Schieber"
   organization: "FHNW"
   date: "2026-10-06"
+bibliography: refs.bib
 ---
 
 ---
@@ -20,9 +21,11 @@ time: 1m
 ## A tour of mdeck: each slide shows *what is written* and what it becomes.
 
 :::notes
-This deck teaches mdeck by example. Most slides show the Markdown beside what it becomes. Open `slides.md` next to it: every slide here is written exactly as shown.
+This deck teaches mdeck by example. Most slides show the Markdown beside what it becomes. Open `slides.en.md` next to it: every slide here is written exactly as shown.
 
 Go through it with the arrow keys or the space bar. These notes are only for you; open the presenter view from the launch page to see them beside the slide.
+
+The tour also comes in German (`slides.de.md`) and Arabic (`slides.ar.md`). Start it with `mdeck run slides.en.md`, and **L** in the presenter view switches every window to the next language.
 :::
 
 ---
@@ -67,7 +70,7 @@ Three dashes on a line of their own start the next slide.
 :::notes
 `#` is the slide's heading. A blank line separates paragraphs.
 
-Try it: change a heading in `slides.md` and save. The slide updates while it is open.
+Try it: change a heading in `slides.en.md` and save. The slide updates while it is open.
 :::
 
 ---
@@ -316,6 +319,32 @@ The other callouts are `note`, `important` and `caution`. Add your own label aft
 
 ---
 :::meta
+layout: split
+time: 1m
+:::
+# Cite your sources
+:::slot left
+```markdown
+---
+bibliography: refs.bib
+---
+
+Recalling beats rereading
+[@roediger2006].
+```
+:::
+:::slot right
+Recalling beats rereading [@roediger2006].
+
+Lectures with active learning cut failure rates by a third [@freeman2014].
+:::
+
+:::notes
+`refs.bib` is a BibTeX file, as Zotero exports it; CSL-JSON and Hayagriva work too. Each slide lists its own references above the footer, and `<bibliography />` on a slide lists them all. `csl: vancouver` switches to numbers.
+:::
+
+---
+:::meta
 layout: chapter
 number: 3
 part: Presenting
@@ -360,7 +389,7 @@ time: 1m
 
 Press **D** now, or the pen button. Draw with a pen, a highlighter, or a marker that fades after a moment. **Escape** stops.
 
-Drawings are kept in `slides.drawings.json` beside the slides, and appear in the PDF.
+Drawings are kept in a `.drawings.json` file beside the slides, and appear in the PDF.
 
 :::notes
 The underline and the circle on this slide were drawn with the pen and saved; they show in every view and in the PDF.
@@ -422,7 +451,7 @@ Run `mdeck rehearse slides.md` to time the slides as you practise, then save the
 :::
 
 :::notes
-Every slide in this tour has a time, 19 minutes in all. Press T in the presenter view to start the timer: under it you see what is left of this slide and how the talk stands.
+Every slide in this tour has a time, 21 minutes in all. Press T in the presenter view to start the timer: under it you see what is left of this slide and how the talk stands.
 
 A rehearsal measures the times for you. At the end it offers them rounded to 15 seconds; change any of them before you save.
 :::
@@ -440,7 +469,34 @@ One line makes a poll; the heading is the question:
 
 `<poll room="tour" options="Writing|Layouts|Drawing|Polls" />`
 
-Phones join with the QR code. They can reach this computer when you start `mdeck run slides.md --network`. The poll example shows scales, word clouds and open questions.
+Phones join with the QR code. They can reach this computer when you start `mdeck run slides.md --network`.
+:::
+
+---
+:::meta
+layout: split
+time: 1m
+:::
+# One word from everyone
+:::slot left
+```markdown
+<wordcloud room="mood"
+  qr="false" />
+
+<scale room="pace" min="1" max="5"
+  low="Too slow" high="Too fast" />
+
+<question room="ask" />
+```
+:::
+:::slot right
+<wordcloud room="mood" placeholder="One word" qr="false" />
+:::
+
+:::notes
+Phones that joined with the poll's code stay in: `qr="false"` leaves the code out here. Answers appear as they come in.
+
+Besides polls and word clouds there are ratings (`<scale>`), numbers with a right answer (`<numeric>`) and open questions (`<question>`). With several of them, `<qrcode join />` on an early slide shows the code once. `mdeck run` keeps the answers in `slides.results.json` beside the deck.
 :::
 
 ---

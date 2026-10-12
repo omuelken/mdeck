@@ -17,7 +17,7 @@ test("pictures in a tag's attributes, such as a poll's options, are collected", 
 })
 
 test('embedding pictures leaves code examples as text', () => {
-  const deck = new URL('../examples/showcase/slides.md', import.meta.url).pathname
+  const deck = new URL('../examples/showcase/slides.en.md', import.meta.url).pathname
   const example = '````markdown\n:::meta\nimage: ./img/image.jpg\n:::\n![Map](./img/image.jpg)\n````'
   const source = `:::meta\nlayout: image-text\nimage: ./img/image.jpg\n:::\n# Pic\n\n${example}\n\n![Map](./img/image.jpg)\n`
   const out = maybeInlineAssets(source, deck, { inlineImages: true })
@@ -26,7 +26,7 @@ test('embedding pictures leaves code examples as text', () => {
 })
 
 test('SVG pictures that use theme colours are drawn inline, not embedded as files', () => {
-  const deck = new URL('../examples/showcase/slides.md', import.meta.url).pathname
+  const deck = new URL('../examples/showcase/slides.en.md', import.meta.url).pathname
   const svgs = themedSvgs(deck)
   assert.deepEqual(Object.keys(svgs), ['./img/mdeck.svg'])
   assert.match(svgs['./img/mdeck.svg'].markup, /^<svg[^>]*>[\s\S]*var\(--accent/)

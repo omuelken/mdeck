@@ -25,8 +25,8 @@ try {
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-layouts/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   browser = await launchChrome({ dir: temp, timeout: 45000 })
   const open = path => browser.open(path)
-  async function until(page, expression) {
-    if (!await page.waitFor(expression, { attempts: 150, interval: 50 })) throw new Error(`Condition did not become true: ${expression}`)
+  async function until(page, expression, { attempts = 150 } = {}) {
+    if (!await page.waitFor(expression, { attempts, interval: 50 })) throw new Error(`Condition did not become true: ${expression}`)
   }
   // Drawing starts with the laser; strokes need the pen. `doc` is the
   // document with the stage (the presenter view's frame).
@@ -753,7 +753,8 @@ try {
   await spotPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }))")
   await until(spotPresenter, `${spotFrame}.index === 1 && ${spotFrame}.zoom.scale === 1 && ${spotFrame}.hotspot === null`)
   await until(spotAudience, "document.querySelector('deck-stage').index === 1 && document.querySelector('deck-stage').zoom.scale === 1")
-  await until(spotPresenter, `${spotFrame}.hotspotMode === 'off' && ${spotFrame}.shadowRoot.querySelectorAll('.hotspot').length === 0`)
+  // Slow on a busy machine (CI): the keys go once the slide has settled.
+  await until(spotPresenter, `${spotFrame}.hotspotMode === 'off' && ${spotFrame}.shadowRoot.querySelectorAll('.hotspot').length === 0`, { attempts: 400 })
   // H switches them on for this talk; the slide's own false still wins.
   await spotPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'h' }))")
   await until(spotPresenter, "document.querySelector('.presenter-hotspots').getAttribute('aria-pressed') === 'false'")

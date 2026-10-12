@@ -41,7 +41,7 @@ test('stripActivities leaves a deck without activities, or of nothing else, as i
 })
 
 test('the examples stay valid without their activities, also with the notes stripped', () => {
-  for (const name of ['showcase/slides', 'python/slides.en', 'python/slides.de', 'python/slides.hi', 'python/slides.fa', 'poll/slides']) {
+  for (const name of ['showcase/slides.en', 'showcase/slides.de', 'showcase/slides.ar', 'python/slides.en', 'python/slides.de', 'python/slides.hi', 'python/slides.fa']) {
     const example = readFileSync(new URL(`../examples/${name}.md`, import.meta.url), 'utf8')
     const { source } = stripActivities(stripNotes(example))
     const after = parseSlides(source)

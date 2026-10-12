@@ -101,3 +101,12 @@ test('citations are put in place, a slide lists the works it cites, and unknown 
   assert.match(html, /@smith2020\?/)
   assert.match(html, /A note/)
 })
+
+test('a code block in one region leaves the next region prose, and stays code itself', async () => {
+  const { prepareSlide } = await server.ssrLoadModule('/src/layouts/layoutApi.jsx')
+  const slide = parseSlides(':::meta\nlayout: split\n:::\n# Notes\n:::slot left\n```markdown\nA claim[^1].\n```\n:::\n:::slot right\nA claim[^1].\n\n[^1]: The source.\n:::').slides[0]
+  const { regions, footnotesHtml } = prepareSlide({ ...slide, deckConfig: {} })
+  assert.match(regions.left.content, /A claim\[\^1\]\./, 'the code shows what is written')
+  assert.doesNotMatch(regions.right.content, /\[\^1\]/, 'the prose beside it gets its footnote')
+  assert.match(footnotesHtml, /The source/)
+})
