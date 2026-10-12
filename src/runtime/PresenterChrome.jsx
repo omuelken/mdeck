@@ -93,25 +93,26 @@ const PAIR = {
   remote: { icon: 'phone', label: 'Phone clicker', scan: "Scan with the phone's camera: a clicker opens there, with your notes, the time and big buttons." },
 }
 
-// Where the phones answer, from the launch page's check of the server: moved
-// here, beside who is connected, where the presenter looks during the talk.
+// Where the phones answer: the join link, a dot that is green while all is
+// well, and words only for what needs the presenter (from the launch page's
+// check of the server).
 function Polls({ live, recheck }) {
   const [copied, setCopied] = useState(false)
   const copy = () => navigator.clipboard?.writeText(live.joinUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500) }, () => {})
-  const pill = ok => ({ marginInlineStart: '6px', padding: '1px 8px', borderRadius: '999px', fontSize: '11px', color: ok ? '#81c995' : '#f28b82', border: `1px solid ${ok ? '#2c4a35' : '#5c2b28'}` })
+  const problem = live.server && !live.reachable ? `The poll server does not answer${live.error ? ` (${live.error})` : ''}.`
+    : !live.joinUrl ? <>Phones cannot reach this computer: start with <code>--network</code>, or set <code>server</code> in the deck.</>
+    : live.server && live.key && !live.keyAccepted ? 'The poll server does not accept this key: phones do not follow.'
+    : null
   return <PanelSection title="Polls" class="presenter-polls">
-    <span>{live.server
-      ? <><code>{live.server}</code><span style={pill(live.reachable)}>{live.reachable ? `reachable · ${live.ms} ms` : `not reachable · ${live.error}`}</span></>
-      : 'Answers go to this computer.'}</span>
-    {live.joinUrl
-      ? <span style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <a href={live.joinUrl} target="_blank" rel="noopener" style={{ color: '#ccc', wordBreak: 'break-all' }}><code>{live.joinUrl}</code></a>
-        <button type="button" class="presenter-copy-join" style={{ ...S.btn, padding: '2px 8px' }} onClick={copy}><Icon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copied' : 'Copy'}</button>
-      </span>
-      : <span style={{ color: '#f5a524' }}>Phones cannot reach this computer. Start with <code>--network</code>, or set <code>server</code> in the deck.</span>}
-    <span>Session code <code>{live.code}</code>, the same for every poll in this deck. The join button shows the code on the slide.</span>
-    {live.server && live.key && <span>Server key <span style={pill(live.keyAccepted)}>{live.keyAccepted ? 'accepted' : live.reachable ? 'not accepted' : 'not checked'}</span></span>}
-    <button type="button" class="presenter-recheck" style={{ ...S.btn, alignSelf: 'flex-start' }} onClick={recheck}><Icon name="reset" size={14} />Check again</button>
+    {live.joinUrl && <span style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: 0 }}>
+      <span aria-hidden="true" style={{ flexShrink: 0, width: '8px', height: '8px', borderRadius: '50%', background: problem ? '#f28b82' : '#81c995' }} />
+      <a href={live.joinUrl} target="_blank" rel="noopener" title="The join link for phones" style={{ color: '#ccc', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{live.joinUrl.replace(/^https?:\/\//, '')}</a>
+      <ToolButton class="presenter-copy-join" icon={copied ? 'check' : 'copy'} label={copied ? 'Copied' : 'Copy the join link'} size={15} style={{ minWidth: '30px', height: '30px', padding: 0, flexShrink: 0 }} onClick={copy} />
+    </span>}
+    {problem && <span style={{ display: 'flex', gap: '8px', alignItems: 'center', color: '#f28b82' }}>
+      <span style={{ flex: 1 }}>{problem}</span>
+      <ToolButton class="presenter-recheck" icon="reset" label="Check again" size={15} style={{ minWidth: '30px', height: '30px', padding: 0, flexShrink: 0 }} onClick={recheck} />
+    </span>}
   </PanelSection>
 }
 
@@ -137,9 +138,9 @@ export function Connections({ presence, phones, problem, audienceOpen, openAudie
   return <Popover class="presenter-connections" label="Connected screens and devices" trigger={trigger} alert={!!problem}>
     {problem && <p role="status" style={{ margin: 0, color: '#f28b82' }}>{problem}</p>}
     <PanelSection title="Connected">
-      {kinds.length === 0 && !phones && <span style={muted}>Only this view.</span>}
+      {kinds.length === 0 && !(presence?.phones > 0) && <span style={muted}>Only this view.</span>}
       {kinds.map(view => <span key={view}>{VIEW_NAME[view]} on {devicesText(views.filter(entry => entry.view === view))}</span>)}
-      {phones && <span>{phonesText(presence?.phones ?? 0)}</span>}
+      {phones && presence?.phones > 0 && <span>{phonesText(presence.phones)}</span>}
       <button type="button" class="presenter-audience" style={{ ...S.btn, alignSelf: 'flex-start' }} onClick={openAudience}>
         <Icon name="projector" size={16} />{audienceOpen ? 'Open the audience window again' : 'Open the audience window'}
       </button>
