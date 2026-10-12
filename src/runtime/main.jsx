@@ -592,7 +592,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
           <button class="presenter-notes" title="Notes (N)" aria-pressed={drawerOpen} style={{ ...pill, ...(drawerOpen ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={() => setDrawerOpen(open => !open)}>Notes</button>
           {canFullscreen && <button class="presenter-fullscreen" style={pill} title={fullscreenLabel} aria-label={fullscreenLabel} aria-pressed={isFullscreen} onClick={() => fullscreen.toggle()}><PresenterIcon name={fullscreenIcon} /></button>}
           <button style={pill} title="Speaker layout: slide, notes and next slide side by side" onClick={() => chooseLayout('speaker')}><PresenterIcon name="speaker" /></button>
-          {launchPage && <a class="presenter-home" href={launchPage} style={{ ...pill, textDecoration: 'none' }} title="Back to the launch page" aria-label="Back to the launch page"><PresenterIcon name="home" /></a>}
+          {launchPage && <a class="presenter-home" href={launchPage} style={{ ...pill, boxSizing: 'border-box', textDecoration: 'none' }} title="Back to the launch page" aria-label="Back to the launch page"><PresenterIcon name="home" /></a>}
         </div>
       )}
       <aside class="presenter-aside" style={{
@@ -616,7 +616,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {!slideLayout && canFullscreen && <button class="presenter-fullscreen" style={{ ...S.btn, padding: '3px 8px' }} title={fullscreenLabel} aria-label={fullscreenLabel} aria-pressed={isFullscreen} onClick={() => fullscreen.toggle()}><PresenterIcon name={fullscreenIcon} /></button>}
-            {!slideLayout && launchPage && <a class="presenter-home" href={launchPage} style={{ ...S.btn, padding: '3px 8px', textDecoration: 'none' }} title="Back to the launch page" aria-label="Back to the launch page"><PresenterIcon name="home" /></a>}
+            {!slideLayout && launchPage && <a class="presenter-home" href={launchPage} style={{ ...S.btn, boxSizing: 'border-box', padding: '3px 8px', textDecoration: 'none' }} title="Back to the launch page" aria-label="Back to the launch page"><PresenterIcon name="home" /></a>}
             {!slideLayout && <button class="presenter-layout" style={{ ...S.btn, padding: '3px 8px' }} title="Slide only, notes in a drawer (for an iPad)" onClick={() => chooseLayout('slide')}><PresenterIcon name="tablet" /></button>}
             <SlideJump index={index} total={slides.length} pad={2} onJump={i => navCommand('goTo', i)} style={{ color: '#666', fontVariantNumeric: 'tabular-nums' }} />
           </span>

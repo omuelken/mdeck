@@ -107,7 +107,7 @@ try {
   await projector.evaluate("document.querySelector('deck-stage').goTo(1)")
   await until(() => ipad.evaluate("document.querySelector('iframe')?.contentDocument?.querySelector('deck-stage')?.index === 1"), 'iPad follows projector')
   await until(() => ipad.evaluate("document.querySelector('iframe[title=\"Next slide preview\"]')?.contentDocument?.querySelector('deck-stage')?.index === 2"), 'iPad next-slide preview follows projector')
-  await until(() => ipad.evaluate("document.querySelector('.presenter-aside')?.textContent.includes('02 / 03')"), 'iPad sidebar follows projector')
+  await until(() => ipad.evaluate("document.querySelector('.presenter-aside .presenter-jump input')?.value === '02'"), 'iPad sidebar follows projector')
   await projector.evaluate("document.querySelector('deck-stage').next()")
   await until(() => ipad.evaluate("document.querySelector('iframe')?.contentDocument?.querySelector('deck-stage')?.state.step === 0"), 'iPad follows projector reveal')
   await ipad.evaluate("document.querySelector('iframe').contentDocument.querySelector('deck-stage').prev()")
