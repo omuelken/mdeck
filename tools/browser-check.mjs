@@ -343,6 +343,13 @@ try {
   await until(clickAudience, "document.querySelector('deck-stage')?.length === 3")
   await delay(400)
   assert.equal(await clicker.evaluate(`!!${clickFrame}.querySelector('.ink-toolbar-host') || ${clickFrame}.querySelector('deck-stage').hasAttribute('data-hotspot-badges')`), false, 'nothing to draw with on the clicker')
+  // The join code over the slide, from the clicker, on the projector too.
+  await until(clicker, "!!document.querySelector('.presenter-join')")
+  await clicker.evaluate("document.querySelector('.presenter-join').click()")
+  // Without --network the overlay says phones cannot reach this computer instead of a code.
+  await until(clickAudience, "!!document.querySelector('.join-overlay .poll-join-slide')")
+  await clicker.evaluate("document.querySelector('.presenter-join').click()")
+  await until(clickAudience, "!document.querySelector('.join-overlay')")
   const clickButton = label => `[...document.querySelectorAll('.presenter-slide-control')].find(b => b.getAttribute('aria-label')?.includes(${JSON.stringify(label)}))`
   await until(clicker, `!!${clickButton('Show the right answer')}`)
   await clicker.evaluate(`${clickButton('Show the right answer')}.click()`)
@@ -875,7 +882,7 @@ try {
   assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
   await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, the phone clicker with the slide\'s controls, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
+  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, the phone clicker with the slide\'s controls and the join code over the slide, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()

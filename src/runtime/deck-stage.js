@@ -539,6 +539,8 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       this._hotspotRaf = 0;
       // Black screen (B), part of the position every screen follows.
       this._blank = false;
+      // The join code over the slide (J), the same: shown on every screen.
+      this._join = false;
       // Overview (O): open or not, and the slide its cursor is on.
       this._overview = false;
       this._ovCursor = 0;
@@ -899,7 +901,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
 
     get state() {
       return { index: this._index, slideId: this._slides[this._index]?.dataset.slideId,
-        step: this._stepMap.get(this._index) ?? -1, blank: this._blank };
+        step: this._stepMap.get(this._index) ?? -1, blank: this._blank, join: this._join };
     }
 
     /** Whether the screen is black (B). Setting it tells the other screens. */
@@ -915,6 +917,22 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     _applyBlank(on) {
       this._blank = on;
       this.toggleAttribute('data-blank', on);
+      if (on && this._join) this._applyJoin(false);
+    }
+
+    /** Whether the join code shows over the slide (J). Setting it tells the other screens; main.jsx draws it. */
+    get join() { return this._join; }
+    setJoin(on, reason = 'api') {
+      on = !!on;
+      if (on === this._join) return;
+      this._applyJoin(on);
+      this._broadcastState(reason);
+    }
+    _applyJoin(on) {
+      this._join = on;
+      this.toggleAttribute('data-join', on);
+      if (on && this._blank) this._applyBlank(false);
+      this.dispatchEvent(new CustomEvent('joinchange', { detail: { join: on } }));
     }
 
     _broadcastState(reason) {
@@ -937,8 +955,10 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       // A position without `blank` (a follower paging on its own) leaves it.
       const blankChanged = typeof state.blank === 'boolean' && state.blank !== this._blank;
       if (blankChanged) this._applyBlank(state.blank);
+      const joinChanged = typeof state.join === 'boolean' && state.join !== this._join;
+      if (joinChanged) this._applyJoin(state.join);
       if (index === this._index) {
-        if (step === this.state.step) { if (blankChanged) this._broadcastState('sync'); return; }
+        if (step === this.state.step) { if (blankChanged || joinChanged) this._broadcastState('sync'); return; }
         if (this._hotspot) this.wholeSlide();
         this._stepMap.set(index, step);
         this._applySteps(index);
@@ -2038,8 +2058,9 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     goTo(i) { this._go(i, 'api'); }
     /** Advance: reveals next step if the current slide has unrevealed steps, else goes to next slide. */
     next(reason = 'api') {
-      // On a black screen, the next press shows the slide again first.
+      // On a black screen, the next press shows the slide again first; so with the join code.
       if (this._blank) { this.setBlank(false, reason); return; }
+      if (this._join) { this.setJoin(false, reason); return; }
       const steps = this._getSteps(this._slides[this._index]);
       const curr  = this._stepMap.get(this._index) ?? -1;
       if (steps.length > 0 && curr < steps.length - 1) {
@@ -2056,6 +2077,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     /** Go back: hides last revealed step if any, else goes to previous slide. */
     prev(reason = 'api') {
       if (this._blank) { this.setBlank(false, reason); return; }
+      if (this._join) { this.setJoin(false, reason); return; }
       const steps = this._getSteps(this._slides[this._index]);
       const curr  = this._stepMap.get(this._index) ?? -1;
       if (steps.length > 0 && curr >= 0) {

@@ -120,17 +120,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--home-focus); ou
 .home-line { margin-left: auto; flex: none; color: var(--home-faint); font-size: 12px; }
 
 /* ── Live polls ───────────────────────────────────────────────────────── */
-.home-live { display: grid; gap: 10px; margin: 0; }
-.home-live > div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; align-items: baseline; }
-.home-live dt { color: var(--home-muted); font-size: 12px; }
-.home-live dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; font-size: 13px; }
-.home-live dd > p { flex-basis: 100%; margin: 0; color: var(--home-muted); font-size: 12px; }
-.home-live code { overflow-wrap: anywhere; }
-.home-live a { color: var(--home-ink); }
-.home-code { padding: 1px 6px; border: 1px solid var(--home-control); border-radius: 4px; background: var(--home-button); color: var(--home-strong); }
-.home-pill { display: inline-block; padding: 0 8px; border: 1px solid var(--home-control); border-radius: 999px; font-size: 11px; color: var(--home-muted); }
-.home-pill.is-ok { border-color: #2c4a35; color: var(--home-ok); }
-.home-pill.is-bad { border-color: #5c2b28; color: var(--home-bad); }
 
 @media (max-width: 760px) {
   .home > :not(.home-header) { padding-left: 12px; padding-right: 12px; }
@@ -139,7 +128,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--home-focus); ou
   .home-output { flex-wrap: wrap; }
   .home-output-actions { width: 100%; justify-content: flex-start; }
   .home-status { text-align: left; min-width: 0; }
-  .home-live > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
 
 

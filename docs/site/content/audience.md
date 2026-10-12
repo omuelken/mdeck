@@ -114,6 +114,8 @@ Each question shows the QR code unless you say otherwise. To invite everybody on
 
 `<qrcode join />` shows the presentation's join code large, with the link below it. Phones that scanned it follow along to every question. With `qr="false"`, a question leaves out its own code. Leave the join slide up for a while, or come back to it, for people who arrive late. `size` sets the size of the code on the join slide.
 
+You need no join slide at all: the join button in the presenter view (the QR-code icon, or **J**) shows the join code large over whatever slide is up, on the projector and every other screen. Press it again, or go on, and the slide is back. The presenter view's connection icons show the join link to copy, the session code, and whether phones can reach the poll server.
+
 The code is drawn in the slide's colours, so it fits the theme; phone cameras also read light codes on dark slides.
 
 ### Follow the slides on a phone

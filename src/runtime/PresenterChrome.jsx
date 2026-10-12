@@ -93,6 +93,28 @@ const PAIR = {
   remote: { icon: 'phone', label: 'Phone clicker', scan: "Scan with the phone's camera: a clicker opens there, with your notes, the time and big buttons." },
 }
 
+// Where the phones answer, from the launch page's check of the server: moved
+// here, beside who is connected, where the presenter looks during the talk.
+function Polls({ live, recheck }) {
+  const [copied, setCopied] = useState(false)
+  const copy = () => navigator.clipboard?.writeText(live.joinUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500) }, () => {})
+  const pill = ok => ({ marginInlineStart: '6px', padding: '1px 8px', borderRadius: '999px', fontSize: '11px', color: ok ? '#81c995' : '#f28b82', border: `1px solid ${ok ? '#2c4a35' : '#5c2b28'}` })
+  return <PanelSection title="Polls" class="presenter-polls">
+    <span>{live.server
+      ? <><code>{live.server}</code><span style={pill(live.reachable)}>{live.reachable ? `reachable · ${live.ms} ms` : `not reachable · ${live.error}`}</span></>
+      : 'Answers go to this computer.'}</span>
+    {live.joinUrl
+      ? <span style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <a href={live.joinUrl} target="_blank" rel="noopener" style={{ color: '#ccc', wordBreak: 'break-all' }}><code>{live.joinUrl}</code></a>
+        <button type="button" class="presenter-copy-join" style={{ ...S.btn, padding: '2px 8px' }} onClick={copy}><Icon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copied' : 'Copy'}</button>
+      </span>
+      : <span style={{ color: '#f5a524' }}>Phones cannot reach this computer. Start with <code>--network</code>, or set <code>server</code> in the deck.</span>}
+    <span>Session code <code>{live.code}</code>, the same for every poll in this deck. The join button shows the code on the slide.</span>
+    {live.server && live.key && <span>Server key <span style={pill(live.keyAccepted)}>{live.keyAccepted ? 'accepted' : live.reachable ? 'not accepted' : 'not checked'}</span></span>}
+    <button type="button" class="presenter-recheck" style={{ ...S.btn, alignSelf: 'flex-start' }} onClick={recheck}><Icon name="reset" size={14} />Check again</button>
+  </PanelSection>
+}
+
 const VIEW_NAME = { presenter: 'Presenter view', audience: 'Audience window', deck: 'Deck window' }
 
 /**
@@ -122,6 +144,7 @@ export function Connections({ presence, phones, problem, audienceOpen, openAudie
         <Icon name="projector" size={16} />{audienceOpen ? 'Open the audience window again' : 'Open the audience window'}
       </button>
     </PanelSection>
+    {info?.live && phones && <Polls live={info.live} recheck={reload} />}
     {info?.pairing && <PanelSection title="Pair a device" class="presenter-pairing">
       {!info.pairing.available
         ? <span style={muted}>Start <code>mdeck run</code> with <code>--network</code> so an iPad or a phone in the same network can reach it, or with <code>--server</code>.</span>

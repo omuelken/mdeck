@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import mark from '../../assets/logo/mark.svg'
 import { Icon } from '../components/Icon.jsx'
 import { ConnectedViews } from '../components/ConnectedViews.jsx'
-import { devicesText, phonesText } from '../live/presence.js'
+import { devicesText } from '../live/presence.js'
 import { devPath } from '../core/devPath.js'
 
 // Where the dev server serves from: / normally, /t/<id>/ with `mdeck run --server`.
@@ -170,13 +170,6 @@ function Diagnostics({ diagnostics, name }) {
   </ul>
 }
 
-function CopyButton({ text, label = 'Copy' }) {
-  const [copied, setCopied] = useState(false)
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1400) } catch {}
-  }
-  return <button class="home-btn home-btn--small" onClick={copy}><HomeIcon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copied' : label}</button>
-}
 
 // One session pairs the presenter view with the audience window, so both
 // links on this page drive each other.
@@ -215,51 +208,6 @@ function Answers({ results, file, onRefresh }) {
 // For decks with a `server` setting: the server's health, the viewers' link
 // and the key (MDECK_SERVER_KEY) that lets a browser steer phones and reset
 // polls.
-function LivePolls({ live, presence, onRecheck }) {
-  const presenterUrl = `${BASE}?view=presenter&session=${SESSION}${live.key ? `&serverkey=${encodeURIComponent(live.key)}` : ''}`
-  const keyState = !live.key ? null : live.keyAccepted ? ['is-ok', 'Accepted by the server'] : live.reachable ? ['is-bad', 'Not accepted by the server'] : ['is-idle', 'Not checked']
-  return <section class="home-section">
-    <div class="home-section-head">
-      <h2>Polls</h2>
-      <button class="home-btn home-btn--small" onClick={onRecheck}>Check again</button>
-    </div>
-    <dl class="home-live">
-      <div>
-        <dt>Server</dt>
-        <dd>
-          {live.server
-            ? <><code>{live.server}</code><span class={`home-pill ${live.reachable ? 'is-ok' : 'is-bad'}`}>{live.reachable ? `Reachable · ${live.ms} ms` : `Not reachable · ${live.error}`}</span></>
-            : <span>Built into this dev server</span>}
-        </dd>
-      </div>
-      <div>
-        <dt>Join link for phones</dt>
-        <dd>
-          {live.joinUrl
-            ? <><a href={live.joinUrl} target="_blank" rel="noopener"><code>{live.joinUrl}</code></a> <CopyButton text={live.joinUrl} /></>
-            : <>
-              <p class="home-note">Phones cannot reach this computer. Start with <code>--network</code>, or set <code>server</code> in the deck.</p>
-              {live.localJoinUrl && <p><a href={live.localJoinUrl} target="_blank" rel="noopener">Try the answer page here</a> <span>in another browser tab or window.</span></p>}
-            </>}
-          <p>Session code <code class="home-code">{live.code}</code>, the same for every poll in this deck.</p>
-          {presence && <p>{presence.phones ? `${phonesText(presence.phones)} connected now.` : 'No phones connected yet.'}</p>}
-        </dd>
-      </div>
-      {live.server && <div>
-        <dt>Server key</dt>
-        <dd>
-          {live.key
-            ? <>
-              <code class="home-code">{live.key}</code> <CopyButton text={live.key} />
-              <span class={`home-pill ${keyState[0]}`}>{keyState[1]}</span>
-              <p>The presenter view and audience window buttons above carry it. Or open <a href={presenterUrl} target="_blank" rel="noopener">the presenter view with the key</a>.</p>
-            </>
-            : <p>Start <code>mdeck run</code> with <code>MDECK_SERVER_KEY</code> set to the server's key to see it here.</p>}
-        </dd>
-      </div>}
-    </dl>
-  </section>
-}
 
 export function Home() {
   const [info, setInfo] = useState(null)
@@ -336,7 +284,7 @@ export function Home() {
         </div>
       </section>
 
-      <section class={`home-section${info.live ? '' : ' home-section--wide'}`}>
+      <section class="home-section home-section--wide">
         <h2>Write and learn</h2>
         <div class="home-tiles">
           <ServiceTile icon="editor" title="Visual editor" text="Forms and a live preview; saves into the file and keeps a backup." action="editor" url={info.services.editor} onError={setError} onStarted={load} />
@@ -345,7 +293,6 @@ export function Home() {
         </div>
       </section>
 
-      {info.live && <LivePolls live={info.live} presence={presence} onRecheck={load} />}
 
       {info.results?.length > 0 && <Answers results={info.results} file={info.name.replace(/\.md$/i, '') + '.results.json'} onRefresh={load} />}
 

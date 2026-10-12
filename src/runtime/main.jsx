@@ -39,6 +39,7 @@ import { useTalkTimer } from './useTalkTimer.js'
 import { devPath } from '../core/devPath.js'
 import { setView } from './shared.js'
 import { watchSlideControls, pressSlideControl } from './slideControls.js'
+import QrCodeTag from '../components/QrCodeTag.jsx'
 import { ToolButton, Popover, PanelSection, SlideControls, Connections, tool } from './PresenterChrome.jsx'
 import mdeckMark from '../../assets/logo/mark.svg'
 import { RehearsalSummary } from './RehearsalSummary.jsx'
@@ -327,6 +328,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [inking, setInking] = useState(false)
   // Black screen (B): the audience's screens are black, this view veils its slide.
   const [blank, setBlank] = useState(false)
+  // The join code over the slide (J), on every screen.
+  const [join, setJoin] = useState(false)
   // The phone clicker: the slide's controls, as its frame reports them (slideControls.js).
   const [slideControls, setSlideControls] = useState({ items: [], hotspots: 0, hotspot: null })
   // The overview (O) in this view's slide frame: keys go to it while it is open.
@@ -510,6 +513,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       atEndRef.current = !!data.atEnd
       setIndex(i)
       setBlank(!!state.blank)
+      setJoin(!!state.join)
       if (data.reason !== 'sync') {
         bcRef.current?.postMessage({ deckControl: { command: 'setState', value: state, order: orderRef.current.stamp() } })
       }
@@ -547,6 +551,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleHotspots(); return }
       // B, or a clicker's blank button (a full stop).
       if (e.key === 'b' || e.key === 'B' || e.key === '.') { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'blank', 'toggle'); return }
+      if ((e.key === 'j' || e.key === 'J') && (hasActivities() || reactionsOf(firstConfig))) { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'join', 'toggle'); return }
       // Digits zoom to hotspots; Escape zooms out.
       if (/^[0-9]$/.test(e.key) || e.key === 'Escape') { if (e.key !== 'Escape') e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'hotspotKey', e.key); return }
       if (!cmd) return
@@ -707,6 +712,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   </>
   const drawButton = <ToolButton class="presenter-draw" icon="pen" label="Draw on the slide (D)" pressed={inking} style={inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : undefined} onClick={() => sendTo(frame(), 'ink', 'toggle')} />
   const blankButton = <ToolButton class="presenter-blank" icon="blank" label={blankLabel} pressed={blank} onClick={toggleBlank} />
+  // Only where phones join: decks with activities or reactions.
+  const joinButton = (hasActivities() || reacting) && <ToolButton class="presenter-join" icon="join" label={join ? 'Hide the join code (J)' : 'Show the join code on the slide (J)'} pressed={join} onClick={() => sendTo(frame(), 'join', 'toggle')} />
   const overviewButton = <ToolButton class="presenter-overview" icon="overview" label="All slides (O)" pressed={overviewOpen} onClick={toggleOverview} />
   const hotspotsButton = <ToolButton class="presenter-hotspots" icon="hotspots" label={hotspotsOn ? 'Hotspots on: 1–9 zoom in (H)' : 'Hotspots off (H)'} pressed={hotspotsOn} onClick={toggleHotspots} />
   const fullscreenButton = canFullscreen && <ToolButton class="presenter-fullscreen" icon={fullscreenIcon} label={fullscreenLabel} pressed={isFullscreen} onClick={() => fullscreen.toggle()} />
@@ -789,7 +796,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <div class="presenter-remote-bar" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ color: '#888', whiteSpace: 'nowrap' }} />
           <span style={{ flex: 1 }} />
-          {finishButton}{timerChip}{blankButton}{connections}{settings}
+          {finishButton}{timerChip}{joinButton}{blankButton}{connections}{settings}
         </div>
         <div style={{ position: 'relative', flexShrink: 0, width: '100%', maxHeight: '32dvh', aspectRatio: '16/9', margin: '0 auto', borderRadius: '8px', overflow: 'hidden', border: '1px solid #2a2a2a', background: '#000' }}>
           <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ width: '100%', height: '100%', border: '0', display: 'block' }} />
@@ -842,7 +849,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ padding: '0 4px', color: '#888' }} />
         {finishButton}{timerChip}
         {separator}{nav}
-        {separator}{drawButton}{blankButton}{overviewButton}{hotspotsButton}
+        {separator}{drawButton}{blankButton}{joinButton}{overviewButton}{hotspotsButton}
         {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}{slideBar(false)}</>}
         {separator}
         <ToolButton class="presenter-notes" icon="file-text" label="Notes and the next slide (N)" pressed={drawerOpen} onClick={() => setDrawerOpen(open => !open)} />
@@ -860,7 +867,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ flex: 1, minHeight: 0, width: '100%', border: '0', display: 'block' }} />
         <div class="presenter-toolbar" role="toolbar" aria-label="Presenter" style={{ ...font, display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', padding: '8px 12px', borderTop: '1px solid #2a2a2a', background: '#111' }}>
           {nav}
-          {separator}{drawButton}{blankButton}{overviewButton}{hotspotsButton}{fullscreenButton}
+          {separator}{drawButton}{blankButton}{joinButton}{overviewButton}{hotspotsButton}{fullscreenButton}
           {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}<span style={{ ...S.label, marginBottom: 0, marginInlineEnd: '4px' }}>This slide</span>{slideBar(false)}</>}
           <span style={{ flex: 1 }} />
           <ToolButton class="presenter-help" icon="guides" label="All keys (?)" onClick={() => setHelpOpen(open => !open)} />
@@ -870,6 +877,27 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       {extras}
     </div>
   )
+}
+
+// The join code over the slide (J in the presenter view): the room scans it
+// from the projector, a phone following the talk shows it too. A click on it,
+// or the next step, hides it again where the screen is not only watching.
+function JoinOverlay({ stage }) {
+  const [on, setOn] = useState(stage.join)
+  useEffect(() => {
+    const follow = () => setOn(stage.join)
+    stage.addEventListener('joinchange', follow)
+    return () => stage.removeEventListener('joinchange', follow)
+  }, [])
+  if (!on) return null
+  const size = Math.round(Math.min(window.innerHeight * 0.55, window.innerWidth * 0.5, 520))
+  return <div class="join-overlay export-hidden" role="dialog" aria-label={t('join.scan')}
+    onClick={() => { if (!stage.hasAttribute('data-watching')) stage.setJoin(false, 'click') }}
+    style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.72)' }}>
+    <div style={{ background: '#fff', color: '#111', borderRadius: '18px', padding: '24px 32px', '--qr-ink': '#000', '--qr-bg': '#fff', '--ink': '#111', '--muted': '#555' }}>
+      <QrCodeTag join size={String(size)} />
+    </div>
+  </div>
 }
 
 // Renders (or re-renders) the deck stage. Slides are keyed by id so an edit to
@@ -995,6 +1023,7 @@ async function init() {
     else if (ctrl.command === 'overview') stage.overview = ctrl.value === 'toggle' ? !stage.overview : !!ctrl.value
     else if (ctrl.command === 'overviewKey' && typeof ctrl.value === 'string') stage.overviewKey(ctrl.value)
     else if (ctrl.command === 'blank') stage.setBlank(ctrl.value === 'toggle' ? !stage.blank : !!ctrl.value, 'keyboard')
+    else if (ctrl.command === 'join') stage.setJoin(ctrl.value === 'toggle' ? !stage.join : !!ctrl.value, 'keyboard')
   }
 
   // The same slide and step in another language, its words and mdeck's own;
@@ -1058,6 +1087,13 @@ async function init() {
 
   // Drawing (D) in the full-screen deck and the presenter's main frame.
   const inkStage = document.querySelector('deck-stage')
+  // The join code over the slide, on every screen but the next-slide preview.
+  if (inkStage && !(embedded && !drawHere)) {
+    const host = document.createElement('div')
+    host.className = 'join-overlay-host'
+    document.body.appendChild(host)
+    render(<JoinOverlay stage={inkStage} />, host)
+  }
   // Main slide frames and audience windows both send and follow navigation.
   // Share their position connection with ink; previews stay on local channels.
   if (inkStage && (drawHere || audienceMode)) {
@@ -1146,6 +1182,7 @@ async function init() {
     onStagePosition(position => {
       if (position.lang) switchLanguage(position.lang, { announce: false })
       if (typeof position.blank === 'boolean') inkStage.setBlank(position.blank, 'sync')
+      if (typeof position.join === 'boolean') inkStage.setJoin(position.join, 'sync')
     })
     startFollowing(inkStage, { onStagePosition, words: { live: t('follow.live'), back: t('follow.back'), waiting: t('follow.waiting') } })
     watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true, view: 'phone' })] })
