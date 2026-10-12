@@ -13,11 +13,12 @@ import { pairToken, pairHeaders } from './pairing.js'
 import { keptAnswers, answersAsMessages } from '../core/results.js'
 import { devPath } from '../core/devPath.js'
 import { t, deckLanguage } from '../core/labels.js'
+import { reactionsOf, REACTIONS_ROOM } from '../core/reactions.js'
 
 // The QR code component the built-in poll uses, for your own activities.
 export { default as QrCode } from '../components/QrCode.jsx'
 
-let settings = { server: null, code: '000000' }
+let settings = { server: null, code: '000000', reactions: null }
 
 // Called by the runtime with the deck settings.
 // `mdeck run --server <address>` and MDECK_SERVER name the server without the
@@ -26,7 +27,7 @@ const givenServer = typeof __MDECK_SERVER__ === 'string' ? __MDECK_SERVER__ : nu
 
 export function configureLive(deckConfig = {}) {
   const server = givenServer ?? deckConfig.server
-  settings = { server: typeof server === 'string' ? server.replace(/\/+$/, '') : null, code: sessionCode(deckConfig) }
+  settings = { server: typeof server === 'string' ? server.replace(/\/+$/, '') : null, code: sessionCode(deckConfig), reactions: reactionsOf(deckConfig) }
   infoRequest = null
   takeKeyFromAddress()
 }
@@ -211,6 +212,22 @@ export function useRoom(room) {
   return { messages: kept ? answersAsMessages(kept.answers) : messages, reset, state, setState, present, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
 }
 
+/**
+ * Reactions sent from the phones, for the presenter's screen:
+ * `onReaction({ value, at, n })` for each one as it arrives. Returns a
+ * function that stops listening. Nothing happens without a room server.
+ */
+export function listenToReactions(onReaction) {
+  if (typeof EventSource === 'undefined') return () => {}
+  const source = new EventSource(`${roomPath(REACTIONS_ROOM)}/events`)
+  source.addEventListener('message', event => {
+    const message = JSON.parse(event.data)
+    const value = message.data?.value
+    if (typeof value === 'string' && settings.reactions?.includes(value)) onReaction({ value, at: message.at, n: message.n })
+  })
+  return () => source.close()
+}
+
 /** The deck's join link alone, for a slide that only invites people in (<qrcode join />). */
 export function useJoinLink() {
   const [info, setInfo] = useState({})
@@ -259,7 +276,7 @@ export function captureLook(doc = lookSource()) {
 
 // The words the answer page shows, in the deck's language.
 const phoneWords = () => ({
-  waiting: t('respond.waiting'), pick: t('poll.pick'), thanks: t('poll.thanks'), send: t('respond.send'), sent: t('respond.sent'), follow: t('follow.open'),
+  waiting: t('respond.waiting'), pick: t('poll.pick'), thanks: t('poll.thanks'), send: t('respond.send'), sent: t('respond.sent'), follow: t('follow.open'), react: t('respond.react'),
   pickSeveral: t('poll.pickSeveral'), thanksSeveral: t('poll.thanksSeveral'), several: t('poll.several'),
   closed: t('respond.closed'), right: t('respond.right'), wrong: t('respond.wrong'), solution: t('respond.solution'),
   number: t('numeric.placeholder'), invalid: t('numeric.invalid'), numberSent: t('numeric.sent'),
@@ -304,7 +321,9 @@ async function sendCurrent() {
   if (look) lastLook = look
   // Phones that answer can also follow the slides, where that works.
   const follow = followUrl(info)
-  const state = { ...current, look: lastLook, lang: deckLanguage(), labels: phoneWords(), ...(follow ? { follow } : {}) }
+  // The reactions the phones offer, whatever is on the slide.
+  const reactions = settings.reactions ? { reactions: settings.reactions } : {}
+  const state = { ...current, look: lastLook, lang: deckLanguage(), labels: phoneWords(), ...reactions, ...(follow ? { follow } : {}) }
   try {
     const response = await fetch(`${controlSessionPath()}/state`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state }) })
     const body = response.ok ? await response.json().catch(() => ({})) : {}

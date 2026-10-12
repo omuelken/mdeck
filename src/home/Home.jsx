@@ -183,6 +183,36 @@ function CopyButton({ text, label = 'Copy' }) {
 // links on this page drive each other.
 const SESSION = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)
 
+// The answers kept in the talk: each question with how it came out, and
+// the files to save them as (the same as `mdeck results`).
+function Answers({ results, file, onRefresh }) {
+  const href = format => `${devPath('__mdeck/home/results')}?format=${format}`
+  return <section class="home-section home-section--wide home-answers">
+    <div class="home-section-head">
+      <h2>Answers from the talk</h2>
+      <button class="home-btn home-btn--small" onClick={onRefresh}>Refresh</button>
+    </div>
+    <ul class="home-outputs">
+      {results.map(question => {
+        const { counts = [], voted, phones, average } = question.summary
+        const top = counts.slice(0, 3).map(row => `${row.answer} ${row.count}`).join(' · ')
+        return <li class="home-output" key={question.room}>
+          <div class="home-output-body">
+            <strong>{question.slide ? `Slide ${question.slide}: ` : ''}{question.question || question.room}</strong>
+            <span>{phones === 1 ? '1 phone' : `${phones} phones`}{voted != null && voted !== phones ? `, ${voted} counted` : ''}{question.closed ? ', closed' : ''}{average != null ? ` · average ${average}` : ''}{top ? ` · ${top}` : ''}</span>
+          </div>
+        </li>
+      })}
+    </ul>
+    <div class="home-answer-files">
+      <a class="home-btn home-btn--primary" href={href('csv')} download><HomeIcon name="download" size={15} />Answers (CSV)</a>
+      <a class="home-btn" href={href('summary')} download><HomeIcon name="download" size={15} />Summary (CSV)</a>
+      <a class="home-btn" href={href('json')} download><HomeIcon name="download" size={15} />Everything (JSON)</a>
+    </div>
+    <p class="home-hint">Kept in <code>{file}</code> beside the deck while <code>mdeck run</code> runs; phones are numbered per question, never named.</p>
+  </section>
+}
+
 // For decks with a `server` setting: the server's health, the viewers' link
 // and the key (MDECK_SERVER_KEY) that lets a browser steer phones and reset
 // polls.
@@ -232,7 +262,7 @@ function LivePolls({ live, presence, onRecheck }) {
   </section>
 }
 
-// Presenting from an iPad: a one-time QR code opens the presenter view there,
+// Presenting from an iPad or a phone (as a remote): a one-time QR code opens the presenter view there,
 // paired with this server so it may save ink and steer the projector, which
 // shows the audience window on this computer.
 function Tablet({ pairing, relay, presence, onChange, onError }) {
@@ -242,7 +272,7 @@ function Tablet({ pairing, relay, presence, onChange, onError }) {
   const unpair = () => api('/action', { action: 'unpair' }).then(() => { setUrl(null); onChange() }).catch(error => onError(error.message))
   return <section class="home-section home-tablet">
     <div class="home-section-head">
-      <h2>Present from an iPad</h2>
+      <h2>Present from an iPad or a phone</h2>
       {pairing.devices > 0 && <button class="home-btn home-btn--small" onClick={unpair}>Unpair {pairing.devices === 1 ? 'the device' : `${pairing.devices} devices`}</button>}
     </div>
     {relay && <p class={`home-note home-relay home-relay--${relay.state}`}>{relay.state === 'up' ? 'Connected to your server: the iPad can reach this computer from any network.' : relay.state === 'refused' ? `Connecting to the server failed: ${relay.reason}` : relay.state === 'down' ? 'Lost the connection to the server; reconnecting…' : 'Connecting to your server…'}</p>}
@@ -253,13 +283,13 @@ function Tablet({ pairing, relay, presence, onChange, onError }) {
         ? <div class="home-pair">
           <QrCode url={url} size="180" />
           <div>
-            <p>Scan this with the iPad's camera. It opens the presenter view there, where you draw and go through the slides.</p>
+            <p>Scan this with the iPad's camera. It opens the presenter view there, where you draw and go through the slides. A phone gets a remote instead: the notes, the timer and big buttons to go on and back.</p>
             <p>Show the <a href={`${BASE}?view=audience&session=${SESSION}`} target="_blank" rel="noopener">audience window</a> on the projector from this computer: it follows the iPad.</p>
             <p class="home-note">The code works once, for ten minutes. {pairing.devices > 0 ? `${pairing.devices} paired so far.` : ''}</p>
           </div>
         </div>
         : <>
-          <p>The iPad opens the same presenter view as this computer, laid out for its screen: you draw and go through the slides there while this computer drives the projector. Drawings are saved in the drawings file beside the deck.</p>
+          <p>The iPad opens the same presenter view as this computer, laid out for its screen: you draw and go through the slides there while this computer drives the projector. Drawings are saved in the drawings file beside the deck. A phone becomes a remote, with your notes and the timer in your hand.</p>
           <p class="home-note">Pairing is what lets the iPad save drawings and steer the audience window here. Other devices in the network can open the presenter view too, but only watch.</p>
           <button class="home-btn" onClick={offer}>Show pairing code</button>
           {pairing.devices > 0 && <p class="home-note">{pairing.devices === 1 ? 'One device' : `${pairing.devices} devices`} paired.</p>}
@@ -347,6 +377,8 @@ export function Home() {
       </section>
 
       {info.live && <LivePolls live={info.live} presence={presence} onRecheck={load} />}
+
+      {info.results?.length > 0 && <Answers results={info.results} file={info.name.replace(/\.md$/i, '') + '.results.json'} onRefresh={load} />}
 
       {info.pairing && <Tablet pairing={info.pairing} relay={info.relay} presence={presence} onChange={load} onError={setError} />}
 

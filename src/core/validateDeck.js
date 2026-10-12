@@ -6,6 +6,7 @@ import { resolveLayoutProps, propertyErrors } from '../layouts/layoutProps.js'
 import { movedHint } from '../extensions/moved.js'
 import { paramValue } from '../extensions/params.js'
 import { parseTime } from './timing.js'
+import { reactionsProblem } from './reactions.js'
 
 // Hotspots (runtime/hotspots.js): the deck's setting and a slide's own.
 const HOTSPOT_SETTINGS = ['auto', 'marked', 'off', true, false]
@@ -56,6 +57,7 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
   }
   if (config.hotspots != null && !HOTSPOT_SETTINGS.includes(config.hotspots)) add('invalid-config', 'hotspots must be auto, marked, off, true or false', deck.configSource?.start)
   if (config.time != null && parseTime(config.time) == null) add('invalid-config', TIME_HINT(config.time), deck.configSource?.start)
+  if (reactionsProblem(config.reactions)) add('invalid-config', reactionsProblem(config.reactions), deck.configSource?.start)
   const enums = { organization: ['title', 'all', 'none'], author: ['title', 'all', 'none'], numbers: ['slides', 'all', 'none'], sections: ['all', 'none'] }
   const switches = ['citations']
   if (isPlainObject(config.show)) {

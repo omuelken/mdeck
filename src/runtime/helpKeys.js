@@ -11,12 +11,14 @@
 // on, which a slide's own setting can overrule; `inking` whether drawing is
 // on; `canDraw` whether D works in this window; `fullscreen` whether F does;
 // `drawer` whether N does (the presenter view's slide-only layout);
-// `languages` whether L does; `mac` names the command key ⌘ instead of Ctrl.
+// `languages` whether L does; `blank` whether the screen is black (B);
+// `overview` whether the grid of all slides (O) is open;
+// `mac` names the command key ⌘ instead of Ctrl.
 // Returns groups: [{ title, keys: [{ keys: ['→', 'Space'], label }] }].
 
 export const HELP_KEY = '?'
 
-export function keyHelp({ view = 'deck', hotspots = false, hotspotSwitch = hotspots, inking = false, canDraw = true, fullscreen = false, drawer = false, languages = false, mac = false } = {}) {
+export function keyHelp({ view = 'deck', blank = false, overview = false, hotspots = false, hotspotSwitch = hotspots, inking = false, canDraw = true, fullscreen = false, drawer = false, languages = false, mac = false } = {}) {
   const presenter = view === 'presenter'
   const command = mac ? '⌘' : 'Ctrl'
   const entry = (keys, label) => ({ keys, label })
@@ -32,6 +34,8 @@ export function keyHelp({ view = 'deck', hotspots = false, hotspotSwitch = hotsp
 
   groups.push({ title: 'Presenting', keys: [
     ...(presenter ? [entry(['T'], 'Start or pause the timer')] : []),
+    entry(['O'], overview ? 'Close the overview' : 'All slides, to pick one'),
+    entry(['B', '.'], blank ? 'Show the slide again' : 'Black screen for the audience'),
     ...(presenter && drawer ? [entry(['N'], 'Show or hide the notes')] : []),
     ...(presenter ? [entry(['H'], hotspotSwitch ? 'Turn hotspots off' : 'Turn hotspots on')] : []),
     ...(presenter && languages ? [entry(['L'], 'Next language')] : []),
@@ -40,7 +44,13 @@ export function keyHelp({ view = 'deck', hotspots = false, hotspotSwitch = hotsp
     ...(fullscreen ? [entry(['F'], 'Full screen')] : []),
   ] })
 
-  if (hotspots) groups.push({ title: 'Hotspots', keys: [
+  if (overview) groups.push({ title: 'All slides', keys: [
+    entry(['←', '→', '↑', '↓'], 'Move between the slides'),
+    entry(['Enter'], 'Go to that slide'),
+    entry(['O', 'Esc'], 'Back to the slide shown'),
+  ] })
+
+  if (hotspots && !overview) groups.push({ title: 'Hotspots', keys: [
     entry(['1–9'], 'Zoom to a part of the slide'),
     entry(['0', 'Esc'], 'Show the whole slide'),
   ] })

@@ -57,6 +57,8 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | Home | Go to the first slide |
 | End | Go to the last slide when the slide view has focus |
 | R | Start again and clear the reveals |
+| B or . | Make the audience's screen black, and show the slide again (see below) |
+| O | Show all slides in a grid, to pick one (see below) |
 | D | Start or stop drawing on the slide ([Draw on your slides](drawing.html)) |
 | I | Hide or show the drawings |
 | F | Full screen, where the browser allows it |
@@ -67,6 +69,20 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | H | Turn hotspots on or off for this talk, in the presenter view |
 | T | Start or pause the timer, in the presenter view |
 | ? | Show the keys that work at this moment, over the slide; **?** again or Escape closes the list |
+
+## Use your phone as a remote
+
+Pair your phone like an iPad: start `mdeck run my-talk.md --network`, choose **Show pairing code** under **Present from an iPad or a phone** on the launch page, and scan the code with the phone's camera. On a phone the presenter view becomes a remote: the slide small at the top, the next slide's heading, the time, your notes in large print, and big **Previous** and **Next** buttons where your thumb is. The button with the crossed-out screen makes the audience's screen black. The audience window on the laptop follows the phone. Where the browser allows it (`https://`, or a page on the laptop itself), the phone's screen stays on during the talk.
+
+The remote is a layout of the presenter view: the button with the phone, at the top of the speaker layout, switches any presenter view to it, and the tablet button in the remote switches back to the slide alone. Each device remembers its layout.
+
+## Black out the screen
+
+Press **B** when the room should look at you, not at the slide: the audience window goes black, and so do a paired iPad's audience window and phones following the talk. Your presenter view keeps the slide under a dark veil and says that the audience sees a black screen. **B** again, the next key (→, Space) or a click on the black screen shows the slide again, without moving on. Many presentation clickers have a button for this; it sends a full stop, which works like **B**. The presenter view also has a button for it.
+
+## Find a slide
+
+Press **O**, or the button with the row of slides, to see every slide of the talk in a grid: the slide shown has a red frame. Move with the arrow keys and press Enter, or click a slide, to go there. **O** or Escape closes the grid and leaves you where you were. In the presenter view the grid opens in your own slide, so the audience keeps the slide they are looking at until you pick another. Every slide in the grid shows all of its points, to make it easier to recognise.
 
 To jump to a slide, tap or click the slide number in the presenter view (beside the arrows on an iPad, at the top of the speaker layout), type the number and press Enter, or Go on an iPad's keyboard. Escape keeps the current slide.
 

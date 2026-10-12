@@ -122,6 +122,20 @@ The code is drawn in the slide's colours, so it fits the theme; phone cameras al
 
 It needs their devices to reach your slides: present with `mdeck run --network` when everyone is on the same Wi-Fi (it prints the **Follow** address), or host the built deck with a `server` setting for people anywhere.
 
+### Reactions
+
+Let people react while you talk, with or without a question on screen:
+
+```markdown
+---
+reactions: true
+---
+```
+
+The phones' answer page then has a row of buttons, 👍 👏 ❤️ 😮 🤔 🐢, below the question or while they wait for the next one. A tap floats up in the corner of your presenter view for a moment, and a small tally keeps what came in the last minute, so a few 🐢 ("slower, please") still show after they faded. The audience window and the projector never show them. Give your own, up to eight emoji or short words: `reactions: [👍, 🤔, 🐢, louder]`. Each phone can react about once a second; reactions are not kept anywhere.
+
+People reach the answer page through a join code, so a deck with reactions and no questions shows `<qrcode join />` somewhere at the start.
+
 Hover over the results to see **Reset**, which clears the answers, for example before the real session. Only the presenter can reset.
 
 ## How phones and slides meet
@@ -218,7 +232,17 @@ Two presentations with the same title share a session code. Give one of them `se
 
 Answers are anonymous. Each phone gets a random number so it can change its vote; nothing else identifies it. The server keeps answers in memory only. It forgets a room after twelve hours without visitors and everything when it restarts. Each phone can send a limited number of answers in a short time.
 
-While you present with `mdeck run`, the answers are also kept beside the presentation, in `my-talk.results.json`. It holds each answer with its time, and the phones numbered 1, 2, 3 … per question instead of their random numbers. Once a question was closed, only the answers that counted. **Reset** takes a question's answers out of the file; a new server that starts empty leaves the file as it is. `mdeck results my-talk.md` prints the answers as CSV (question, phone, time, answer), to open in a spreadsheet; `-o answers.csv` saves them to a file. A deck hosted with its own `server` keeps nothing beside it.
+While you present with `mdeck run`, the answers are also kept beside the presentation, in `my-talk.results.json`. It holds each answer with its time, and the phones numbered 1, 2, 3 … per question instead of their random numbers. Once a question was closed, only the answers that counted. **Reset** takes a question's answers out of the file; a new server that starts empty leaves the file as it is. A deck hosted with its own `server` keeps nothing beside it.
+
+### Save the answers
+
+Under **Answers from the talk**, the launch page lists each question with how many phones answered and how it came out, and saves the answers as a file:
+
+- **Answers (CSV)**: every answer on its own row, with the slide, the question, the phone's number and the time, to open in a spreadsheet.
+- **Summary (CSV)**: one row per option, number on a scale, number typed or word, with how many chose it and their share; for scales and numbers also the average and the median. It counts as the slide does: each phone's last vote.
+- **Everything (JSON)**: all of it, for other programs.
+
+On the command line, `mdeck results my-talk.md` prints the answers as CSV, `--summary` the summary and `--json` everything; `-o answers.csv` (or `.json`) saves them to a file.
 
 ## In a PDF or a shared file
 
