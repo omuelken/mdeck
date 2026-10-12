@@ -128,7 +128,7 @@ A slide that is nothing but an `:::include` line, with no settings, stands for t
 
 - The included file is a complete deck and can be presented alone; a file of slides without deck settings can be included too. When it is included, its slides come along with what they need from its settings, and the look stays the including deck's:
   - `hotspots` and `time` become each included slide's own, unless it has one. A slide without a time gets its share of the included deck's `time`, shared out as that deck does alone (its slides' own times first, the rest in equal parts); `slides=` keeps each chosen slide's share.
-  - `bibliography` files and `nocite` keys are added to the including deck's; `csl` too, when the including deck sets none.
+  - `bibliography` files and `nocite` keys are added to the including deck's; `csl` too, when the including deck sets none. Its `<bibliography />` lists the works it cites itself (and its `nocite`), not every work of the including deck.
   - `components` folders, and a `components/` folder beside the included file, are added to the including deck's.
   - Callout names of its own under `callouts` are added, unless the including deck names them; titles it gives built-in callouts are not.
   - `theme`, `palette`, `appearance`, `params`, `width`, `height`, `lang`, `labels`, `show`, `meta`, `reader`, `server` and `session` are ignored, and a problem with them is not reported for the including deck.
@@ -453,7 +453,7 @@ As @smith2020 showed, it works [see @smith2020, p. 12; @doe2019].
 | `@smith2020 [chap. 3]` | Smith et al. (2020, Chapter 3) | Smith et al. (1) |
 
 - **On the slide** each citation shows in the style's short form, and the full reference of every work the slide cites stands in small type above the footer, after any footnotes. `show.citations: false` leaves those out.
-- **`<bibliography />`** lists every cited work, plus those named in `nocite`, in the style's order. A list too long for one slide goes on several: `<bibliography part="1/2" />` on one and `<bibliography part="2/2" />` on the next split it in halves.
+- **`<bibliography />`** lists every cited work, plus those named in `nocite`, in the style's order. A list too long for one slide goes on several: `<bibliography part="1/2" />` on one and `<bibliography part="2/2" />` on the next split it in halves. `<bibliography keys="smith2020 doe2019" />` lists only these works. In a deck that includes others, an included deck's `<bibliography />` lists the works that deck cites, as it does when shown alone, and the including deck's own lists every work.
 - **Locators** after a comma: `p.`/`pp.`, `chap.`, `sec.`, `fig.`, `vol.`, `para.`, `no.`, `l.`, `eq.` and the German `S.`, `Kap.`, `Abb.`, `Bd.`, `Nr.`; a bare number is a page.
 - **`@key` without brackets** is a citation only when the key is in the reference file, so e-mail addresses and `@handles` stay text. Citations in code, in links' addresses and in `:::notes` blocks work as in slide text, except that notes show no reference footer.
 - **A key that is not in the file** shows as `@key?`, marked, and `mdeck check` and `mdeck build` warn about it.

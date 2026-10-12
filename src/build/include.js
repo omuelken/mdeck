@@ -45,6 +45,9 @@ import { CALLOUT_TYPES } from '../core/labels.js'
 import { isPlainObject, DECK_KEYS, SLIDE_KEYS } from '../core/parseSlides.js'
 import { parseSlideNumbers } from '../cli/args.js'
 import { rewriteAssetRefs } from './slidesPlugin.js'
+import { deckTexts } from './bibliography.js'
+import { scanCitations, citedKeys } from '../core/citations.js'
+import { replaceTagsIn } from '../core/tags.js'
 
 const read = file => readFileSync(file, 'utf8')
 
@@ -133,7 +136,7 @@ function includeText(abs, slide, line, { state, language, stack, prefix }) {
   if (keys.length && keys.every(key => DECK_KEYS.has(key) && SLIDE_KEYS.has(key)) && !state.diagnostics.some(d => d.file === target && d.code === 'include-settings')) {
     state.diagnostics.push({ file: target, line: 1, severity: 'warning', code: 'include-settings', message: `The block at the top (${keys.join(', ')}) is read as this file's settings, for all its slides; for its first slide alone, write it in a :::meta block` })
   }
-  let text = inherit(expandFile(target, source, { state, language, stack: [...stack, target], prefix: childPrefix, top: false }), settings)
+  let text = ownReferences(inherit(expandFile(target, source, { state, language, stack: [...stack, target], prefix: childPrefix, top: false }), settings), settings)
   if (numbers) {
     try { text = shareSlides(text, { slides: numbers }).source } catch (error) { return problem('invalid-include', `${file}: ${error.message}`) }
   }
@@ -157,6 +160,19 @@ function inherit(text, { hotspots, time }) {
     deck = parseSlides(text)
   }
   return text
+}
+
+// An included deck's <bibliography /> lists the works that deck cites (and
+// its `nocite`), as it does when shown alone, not every work the including
+// deck cites: it gets them as `keys`. With `nocite: '*'` it lists them all.
+function ownReferences(text, { nocite }) {
+  const named = [nocite ?? []].flat().map(key => String(key).replace(/^@/, ''))
+  if (!/<bibliography\b/.test(text) || named.includes('*')) return text
+  const keys = [...new Set([...citedKeys(deckTexts(text).flatMap(part => scanCitations(part))), ...named])].join(' ')
+  return replaceTagsIn(text, tag => {
+    if (tag.closing || tag.name !== 'bibliography' || 'keys' in tag.attrs) return
+    return tag.raw.replace(/(\s*)(\/?>)$/, ` keys="${keys}"$1$2`)
+  })
 }
 
 // What the included decks add to the including deck's settings, or null.

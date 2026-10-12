@@ -161,3 +161,12 @@ test('time: or hotspots: alone at the top of an included file is its settings, a
   assert.deepEqual(diagnostics.map(d => [d.code, d.severity]), [['include-settings', 'warning']])
   assert.deepEqual(parseSlides(source).slides.map(slide => slide.meta.time), [undefined, '1m', '1m'])
 })
+
+test('an included deck’s reference list shows the works it cites, as it does alone', () => {
+  const dir = folder({
+    'course.md': '---\nbibliography: course.bib\n---\n\n# Course [@knuth1997]\n\n---\n:::include ./part.md\n\n---\n# All\n\n<bibliography />\n',
+    'part.md': '---\nbibliography: part.bib\nnocite: [dijkstra1959]\n---\n\n# Part [@euler1736]\n\n---\n# References\n\n<bibliography />\n\n```markdown\n<bibliography />\n```\n',
+  })
+  const tags = expandDeck(resolve(dir, 'course.md')).source.match(/<bibliography[^>]*>/g)
+  assert.deepEqual(tags, ['<bibliography keys="euler1736 dijkstra1959" />', '<bibliography />', '<bibliography />'], 'the course’s own list and the code example stay as written')
+})
