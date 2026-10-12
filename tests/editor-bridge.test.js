@@ -5,7 +5,7 @@ import { parseSlides } from '../src/core/parseSlides.js'
 import { validateDeck } from '../src/core/validateDeck.js'
 import { layoutManifests } from '../src/extensions/discover.js'
 
-const layouts = layoutManifests('examples/showcase/slides.md')
+const layouts = layoutManifests('examples/showcase/slides.en.md')
 
 function harness() {
   const calls = { themes: [], mounts: [], posts: [], overrides: [] }

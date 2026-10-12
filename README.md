@@ -200,7 +200,7 @@ complete folder.
 
 | Example | Theme | What it demonstrates |
 |---|---|---|
-| [Tour](examples/showcase/slides.md) | Neue | Start here: each slide shows the Markdown beside what it becomes, from headings to layouts, live code, citations, notes, drawing, zooming into a part, timing the talk, a poll and a word cloud for the room, and sharing |
+| [Tour](examples/showcase/slides.en.md) | Neue | Start here: each slide shows the Markdown beside what it becomes, from headings to layouts, live code, citations, notes, drawing, zooming into a part, timing the talk, a poll and a word cloud for the room, and sharing; in English, [German](examples/showcase/slides.de.md) and [Arabic](examples/showcase/slides.ar.md) |
 | [Python](examples/python/slides.en.md) | Academic | A real lesson: live code to try out, points revealed step by step, notes on every slide, a poll to check understanding; in English, [German](examples/python/slides.de.md), [Hindi](examples/python/slides.hi.md) and [Farsi](examples/python/slides.fa.md), switched in the presenter view |
 | [Custom layouts](examples/custom-layouts/slides.md) | Neue | A deck-local comparison design and named regions |
 

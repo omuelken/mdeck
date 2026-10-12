@@ -18,7 +18,7 @@ The mdeck docs are the source of truth for syntax, layouts and looks. Look for t
 1. `docs/reference/` in the current folder (you are inside the mdeck repository).
 2. `$(npm root -g)/mdeck/docs/reference/` (mdeck is installed globally).
 
-Read `examples/showcase/slides.md` from the same place as a complete working deck.
+Read `examples/showcase/slides.en.md` from the same place as a complete working deck.
 
 Then ask the installed mdeck what this deck can use, because a deck may ship its own layouts, themes and palettes in an `extensions/` folder:
 

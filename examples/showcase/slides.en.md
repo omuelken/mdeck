@@ -21,9 +21,11 @@ time: 1m
 ## A tour of mdeck: each slide shows *what is written* and what it becomes.
 
 :::notes
-This deck teaches mdeck by example. Most slides show the Markdown beside what it becomes. Open `slides.md` next to it: every slide here is written exactly as shown.
+This deck teaches mdeck by example. Most slides show the Markdown beside what it becomes. Open `slides.en.md` next to it: every slide here is written exactly as shown.
 
 Go through it with the arrow keys or the space bar. These notes are only for you; open the presenter view from the launch page to see them beside the slide.
+
+The tour also comes in German (`slides.de.md`) and Arabic (`slides.ar.md`). Start it with `mdeck run slides.en.md`, and **L** in the presenter view switches every window to the next language.
 :::
 
 ---
@@ -68,7 +70,7 @@ Three dashes on a line of their own start the next slide.
 :::notes
 `#` is the slide's heading. A blank line separates paragraphs.
 
-Try it: change a heading in `slides.md` and save. The slide updates while it is open.
+Try it: change a heading in `slides.en.md` and save. The slide updates while it is open.
 :::
 
 ---
@@ -387,7 +389,7 @@ time: 1m
 
 Press **D** now, or the pen button. Draw with a pen, a highlighter, or a marker that fades after a moment. **Escape** stops.
 
-Drawings are kept in `slides.drawings.json` beside the slides, and appear in the PDF.
+Drawings are kept in a `.drawings.json` file beside the slides, and appear in the PDF.
 
 :::notes
 The underline and the circle on this slide were drawn with the pen and saved; they show in every view and in the PDF.

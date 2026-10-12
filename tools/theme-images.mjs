@@ -15,7 +15,7 @@ import { palettesFor } from '../src/extensions/tokens.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const out = resolve(root, 'docs/site/images/themes')
-const deck = resolve(root, 'examples/showcase/slides.md')
+const deck = resolve(root, 'examples/showcase/slides.en.md')
 const font = ['/System/Library/Fonts/Helvetica.ttc', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'].find(existsSync)
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-themes-'))
 mkdirSync(out, { recursive: true })

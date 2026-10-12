@@ -203,7 +203,7 @@ try {
   // Hotspots: the presenter view at the tour's hotspot slide with its keys,
   // in front of the projector zoomed in on the table.
   cpSync(resolve(root, 'examples/showcase'), t('tour'), { recursive: true })
-  const tourConfig = baseConfig(t('tour/slides.md'))
+  const tourConfig = baseConfig(t('tour/slides.en.md'))
   tour = await createServer({ ...tourConfig, plugins: [...tourConfig.plugins, livePlugin()], server: { ...tourConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await tour.listen()
   const tourBase = tour.resolvedUrls.local[0]

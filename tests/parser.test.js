@@ -48,7 +48,7 @@ test('invalid metadata produces source diagnostics', () => {
 })
 
 test('existing examples parse without errors', () => {
-  for (const name of ['showcase/slides', 'python/slides.en', 'python/slides.de', 'python/slides.hi', 'python/slides.fa']) {
+  for (const name of ['showcase/slides.en', 'showcase/slides.de', 'showcase/slides.ar', 'python/slides.en', 'python/slides.de', 'python/slides.hi', 'python/slides.fa']) {
     const deck = parseSlides(readFileSync(new URL(`../examples/${name}.md`, import.meta.url), 'utf8'))
     assert.deepEqual(deck.diagnostics, [], name)
     assert.ok(deck.slides.length > 3, name)
