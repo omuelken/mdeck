@@ -49,15 +49,26 @@ function reveal(file) {
   spawn(command, args, { stdio: 'ignore', detached: true }).on('error', () => {}).unref()
 }
 
-// The server named in the `server` setting: whether it answers, and whether it
-// accepts the key (MDECK_SERVER_KEY, as given to the server).
+// The server named in the `server` setting: whether it answers, whether it
+// accepts the key (MDECK_SERVER_KEY, as given to the server), and which mdeck
+// it runs (servers before 3.12 do not say).
+const VERSION = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version
+// Whether mdeck `a` is older than `b`, by major and minor: a server that
+// lacks a feature of this mdeck (reactions came with 3.12) is older.
+export function olderVersion(a, b) {
+  const [am, an] = String(a).split('.').map(Number), [bm, bn] = String(b).split('.').map(Number)
+  return am < bm || (am === bm && an < bn)
+}
+// A reachable server that runs an older mdeck than this computer, or does not say.
+const withVersion = status => status.reachable ? { ...status, version: VERSION, serverOutdated: !status.serverVersion || olderVersion(status.serverVersion, VERSION) } : status
+
 export async function liveStatus(live, { key = null, fetch: get = fetch, timeoutMs = 2500 } = {}) {
   const started = Date.now()
   try {
     const response = await get(`${live.server.replace(/\/+$/, '')}/info`, { headers: key ? { Authorization: `Bearer ${key}` } : {}, signal: AbortSignal.timeout(timeoutMs) })
     if (!response.ok) return { reachable: false, error: `It answered with status ${response.status}` }
     const body = await response.json()
-    return { reachable: true, ms: Date.now() - started, keyAccepted: key ? !!body.canReset : null }
+    return { reachable: true, ms: Date.now() - started, keyAccepted: key ? !!body.canReset : null, serverVersion: typeof body.version === 'string' ? body.version : null }
   } catch (error) {
     return { reachable: false, error: error.name === 'TimeoutError' ? `No answer within ${timeoutMs / 1000} s` : error.cause?.code ?? error.message }
   }
@@ -136,7 +147,7 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
     return {
       server: own ? settings.server : null,
       code,
-      ...(own ? await liveStatus(settings, { key: serverKey, fetch: get }) : { reachable: true }),
+      ...(own ? withVersion(await liveStatus(settings, { key: serverKey, fetch: get })) : { reachable: true }),
       key: own ? serverKey : null,
       joinUrl,
       localJoinUrl: joinUrl ?? (local[0] ? builtIn(local[0]) : null),

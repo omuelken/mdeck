@@ -158,3 +158,14 @@ test('kept answers show on the launch page and download as CSV or JSON', async (
   assert.equal(json.questions[0].answers[0].value, 'Thai')
   assert.equal((await get('/results', { Origin: 'http://evil.example' })).status, 403)
 })
+
+test('a poll server on an older mdeck is told apart', async () => {
+  const { olderVersion } = await import('../src/build/homePlugin.js')
+  assert.equal(olderVersion('3.11.0', '3.12.0'), true)
+  assert.equal(olderVersion('3.12.4', '3.12.0'), false, 'a patch release does not matter')
+  assert.equal(olderVersion('4.0.0', '3.12.0'), false)
+  assert.equal(olderVersion('2.9.0', '3.0.1'), true)
+  const answers = version => async () => ({ ok: true, json: async () => ({ canReset: true, ...(version ? { version } : {}) }) })
+  assert.equal((await liveStatus({ server: 'http://x' }, { fetch: answers('3.12.0') })).serverVersion, '3.12.0')
+  assert.equal((await liveStatus({ server: 'http://x' }, { fetch: answers(null) })).serverVersion, null, 'servers before 3.12 do not say')
+})

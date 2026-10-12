@@ -103,11 +103,16 @@ function Polls({ live, recheck }) {
     : !live.joinUrl ? <>Phones cannot reach this computer: start with <code>--network</code>, or set <code>server</code> in the deck.</>
     : live.server && live.key && !live.keyAccepted ? 'The poll server does not accept this key: phones do not follow.'
     : null
+  // A server on an older mdeck answers, but lacks what is new (reactions came with 3.12).
+  const outdated = !problem && live.server && live.serverOutdated
   return <PanelSection title="Polls" class="presenter-polls">
     {live.joinUrl && <span style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: 0 }}>
-      <span aria-hidden="true" style={{ flexShrink: 0, width: '8px', height: '8px', borderRadius: '50%', background: problem ? '#f28b82' : '#81c995' }} />
+      <span aria-hidden="true" style={{ flexShrink: 0, width: '8px', height: '8px', borderRadius: '50%', background: problem ? '#f28b82' : outdated ? '#f5a524' : '#81c995' }} />
       <a href={live.joinUrl} target="_blank" rel="noopener" title="The join link for phones" style={{ color: '#ccc', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{live.joinUrl.replace(/^https?:\/\//, '')}</a>
       <ToolButton class="presenter-copy-join" icon={copied ? 'check' : 'copy'} label={copied ? 'Copied' : 'Copy the join link'} size={15} style={{ minWidth: '30px', height: '30px', padding: 0, flexShrink: 0 }} onClick={copy} />
+    </span>}
+    {outdated && <span class="presenter-server-outdated" style={{ color: '#f5a524' }}>
+      Your poll server runs {live.serverVersion ? `mdeck ${live.serverVersion}` : 'an older mdeck'}, this computer {live.version}: what is new, such as reactions, may not reach the phones. Update it with <code>npm install -g mdeck</code> and restart <code>mdeck server</code>.
     </span>}
     {problem && <span style={{ display: 'flex', gap: '8px', alignItems: 'center', color: '#f28b82' }}>
       <span style={{ flex: 1 }}>{problem}</span>

@@ -9,6 +9,10 @@ import { timingSafeEqual } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { CODE_RE } from './code.js'
 
+// This mdeck's version, in /info: a presenter on a newer mdeck can tell that
+// this server lacks what its deck uses (src/build/homePlugin.js).
+const VERSION = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version
+
 // The phones' answer page, served by the server itself at /<code>.
 const ANSWER_FILES = Object.fromEntries(['answer.html', 'answer.js', 'answer.css'].map(name => [name, readFileSync(new URL(`./answer/${name}`, import.meta.url))]))
 const ANSWER_TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8' }
@@ -199,7 +203,7 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
     response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     if (request.method === 'OPTIONS') { response.writeHead(204); response.end(); return }
     try {
-      if (pathname === '/info' && request.method === 'GET') return reply(response, 200, { canReset: !!canReset(request, searchParams.get('session')), ...info(request) })
+      if (pathname === '/info' && request.method === 'GET') return reply(response, 200, { canReset: !!canReset(request, searchParams.get('session')), version: VERSION, ...info(request) })
       const page = pathname.slice(1)
       if (request.method === 'GET' && (CODE_RE.test(page) || Object.hasOwn(ANSWER_FILES, page))) {
         const name = CODE_RE.test(page) ? 'answer.html' : page
