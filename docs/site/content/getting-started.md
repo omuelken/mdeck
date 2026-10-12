@@ -1,38 +1,8 @@
 # Make your first presentation
 
-You will install mdeck, teach your AI assistant how to write mdeck slides, give it material you already have, and open the deck it makes. If mdeck is already installed, skip to “Teach your assistant about mdeck.”
+You will give your AI assistant material you already have and open the deck it makes.
 
-## Set up mdeck once
-
-mdeck needs Node.js and npm on your computer. Install [Node.js](https://nodejs.org) (version 22 or newer); npm comes with it.
-
-Open a terminal. A terminal is an app where you type short commands: Terminal on macOS, or PowerShell on Windows. A text editor may also have a Terminal menu.
-
-Run this command to install mdeck:
-
-```sh
-npm install -g mdeck
-```
-
-You normally do this only once. To update later, run it again.
-
-Check that the command is ready:
-
-```sh
-mdeck --help
-```
-
-If your computer does not recognize `npm` or `mdeck`, see [When something goes wrong](troubleshooting.html#the-command-is-not-recognized).
-
-## Teach your assistant about mdeck
-
-mdeck comes with a set of instructions, called a *skill*, that tells an AI assistant how mdeck slides are written, which layouts and looks exist, and how to check its work. Install it for the assistant you use:
-
-```sh
-mdeck skill --install claude
-```
-
-Replace `claude` with `codex`, `cursor`, `copilot` or `gemini` for those tools. Run `mdeck skill` to see the list. For Cursor, Copilot and Gemini, run it in your talk's folder.
+First [install mdeck](install.html) and the skill for your assistant, if you have not yet. It takes a few minutes.
 
 ## Hand over your material
 
