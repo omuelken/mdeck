@@ -1,5 +1,5 @@
 ---
-theme: glass
+theme: neue
 meta:
   title: "A tour of mdeck"
   author: "Tilman Schieber"
@@ -14,6 +14,7 @@ image: ./img/mdeck.svg
 fit: contain
 alt: "A Markdown file turning into a stack of slides"
 id: a-talk-in-a-text-file
+time: 1m
 :::
 # A talk in a text file.
 ## A tour of mdeck: each slide shows *what is written* and what it becomes.
@@ -30,6 +31,7 @@ layout: chapter
 number: 1
 part: Writing
 description: Plain Markdown, the format AI assistants already write. You can read and change every word.
+time: 15s
 :::
 # Write it.
 
@@ -40,6 +42,7 @@ In practice an AI assistant usually writes this file from your own material: old
 ---
 :::meta
 layout: split
+time: 1m
 :::
 # Words become slides
 :::slot left
@@ -70,6 +73,7 @@ Try it: change a heading in `slides.md` and save. The slide updates while it is 
 ---
 :::meta
 layout: split
+time: 45s
 :::
 # Lists and emphasis
 :::slot left
@@ -96,6 +100,9 @@ layout: split
 :::
 
 ---
+:::meta
+time: 1m
+:::
 # Reveal points one at a time
 
 :::columns
@@ -126,6 +133,7 @@ layout: chapter
 number: 2
 part: Layouts and content
 description: Layouts, pictures, code, tables and callouts. Pick a layout per slide; the theme does the rest.
+time: 15s
 :::
 # Lay it out.
 
@@ -134,6 +142,7 @@ description: Layouts, pictures, code, tables and callouts. Pick a layout per sli
 layout: split
 props:
   ratio: [3, 2]
+time: 1m
 :::
 # Choose a layout
 :::slot left
@@ -162,6 +171,7 @@ The built-in layouts are `title`, `chapter`, `focus`, `split`, `image-text` and 
 :::meta
 layout: focus
 attribution: "A teacher"
+time: 30s
 :::
 # Good questions make better conversations.
 
@@ -170,6 +180,7 @@ attribution: "A teacher"
 layout: image-text
 image: ./img/image.jpg
 alt: "Contour lines like those on a map"
+time: 45s
 :::
 # A picture beside your words
 
@@ -193,6 +204,7 @@ layout: full-bleed-image
 image: ./img/image.jpg
 alt: "Contour lines like those on a map"
 overlay: true
+time: 30s
 :::
 # Or let the picture fill the slide.
 
@@ -214,6 +226,7 @@ overlay: true
 ---
 :::meta
 layout: split
+time: 1m30s
 :::
 # Code you can run
 :::slot left
@@ -240,6 +253,7 @@ Live Python downloads its runtime the first time, so it needs an internet connec
 ---
 :::meta
 layout: split
+time: 45s
 :::
 # Tables and formulas
 :::slot left
@@ -272,6 +286,7 @@ Formulas use LaTeX. Single dollar signs put a formula inside a sentence; two dol
 ---
 :::meta
 layout: split
+time: 45s
 :::
 # Tips and warnings
 :::slot left
@@ -306,12 +321,14 @@ number: 3
 part: Presenting
 description: Notes for you, drawing on the slides, and questions for the room.
 id: give-the-talk
+time: 15s
 :::
 # Give the talk.
 
 ---
 :::meta
 layout: split
+time: 1m
 :::
 # Notes only you can see
 :::slot left
@@ -337,6 +354,7 @@ This is what the presenter view shows for this slide. Its header also shows what
 ---
 :::meta
 id: draw-on-any-slide
+time: 1m
 :::
 # Draw on any slide
 
@@ -355,6 +373,7 @@ On an iPad, pair it from the launch page: you draw and steer there while the lap
 layout: split
 hotspots: auto
 id: zoom-in-on-a-part
+time: 1m30s
 :::
 # Zoom in on a part
 :::slot left
@@ -384,6 +403,34 @@ The numbered keys show on this slide only here in the presenter view, never on t
 :::
 
 ---
+:::meta
+layout: split
+time: 1m
+:::
+# Time your talk
+:::slot left
+```markdown
+:::meta
+time: 1m
+:::
+```
+:::
+:::slot right
+Give each slide a **time**. The presenter view counts it down, and tells you whether you are ahead or behind.
+
+Run `mdeck rehearse slides.md` to time the slides as you practise, then save the times into the file.
+:::
+
+:::notes
+Every slide in this tour has a time, 19 minutes in all. Press T in the presenter view to start the timer: under it you see what is left of this slide and how the talk stands.
+
+A rehearsal measures the times for you. At the end it offers them rounded to 15 seconds; change any of them before you save.
+:::
+
+---
+:::meta
+time: 1m30s
+:::
 # Which part will you try first?
 
 <poll room="tour" options="Writing|Layouts|Drawing|Polls" />
@@ -402,12 +449,14 @@ layout: chapter
 number: 4
 part: Sharing
 description: One file to send, a PDF, or a folder for a website.
+time: 15s
 :::
 # Share it.
 
 ---
 :::meta
 layout: split
+time: 45s
 :::
 # Change the whole look
 :::slot left
@@ -431,6 +480,7 @@ mdeck has four built-in themes and five palettes, each light or dark. `mdeck lis
 ---
 :::meta
 layout: split
+time: 45s
 :::
 # Send it, print it, host it
 :::slot left
@@ -449,6 +499,7 @@ mdeck build slides.md
 ---
 :::meta
 layout: title
+time: 1m
 :::
 # Now make your own.
 ## Hand your slides, documents or notes to an *AI assistant*.
