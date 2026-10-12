@@ -1,0 +1,3 @@
+# The sound files stay on this computer
+sounds/*
+!sounds/.gitkeep
