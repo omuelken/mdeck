@@ -61,6 +61,14 @@ function hasFlag(name, short = null) { return !!(parsed.options[name] ?? parsed.
 const positionals = () => parsed.positionals
 const outputOption = () => parsed.options['--output'] ?? null
 const serverOption = () => parsed.options['--server']
+// Whether a poll server answers at `address`, within a few seconds.
+async function serverAnswers(address) {
+  try {
+    validateServerOrigin(address)
+    const response = await fetch(new URL('info', address.replace(/\/*$/, '/')), { signal: AbortSignal.timeout(3000) })
+    return response.ok
+  } catch { return false }
+}
 const portOption = () => parsed.options['--port'] ?? null
 // --slide 3,5-7 for build, send and pdf: only these slides, numbered as written.
 function slideOption(input) {
@@ -326,7 +334,10 @@ const HELP = `
       --network              reach the slides from phones and tablets on the same network
       --server [address]     present from an iPad on any network, through your server
                              (the address, or the deck's server setting, or MDECK_SERVER;
-                              the key in MDECK_SERVER_KEY)
+                              the key in MDECK_SERVER_KEY). With both MDECK_SERVER and
+                              MDECK_SERVER_KEY set, the server is used without --server
+                              when it answers
+      --no-server            present from this computer only, even with MDECK_SERVER set
       --no-open   --port <number>
     ${c.green}mdeck rehearse${c.reset} [slides.md]                Like run, but opens the presenter view rehearsing: it times
                                               each slide and saves the times into the deck (time: 1m30s)
@@ -577,8 +588,18 @@ if (command === 'new') {
   // (src/build/tunnelClient.js). The dev server then serves under /t/<id>/, the
   // address the iPad uses on the server, and its own addresses follow it. The
   // address is the flag's value, else the deck's server setting, else MDECK_SERVER.
+  // With MDECK_SERVER and MDECK_SERVER_KEY set, the server is used without
+  // --server when it answers; otherwise this computer presents alone.
+  // --no-server keeps it out.
   let relay = null
-  const serverFlag = serverOption()
+  let serverFlag = serverOption()
+  if (serverFlag === undefined && !hasFlag('--no-server') && process.env.MDECK_SERVER && process.env.MDECK_SERVER_KEY) {
+    const address = process.env.MDECK_SERVER
+    if (await serverAnswers(address)) {
+      serverFlag = address
+      tip(`Using your server from MDECK_SERVER (${address}); --no-server presents without it.`)
+    } else tip(`Your server (MDECK_SERVER, ${address}) does not answer: presenting from this computer only.`)
+  }
   if (serverFlag !== undefined) {
     const inDeck = parseSlides(readFileSync(abs, 'utf8')).deckConfig?.server
     const address = serverFlag ?? (typeof inDeck === 'string' ? inDeck : null) ?? process.env.MDECK_SERVER ?? null

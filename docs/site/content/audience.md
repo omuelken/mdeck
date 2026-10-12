@@ -222,7 +222,7 @@ server: https://rooms.example.org
 ---
 ```
 
-To keep the address out of the deck, leave the setting out and set `MDECK_SERVER=https://rooms.example.org` in your shell instead; `mdeck run --server` then finds it. A built or sent presentation reads the address from the deck only, because it has to carry it to wherever it is opened.
+To keep the address out of the deck, leave the setting out and set `MDECK_SERVER=https://rooms.example.org` in your shell instead. With `MDECK_SERVER_KEY` set as well, `mdeck run` then uses the server by itself, without `--server`; when the server does not answer, it says so and presents from your computer, and `--no-server` leaves it out on purpose. A built or sent presentation reads the address from the deck only, because it has to carry it to wherever it is opened.
 
 `MDECK_SERVER_KEY` is the server’s master key. `mdeck run` keeps it on your computer and lets your local browser, or an iPad with a revocable pairing token, move the phones along and reset polls for this deck. Pairing QR codes never include the master key. Start `mdeck run` with the same key (`MDECK_SERVER_KEY=choose-a-secret mdeck run my-talk.md`), and the launch page checks the server, shows the join link and opens the presenter view. Paired devices remember only their token, scoped to this presentation; it never appears in the address bar or in the slide file. A hosted presenter can still unlock the server by opening the presenter view once with `?serverkey=…` in its address. That browser remembers the master key. Without permission to control the server, phones wait. The presenter view says whether the phones follow it, and if not, why.
 

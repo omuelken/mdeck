@@ -59,7 +59,7 @@ A pairing code works once, for ten minutes. **Unpair** on the launch page ends e
 **The iPad on another network.** Some networks, often big Wi-Fi networks at universities, do not let devices reach each other, and a laptop's firewall may not let the iPad in. With a server of your own (see [Ask your audience](audience.html#use-it-in-a-real-session)) the iPad does not need to reach your laptop at all: your laptop connects out to the server, and the server passes the iPad's requests to it. The slides are not uploaded or stored anywhere.
 
 1. Tell mdeck where your server is: `server: https://rooms.example.org` in the deck's settings, or `MDECK_SERVER` in your shell, or the address after the option in the next step.
-2. Start `MDECK_SERVER_KEY=your-key mdeck run my-talk.md --server`. The key is the one the server was started with.
+2. Start `MDECK_SERVER_KEY=your-key mdeck run my-talk.md --server`. The key is the one the server was started with. With `MDECK_SERVER` and `MDECK_SERVER_KEY` both set in your shell, plain `mdeck run my-talk.md` is enough: it uses the server whenever it answers.
 3. In the presenter view on the laptop, click the connection icons, choose **iPad** and scan the code. The address in the code is on your server and contains a long random name, so treat it like a private link.
 4. Open the **audience window** on the laptop as before. It follows the iPad through the server.
 

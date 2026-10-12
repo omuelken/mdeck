@@ -170,6 +170,18 @@ try {
   assert.equal(await control('654321', otherToken), 200, 'other pairing remains valid')
   const refused = dev.out().split('\n').filter(line => /not shared/.test(line) && !/home\.html|__mdeck\/home\/info|__mdeck\/deck|private|confidential/.test(line))
   assert.deepEqual(refused, [])
-  console.log('Server check passed: bidirectional slide/reveal sync and presenter previews without echoes, pairing through the server, refused addresses, scoped tokens, revocation, two concurrent decks, custom layouts and assets, live reload.')
+  // MDECK_SERVER with its key: the server is used without --server, and a
+  // server that does not answer leaves this computer presenting alone.
+  const envDeck = resolve(temp, 'env.md')
+  writeFileSync(envDeck, source(2).replace(`server: ${ROOM}\n`, '').replace('123456', '777777'))
+  const byEnv = run('env', ['bin/mdeck.js', 'run', envDeck, '--no-open', '--port', String(await freePort())], { MDECK_SERVER: ROOM, MDECK_SERVER_KEY: KEY })
+  await until(() => /Connected to/.test(byEnv.out()), 'MDECK_SERVER is used without --server')
+  const offline = run('offline', ['bin/mdeck.js', 'run', envDeck, '--no-open', '--port', String(await freePort())], { MDECK_SERVER: `http://127.0.0.1:${await freePort()}`, MDECK_SERVER_KEY: KEY })
+  await until(() => /does not answer/.test(offline.out()) && /Launch page: http/.test(offline.out()), 'an unreachable MDECK_SERVER falls back to this computer')
+  assert.ok(!/\/t\//.test(offline.out().match(/Launch page: (http\S+)/)[1]), 'presenting locally, not through the server')
+  const optOut = run('opt-out', ['bin/mdeck.js', 'run', envDeck, '--no-server', '--no-open', '--port', String(await freePort())], { MDECK_SERVER: ROOM, MDECK_SERVER_KEY: KEY })
+  await until(() => /Launch page: http/.test(optOut.out()), '--no-server starts')
+  assert.ok(!/Connected to|Using your server/.test(optOut.out()), '--no-server keeps the server out')
+  console.log('Server check passed: bidirectional slide/reveal sync and presenter previews without echoes, pairing through the server, refused addresses, scoped tokens, revocation, two concurrent decks, MDECK_SERVER without --server (and its fallback), custom layouts and assets, live reload.')
 } catch (error) { console.error('Server check failed:', error.stack, error.cause ?? '', devLog()); process.exitCode = 1 }
 finally { await browser?.close?.(); for (const k of kids) k.kill(); rmSync(temp, { recursive: true, force: true }) }

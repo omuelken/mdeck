@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- With `MDECK_SERVER` and `MDECK_SERVER_KEY` set in your shell, `mdeck run` uses your server without `--server` whenever it answers, and presents from this computer when it does not. `--no-server` leaves it out.
 - The presenter view, redesigned: one toolbar of icons under the slide (each says what it does and its key; **?** lists all keys), with **This slide** for what can be done on the slide shown: a poll's lock, results and right answer, a video's play, the hotspots' numbers. Beside the slide: the slide number, the timer, the next slide small, and the notes in most of the room. Who is connected sits behind the icons that show it, with the audience window and the codes that pair an iPad or a phone; theme, palette, language, layout, rehearsal and the size of the notes are in the settings. The iPad's bar and the phone clicker use the same buttons.
 - A phone becomes a clicker: in the presenter view's connections, **Phone clicker** shows its code. The phone gets the slide small, the time, the notes in large print, big Previous and Next buttons and the slide's own controls, and nothing to draw with. Every layout, the clicker too, switches to the others in the settings. Pairing moved from the launch page into the presenter view.
 - **J**, or the join button in the presenter view, shows the join code large over the slide on every screen, so a deck needs no extra join slide. The join link, the session code and whether phones can reach the poll server moved from the launch page into the presenter view's connections.

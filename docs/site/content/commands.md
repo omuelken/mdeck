@@ -46,7 +46,8 @@ Two options make the slides reachable from other devices:
 | Option | What it does |
 |---|---|
 | `--network` | Phones and tablets on the same network can open the slides. |
-| `--server` | An iPad on any network can present through your own server. It takes the server's address, or finds it in the deck's `server` setting or in the `MDECK_SERVER` variable, in that order. The key goes in `MDECK_SERVER_KEY`. |
+| `--server` | An iPad on any network can present through your own server. It takes the server's address, or finds it in the deck's `server` setting or in the `MDECK_SERVER` variable, in that order. The key goes in `MDECK_SERVER_KEY`. With both `MDECK_SERVER` and `MDECK_SERVER_KEY` set in your shell, `mdeck run` uses the server without `--server` whenever it answers, and presents from this computer when it does not. |
+| `--no-server` | Present from this computer only, even with `MDECK_SERVER` set. |
 
 See [Draw on your slides](drawing.html#present-from-an-ipad) for both. The launch page itself and its buttons only work on your own computer. `--port 4000` chooses the port and `--no-open` starts without opening a browser.
 
