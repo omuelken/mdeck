@@ -25,7 +25,7 @@ props:
 ## Single HTML file
 
 :::tip
-Useful when transferring one file is operationally important.
+Handy when one file is easier to pass on than a folder.
 :::
 
 - All local assets embedded
@@ -33,7 +33,7 @@ Useful when transferring one file is operationally important.
 :::
 
 :::notes
-This layout is loaded from extensions/comparison beside this deck.
+This layout is not built into mdeck: it comes from `extensions/comparison/` beside this deck. `ratio` sets the widths of the two sides, `emphasis` which one stands out.
 :::
 
 ---
@@ -41,20 +41,32 @@ This layout is loaded from extensions/comparison beside this deck.
 layout: split
 id: built-in-regions
 props:
-  ratio: [1, 2]
+  ratio: [1, 1]
 :::
-# Built-in layouts use the same region model
+# A layout of your own
 
 :::slot left
-```js
-const template = 'comparison'
+```markdown
+:::meta
+layout: comparison
+props:
+  emphasis: right
+:::
+# Deployment options
+:::slot left
+## Directory bundle
+:::
 ```
 :::
 
 :::slot right
 :::steps
-- Define a manifest.
-- Write a Preact layout.
-- Use it from Markdown.
+- `extension.toml` names the layout, its areas and its settings.
+- `layout.jsx` places the areas, `styles.css` styles them.
+- A slide chooses it with `layout: comparison`.
 :::
+:::
+
+:::notes
+All three files are in `extensions/comparison/`. `mdeck list layouts` shows the deck's own layouts beside mdeck's, and `mdeck starter comparison` prints a slide to start from. To use the layout in other decks, install it once for all of them; the guide "Reusable layouts" shows how.
 :::
