@@ -1,5 +1,6 @@
 export const pages = [
   { slug: 'index', title: 'Welcome to mdeck', group: 'Start here', file: 'welcome.md', description: 'Turn your existing slides, documents and notes into a deck with an AI assistant, then present and share it.', preview: 'first-talk' },
+  { slug: 'install', title: 'Install mdeck', group: 'Start here', file: 'install.md', description: 'Install Node.js and mdeck from npm, teach your AI assistant, and keep mdeck up to date.' },
   { slug: 'getting-started', title: 'Make your first presentation', group: 'Start here', file: 'getting-started.md', description: 'Set up mdeck and your AI assistant, hand over your material, and open the deck it makes.' },
   { slug: 'claude-skill', title: 'Work with an AI assistant', group: 'Start here', source: '../reference/claude-skill.md', description: 'Set up Claude Code, Codex, Cursor, Copilot or Gemini, turn PowerPoint, PDF, Word or notes into a deck, and change it by asking.' },
   { slug: 'writing', title: 'Read and adjust your slides', group: 'Make your presentation', file: 'writing.md', description: 'The simple marks in a slide file, so you can read what your assistant wrote and fix small things.' },

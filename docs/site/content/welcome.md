@@ -4,7 +4,7 @@ Bring what you already have: old PowerPoint slides, a PDF, a Word document, a pa
 
 The content stays yours. The assistant works from your material, not from its own idea of the topic: it chooses layouts, tidies wording, moves detail into speaker notes and checks the file. You do not need to know how to program. The slides are a plain text file, so you can read every word, change any of it yourself, or ask for something different.
 
-[Make your first presentation](getting-started.html)
+[Make your first presentation](getting-started.html) [Install mdeck](install.html)
 
 ## What you can do with it
 
