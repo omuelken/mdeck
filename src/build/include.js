@@ -20,6 +20,16 @@
 // file's name in front (graphs-slide-3, graphs-dijkstra). `origins` says, for
 // each such id, the file the slide is written in and its id there.
 //
+// What an included deck's slides need from its settings comes along; how
+// it looks and is presented stays the including deck's. `hotspots` and
+// `time` become each included slide's own, unless it has one: a slide
+// without a time gets its share of the included deck's `time`. The
+// references (`bibliography`, `nocite`, and `csl` when the deck has none),
+// the `components` folders (and a components/ folder beside the file) and
+// callout names of its own (`callouts`, where the deck does not name them)
+// are added to the including deck's settings. Theme, palette, size,
+// language, labels, `show`, `meta` and the server stay the including deck's.
+//
 // Paths of pictures and media in an included file are written from its own
 // folder; they are rewritten to work from the deck's. A deck in several
 // languages (talk.de.md) takes an included file's twin in its language
@@ -27,9 +37,12 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve, dirname, relative, basename, sep } from 'node:path'
 import { parseSlides } from '../core/parseSlides.js'
-import { setSlideMeta, shareSlides } from '../core/editDeck.js'
+import { setSlideMeta, setDeckConfig, shareSlides } from '../core/editDeck.js'
 import { diagnostic } from '../core/source.js'
 import { languageOfFile } from '../core/languages.js'
+import { planFor, formatTime } from '../core/timing.js'
+import { CALLOUT_TYPES } from '../core/labels.js'
+import { isPlainObject, DECK_KEYS, SLIDE_KEYS } from '../core/parseSlides.js'
 import { parseSlideNumbers } from '../cli/args.js'
 import { rewriteAssetRefs } from './slidesPlugin.js'
 
@@ -51,9 +64,11 @@ export function expandDeck(file, { source = null, lang = null } = {}) {
   const text = source ?? read(abs)
   if (!hasIncludes(text)) return { source: text, files: [], origins: null, diagnostics: [] }
   const deck = parseSlides(text)
-  const state = { root: dirname(abs), files: new Set(), diagnostics: [], prefixes: new Set(), origins: {} }
+  const state = { root: dirname(abs), files: new Set(), diagnostics: [], prefixes: new Set(), origins: {}, settings: [] }
   const language = lang ?? languageOfFile(basename(abs))?.lang ?? (typeof deck.deckConfig.lang === 'string' ? deck.deckConfig.lang : null)
-  const expanded = expandFile(abs, text, { state, language, stack: [abs], prefix: null, top: true })
+  let expanded = expandFile(abs, text, { state, language, stack: [abs], prefix: null, top: true })
+  const patch = addedSettings(deck.deckConfig, state)
+  if (patch) expanded = setDeckConfig(parseSlides(expanded), patch)
   return { source: expanded, files: [...state.files], origins: state.origins, diagnostics: state.diagnostics }
 }
 
@@ -109,11 +124,76 @@ function includeText(abs, slide, line, { state, language, stack, prefix }) {
   }
   state.files.add(target)
   const childPrefix = uniquePrefix(state, prefix, target)
-  let text = expandFile(target, read(target), { state, language, stack: [...stack, target], prefix: childPrefix, top: false })
+  const source = read(target)
+  const settings = parseSlides(source).deckConfig ?? {}
+  state.settings.push({ file: target, settings })
+  // `time:` or `hotspots:` alone at the top is the file's, for all its
+  // slides; meant for its first slide, it belongs in a :::meta block.
+  const keys = Object.keys(settings)
+  if (keys.length && keys.every(key => DECK_KEYS.has(key) && SLIDE_KEYS.has(key)) && !state.diagnostics.some(d => d.file === target && d.code === 'include-settings')) {
+    state.diagnostics.push({ file: target, line: 1, severity: 'warning', code: 'include-settings', message: `The block at the top (${keys.join(', ')}) is read as this file's settings, for all its slides; for its first slide alone, write it in a :::meta block` })
+  }
+  let text = inherit(expandFile(target, source, { state, language, stack: [...stack, target], prefix: childPrefix, top: false }), settings)
   if (numbers) {
     try { text = shareSlides(text, { slides: numbers }).source } catch (error) { return problem('invalid-include', `${file}: ${error.message}`) }
   }
   return text
+}
+
+// The included deck's `hotspots` and `time`, as each of its slides' own
+// where it has none; `time` is shared out as the deck itself would (its
+// slides' own times first, the rest in equal parts).
+function inherit(text, { hotspots, time }) {
+  if (hotspots == null && time == null) return text
+  let deck = parseSlides(text)
+  const plan = time == null ? null : planFor(deck.slides, { time })
+  for (const [i, slide] of [...deck.slides].entries()) {
+    if (slide.include) continue
+    const patch = {}
+    if (hotspots != null && slide.meta.hotspots == null) patch.hotspots = hotspots
+    if (plan?.budget && slide.meta.time == null && plan.perSlide[i] >= 1) patch.time = formatTime(plan.perSlide[i])
+    if (!Object.keys(patch).length) continue
+    text = setSlideMeta(deck, slide.id, patch)
+    deck = parseSlides(text)
+  }
+  return text
+}
+
+// What the included decks add to the including deck's settings, or null.
+function addedSettings(config, { root, settings: included }) {
+  const fromRoot = (file, path) => {
+    if (typeof path !== 'string' || !path.trim()) return null
+    const trimmed = path.trim()
+    if (trimmed === '~' || trimmed.startsWith('~/') || trimmed.startsWith('/')) return trimmed
+    return relative(root, resolve(dirname(file), trimmed)).split(sep).join('/') || '.'
+  }
+  const list = value => [value ?? []].flat()
+  const patch = {}
+  const bibliography = list(config.bibliography)
+  const nocite = list(config.nocite)
+  const components = list(config.components)
+  const callouts = isPlainObject(config.callouts) ? { ...config.callouts } : {}
+  const known = new Set([...CALLOUT_TYPES, ...Object.keys(callouts)].map(name => name.toLowerCase()))
+  let csl = config.csl ?? null
+  for (const { file, settings } of included) {
+    for (const path of list(settings.bibliography)) { const own = fromRoot(file, path); if (own && !bibliography.includes(own)) bibliography.push(own) }
+    for (const key of list(settings.nocite)) if (!nocite.includes(key)) nocite.push(key)
+    if (csl == null && typeof settings.csl === 'string') csl = patch.csl = /\.csl$/i.test(settings.csl) ? fromRoot(file, settings.csl) : settings.csl
+    const folders = [...list(settings.components), ...(existsSync(resolve(dirname(file), 'components')) ? ['components'] : [])]
+    for (const path of folders) { const own = fromRoot(file, path); if (own && !components.includes(own) && resolve(root, own) !== resolve(root, 'components')) components.push(own) }
+    if (isPlainObject(settings.callouts)) {
+      for (const [name, title] of Object.entries(settings.callouts)) {
+        if (known.has(name.toLowerCase())) continue
+        callouts[name] = title
+        known.add(name.toLowerCase())
+      }
+    }
+  }
+  if (bibliography.length > list(config.bibliography).length) patch.bibliography = bibliography
+  if (nocite.length > list(config.nocite).length) patch.nocite = nocite
+  if (components.length > list(config.components).length) patch.components = components
+  if (Object.keys(callouts).length > Object.keys(isPlainObject(config.callouts) ? config.callouts : {}).length) patch.callouts = callouts
+  return Object.keys(patch).length ? patch : null
 }
 
 // The file in the deck's language where there is one: ./02-graphs.md in a

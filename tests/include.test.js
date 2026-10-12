@@ -128,3 +128,36 @@ test('drawings on an included slide are kept under its id, without writing into 
   assert.deepEqual([readFileSync(course, 'utf8'), readFileSync(resolve(dir, 'lectures/02-graphs.md'), 'utf8')], before)
   assert.deepEqual(Object.keys(ink.read().ink.slides), ['graphs-slide-3'])
 })
+
+test('what the included slides need comes along; the look stays the deck’s', () => {
+  const dir = folder({
+    'course.md': '---\ntheme: neue\nbibliography: course.bib\ncallouts:\n  aside: Beside\n---\n\n# Welcome\n\n---\n:::include ./lectures/graphs.md\n',
+    'lectures/graphs.md': '---\ntheme: duet\nwidth: 1280\nbibliography: refs/graphs.bib\nnocite: [euler1736]\ncsl: ieee\ncomponents: [../shared]\ncallouts:\n  aside: Margin\n  proof-sketch: Sketch\nhotspots: auto\ntime: 10m\n---\n\n# One\n\n---\n:::meta\ntime: 4m\nhotspots: off\n:::\n# Two\n\n---\n# Three\n',
+    'lectures/components/Graph.jsx': 'export default () => null\n',
+  })
+  const { source, diagnostics } = expandDeck(resolve(dir, 'course.md'))
+  assert.deepEqual(diagnostics, [])
+  const deck = parseSlides(source)
+  const config = deck.deckConfig
+  assert.equal(config.theme, 'neue')
+  assert.equal(config.width, undefined)
+  assert.deepEqual(config.bibliography, ['course.bib', 'lectures/refs/graphs.bib'])
+  assert.deepEqual(config.nocite, ['euler1736'])
+  assert.equal(config.csl, 'ieee', 'the style of the included deck, as the course has none')
+  assert.deepEqual(config.components, ['shared', 'lectures/components'])
+  assert.deepEqual(config.callouts, { aside: 'Beside', 'proof-sketch': 'Sketch' }, 'the course’s own names win')
+  // hotspots and time become the slides' own, unless they have one; the 10 minutes are shared out.
+  assert.deepEqual(deck.slides.map(slide => [slide.meta.hotspots, slide.meta.time]), [[undefined, undefined], ['auto', '3m'], ['off', '4m'], ['auto', '3m']])
+})
+
+test('slides= keeps each kept slide’s share of the included deck’s time', () => {
+  const dir = folder({ 'course.md': '# A\n\n---\n:::include ./part.md slides=2\n', 'part.md': '---\ntime: 9m\ntheme: neue\n---\n\n# One\n\n---\n# Two\n\n---\n# Three\n' })
+  assert.deepEqual(parseSlides(expandDeck(resolve(dir, 'course.md')).source).slides.map(slide => slide.meta.time), [undefined, '3m'])
+})
+
+test('time: or hotspots: alone at the top of an included file is its settings, and says so', () => {
+  const dir = folder({ 'course.md': '# A\n\n---\n:::include ./part.md\n', 'part.md': '---\ntime: 2m\n---\n\n# One\n\n---\n# Two\n' })
+  const { source, diagnostics } = expandDeck(resolve(dir, 'course.md'))
+  assert.deepEqual(diagnostics.map(d => [d.code, d.severity]), [['include-settings', 'warning']])
+  assert.deepEqual(parseSlides(source).slides.map(slide => slide.meta.time), [undefined, '1m', '1m'])
+})

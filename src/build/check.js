@@ -40,9 +40,9 @@ export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath
   if (includes) {
     const expansion = expandDeck(slidesPath, { source })
     diagnostics.push(...expansion.diagnostics)
-    // The settings of an included deck count only when it is shown alone; its
-    // palettes and components folders are the including deck's.
-    const ownOnly = new Set(['palette-contrast', 'palette-fallback', 'missing-components'])
+    // The look in an included deck's settings counts only when it is shown
+    // alone; its palettes are the including deck's.
+    const ownOnly = new Set(['palette-contrast', 'palette-fallback'])
     for (const file of expansion.files) {
       const text = readFileSync(file, 'utf8')
       for (const d of withoutSettings(text, checkDeck(file, registry, text, { includes: false }).diagnostics)) if (!ownOnly.has(d.code)) diagnostics.push({ ...d, file: d.file ?? file })
@@ -66,11 +66,17 @@ export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath
 
 // What the deck's references cannot use: missing or unreadable files, an
 // unknown style or language, citations of keys the files do not have.
+// Citations in included decks are checked too, against the references they
+// bring along (include.js), and named at their file and line.
 export async function bibliographyDiagnostics(slidesPath, source = readFileSync(slidesPath, 'utf8')) {
-  const bibliography = await resolveBibliography(slidesPath, source)
+  const expansion = expandDeck(slidesPath, { source })
+  const bibliography = await resolveBibliography(slidesPath, expansion.source)
+  const texts = [[null, source], ...expansion.files.map(file => [file, readFileSync(file, 'utf8')])]
   return (bibliography?.diagnostics ?? []).map(d => {
-    const at = d.code === 'citation-unknown' ? source.indexOf('@' + d.message.match(/@(\S+)/)?.[1]) : -1
-    const line = at < 0 ? 1 : source.slice(0, at).split('\n').length
-    return { ...d, line, column: 1 }
+    const key = d.code === 'citation-unknown' ? '@' + d.message.match(/@(\S+)/)?.[1] : null
+    const [file, text] = (key && texts.find(([, text]) => text.includes(key))) || [null, source]
+    const at = key ? text.indexOf(key) : -1
+    const line = at < 0 ? 1 : text.slice(0, at).split('\n').length
+    return { ...d, line, column: 1, ...(file ? { file } : {}) }
   })
 }

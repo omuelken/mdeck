@@ -128,7 +128,7 @@ meta:
 :::include ./lectures/02-graphs.md slides=3-7
 ```
 
-Each included file stays a deck of its own: `mdeck run lectures/02-graphs.md` still presents it alone, with its own theme and settings. Included, only its slides come along; the settings are those of the deck that includes it. `slides=3-7` (or `slides=2`, `slides=1,4-6`) keeps some of them, numbered as that file shows them.
+Each included file stays a deck of its own: `mdeck run lectures/02-graphs.md` still presents it alone, with its own theme and settings. Included, its slides come along with what they need: its references, its components, its own callout names, its hotspots setting and its time, which its slides share as they do when it is shown alone. The look (theme, palette, size, language) is that of the deck that includes it. A file of slides without settings of its own can be included too. `slides=3-7` (or `slides=2`, `slides=1,4-6`) keeps some of them, numbered as that file shows them.
 
 Pictures, videos and drawings in an included file are found from its own folder, wherever it lies. A deck in another language takes the included file in that language where there is one: `course.de.md` including `./lectures/02-graphs.md` shows `02-graphs.de.md` beside it. An included file may include others.
 

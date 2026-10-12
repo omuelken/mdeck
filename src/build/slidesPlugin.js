@@ -277,12 +277,12 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
   let languageWatch = []
   const resultsPath = resultsFileFor(abs)
   const extensionDirs = extensionRoots(abs).map(root => root.dir)
-  let componentDirs = componentFolders(abs, readRaw()).map(folder => folder.dir)
+  let componentDirs = componentFolders(abs, readDeck()).map(folder => folder.dir)
   const watchDirs = () => [...extensionDirs, ...componentDirs]
   const isWatched = file => watchDirs().some(dir => resolve(file).startsWith(dir + sep))
   // A changed `components:` list takes effect without restarting the server.
   const followComponentFolders = server => {
-    const next = componentFolders(abs, readRaw()).map(folder => folder.dir)
+    const next = componentFolders(abs, readDeck()).map(folder => folder.dir)
     if (next.join('\n') === componentDirs.join('\n')) return false
     componentDirs = next
     server.watcher.add(next)
@@ -433,7 +433,7 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
         return generateExtensionsModule(deckLookOnly(registry, config))
       }
       if (id === RESOLVED_COMPONENTS_ID) {
-        const files = componentFiles(abs, componentFolders(abs, readRaw()))
+        const files = componentFiles(abs, componentFolders(abs, readDeck()))
         const imports = files
           .map((f, i) => `import C${i} from ${JSON.stringify(f.file)}`)
           .join('\n')

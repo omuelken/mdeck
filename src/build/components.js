@@ -3,10 +3,11 @@
 // file's default export is registered under its lowercased file name, so
 // `Tokenizer.jsx` becomes `<tokenizer>`. The first folder that has a name wins,
 // and all of them override built-ins of the same name.
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { resolve, dirname, basename } from 'node:path'
 import { parseSlides } from '../core/parseSlides.js'
+import { expandedSource } from './include.js'
 
 function expand(path, deckDir) {
   if (path === '~' || path.startsWith('~/')) return resolve(homedir(), path.slice(2))
@@ -14,8 +15,9 @@ function expand(path, deckDir) {
 }
 
 // Folder paths as written in the deck, resolved; entries that are not strings
-// are left to validateDeck to report.
-export function componentFolders(slidesPath, source = readFileSync(slidesPath, 'utf8')) {
+// are left to validateDeck to report. Read from the file, the folders of the
+// decks it includes count too (include.js).
+export function componentFolders(slidesPath, source = expandedSource(slidesPath)) {
   const abs = resolve(slidesPath)
   const deckDir = dirname(abs)
   let listed = []

@@ -126,14 +126,20 @@ A slide that is nothing but an `:::include` line, with no settings, stands for t
 :::include "./lectures/week 3.md"
 ```
 
-- The included file is a complete deck and can be presented alone. When it is included, its deck settings are ignored and only its slides are taken; a problem in its settings is not reported for the including deck.
+- The included file is a complete deck and can be presented alone; a file of slides without deck settings can be included too. When it is included, its slides come along with what they need from its settings, and the look stays the including deck's:
+  - `hotspots` and `time` become each included slide's own, unless it has one. A slide without a time gets its share of the included deck's `time`, shared out as that deck does alone (its slides' own times first, the rest in equal parts); `slides=` keeps each chosen slide's share.
+  - `bibliography` files and `nocite` keys are added to the including deck's; `csl` too, when the including deck sets none.
+  - `components` folders, and a `components/` folder beside the included file, are added to the including deck's.
+  - Callout names of its own under `callouts` are added, unless the including deck names them; titles it gives built-in callouts are not.
+  - `theme`, `palette`, `appearance`, `params`, `width`, `height`, `lang`, `labels`, `show`, `meta`, `reader`, `server` and `session` are ignored, and a problem with them is not reported for the including deck.
+- A block at the top of an included file with only `time:` or `hotspots:` (keys both a deck and a slide have) is read as the file's settings, for all its slides; `mdeck check` says so. For the first slide alone, write them in a `:::meta` block.
 - `slides=` keeps the slides with these numbers (`3`, `3,5`, `2-4`), counted as the included file shows them, like `--slide`.
 - Local paths (Markdown pictures, `<img>`, `<video>`, `<videoplayer>` and `<audio>` sources, `image:` and `logo:`) are read from the included file's folder. Paths from the root (`/…`) stay as written.
 - Includes may nest. A file that includes itself, directly or through others, is an error, as is a missing file or a slide number beyond the file.
 - In a deck whose file name gives a language (`course.de.md`), `./part.md` is read as `./part.de.md` when that file exists.
 - Ids: slides of the including deck keep the ids they have in it; included slides get the included file's name in front of theirs, without leading digits (`02-graphs.md` → `graphs-slide-3`, `graphs-dijkstra`), with `-2`, `-3` … when the same name comes up again. Drawings made while presenting are saved under these ids, in the including deck's drawings file.
 - Saved rehearsal times go into the file the slide is written in. The editor (`mdeck edit`) shows an include as one card; edit included slides in their own file.
-- Deck-local components, the bibliography and palettes are the including deck's.
+- Palettes, layouts and themes are found beside the including deck.
 
 ## Available themes
 
