@@ -128,7 +128,7 @@ Open the launch page and choose **Presenter view**:
 mdeck run my-talk.md
 ```
 
-Its theme, palette and light or dark controls, under the notes, let you try other looks (fold them away with the arrow beside them). These changes are a preview: they do not save back to your text file. Once you find a look you like, put its settings in the file and save.
+Its settings (the slider button at the top) let you try other themes, palettes and light or dark. These changes are a preview: they do not save back to your text file. Once you find a look you like, put its settings in the file and save.
 
 ## More themes from other people
 

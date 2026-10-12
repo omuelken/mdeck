@@ -5,7 +5,7 @@
 //
 // A rehearsal is the same clock, started from nothing: the time each slide
 // got is what the rehearsal summary offers to save (core/timing.js).
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
 
 const fresh = () => ({ running: false, rehearsing: false, mark: 0, total: 0, spent: {}, slide: null })
 
@@ -37,7 +37,9 @@ export function useTalkTimer(key, slideId, { rehearse = false } = {}) {
   const update = change => setState(current => change(settle(current, Date.now())))
 
   useEffect(() => { try { sessionStorage.setItem(key, JSON.stringify(state)) } catch {} }, [state])
-  useEffect(() => { if (slideId != null && slideId !== state.slide) update(s => ({ ...s, slide: slideId })) }, [slideId])
+  // At once, not after the next paint: in a background tab that comes late,
+  // and the time in between went to the slide before.
+  useLayoutEffect(() => { if (slideId != null && slideId !== state.slide) update(s => ({ ...s, slide: slideId })) }, [slideId])
   useEffect(() => {
     if (!state.running) return
     const timer = setInterval(() => setTick(n => n + 1), 500)

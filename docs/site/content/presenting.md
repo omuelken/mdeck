@@ -34,17 +34,20 @@ can skip if I run out of time.
 mdeck run my-talk.md
 ```
 
-The launch page it opens has a **Presenter view** button.
+The launch page it opens has a **Presenter view** button. The presenter view shows the slide with a toolbar under it, and beside it the time, the next slide and your notes:
 
-Use its audience-window button to open a separate view of the slides. If you have a projector or second screen, move that audience window onto it. Keep the presenter window on your own screen.
+- **Under the slide**: previous and next, then drawing, black screen, all slides, hotspots and full screen, and **This slide**: what can be done on the slide shown, such as a poll's lock, results and right answer, or playing its video. Point at a button to see what it does and its key; **?** lists all keys.
+- **At the top of the notes**: the slide number (type one to jump there), the timer, the icons of who is connected, and the settings.
+- **Who is connected** (the icons): the audience windows, a paired iPad, phones; the button that opens the audience window; and the codes that pair an iPad or a phone. A red dot means something needs you, such as phones that do not follow.
+- **Settings**: the layout (speaker, slide only, phone clicker), the theme, palette and light or dark to try, the language, the timer and rehearsal, the size of the notes, and the way back to the launch page.
+
+Open the audience window from the connection icons. If you have a projector or second screen, move it there, and keep the presenter view on your own screen.
 
 The two windows follow the same slide and reveal position: navigate in either window and the other follows. This works between windows in the same browser and between your laptop and a paired iPad. To connect the iPad, see [Draw on your slides](drawing.html#present-from-an-ipad).
 
 A video file you play, pause or move in the presenter view does the same in the audience window, which plays the sound; the presenter view's copy stays silent while the audience window is open. Click the audience window once before the talk, so the browser lets it play sound.
 
-Small icons next to **Speaker View** show what is connected to the deck: presenter views, audience windows and, for decks with polls, how many phones. Point at them to see on which devices, such as "Presenter view on an iPad". The launch page shows the same under **Present**, and marks each view that is open.
-
-For a single screen, switch the presenter view to its slide-only layout. **F** or the fullscreen button fills the screen in either the presenter view or the audience window; fullscreen does not select another view.
+For a single screen, choose **Slide only** in the settings. **F** or the fullscreen button fills the screen in either the presenter view or the audience window; fullscreen does not select another view.
 
 To let people answer a question on their phones, put a poll on a slide. See [Ask your audience](audience.html).
 
@@ -72,9 +75,9 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 
 ## Use your phone as a clicker
 
-Start `mdeck run my-talk.md --network`, choose **Use a phone as clicker** under **Present from an iPad or a phone** on the launch page, and scan the code with the phone's camera. The phone shows the slide small at the top, the next slide's heading, the time, your notes in large print, and big **Previous** and **Next** buttons where your thumb is; there is nothing to draw with. The button with the crossed-out screen makes the audience's screen black. The audience window on the laptop follows the phone. Where the browser allows it (`https://`, or a page on the laptop itself), the phone's screen stays on during the talk.
+Start `mdeck run my-talk.md --network`, open the presenter view, click the connection icons at its top, choose **Phone clicker**, and scan the code with the phone's camera. The phone shows the slide small, the time and how you stand against the plan, your notes in large print, and big **Previous** and **Next** buttons where your thumb is. Under the slide it has the slide's own controls: close a poll, show its results or the right answer, play a video, zoom into a numbered part. The audience window on the laptop does what the phone does. Nothing on the phone draws. Where the browser allows it (`https://`, or a page on the laptop itself), the phone's screen stays on during the talk.
 
-The clicker is a layout of the presenter view: the phone button at the top of the speaker layout switches any presenter view to it, and the tablet button in the clicker switches back to the slide alone. Each device remembers its layout.
+The clicker is one of the presenter view's layouts: the settings switch any presenter view between **Speaker**, **Slide only** and **Clicker**, on the phone as well. Each device remembers its layout.
 
 ## Black out the screen
 
@@ -118,7 +121,7 @@ You do not have to guess the times. Rehearse the talk and mdeck measures them:
 mdeck rehearse my-talk.md
 ```
 
-This opens the presenter view rehearsing: the timer starts, and every second on a slide counts towards it, including when you come back to it. **Rehearse** in the presenter view, and the tile on the launch page, start a rehearsal too. Press **Finish**, or go on past the last slide, and a table shows for each slide the time it has, the time you spent and the new time, rounded to 15 seconds. Change a new time in 15-second steps with **−** and **+** (or **↑** and **↓** on its row), put back the time the slide had, or take the slide's time out. **Save to deck** writes the new times into the slides' settings, so you can see them in the file and change them like any other setting. The open windows do not reload, and the deck is copied to `.mdeck-backups/` first.
+This opens the presenter view rehearsing: the timer starts, and every second on a slide counts towards it, including when you come back to it. **Rehearse** in the presenter view's settings, and the tile on the launch page, start a rehearsal too. Press **Finish**, or go on past the last slide, and a table shows for each slide the time it has, the time you spent and the new time, rounded to 15 seconds. Change a new time in 15-second steps with **−** and **+** (or **↑** and **↓** on its row), put back the time the slide had, or take the slide's time out. **Save to deck** writes the new times into the slides' settings, so you can see them in the file and change them like any other setting. The open windows do not reload, and the deck is copied to `.mdeck-backups/` first.
 
 Saving needs `mdeck run` or `mdeck rehearse`. A deck you built can still rehearse; **Copy** gives you the times to paste in yourself.
 

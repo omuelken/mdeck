@@ -994,8 +994,20 @@ export default function Counter() {
 - Choose names that belong to your component, such as `countdown` or
   `quiz:round`: every component in the deck shares one set of names.
 
-`mdeck/component` is the part of mdeck that components may rely on; it is
-kept stable across versions. A component renders inside its slide. Anything
+A button the presenter uses during the talk, such as one that starts or stops
+something, can be offered in the presenter view's toolbar and on the phone
+clicker: give it `data-presenter-control`, an `aria-label` (or a value for
+`data-presenter-control`) that says what it does, `aria-pressed` while it is
+on, and `data-presenter-icon` with one of mdeck's icon names. A press there
+clicks the button on the slide.
+
+```jsx
+<button data-presenter-control data-presenter-icon="play" aria-label="Start the countdown"
+  aria-pressed={running} onClick={toggle}>…</button>
+```
+
+`mdeck/component` and these attributes are the part of mdeck that components
+may rely on; they are kept stable across versions. A component renders inside its slide. Anything
 else it reaches, such as the page outside its slide, the `<deck-stage>`, mdeck's
 events or the presenter view, is not part of it and may change without notice.
 

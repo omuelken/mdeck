@@ -20,7 +20,7 @@ import { resultsPlugin } from '../src/build/resultsPlugin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-browser-check-'))
-let browser, dev, pollDev, inkDev, stageDev, videoDev, langDev, tablet2
+let browser, dev, pollDev, inkDev, stageDev, videoDev, langDev, clickDev, tablet2
 try {
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-layouts/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   browser = await launchChrome({ dir: temp, timeout: 45000 })
@@ -323,6 +323,49 @@ try {
   await delay(300)
   assert.equal(await sharedAudience.evaluate("document.querySelector('.shared-counter').textContent"), '2', 'a preview does not change it')
   await Promise.all([sharedPresenter.close(), sharedAudience.close(), lateDeck.close()])
+
+  // The phone clicker (?layout=remote): nothing to draw with, and the slide's
+  // own controls as big buttons: a poll's right answer, a video, hotspots.
+  // What it presses reaches the audience window.
+  const clickDir = resolve(temp, 'clicker')
+  mkdirSync(clickDir, { recursive: true })
+  copyFileSync(resolve(root, 'tests/fixtures/video/clip.webm'), resolve(clickDir, 'clip.webm'))
+  writeFileSync(resolve(clickDir, 'slides.md'), '---\ntheme: neue\nhotspots: auto\n---\n\n---\n# Vote\n\n<poll room="q" options="Yes|No" answer="Yes" />\n\n---\n# Parts\n\n:::columns\n\n```js\nconst a = 1\n```\n\n+++\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n:::\n\n---\n# Clip\n\n<videoplayer src="./clip.webm" />\n')
+  // As mdeck run serves it: a poll's controls need the live server.
+  const clickConfig = baseConfig(resolve(clickDir, 'slides.md'))
+  clickDev = await createServer({ ...clickConfig, publicDir: clickDir, plugins: [...clickConfig.plugins, livePlugin()], server: { ...clickConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  await clickDev.listen()
+  const clickBase = clickDev.resolvedUrls.local[0]
+  const clicker = await open(new URL('?view=presenter&layout=remote&session=clicker-check', clickBase).href)
+  const clickFrame = "document.querySelector('iframe')?.contentWindow?.document"
+  await until(clicker, `!!document.querySelector('.presenter--remote') && ${clickFrame}?.querySelector('deck-stage')?.length === 3`)
+  const clickAudience = await open(new URL('?view=audience&session=clicker-check', clickBase).href)
+  await until(clickAudience, "document.querySelector('deck-stage')?.length === 3")
+  await delay(400)
+  assert.equal(await clicker.evaluate(`!!${clickFrame}.querySelector('.ink-toolbar-host') || ${clickFrame}.querySelector('deck-stage').hasAttribute('data-hotspot-badges')`), false, 'nothing to draw with on the clicker')
+  const clickButton = label => `[...document.querySelectorAll('.presenter-slide-control')].find(b => b.getAttribute('aria-label')?.includes(${JSON.stringify(label)}))`
+  await until(clicker, `!!${clickButton('Show the right answer')}`)
+  await clicker.evaluate(`${clickButton('Show the right answer')}.click()`)
+  await until(clickAudience, "!!document.querySelector('[data-deck-active] .poll-row.is-correct')")
+  await until(clicker, `${clickButton('Hide the right answer')}?.getAttribute('aria-pressed') === 'true'`)
+  // Hotspots are found in an animation frame: the phone's page is in front.
+  await clicker.send('Page.bringToFront')
+  await clicker.evaluate("document.querySelector('.presenter-remote-next').click()")
+  await until(clicker, "document.querySelectorAll('.presenter-slide-hotspot').length >= 2")
+  await clicker.evaluate("document.querySelector('.presenter-slide-hotspot').click()")
+  await until(clickAudience, "document.querySelector('deck-stage').zoom?.scale > 1")
+  await until(clicker, "document.querySelector('.presenter-slide-hotspot')?.getAttribute('aria-pressed') === 'true' && !!document.querySelector('.presenter-slide-whole')")
+  await clicker.evaluate("document.querySelector('.presenter-slide-whole').click()")
+  await until(clickAudience, "document.querySelector('deck-stage').zoom?.scale === 1")
+  await clicker.evaluate("document.querySelector('.presenter-remote-next').click()")
+  await until(clicker, `!!${clickButton('Play the video')}`)
+  await clicker.evaluate(`${clickButton('Play the video')}.click()`)
+  await until(clickAudience, "document.querySelector('[data-deck-active] video')?.paused === false")
+  await until(clicker, `!!${clickButton('Pause the video')}`)
+  await clicker.evaluate(`${clickButton('Pause the video')}.click()`)
+  await until(clickAudience, "document.querySelector('[data-deck-active] video')?.paused === true")
+  await Promise.all([clicker.close(), clickAudience.close()])
+  await clickDev.close()
 
   const presenter = await open('deck.html?view=presenter')
   const stage = "document.querySelector('iframe')?.contentWindow?.document.querySelector('deck-stage')"
@@ -832,7 +875,7 @@ try {
   assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
   await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
+  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, the phone clicker with the slide\'s controls, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()
@@ -841,6 +884,7 @@ try {
   await inkDev?.close()
   await stageDev?.close()
   await videoDev?.close()
+  await clickDev?.close()
   await langDev?.close()
   rmSync(temp, { recursive: true, force: true })
 }

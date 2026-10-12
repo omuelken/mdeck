@@ -1773,7 +1773,16 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       if (this._hotspotRaf) return;
       // A hidden page gets no frames: its keys still need the hotspots.
       if (typeof requestAnimationFrame !== 'function' || document.hidden) { this._refreshHotspots(); return; }
-      this._hotspotRaf = requestAnimationFrame(() => { this._hotspotRaf = 0; this._refreshHotspots(); });
+      // A page in the background gets its frames late or not at all: a timer
+      // stands in, whichever comes first.
+      const run = () => {
+        if (!this._hotspotRaf) return;
+        cancelAnimationFrame(this._hotspotRaf); clearTimeout(this._hotspotTimer);
+        this._hotspotRaf = 0;
+        this._refreshHotspots();
+      };
+      this._hotspotRaf = requestAnimationFrame(run);
+      this._hotspotTimer = setTimeout(run, 120);
     }
 
     // An element's box in design pixels, whatever the canvas's transform.
@@ -1791,6 +1800,8 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       const design = { width: this.designWidth, height: this.designHeight };
       this._hotspots = findHotspots(slide, { mode: this.hotspotMode, design, max: ZOOM_MAX, rectOf: element => this._designRect(element) });
       this.toggleAttribute('data-has-hotspots', this._hotspots.length > 0);
+      // The presenter's toolbar and the phone clicker list them (slideControls.js).
+      this.dispatchEvent(new CustomEvent('hotspotschange', { detail: { count: this._hotspots.length } }));
       const layer = this._hotspotLayer;
       if (!layer) return;
       layer.replaceChildren(...this._hotspots.flatMap(({ rect }, i) => {
