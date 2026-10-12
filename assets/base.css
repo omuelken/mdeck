@@ -183,7 +183,10 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 /* ── Code blocks ─────────────────────────────────────────────────────────── */
 .code-block { white-space: pre-wrap; overflow-x: hidden; }
 /* Code and maths read from left to right, also on a right-to-left slide. */
-.slide[dir="rtl"] :is(pre, code, kbd, samp, .katex, .code-block-wrapper) { direction: ltr; unicode-bidi: isolate; }
+.slide[dir="rtl"] :is(pre, code, kbd, samp, .katex, .code-block-wrapper, .themed-picture) { direction: ltr; unicode-bidi: isolate; }
+/* A citation and a reference read in their own direction: Latin names stay in
+   order beside Arabic text, and a reference list in Latin script stays left aligned. */
+.slide[dir="rtl"] .citation, .slide[dir="rtl"] .slide-citations .csl-entry { unicode-bidi: plaintext; }
 /* A bullet that points along the line points the other way. */
 .slide[dir="rtl"] .slide-body ul > li::before { scale: -1 1; }
 
