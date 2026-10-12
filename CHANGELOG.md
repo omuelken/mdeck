@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fixed: with polls on your own server, the presenter view counted no phones: they join that server, while the presenter view's room stays on your computer. `mdeck run` now asks the server how many phones joined.
+- Shorter status lines in the presenter view: "Poll server needs an update to 3.12.1.", "Phones follow another screen. Change slide to take them back."
+
 ## 3.12.0 — 2026-10-12
 
 - In a word cloud each phone counts with one word: a new one replaces its earlier word, and the phone says which it sent. Before, one phone could fill the cloud.

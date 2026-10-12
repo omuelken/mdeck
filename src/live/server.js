@@ -14,11 +14,25 @@ export function livePlugin({ pairing = null, upstream = null, key = null, sessio
   return {
     name: 'vite-plugin-mdeck-live',
     configureServer(server) {
+      const rooms = createRooms()
       const handler = liveHandler({
-        rooms: createRooms(),
+        rooms,
         canReset: (request, room) => isAllowedRequest(request) || (!!pairing?.allows(request) && (room == null || room === session() || room.startsWith(`${session()}.`))),
         info: () => ({ network: server.resolvedUrls?.network?.[0] ?? null }),
       })
+      // With polls on a standalone server, the phones join there: its count
+      // joins the local stage room's, so the presenter sees them.
+      const awayTimer = setInterval(async () => {
+        const address = typeof upstream === 'function' ? upstream() : upstream
+        const code = session()
+        if (!address || !code) return
+        try {
+          const response = await fetch(`${address.replace(/\/+$/, '')}/rooms/${encodeURIComponent(code)}.stage/presence`, { signal: AbortSignal.timeout(3000) })
+          if (response.ok) rooms.setAwayPhones(code, Number((await response.json()).phones) || 0)
+        } catch {}
+      }, 4000)
+      awayTimer.unref?.()
+      server.httpServer?.once('close', () => clearInterval(awayTimer))
       server.middlewares.use('/__mdeck/live', (request, response, next) => {
         const address = typeof upstream === 'function' ? upstream() : upstream
         // The stage room (position and live ink between the presenter's

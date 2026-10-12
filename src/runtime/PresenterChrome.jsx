@@ -99,9 +99,9 @@ const PAIR = {
 function Polls({ live, recheck }) {
   const [copied, setCopied] = useState(false)
   const copy = () => navigator.clipboard?.writeText(live.joinUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500) }, () => {})
-  const problem = live.server && !live.reachable ? `The poll server does not answer${live.error ? ` (${live.error})` : ''}.`
-    : !live.joinUrl ? <>Phones cannot reach this computer: start with <code>--network</code>, or set <code>server</code> in the deck.</>
-    : live.server && live.key && !live.keyAccepted ? 'The poll server does not accept this key: phones do not follow.'
+  const problem = live.server && !live.reachable ? 'Poll server not answering.'
+    : !live.joinUrl ? <>Phones can’t reach this computer: use <code>--network</code>.</>
+    : live.server && live.key && !live.keyAccepted ? 'Poll server refuses the key.'
     : null
   // A server on an older mdeck answers, but lacks what is new (reactions came with 3.12).
   const outdated = !problem && live.server && live.serverOutdated
@@ -111,8 +111,8 @@ function Polls({ live, recheck }) {
       <a href={live.joinUrl} target="_blank" rel="noopener" title="The join link for phones" style={{ color: '#ccc', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{live.joinUrl.replace(/^https?:\/\//, '')}</a>
       <ToolButton class="presenter-copy-join" icon={copied ? 'check' : 'copy'} label={copied ? 'Copied' : 'Copy the join link'} size={15} style={{ minWidth: '30px', height: '30px', padding: 0, flexShrink: 0 }} onClick={copy} />
     </span>}
-    {outdated && <span class="presenter-server-outdated" style={{ color: '#f5a524' }}>
-      Your poll server runs {live.serverVersion ? `mdeck ${live.serverVersion}` : 'an older mdeck'}, this computer {live.version}: what is new, such as reactions, may not reach the phones. Update it with <code>npm install -g mdeck</code> and restart <code>mdeck server</code>.
+    {outdated && <span class="presenter-server-outdated" style={{ color: '#f5a524' }} title={`Server ${live.serverVersion ?? 'older'}, here ${live.version}: npm install -g mdeck there, then restart mdeck server`}>
+      Poll server needs an update to {live.version}.
     </span>}
     {problem && <span style={{ display: 'flex', gap: '8px', alignItems: 'center', color: '#f28b82' }}>
       <span style={{ flex: 1 }}>{problem}</span>

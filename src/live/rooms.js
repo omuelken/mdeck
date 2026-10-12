@@ -43,13 +43,23 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
   const broadcast = (room, event) => { for (const listener of room.listeners) listener(event) }
   // A session is a room and the rooms named after it (`<code>.stage`, …).
   const sessionRooms = id => { const session = id.split('.')[0]; return [...rooms].filter(([name]) => name === session || name.startsWith(`${session}.`)).map(([, room]) => room) }
+  // Phones connected elsewhere, by session: mdeck run keeps the stage room
+  // here but the phones join a standalone server (src/live/server.js).
+  const awayPhones = new Map()
   const presence = id => {
     const present = sessionRooms(id).flatMap(room => [...room.present.values()])
     const views = present.filter(entry => entry.view !== 'phone').sort((a, b) => VIEWS.indexOf(a.view) - VIEWS.indexOf(b.view))
-    return { views, phones: present.length - views.length }
+    return { views, phones: present.length - views.length + (awayPhones.get(id.split('.')[0]) ?? 0) }
   }
   const announcePresence = id => { const event = { type: 'presence', presence: presence(id) }; for (const room of sessionRooms(id)) broadcast(room, event) }
   return {
+    /** Phones of session `id` that joined another server; announced when the number changes. */
+    setAwayPhones(id, n) {
+      const session = id.split('.')[0]
+      if ((awayPhones.get(session) ?? 0) === n) return
+      awayPhones.set(session, n)
+      announcePresence(session)
+    },
     post(id, { from = null, data }) {
       const room = get(id)
       // Reactions (src/core/reactions.js) are passed on and forgotten.

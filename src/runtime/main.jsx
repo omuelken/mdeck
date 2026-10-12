@@ -148,10 +148,10 @@ function announceSlide(deck, index, { initial = false } = {}) {
 // Whether this presenter screen moves the phones along, shown only for decks
 // with activities: a failure used to be silent.
 const STEERING = {
-  'no-code': 'Phones do not follow: this browser has no server key. Open the presenter view once with ?serverkey=… (the launch page has a link).',
-  'wrong-code': "Phones do not follow: the server does not accept this browser's presenter code.",
-  unreachable: 'Phones do not follow: the server does not answer.',
-  'other-screen': 'Phones follow another screen, where this presentation was moved on more recently. Change the slide here to take them back.',
+  'no-code': 'Phones don’t follow: no server key here.',
+  'wrong-code': 'Phones don’t follow: key refused.',
+  unreachable: 'Phones don’t follow: server not answering.',
+  'other-screen': 'Phones follow another screen. Change slide to take them back.',
 }
 
 function injectSpeakerNotes(slides) {
