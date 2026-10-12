@@ -12,9 +12,10 @@ import 'katex/dist/katex.min.css'
 // the number of answers, the live dot, Reset and the presenter's controls.
 
 export const shortLink = url => url.replace(/^https?:\/\//, '')
-// `qr="false"` (or "no", "off") leaves the code out: it was on an earlier
-// slide (<qrcode join />), and people's phones follow along.
-export const wantsQr = qr => !/^(false|no|off|0)$/i.test(String(qr ?? 'true'))
+// An activity shows no join code of its own: the presenter puts it over the
+// slide when it is wanted (J), and phones that joined follow along. `qr` (or
+// `qr="true"`) still puts the code beside the question.
+export const wantsQr = qr => qr != null && !/^(false|no|off|0)$/i.test(String(qr))
 // A switch such as `multiple`: on when given, unless it says false.
 export const isSet = value => value != null && !/^(false|no|off|0)$/i.test(String(value))
 

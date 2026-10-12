@@ -469,7 +469,7 @@ Eine Zeile ergibt eine Umfrage; die Überschrift ist die Frage:
 
 `<poll room="tour" options="Schreiben|Layouts|Zeichnen|Umfragen" />`
 
-Handys kommen über den QR-Code dazu. Sie erreichen diesen Computer, wenn du `mdeck run slides.md --network` startest.
+Drück **J**, dann erscheint der Beitrittscode über der Folie; Handys scannen ihn und bleiben für alle weiteren Fragen dabei. Sie erreichen diesen Computer, wenn du `mdeck run slides.md --network` startest.
 :::
 
 ---
@@ -480,8 +480,7 @@ time: 1m
 # Ein Wort von allen
 :::slot left
 ```markdown
-<wordcloud room="mood"
-  qr="false" />
+<wordcloud room="mood" />
 
 <scale room="pace" min="1" max="5"
   low="Zu langsam" high="Zu schnell" />
@@ -490,11 +489,11 @@ time: 1m
 ```
 :::
 :::slot right
-<wordcloud room="mood" placeholder="Ein Wort" qr="false" />
+<wordcloud room="mood" placeholder="Ein Wort" />
 :::
 
 :::notes
-Handys, die mit dem Code der Umfrage beigetreten sind, bleiben dabei: `qr="false"` lässt den Code hier weg. Antworten erscheinen, sobald sie eintreffen.
+Handys, die bei der Umfrage beigetreten sind, bleiben dabei; **J** zeigt den Beitrittscode für Nachzügler noch einmal. Antworten erscheinen, sobald sie eintreffen.
 
 Neben Umfragen und Wortwolken gibt es Bewertungen (`<scale>`), Zahlen mit richtiger Antwort (`<numeric>`) und offene Fragen (`<question>`). Bei mehreren davon zeigt `<qrcode join />` auf einer frühen Folie den Code einmal. `mdeck run` speichert die Antworten in `slides.results.json` neben dem Deck.
 :::

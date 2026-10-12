@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "rooms": {
+    "tour": {
+      "savedAt": "2026-10-12T21:02:59.375Z",
+      "closed": false,
+      "answers": [
+        {
+          "phone": 1,
+          "at": "2026-10-12T21:01:59.353Z",
+          "value": "Umfragen"
+        }
+      ]
+    }
+  }
+}

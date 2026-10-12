@@ -1087,7 +1087,9 @@ async function init() {
 
   // Drawing (D) in the full-screen deck and the presenter's main frame.
   const inkStage = document.querySelector('deck-stage')
-  // The join code over the slide, on every screen but the next-slide preview.
+  // The join code over the slide, on every screen but the next-slide preview;
+  // J shows it in a deck phones join.
+  if (inkStage && (hasActivities() || reactionsOf(deckConfig))) inkStage.setAttribute('data-joinable', '')
   if (inkStage && !(embedded && !drawHere)) {
     const host = document.createElement('div')
     host.className = 'join-overlay-host'

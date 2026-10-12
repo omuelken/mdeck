@@ -1081,6 +1081,9 @@ import { flight, durationFor, ease } from './zoom/camera.js'
         toggleFullscreen();
       } else if (key === 'r' || key === 'R') {
         this.reset();
+      } else if ((key === 'j' || key === 'J') && this._isPage() && !this.hasAttribute('data-watching') && this.hasAttribute('data-joinable')) {
+        // J: the join code over the slide, in a deck phones join (main.jsx sets data-joinable).
+        this.setJoin(!this._join, 'keyboard');
       } else if ((key === 'b' || key === 'B' || key === '.') && this._isPage() && !this.hasAttribute('data-watching')) {
         // B, or the "blank" button of a presenter's clicker, which sends a full stop.
         this.setBlank(!this._blank, 'keyboard');

@@ -34,7 +34,7 @@ Every poll in a presentation shows the same code, so people scan once. Their pho
 | `multiple` | Each phone may pick several options. The slide and the phones say “Several answers possible”. Without it, one option per phone. |
 | `buttons` | `letters` puts A, B, C … before the options on the slide, and the phones show only those letters; `numbers` does the same with 1, 2, 3 … For options that are pictures or long formulas, better read on the big screen. |
 | `results` | `hidden` starts with the bars hidden, e.g. to let people vote before they see what others chose. |
-| `qr` | `false` leaves out the QR code, when an earlier slide showed it with `<qrcode join />`. |
+| `qr` | Puts the deck's join code beside the question. Usually not needed: **J** shows it over any slide (see below). |
 
 The question and the options may contain formatting and formulas, written as on a slide, so a maths lecture can ask:
 
@@ -96,9 +96,11 @@ Besides a poll, four more kinds work the same way: one line on a slide, answered
 
 All of them take `room`, `question` and `qr` like a poll, and `placeholder` for the text fields. Their `question`, and the scale's `low` and `high`, may contain formatting and formulas like a poll's options. All of them have the lock that closes them; `<numeric>` also has the eye and the tick, and takes `results="hidden"`.
 
-## Show the code once
+## Let phones join
 
-Each question shows the QR code unless you say otherwise. To invite everybody once, at the start, put the code on a slide of its own and leave it out of the questions:
+Questions show no QR code of their own. When people should join, press **J** in the presenter view (or the QR-code button): the deck's join code appears large over the slide on the projector and every other screen, with the link below it. Phones that scanned it follow along to every question. **J** again, or the next step, shows the slide again; press it once more for people who arrive late.
+
+To keep the code on a slide of its own, or beside one question, write it there:
 
 ```markdown
 ---
@@ -109,12 +111,12 @@ Each question shows the QR code unless you say otherwise. To invite everybody on
 ---
 # How do you make slides today?
 
-<poll room="tools" options="PowerPoint|Keynote|Markdown" qr="false" />
+<poll room="tools" options="PowerPoint|Keynote|Markdown" />
 ```
 
-`<qrcode join />` shows the presentation's join code large, with the link below it. Phones that scanned it follow along to every question. With `qr="false"`, a question leaves out its own code. Leave the join slide up for a while, or come back to it, for people who arrive late. `size` sets the size of the code on the join slide.
+`<qrcode join />` shows the join code large on that slide (`size` sets its size); `qr` on a question puts the code beside it.
 
-You need no join slide at all: the join button in the presenter view (the QR-code icon, or **J**) shows the join code large over whatever slide is up, on the projector and every other screen. Press it again, or go on, and the slide is back. The presenter view's connection icons show the join link to copy, the session code, and whether phones can reach the poll server.
+The presenter view's connection icons show the join link to copy, and whether phones can reach the poll server.
 
 The code is drawn in the slide's colours, so it fits the theme; phone cameras also read light codes on dark slides.
 
@@ -136,7 +138,7 @@ reactions: true
 
 The phones' answer page then has a row of buttons, 👍 👏 ❤️ 😮 🤔 🐢, below the question or while they wait for the next one. A tap floats up in the corner of your presenter view for a moment, and a small tally keeps what came in the last minute, so a few 🐢 ("slower, please") still show after they faded. The audience window and the projector never show them. Give your own, up to eight emoji or short words: `reactions: [👍, 🤔, 🐢, louder]`. Each phone can react about once a second; reactions are not kept anywhere.
 
-People reach the answer page through a join code, so a deck with reactions and no questions shows `<qrcode join />` somewhere at the start.
+People reach the answer page through the join code: press **J** in the presenter view to show it, also in a deck with reactions and no questions.
 
 Hover over the results to see **Reset**, which clears the answers, for example before the real session. Only the presenter can reset.
 

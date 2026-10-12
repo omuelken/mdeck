@@ -13,7 +13,7 @@
 // `drawer` whether N does (the presenter view's slide-only layout);
 // `languages` whether L does; `blank` whether the screen is black (B);
 // `overview` whether the grid of all slides (O) is open; `join` whether J
-// works (the presenter view of a deck phones join) and `joinShown` whether
+// works (a deck phones join) and `joinShown` whether
 // the join code is over the slide;
 // `mac` names the command key ⌘ instead of Ctrl.
 // Returns groups: [{ title, keys: [{ keys: ['→', 'Space'], label }] }].
@@ -38,7 +38,7 @@ export function keyHelp({ view = 'deck', blank = false, join = false, joinShown 
     ...(presenter ? [entry(['T'], 'Start or pause the timer')] : []),
     entry(['O'], overview ? 'Close the overview' : 'All slides, to pick one'),
     entry(['B', '.'], blank ? 'Show the slide again' : 'Black screen for the audience'),
-    ...(presenter && join ? [entry(['J'], joinShown ? 'Hide the join code' : 'Show the join code over the slide')] : []),
+    ...(join ? [entry(['J'], joinShown ? 'Hide the join code' : 'Show the join code over the slide')] : []),
     ...(presenter && drawer ? [entry(['N'], 'Show or hide the notes')] : []),
     ...(presenter ? [entry(['H'], hotspotSwitch ? 'Turn hotspots off' : 'Turn hotspots on')] : []),
     ...(presenter && languages ? [entry(['L'], 'Next language')] : []),

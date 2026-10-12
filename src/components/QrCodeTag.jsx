@@ -7,8 +7,8 @@ import './poll.css'
 
 // <qrcode url="https://example.com" size="240" /> on a slide.
 // <qrcode join />: the deck's join link for audience questions, with the
-// short link below it, so a slide early in the talk can invite everyone once
-// and the questions after it can leave out their own code (`qr="false"`).
+// short link below it, for a slide that invites everyone (the presenter view
+// can also put it over any slide, J).
 // <qrcode follow />: the link for following the slides on a phone or laptop.
 
 function JoinQr({ size }) {

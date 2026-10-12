@@ -836,7 +836,7 @@ For `play="auto"` the video pauses and resets to the beginning when you navigate
 | `room` | `poll` | Name of the room that collects the answers; unique per poll in a deck. Letters, digits, `.`, `-`, `_` |
 | `options` | — | Answers separated by `\|`. Markdown and `$…$` maths, as on a slide (see below). Or a list inside the tag |
 | `question` | — | Question text, Markdown and maths like `options`; phones fall back to the slide heading |
-| `qr` | `true` | `false` leaves out the QR code (shown earlier with `<qrcode join />`) |
+| `qr` | `false` | Puts the join code beside the question; **J** in the presenter view shows it over any slide |
 | `answer` | — | The right answer (several separated by `\|`): a button with a tick outlines its label, bar and count in green, also in the audience window and on paired devices, and each phone says whether its vote was right. `--poll-correct` sets the colour |
 | `multiple` | — | Each phone may pick several options; the slide and the phones say so. A vote is then the list of options picked, and is right when it is exactly the `answer` options |
 | `buttons` | — | `letters` puts A, B, C … before the options, and the phones show only those; `numbers` does the same with 1, 2, 3 …. For options better read on the slide, such as pictures (`options="![](a.svg)\|![](b.svg)"`) |

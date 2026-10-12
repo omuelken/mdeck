@@ -95,6 +95,8 @@ function DeckKeyHelp({ stage, canDraw }) {
   const context = {
     view: 'deck',
     blank: stage.blank,
+    join: stage.hasAttribute('data-joinable'),
+    joinShown: stage.join,
     overview: stage.overview,
     hotspots: stage.hotspotMode !== 'off',
     inking: stage.inking,
