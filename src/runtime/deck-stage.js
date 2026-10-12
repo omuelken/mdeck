@@ -1600,7 +1600,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     // bus), in design pixels. While the pen is down a trail's points stay
     // (time Infinity); lifted, they are stamped so that they expire one after
     // the other within LASER_MS, and the trail retracts from its tail. Frames
-    // run only while some trail is left.
+    // run only while some trail is shown or retracting.
 
     _laserEntry(key, slideId) {
       let entry = this._lasers.get(key);
@@ -1621,7 +1621,6 @@ import { flight, durationFor, ease } from './zoom/camera.js'
         if (!begins && last && last[2] === Infinity && Math.hypot(x - last[0], y - last[1]) < LASER_STEP) return;
         entry.points.push([x, y, Infinity, begins]);
       });
-      entry.heldSince = performance.now();
       if (key !== 'local') { clearTimeout(entry.heldTimer); entry.heldTimer = setTimeout(() => this.laserRelease(key), LASER_HELD_MS); }
       entry.dot = points[points.length - 1];
       this._kickLaser();
@@ -1634,7 +1633,6 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       const held = entry.points.filter(p => p[2] === Infinity);
       const now = performance.now();
       held.forEach((p, i) => { p[2] = now - LASER_MS + LASER_MS * (i + 1) / held.length; });
-      entry.heldSince = null;
       clearTimeout(entry.heldTimer);
       this._kickLaser();
     }
@@ -1676,8 +1674,9 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       for (const [key, entry] of this._lasers) {
         entry.points = entry.points.filter(p => now - p[2] < LASER_MS);
         if (!entry.points.length && !entry.dot) { this._lasers.delete(key); continue; }
-        // Only a retracting trail needs frames; a held one is drawn again when points arrive.
-        if (entry.points.some(p => p[2] !== Infinity)) running = true;
+        // A held trail needs frames too: a zoom, a new size or another slide
+        // must move it while the pen stays still.
+        if (entry.points.length) running = true;
         if (entry.slideId && slideId && entry.slideId !== slideId) continue;
         // A red glow with a white core, the core drawn second.
         for (const [color, lineWidth, blur] of [[LASER_GLOW, 8, 14], [LASER_CORE, 3, 0]]) {
