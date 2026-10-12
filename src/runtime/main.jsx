@@ -37,6 +37,7 @@ import { ConnectedViews } from '../components/ConnectedViews.jsx'
 import './deck-stage.js'
 import { normalMode, hotspotMode } from './hotspots.js'
 import { useTalkTimer } from './useTalkTimer.js'
+import { devPath } from '../core/devPath.js'
 import { RehearsalSummary } from './RehearsalSummary.jsx'
 import { planFor, scheduleAt, formatClock } from '../core/timing.js'
 
@@ -224,6 +225,17 @@ function usePresence() {
   return presence
 }
 
+// The launch page of `mdeck run`, when this computer's presenter view was
+// served by it; a built deck, `mdeck edit` and a paired iPad have none.
+function useLaunchPage() {
+  const [url, setUrl] = useState(null)
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    fetch(devPath('__mdeck/home/info'), { cache: 'no-store' }).then(response => { if (response.ok) setUrl(devPath('home.html')) }, () => {})
+  }, [])
+  return url
+}
+
 function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [index, setIndex] = useState(0)
   // The notes, slide count and phones follow the language shown.
@@ -250,6 +262,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   // Whether the number keys zoom on the slide shown: a slide may have its own setting.
   const slideHotspots = hotspotMode({ slide: slides[index]?.meta.hotspots, deck: deckConfig.hotspots, forced: hotspotsForced }) !== 'off'
   const presence = usePresence()
+  const launchPage = useLaunchPage()
   // Drawing in the slide's frame: this page around it must not pan or bounce either.
   useEffect(() => { document.documentElement.classList.toggle('is-inking', inking) }, [inking])
   // The slide zooms itself (two fingers in its frame); Safari's page zoom
@@ -541,6 +554,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
           <button class="presenter-notes" title="Notes (N)" aria-pressed={drawerOpen} style={{ ...pill, ...(drawerOpen ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={() => setDrawerOpen(open => !open)}>Notes</button>
           {canFullscreen && <button class="presenter-fullscreen" style={pill} title={fullscreenLabel} aria-label={fullscreenLabel} aria-pressed={isFullscreen} onClick={() => fullscreen.toggle()}><PresenterIcon name={fullscreenIcon} /></button>}
           <button style={pill} title="Speaker layout: slide, notes and next slide side by side" onClick={() => chooseLayout('speaker')}><PresenterIcon name="speaker" /></button>
+          {launchPage && <a class="presenter-home" href={launchPage} style={{ ...pill, textDecoration: 'none' }} title="Back to the launch page" aria-label="Back to the launch page"><PresenterIcon name="home" /></a>}
         </div>
       )}
       <aside class="presenter-aside" style={{
@@ -564,6 +578,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {!slideLayout && canFullscreen && <button class="presenter-fullscreen" style={{ ...S.btn, padding: '3px 8px' }} title={fullscreenLabel} aria-label={fullscreenLabel} aria-pressed={isFullscreen} onClick={() => fullscreen.toggle()}><PresenterIcon name={fullscreenIcon} /></button>}
+            {!slideLayout && launchPage && <a class="presenter-home" href={launchPage} style={{ ...S.btn, padding: '3px 8px', textDecoration: 'none' }} title="Back to the launch page" aria-label="Back to the launch page"><PresenterIcon name="home" /></a>}
             {!slideLayout && <button class="presenter-layout" style={{ ...S.btn, padding: '3px 8px' }} title="Slide only, notes in a drawer (for an iPad)" onClick={() => chooseLayout('slide')}><PresenterIcon name="tablet" /></button>}
             <span style={{ color: '#666', fontVariantNumeric: 'tabular-nums' }}>
               {String(index + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}

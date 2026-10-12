@@ -277,6 +277,7 @@ try {
   await delay(200)
   await until(timed, "!!document.querySelector('.presenter-aside .presenter-rehearsing') && /left/.test(document.querySelector('.presenter-schedule .presenter-slide-time').textContent)")
   assert.equal(await timed.evaluate("new URL(location.href).searchParams.has('rehearse')"), false, 'a reload does not start another rehearsal')
+  assert.equal(await timed.evaluate("!!document.querySelector('.presenter-home')"), false, 'a built deck has no launch page to go back to')
   assert.match(await timed.evaluate("document.querySelector('.presenter-schedule').textContent"), /of 1:00/)
   // A slide counts as rehearsed after a second on it.
   await delay(1100)
