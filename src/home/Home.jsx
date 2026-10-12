@@ -117,8 +117,6 @@ function Preview({ info }) {
       <button class="home-btn home-btn--small" onClick={() => control('prev')} aria-label="Previous"><HomeIcon name="prev" size={14} /></button>
       <button class="home-btn home-btn--small" onClick={() => control('next')} aria-label="Next"><HomeIcon name="next" size={14} /></button>
       <span class="home-preview-count">{index + 1} / {info.slides}</span>
-      <span class="home-spacer" />
-      <a class="home-btn home-btn--small" href={audienceUrl} target="_blank" rel="noopener">Open audience window <HomeIcon name="external" size={13} /></a>
     </div>
   </section>
 }
