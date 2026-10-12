@@ -9,7 +9,7 @@
 // The tag shows nothing where it stands. It hangs the countdown over the
 // whole page instead, in every window of the talk:
 // - the presenter view's slide frame (on the laptop and on a paired iPad)
-//   gets a ⏱ button in its lower left corner with the controls,
+//   gets a timer button in its lower left corner with the controls,
 // - the audience window and a full deck window show the countdown when the
 //   presenter shows it, in a corner or big in the middle; at the end it
 //   moves big into the middle and plays the chosen sound.
@@ -47,6 +47,14 @@ const SOUNDS = Object.entries(import.meta.glob('./sounds/*.{mp3,m4a,aac,wav,ogg,
   .sort((a, b) => a.name.localeCompare(b.name))
 const soundSrc = name => SOUNDS.find(sound => sound.name === name)?.src ?? null
 
+// The button's icon, drawn like mdeck's own (src/core/icons.js): Lucide
+// `timer` on the 24px grid with the same stroke, so it sits beside the
+// folded ink toolbar as one of its kind. Copied, so the folder needs nothing
+// from mdeck's sources.
+const TimerIcon = () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <line x1="10" x2="14" y1="2" y2="2" /><line x1="12" x2="15" y1="14" y2="11" /><circle cx="12" cy="14" r="8" />
+</svg>
+
 // --- Which window this is -------------------------------------------------
 
 function windowRole() {
@@ -67,7 +75,7 @@ const onIpad = () => /iPad/.test(navigator.userAgent) || (/Macintosh/.test(navig
 // `remaining` while not; `sound` is a name of SOUNDS; `quiet` stops the
 // sound; a new `test` number plays it once.
 
-const newTimer = () => ({ running: false, endsAt: null, remaining: 5 * MINUTE, duration: 5 * MINUTE, visible: false, position: 'top-right', sound: SOUNDS[0]?.name ?? null, volume: 0.8, quiet: false, test: 0 })
+const newTimer = () => ({ running: false, endsAt: null, remaining: 5 * MINUTE, duration: 5 * MINUTE, visible: true, position: 'top-right', sound: SOUNDS[0]?.name ?? null, volume: 0.8, quiet: false, test: 0 })
 const timeLeft = (timer, now = Date.now()) => !timer ? 0 : Math.max(0, timer.running ? timer.endsAt - now : timer.remaining)
 
 const encode = timer => ({ running: !!timer.running && timeLeft(timer) > 0, remaining: timeLeft(timer), duration: timer.duration, visible: !!timer.visible, position: timer.position, sound: timer.sound ?? null, volume: timer.volume ?? 0.8, quiet: !!timer.quiet, test: timer.test || 0 })
@@ -329,10 +337,12 @@ function Countdown({ stage, role }) {
     {sound.blocked && <button type="button" class="countdown-sound" onClick={() => { sound.allow(); activated(n => n + 1) }}>Click for sound</button>}
     {controls && <div class="countdown-controls" onPointerDown={keep} onClick={keep} onKeyDown={keep} onTouchStart={keep}>
       {open && <Panel timer={timer} change={change} />}
-      <button class={`countdown-toggle${open ? ' is-on' : ''}${timer.visible ? ' is-shown' : ''}`} title="Countdown for the room" aria-expanded={open} onClick={() => setOpen(o => !o)}
-        data-ending={showing && left > 0 && left <= MINUTE ? '' : undefined} data-done={showing && left === 0 ? '' : undefined}>
-        {showing ? formatTime(left) : '⏱'}
-      </button>
+      <div class="countdown-fab">
+        <button class={`countdown-toggle${open ? ' is-on' : ''}${timer.visible ? ' is-shown' : ''}${showing ? ' is-time' : ''}`} title="Countdown for the room" aria-label="Countdown for the room" aria-expanded={open} onClick={() => setOpen(o => !o)}
+          data-ending={showing && left > 0 && left <= MINUTE ? '' : undefined} data-done={showing && left === 0 ? '' : undefined}>
+          {showing ? formatTime(left) : <TimerIcon />}
+        </button>
+      </div>
     </div>}
   </>
 }
@@ -361,7 +371,7 @@ const STYLES = `
   color: #fff; background: rgba(0, 0, 0, 0.74); cursor: pointer;
 }
 .countdown-controls {
-  position: fixed; z-index: 2147481002; left: 12px; bottom: 12px;
+  position: fixed; z-index: 2147481002; left: max(16px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom));
   display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
   font: 13px/1.2 ui-sans-serif, system-ui, -apple-system, sans-serif; color: #ccc;
 }
@@ -371,8 +381,31 @@ const STYLES = `
 }
 .countdown-controls button:disabled { opacity: 0.4; cursor: default; }
 .countdown-controls .is-on { background: #2d3b4a; border-color: #4a6a8a; color: #fff; }
-.countdown-toggle { font-variant-numeric: tabular-nums; font-size: 16px !important; background: rgba(17, 17, 17, 0.88) !important; }
-.countdown-toggle.is-shown { border-color: #ffcc4d !important; }
+/* The button, as the folded ink toolbar in the opposite corner: a round dark
+   frame around one 40px button with a line icon. While the time shows, it
+   widens to a pill. A yellow dot, where the ink button shows its colour,
+   says the room sees the countdown. */
+.countdown-fab {
+  display: flex; padding: 4px; border: 1px solid #3a3a3a; border-radius: 999px;
+  background: rgba(22, 22, 22, 0.94); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+.countdown-controls .countdown-toggle {
+  position: relative; display: grid; place-items: center; min-width: 40px; height: 40px; min-height: 0; padding: 0;
+  border: 1px solid transparent; border-radius: 999px; background: none; color: #e6e6e6;
+  font-size: 16px; font-variant-numeric: tabular-nums; -webkit-tap-highlight-color: transparent;
+}
+.countdown-controls .countdown-toggle.is-time { padding: 0 14px; }
+.countdown-controls .countdown-toggle:hover { background: #262626; }
+.countdown-controls .countdown-toggle.is-on { background: #27436a; border-color: #3d6094; color: #fff; }
+.countdown-controls .countdown-toggle[data-ending] { color: #ffcc4d; }
+.countdown-controls .countdown-toggle[data-done] { color: #ff6b6b; }
+.countdown-toggle.is-shown::after {
+  content: ''; position: absolute; right: 5px; bottom: 5px; width: 10px; height: 10px; border-radius: 50%;
+  background: #ffcc4d; box-shadow: 0 0 0 1.5px rgba(22, 22, 22, 0.94);
+}
+.countdown-toggle.is-time.is-shown::after { right: 3px; bottom: 3px; width: 8px; height: 8px; }
+@media (max-width: 1000px) { .countdown-controls .countdown-toggle { min-width: 34px; height: 34px; } }
+@media (pointer: coarse) { .countdown-controls .countdown-toggle { min-width: 44px; height: 44px; } }
 .countdown-panel {
   display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px;
   background: rgba(17, 17, 17, 0.95); border: 1px solid #2a2a2a; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
