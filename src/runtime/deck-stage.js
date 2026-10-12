@@ -5,8 +5,8 @@
  *  (a) speaker notes — reads <script type="application/json" id="speaker-notes">
  *      and posts {slideIndexChanged: N} to the parent window on nav.
  *  (b) keyboard navigation — ←/→, PgUp/PgDn, Space, Home/End; number keys
- *      zoom to a slide's hotspots when they are on (see "Hotspots"), and
- *      jump to slides 1–10 when they are off.
+ *      zoom to a slide's hotspots when they are on (see "Hotspots") and do
+ *      nothing when they are off.
  *  (c) press R to reset to slide 0 (with a tasteful keyboard hint).
  *  (d) bottom-center overlay showing slide count + hints, fades out on idle.
  *  (e) auto-scaling — inner canvas is a fixed design size (default 1920×1080)
@@ -1473,12 +1473,8 @@ import { flight, durationFor, ease } from './zoom/camera.js'
         return true;
       }
       if (!/^[0-9]$/.test(key)) return false;
-      if (this.hotspotMode === 'off') {
-        // Without hotspots: 1..9 jump to that slide; 0 jumps to 10.
-        const n = key === '0' ? 9 : parseInt(key, 10) - 1;
-        if (n < this._slides.length) this._go(n, 'keyboard');
-        return true;
-      }
+      // Number keys are for hotspots only: without them they do nothing.
+      if (this.hotspotMode === 'off') return false;
       if (key === '0') this.wholeSlide();
       else this.zoomToHotspot(Number(key));
       return true;

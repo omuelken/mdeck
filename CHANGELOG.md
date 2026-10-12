@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The number keys are for hotspots only. Without hotspots on the slide shown, they no longer jump to slides 1–10; they do nothing. To go to a slide, type its number into the presenter view's slide number.
 - **?** shows the keys that work at this moment, over the slide in a see-through layer, in the presenter view and in a deck window: the number keys only while the slide shown has hotspots, the drawing keys while drawing, **L** only for a talk in several languages, **N** only in the slide-only layout, **F** only where the browser can go full screen. The list follows along while it is open (press **H** and it changes); **?** again, Escape or a click closes it. In the presenter view, **?** works while the slide has the keyboard too.
 
 ## 3.11.0 — 2026-10-12

@@ -62,7 +62,7 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | F | Full screen, where the browser allows it |
 | N | Open or close the notes drawer, in the presenter view's slide-only layout |
 | L | Switch to the talk's next language, for a talk written in several (see below) |
-| 1–9 | Zoom in on a part of the slide, with hotspots on (see below); without them, go to slide 1–9 |
+| 1–9 | Zoom in on a part of the slide, with hotspots on (see below); without them, nothing |
 | 0 or Escape | Show the whole slide again |
 | H | Turn hotspots on or off for this talk, in the presenter view |
 | T | Start or pause the timer, in the presenter view |
@@ -124,7 +124,7 @@ To see the whole slide again, press the same number again, **0** or **Escape**, 
 |---|---|
 | `hotspots: auto` | Pictures, code blocks, tables, formulas, videos, callouts, columns and polls, and anything marked `data-hotspot` |
 | `hotspots: marked` | Only what you marked with `data-hotspot`; nothing is found by itself |
-| `hotspots: off` | Nothing. This is the default: 1–9 go to slides 1–9 |
+| `hotspots: off` | Nothing. This is the default: the number keys do nothing |
 
 A slide can have its own setting in its frontmatter, such as `hotspots: false` for a slide whose numbers you do not want, or `hotspots: auto` on one slide of a deck without hotspots. Mark a part of your own in inline HTML with `data-hotspot`, and keep a found one out with `data-hotspot="off"`:
 

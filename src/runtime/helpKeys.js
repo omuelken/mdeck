@@ -2,8 +2,8 @@
 // presenter view and the deck window. Each window has its own keys
 // (main.jsx for the presenter view, deck-stage.js and ink/attach.js for the
 // deck window); what is listed depends on the moment: the number keys only
-// while the slide shown has hotspots (without them they jump to slides, which
-// is not worth a line), the drawing keys while drawing, L only with several
+// while the slide shown has hotspots (without them they do nothing), the
+// drawing keys while drawing, L only with several
 // languages, F only where the browser can go full screen.
 //
 // `view` is 'presenter' or 'deck'; `hotspots` whether the number keys zoom on

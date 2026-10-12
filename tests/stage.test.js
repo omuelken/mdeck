@@ -138,11 +138,13 @@ test('with hotspots on, digits zoom to them and the same digit, 0 or Escape zoom
   assert.equal(stage.index, 0, 'and does not jump to a slide')
 })
 
-test('with hotspots off, digits still jump to slides', () => {
+test('with hotspots off, digits do nothing', () => {
   const { stage, flights } = hotspotStage('off')
-  stage._onKey({ key: '2', target: null, preventDefault() {} })
-  assert.equal(stage.index, 1)
+  let prevented = false
+  stage._onKey({ key: '2', target: null, preventDefault() { prevented = true } })
+  assert.equal(stage.index, 0, 'no jump to a slide')
   assert.equal(flights.length, 0)
+  assert.equal(prevented, false, 'the key is left to the page')
   // The presenter's switch turns them on for this window.
   stage._refreshHotspots = () => {}
   stage.hotspotsForced = true

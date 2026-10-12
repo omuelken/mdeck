@@ -68,7 +68,7 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `nocite` | — | References to list without citing them; `['*']` lists the whole file |
 | `show.citations` | `true` | `false` leaves out each slide's own references above the footer |
 | `time` | — | How long the talk takes, such as `20m`: slides without their own `time` share what is left (see [Time your talk](../site/content/presenting.md#time-your-talk)) |
-| `hotspots` | `off` | Number keys zoom in on parts of a slide while presenting: `auto` (pictures, code, tables, formulas, videos, callouts, columns, polls and `data-hotspot` elements), `marked` (only `data-hotspot` elements) or `off` (1–9 go to slides) |
+| `hotspots` | `off` | Number keys zoom in on parts of a slide while presenting: `auto` (pictures, code, tables, formulas, videos, callouts, columns, polls and `data-hotspot` elements), `marked` (only `data-hotspot` elements) or `off` (the number keys do nothing) |
 
 ### Theme params
 

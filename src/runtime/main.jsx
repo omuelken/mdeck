@@ -489,7 +489,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       if (e.key === 'n' || e.key === 'N') { e.preventDefault(); setDrawerOpen(open => !open); return }
       if ((e.key === 'l' || e.key === 'L') && LANGUAGES.length) { e.preventDefault(); nextLanguage(); return }
       if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleHotspots(); return }
-      // Digits zoom to hotspots (or jump to slides without them); Escape zooms out.
+      // Digits zoom to hotspots; Escape zooms out.
       if (/^[0-9]$/.test(e.key) || e.key === 'Escape') { if (e.key !== 'Escape') e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'hotspotKey', e.key); return }
       if (!cmd) return
       e.preventDefault()
@@ -595,7 +595,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
           <button style={pill} title="Previous" aria-label="Previous" onClick={() => navCommand('prev')}><PresenterIcon name="prev" /></button>
           <button style={pill} title="Next" aria-label="Next" onClick={() => navCommand('next')}><PresenterIcon name="next" /></button>
           <button class="presenter-draw" title="Draw on the slide (D)" aria-pressed={inking} style={{ ...pill, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }} onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}><PresenterIcon name="pen" /></button>
-          <button class="presenter-hotspots" title={hotspotsOn ? 'Hotspots on: 1–9 zoom in (H)' : 'Hotspots off: 1–9 jump to slides (H)'} aria-label="Hotspots" aria-pressed={hotspotsOn} style={{ ...pill, ...(hotspotsOn ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={toggleHotspots}><PresenterIcon name="hotspots" /></button>
+          <button class="presenter-hotspots" title={hotspotsOn ? 'Hotspots on: 1–9 zoom in (H)' : 'Hotspots off (H)'} aria-label="Hotspots" aria-pressed={hotspotsOn} style={{ ...pill, ...(hotspotsOn ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={toggleHotspots}><PresenterIcon name="hotspots" /></button>
           <button class="presenter-notes" title="Notes (N)" aria-pressed={drawerOpen} style={{ ...pill, ...(drawerOpen ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={() => setDrawerOpen(open => !open)}>Notes</button>
           {canFullscreen && <button class="presenter-fullscreen" style={pill} title={fullscreenLabel} aria-label={fullscreenLabel} aria-pressed={isFullscreen} onClick={() => fullscreen.toggle()}><PresenterIcon name={fullscreenIcon} /></button>}
           <button style={pill} title="Speaker layout: slide, notes and next slide side by side" onClick={() => chooseLayout('speaker')}><PresenterIcon name="speaker" /></button>
@@ -788,7 +788,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
             ><PresenterIcon name="pen" size={15} />Draw</button>
             <button
               class="presenter-hotspots"
-              title={hotspotsOn ? 'Hotspots on: 1–9 zoom in, 0 shows the whole slide (H)' : 'Hotspots off: 1–9 jump to slides (H)'}
+              title={hotspotsOn ? 'Hotspots on: 1–9 zoom in, 0 shows the whole slide (H)' : 'Hotspots off (H)'}
               aria-pressed={hotspotsOn}
               aria-label="Hotspots"
               style={{ ...S.btn, ...(hotspotsOn ? { background: '#2a2a2a', borderColor: '#444', color: '#f0f0f0' } : {}) }}
