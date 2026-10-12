@@ -27,6 +27,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck list`, `mdeck starter` | Look up layouts, themes and palettes |
 | `mdeck docs` | Open this documentation |
 | `mdeck --help` | Show a short list of commands |
+| `mdeck --version` | Show which version of mdeck you have |
 
 ## The launch page
 

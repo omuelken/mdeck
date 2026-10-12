@@ -391,6 +391,7 @@ const HELP = `
                                               through it (MDECK_SERVER_KEY); put a web server in front
 
   Commands that take ${c.bold}slides.md${c.reset} use the one in the current folder when you leave it out.
+  ${c.green}mdeck --version${c.reset} shows which mdeck this is.
 
   ${c.dim}Install the${c.reset} ${c.bold}mdeck${c.reset} ${c.dim}command globally:${c.reset}
     npm link
@@ -401,6 +402,11 @@ const HELP = `
 
 // ── Argument parsing ──────────────────────────────────────────────────────────
 const [command, ...argv] = process.argv.slice(2)
+
+if (command === '--version' || command === '-v' || command === 'version') {
+  console.log(JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version)
+  process.exit(0)
+}
 
 if (!command || command === '--help' || command === '-h') {
   console.log(HELP)
