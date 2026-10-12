@@ -699,7 +699,9 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const frame = () => iframeRef.current?.contentWindow
   const problem = hasActivities() && steering && !steering.ok ? STEERING[steering.reason] : null
   const slideBar = big => <SlideControls controls={slideControls} press={i => sendTo(frame(), 'slideControl', i)} zoom={key => sendTo(frame(), 'hotspotKey', key)} big={big} />
-  const connections = <Connections presence={presence} phones={hasActivities()} problem={problem} audienceOpen={audienceConnected} openAudience={openAudienceWindow} />
+  // The audience window, one click away (not on a phone: it would open there).
+  const audienceButton = <ToolButton class="presenter-audience" icon="projector" label={audienceConnected ? 'Open the audience window again' : 'Open the audience window, for the projector'} onClick={openAudienceWindow} />
+  const connections = <Connections presence={presence} phones={hasActivities()} problem={problem} />
   const timerChip = <button class="presenter-clock" title={timer.running ? 'Pause the timer (T)' : 'Start the timer (T)'} aria-pressed={timer.running} onClick={timer.toggle}
     style={{ ...tool, gap: '8px', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', color: timer.running ? '#f0f0f0' : '#777' }}>
     <Icon name={timer.running ? 'pause' : 'play'} size={14} style={{ display: 'block' }} />{clock}
@@ -829,7 +831,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     {!slideLayout && <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
       <SlideJump index={index} total={slides.length} pad={2} onJump={i => navCommand('goTo', i)} style={{ color: '#888', fontVariantNumeric: 'tabular-nums' }} />
       <span style={{ flex: 1 }} />
-      {finishButton}{timerChip}{connections}{settings}
+      {finishButton}{timerChip}{audienceButton}{connections}{settings}
     </div>}
     {slideLayout && <span style={{ display: 'none' }}><SlideJump index={index} total={slides.length} pad={2} onJump={i => navCommand('goTo', i)} /></span>}
     {schedule}
@@ -856,7 +858,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}{slideBar(false)}</>}
         {separator}
         <ToolButton class="presenter-notes" icon="file-text" label="Notes and the next slide (N)" pressed={drawerOpen} onClick={() => setDrawerOpen(open => !open)} />
-        {fullscreenButton}{connections}{settings}
+        {fullscreenButton}{audienceButton}{connections}{settings}
       </div>
       {aside}
       {extras}

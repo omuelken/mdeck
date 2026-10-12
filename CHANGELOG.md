@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 3.12.0 — 2026-10-12
 
+- In a word cloud each phone counts with one word: a new one replaces its earlier word, and the phone says which it sent. Before, one phone could fill the cloud.
 - The poll server says which mdeck it runs (`/info`), and the presenter view warns in amber when your server runs an older mdeck than your computer, whose phones may then miss what is new, such as reactions.
 - With `MDECK_SERVER` and `MDECK_SERVER_KEY` set in your shell, `mdeck run` uses your server without `--server` whenever it answers, and presents from this computer when it does not. `--no-server` leaves it out.
 - The presenter view, redesigned: one toolbar of icons under the slide (each says what it does and its key; **?** lists all keys), with **This slide** for what can be done on the slide shown: a poll's lock, results and right answer, a video's play, the hotspots' numbers. Beside the slide: the slide number, the timer, the next slide small, and the notes in most of the room. Who is connected sits behind the icons that show it, with the audience window and the codes that pair an iPad or a phone; theme, palette, language, layout, rehearsal and the size of the notes are in the settings. The iPad's bar and the phone clicker use the same buttons.
@@ -12,7 +13,6 @@
 - The laser has a laser-pointer icon instead of a crosshair, and the presenter view shows mdeck's icon in its tab.
 - **B** makes the audience's screen black: the audience window, a paired iPad's audience window and phones following the talk go black, while the presenter view keeps the slide under a veil and says so. **B** again, the next key or a click on the black screen shows the slide again without moving on. A presentation clicker's blank button, which sends a full stop, works the same. The presenter view has a button for it.
 - **O** shows every slide in a grid, to find one: arrows move between the slides, Enter or a click goes there, **O** or Escape go back. The slides show all their points. In the presenter view the grid opens in the presenter's own slide, so the audience keeps its slide until another is picked; the deck window's control bar has a button for it too.
-- A phone becomes a remote: paired through the launch page's code (now **Present from an iPad or a phone**), the presenter view on a phone shows the slide small, the next slide's heading, the time, the notes in large print and big buttons to go on and back, plus the black screen. The screen stays on where the browser allows it. The phone button in the speaker layout switches any presenter view to the remote.
 - Reactions: with `reactions: true` in the deck's settings, the phones' answer page has a row of buttons (👍 👏 ❤️ 😮 🤔 🐢, or a list of the deck's own, up to eight emoji or short words). A tap floats up in the corner of the presenter view, never on the projector, and a tally keeps the last minute's. The server passes reactions on without keeping them, with a limit of their own, so a room full of reactions behind one network address still gets its answers in. `mdeck check` reports a `reactions` setting it cannot use.
 - The answers kept in a talk can be saved from the launch page: **Answers from the talk** lists each question with how it came out, and saves every answer (CSV), a summary with one row per option, scale step, number or word and how many chose it (CSV), or everything (JSON). `mdeck results` now names each answer's slide, kind and question (`slide,room,kind,question,phone,at,answer`), and takes `--summary` and `--json`.
 

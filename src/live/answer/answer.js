@@ -193,17 +193,23 @@
         solution ? verdict(sent != null, right, drawn(solution.html, solution.text)) : null,
       ]
     },
-    // { question, placeholder, maxLength }: short text, as often as people like.
+    // { question, placeholder, maxLength, once }: short text, as often as
+    // people like; with `once` (a word cloud) the latest one counts, and the
+    // phone says which it sent.
     text(activity, room) {
-      const input = el('textarea', { rows: 3, maxlength: activity.maxLength ?? 200, placeholder: activity.placeholder ?? '', disabled: !!controls.closed })
+      const sent = activity.once ? remembered(room) : null
+      const input = el('textarea', { rows: activity.once ? 1 : 3, maxlength: activity.maxLength ?? 200, placeholder: activity.placeholder ?? '', disabled: !!controls.closed })
       const form = el('form', { class: 'answer-text', onsubmit: async event => {
         event.preventDefault()
         const value = input.value.trim()
         if (!value) return
-        try { await answer(room, value); status = words.sent } catch (error) { status = error.message }
+        try {
+          await answer(room, value)
+          if (activity.once) { remember(room, value); status = '' } else status = words.sent
+        } catch (error) { status = error.message }
         render()
       } }, input, el('button', { type: 'submit', disabled: !!controls.closed }, words.send))
-      return [form, statusLine('')]
+      return [form, statusLine(sent != null ? fill(words.numberSent, { value: sent }) : '')]
     },
     // { question, min, max, minLabel, maxLabel }: a number on a scale.
     scale(activity, room) {

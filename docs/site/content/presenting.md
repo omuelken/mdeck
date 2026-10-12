@@ -37,11 +37,11 @@ mdeck run my-talk.md
 The launch page it opens has a **Presenter view** button. The presenter view shows the slide with a toolbar under it, and beside it the time, the next slide and your notes:
 
 - **Under the slide**: previous and next, then drawing, black screen, all slides, hotspots and full screen, and **This slide**: what can be done on the slide shown, such as a poll's lock, results and right answer, or playing its video. Point at a button to see what it does and its key; **?** lists all keys.
-- **At the top of the notes**: the slide number (type one to jump there), the timer, the icons of who is connected, and the settings.
-- **Who is connected** (the icons): the audience windows, a paired iPad, phones; the button that opens the audience window; and the codes that pair an iPad or a phone. A red dot means something needs you, such as phones that do not follow.
+- **At the top of the notes**: the slide number (type one to jump there), the timer, the audience window button (a projector), the icons of who is connected, and the settings.
+- **Who is connected** (the icons): the audience windows, a paired iPad, phones; the join link for polls; and the codes that pair an iPad or a phone. A red dot means something needs you, such as phones that do not follow.
 - **Settings**: the layout (speaker, slide only, phone clicker), the theme, palette and light or dark to try, the language, the timer and rehearsal, the size of the notes, and the way back to the launch page.
 
-Open the audience window from the connection icons. If you have a projector or second screen, move it there, and keep the presenter view on your own screen.
+Open the audience window with the projector button. If you have a projector or second screen, move it there, and keep the presenter view on your own screen.
 
 The two windows follow the same slide and reveal position: navigate in either window and the other follows. This works between windows in the same browser and between your laptop and a paired iPad. To connect the iPad, see [Draw on your slides](drawing.html#present-from-an-ipad).
 

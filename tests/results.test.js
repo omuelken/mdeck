@@ -101,7 +101,7 @@ test('a report names the slide and question of each room, and sums it up as the 
   assert.equal(report[0].summary.voted, 2, 'an option the poll does not have does not count')
   assert.equal(report[1].summary.average, 3.67)
   assert.equal(report[1].summary.median, 4)
-  assert.deepEqual(report[2].summary.counts, [{ answer: 'Fast', count: 2 }, { answer: 'clear', count: 1 }])
+  assert.deepEqual(report[2].summary.counts, [{ answer: 'clear', count: 1 }, { answer: 'fast', count: 1 }], 'a word cloud counts each phone\'s latest word: phone 1 changed to clear')
   assert.equal(report[3].slide, null)
 
   const answers = reportAnswersCsv(report).split('\n')

@@ -848,7 +848,7 @@ Four more activities take the same `room`, `question` and `qr`:
 |---|---|---|---|
 | `<scale>` | `min` (1), `max` (5), `low`, `high` | One button per number, `low`/`high` as labels | Count per number and the average; latest answer per device |
 | `<numeric>` | `answer`, `tolerance` (0), `limit` (6), `placeholder`, `results` | A number field: `0.5`, `0,5`, `1/2`, `1e-3`; latest answer per device | The most frequent answers as bars, the rest as Other; with `answer`, the tick marks the right ones, counts them and tells each phone |
-| `<wordcloud>` | `placeholder`, `limit` (60), `height` (520) | Text field, up to 40 characters, repeatable | A packed word cloud (d3-cloud): size by frequency, some words upright, case-insensitive |
+| `<wordcloud>` | `placeholder`, `limit` (60), `height` (520) | Text field, up to 40 characters; a phone's latest word counts | A packed word cloud (d3-cloud): size by frequency, some words upright, case-insensitive |
 | `<question>` | `placeholder`, `limit` (8) | Text field, up to 200 characters, repeatable | The newest answers as cards |
 
 `<qrcode follow />` shows the link for following the slides on phones and laptops (`?view=follow`), with `mdeck run --network` or a hosted deck with a `server` setting; the phones' answer page links to it as well. `<qrcode join />` shows the deck's join code large with its link (`size`, default 420), for a slide that invites everyone once; activities after it can use `qr="false"`. QR codes (`<qrcode>`, activities) are SVG in the slide's `--ink` on a transparent background; `--qr-ink` and `--qr-bg` override the colours.

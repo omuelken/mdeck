@@ -1,15 +1,15 @@
 import { h } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import cloud from 'd3-cloud'
-import { useRoom } from '../live/client.js'
+import { useRoom, latestByDevice } from '../live/client.js'
 import { JoinCode, ActivityFooter, ActivityQuestion, ActivityControls, useControls, wantsQr } from './activity.jsx'
 import { phoneQuestion } from './inlineText.js'
 import { t } from '../core/labels.js'
 import './poll.css'
 
 // <wordcloud room="mood" question="One word for today?" />
-// Phones send a word or two, as often as they like. The slide packs every
-// answer into a cloud around its middle: the more often it was sent, the
+// Each phone sends a word or two; a new one replaces its earlier word. The
+// slide packs the answers into a cloud around its middle: the more often it was sent, the
 // larger; some stand upright. Answers that differ only in case or spacing
 // count together. `height` is the cloud's height in slide pixels (520),
 // `limit` the most words shown (60).
@@ -66,7 +66,7 @@ function layout(words, { width, height, font }) {
 export default function WordCloud({ room = 'words', question = '', limit = '60', height = '520', qr }) {
   const live = useRoom(room)
   const controls = useControls(room, live)
-  const all = countWords(controls.counted(live.messages))
+  const all = countWords(latestByDevice(controls.counted(live.messages)))
   const words = all.slice(0, Math.max(1, Number(limit) || 60))
   const total = all.reduce((sum, word) => sum + word.n, 0)
   const cloudHeight = Math.max(200, Number(height) || 520)
@@ -99,7 +99,7 @@ export default function WordCloud({ room = 'words', question = '', limit = '60',
           </svg>
           : !live.offline && <p class="question-empty">{t('question.empty')}</p>}
       </div>
-      <ActivityFooter count={total} {...live} reset={controls.reset} closed={controls.closed}>
+      <ActivityFooter count={total} {...live} perPhone reset={controls.reset} closed={controls.closed}>
         <ActivityControls controls={controls} messages={live.messages} offline={live.offline} />
       </ActivityFooter>
     </div>
@@ -107,4 +107,5 @@ export default function WordCloud({ room = 'words', question = '', limit = '60',
   </div>
 }
 
-WordCloud.phone = ({ question, placeholder }, { slideTitle = '' } = {}) => ({ type: 'text', ...phoneQuestion(question, slideTitle), placeholder: placeholder ?? '', maxLength: 40 })
+// `once`: the phone's latest word counts (a server before 3.12 ignores it and lets phones send more).
+WordCloud.phone = ({ question, placeholder }, { slideTitle = '' } = {}) => ({ type: 'text', ...phoneQuestion(question, slideTitle), placeholder: placeholder ?? '', maxLength: 40, once: true })

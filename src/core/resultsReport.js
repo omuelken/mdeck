@@ -4,9 +4,8 @@
 // one by one (CSV), one row per option, word or number (summary CSV), or
 // all of it (JSON).
 //
-// The summary counts as the slide does: for a poll, a scale and a number,
-// each phone's latest answer; for a word cloud and open questions, every
-// answer. Phones stay numbered per question; no device ids are kept.
+// The summary counts as the slide does: for a poll, a scale, a number and a
+// word cloud, each phone's latest answer; for open questions, every answer. Phones stay numbered per question; no device ids are kept.
 import { tagsIn } from './tags.js'
 import { expandPollLists, pollChoices } from './pollList.js'
 import { choicesOf } from '../components/inlineText.js'
@@ -93,9 +92,9 @@ export function summarize(activity, answers = []) {
     const texts = latestPerPhone(answers).map(answer => answer.value).filter(value => parseNumber(value) != null)
     return { ...base, voted: texts.length, counts: groupNumbers(texts).map(group => ({ answer: group.text, count: group.n })), ...stats(texts.map(parseNumber)) }
   }
-  // Words and open answers: every answer counts, the same words together.
+  // Words (each phone's latest) and open answers (every one), the same words together.
   const counts = new Map()
-  for (const answer of answers) {
+  for (const answer of tag === 'wordcloud' ? latestPerPhone(answers) : answers) {
     const text = String(answer.value ?? '').trim().replace(/\s+/g, ' ')
     if (!text) continue
     const key = text.toLocaleLowerCase()

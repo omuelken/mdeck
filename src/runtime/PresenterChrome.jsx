@@ -127,7 +127,7 @@ const VIEW_NAME = { presenter: 'Presenter view', audience: 'Audience window', de
  * Who is connected, behind the icons that show it: the views and devices,
  * the audience window, and the codes that pair an iPad or a phone.
  */
-export function Connections({ presence, phones, problem, audienceOpen, openAudience }) {
+export function Connections({ presence, phones, problem }) {
   const [info, reload] = useHomeInfo()
   const [code, setCode] = useState(null)
   const [error, setError] = useState(null)
@@ -146,9 +146,6 @@ export function Connections({ presence, phones, problem, audienceOpen, openAudie
       {kinds.length === 0 && !(presence?.phones > 0) && <span style={muted}>Only this view.</span>}
       {kinds.map(view => <span key={view}>{VIEW_NAME[view]} on {devicesText(views.filter(entry => entry.view === view))}</span>)}
       {phones && presence?.phones > 0 && <span>{phonesText(presence.phones)}</span>}
-      <button type="button" class="presenter-audience" style={{ ...S.btn, alignSelf: 'flex-start' }} onClick={openAudience}>
-        <Icon name="projector" size={16} />{audienceOpen ? 'Open the audience window again' : 'Open the audience window'}
-      </button>
     </PanelSection>
     {info?.live && phones && <Polls live={info.live} recheck={reload} />}
     {info?.pairing && <PanelSection title="Pair a device" class="presenter-pairing">
