@@ -391,6 +391,28 @@ try {
   await presenter.evaluate(`${stage}.reset()`)
   await until(audience, `${audienceStage}.state.index === 0`)
 
+  // B: the audience window goes black and the presenter's slide is only
+  // veiled; the next press shows the slide again without moving on.
+  const press = key => presenter.evaluate(`window.dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(key)}, bubbles: true }))`)
+  await press('b')
+  await until(audience, `${audienceStage}.blank === true`)
+  await until(presenter, "!!document.querySelector('.presenter-blank-note')")
+  assert.equal(await other.evaluate(`${audienceStage}.blank`), false, 'another presenter session stays as it is')
+  await press('ArrowRight')
+  await until(audience, `${audienceStage}.blank === false`)
+  assert.equal(await audience.evaluate(`${audienceStage}.state.index`), 0, 'showing the slide again does not move on')
+  // O: every slide in a grid in the presenter's frame only; Enter goes to
+  // the slide under the cursor, and the audience follows there.
+  await press('o')
+  await until(presenter, `${stage}.overview === true && ${stage}.shadowRoot.querySelectorAll('.ov-cell').length === 2`)
+  assert.equal(await audience.evaluate(`${audienceStage}.overview`), false, 'the audience never sees the overview')
+  await press('ArrowRight')
+  await press('Enter')
+  await until(audience, `${audienceStage}.state.index === 1`)
+  assert.equal(await presenter.evaluate(`${stage}.overview`), false)
+  await presenter.evaluate(`${stage}.reset()`)
+  await until(audience, `${audienceStage}.state.index === 0`)
+
   // Back to where the checks below start: the second slide, nothing revealed.
   await presenter.evaluate(`${stage}.goTo(1)`)
   await until(audience, `${audienceStage}.state.index === 1 && ${audienceStage}.state.step === -1`)
@@ -810,7 +832,7 @@ try {
   assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
   await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
+  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()

@@ -87,13 +87,15 @@ function DeckKeyHelp({ stage, canDraw }) {
   const [, refresh] = useState(0)
   useEffect(() => {
     const update = () => refresh(n => n + 1)
-    const events = ['slidechange', 'statechange', 'inkmode']
+    const events = ['slidechange', 'statechange', 'inkmode', 'overviewchange']
     for (const name of events) stage.addEventListener(name, update)
     return () => { for (const name of events) stage.removeEventListener(name, update) }
   }, [stage])
   if (!open) return null
   const context = {
     view: 'deck',
+    blank: stage.blank,
+    overview: stage.overview,
     hotspots: stage.hotspotMode !== 'off',
     inking: stage.inking,
     canDraw,

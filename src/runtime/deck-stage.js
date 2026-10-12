@@ -195,6 +195,73 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     .zoom-reset svg { width: 16px; height: 16px; }
     :host([data-zoomed]) .zoom-reset { display: inline-flex; }
     :host([data-follower]) .zoom-reset { display: none; }
+    /* Overview (O): every slide in a grid, local to this window. The slides
+       keep their place in the canvas, which grows to hold the grid; a
+       sizer gives the stage the grid's height to scroll. */
+    .ov-cells, .ov-sizer { display: none; }
+    :host([data-overview]) { touch-action: pan-y; }
+    :host([data-overview]) .stage { display: block; overflow-x: hidden; overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+    :host([data-overview]) .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: none; }
+    :host([data-overview]) .ov-sizer { display: block; }
+    :host([data-overview]) ::slotted(*) {
+      inset: auto !important;
+      left: var(--ov-x, 0) !important;
+      top: var(--ov-y, 0) !important;
+      width: var(--deck-design-w) !important;
+      height: var(--deck-design-h) !important;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: none;
+    }
+    :host([data-overview]) .ink-live, :host([data-overview]) .hotspots, :host([data-overview]) .zoom-reset, :host([data-overview]) .overlay { display: none; }
+    :host([data-overview]) .ov-cells { display: block; position: absolute; inset: 0; z-index: 3; }
+    .ov-cell {
+      position: absolute;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 4px;
+      outline: calc(3px * var(--ov-k, 1)) solid rgba(255, 255, 255, 0.18);
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ov-cell:hover { outline-color: rgba(255, 255, 255, 0.6); }
+    .ov-cell[data-current] { outline-color: #e11d48; }
+    .ov-cell[data-cursor] { outline: calc(5px * var(--ov-k, 1)) solid #4da3ff; outline-offset: calc(3px * var(--ov-k, 1)); }
+    .ov-cell span {
+      position: absolute;
+      left: 0;
+      top: 100%;
+      transform: scale(var(--ov-k, 1));
+      transform-origin: 0 0;
+      margin-top: calc(6px * var(--ov-k, 1));
+      max-width: calc(100% / var(--ov-k, 1));
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      color: #bbb;
+      font: 13px/1.3 system-ui, -apple-system, sans-serif;
+      text-align: left;
+    }
+    .ov-cell[data-current] span { color: #fff; }
+
+    /* Black screen (B): the screens the audience sees go black; the
+       presenter's own slide stays visible under a veil, to say so. */
+    .blank {
+      position: fixed;
+      inset: 0;
+      z-index: 2147482900;
+      background: #000;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+    }
+    :host([data-blank]) .blank { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 0.3s ease; }
+    :host([data-presenter]) .blank { background: rgba(0, 0, 0, 0.6); pointer-events: none; }
+    :host([data-deck-static]) .blank { display: none; }
     /* Hotspots: a numbered key at the corner of each part of the slide the
        presenter can zoom to (in design pixels, inside the canvas; the badge
        keeps its size on screen). Only the presenter's own slide shows them. */
@@ -256,7 +323,9 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     .ink-live .fading { transition: opacity 0.8s ease 2.2s; opacity: 0; }
     /* The ink toolbar replaces the overlay while drawing. */
     :host([data-inking]) .overlay { display: none; }
-    .btn.draw, .btn.fullscreen { display: none; }
+    .btn.draw, .btn.fullscreen, .btn.overview { display: none; }
+    /* The overview is for a stage that is the page (data-zoomable). */
+    :host([data-zoomable]) .btn.overview { display: inline-flex; }
     :host([data-ink-enabled]) .btn.draw { display: inline-flex; }
     :host([data-fullscreen-available]) .btn.fullscreen { display: inline-flex; }
     @media (pointer: coarse) { .overlay .btn { height: 40px; min-width: 40px; } }
@@ -401,7 +470,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
         break-after: auto;
         page-break-after: auto;
       }
-      .overlay, .ink-input, .ink-live, .ink-laser, .zoom-reset, .hotspots { display: none !important; }
+      .overlay, .ink-input, .ink-live, .ink-laser, .zoom-reset, .hotspots, .blank, .ov-cells, .ov-sizer { display: none !important; }
     }
   `;
 
@@ -468,6 +537,11 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       this._hotspot = null;
       this._hotspotsForced = null;
       this._hotspotRaf = 0;
+      // Black screen (B), part of the position every screen follows.
+      this._blank = false;
+      // Overview (O): open or not, and the slide its cursor is on.
+      this._overview = false;
+      this._ovCursor = 0;
       this._queueHotspots = this._queueHotspots.bind(this);
       this._touches = new Map();
       this._onWheel = this._onWheel.bind(this);
@@ -566,7 +640,23 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       });
       canvas.appendChild(hotspots);
       this._hotspotLayer = hotspots;
+      const ovCells = document.createElement('div');
+      ovCells.className = 'ov-cells export-hidden';
+      ovCells.setAttribute('data-ink-ui', '');
+      ovCells.addEventListener('click', e => {
+        const cell = e.target.closest?.('.ov-cell');
+        if (!cell) return;
+        e.stopPropagation();
+        this._overviewGo(Number(cell.dataset.i), 'click');
+      });
+      canvas.appendChild(ovCells);
+      this._ovCells = ovCells;
       stage.appendChild(canvas);
+      const ovSizer = document.createElement('div');
+      ovSizer.className = 'ov-sizer';
+      stage.appendChild(ovSizer);
+      this._ovSizer = ovSizer;
+      this._stageEl = stage;
 
       // Only shown when fingers draw: keeps their touches from scrolling or
       // zooming. The input itself is read on the window.
@@ -603,6 +693,9 @@ import { flight, durationFor, ease } from './zoom/camera.js'
         </button>
         <span class="divider"></span>
         <button class="btn reset" type="button" aria-label="Reset to first slide" title="Reset (R)">Reset<span class="kbd">R</span></button>
+        <button class="btn overview" type="button" aria-label="All slides" title="All slides (O)">
+          ${iconSvg('overview')}
+        </button>
         <button class="btn draw" type="button" aria-label="Draw on the slide" title="Draw (D)">
           ${iconSvg('pen')}
         </button>
@@ -614,6 +707,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       overlay.querySelector('.prev').addEventListener('click', () => this.prev('click'));
       overlay.querySelector('.next').addEventListener('click', () => this.next('click'));
       overlay.querySelector('.reset').addEventListener('click', () => this.reset());
+      overlay.querySelector('.overview').addEventListener('click', () => { this.overview = true; });
       overlay.querySelector('.draw').addEventListener('click', () => { this.inking = !this.inking; });
       const fullscreenButton = overlay.querySelector('.fullscreen');
       fullscreenButton.addEventListener('click', () => toggleFullscreen());
@@ -626,7 +720,14 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       // Only a top-level window can go full screen (an iPhone cannot at all).
       if (window.top === window && fullscreenAvailable()) this.setAttribute('data-fullscreen-available', '');
 
-      this._root.append(style, stage, inkInput, inkLaser, zoomReset, overlay);
+      // Black screen: a click on it shows the slide again, except on a phone
+      // that only watches the talk (data-watching, the follow view).
+      const blank = document.createElement('div');
+      blank.className = 'blank export-hidden';
+      blank.setAttribute('data-ink-ui', '');
+      blank.addEventListener('click', () => { if (!this.hasAttribute('data-watching')) this.setBlank(false, 'click'); });
+
+      this._root.append(style, stage, inkInput, inkLaser, zoomReset, blank, overlay);
       this._canvas = canvas;
       this._slot = slot;
       this._overlay = overlay;
@@ -660,6 +761,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     _onSlotChange() {
       this._collectSlides();
       this._restoreIndex();
+      if (this._overview) this._buildOverview();
       this._applyIndex({ showOverlay: false, broadcast: true, reason: 'init' });
       this._fit();
     }
@@ -754,6 +856,11 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       // slide may stay on it.
       if (curr !== prev) this._clearLive();
       if (this._countEl) this._countEl.textContent = String(curr + 1);
+      // The overview marks the slide shown, wherever the change came from.
+      if (this._overview) {
+        const cells = this._ovCells?.children ?? [];
+        for (let i = 0; i < cells.length; i++) cells[i].toggleAttribute('data-current', i === curr);
+      }
 
       if (broadcast) {
         // (1) Legacy: postMessage bridge for presenter/speaker-note renderers.
@@ -792,7 +899,22 @@ import { flight, durationFor, ease } from './zoom/camera.js'
 
     get state() {
       return { index: this._index, slideId: this._slides[this._index]?.dataset.slideId,
-        step: this._stepMap.get(this._index) ?? -1 };
+        step: this._stepMap.get(this._index) ?? -1, blank: this._blank };
+    }
+
+    /** Whether the screen is black (B). Setting it tells the other screens. */
+    get blank() { return this._blank; }
+    set blank(on) { this.setBlank(on); }
+    /** Make the screen black or show the slide again; `reason` as in statechange. */
+    setBlank(on, reason = 'api') {
+      on = !!on;
+      if (on === this._blank) return;
+      this._applyBlank(on);
+      this._broadcastState(reason);
+    }
+    _applyBlank(on) {
+      this._blank = on;
+      this.toggleAttribute('data-blank', on);
     }
 
     _broadcastState(reason) {
@@ -812,8 +934,11 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       if (index < 0 || index >= this._slides.length) return;
       const max = this._getSteps(this._slides[index]).length - 1;
       const step = Math.max(-1, Math.min(max, state.step));
+      // A position without `blank` (a follower paging on its own) leaves it.
+      const blankChanged = typeof state.blank === 'boolean' && state.blank !== this._blank;
+      if (blankChanged) this._applyBlank(state.blank);
       if (index === this._index) {
-        if (step === this.state.step) return;
+        if (step === this.state.step) { if (blankChanged) this._broadcastState('sync'); return; }
         if (this._hotspot) this.wholeSlide();
         this._stepMap.set(index, step);
         this._applySteps(index);
@@ -847,6 +972,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       const rect = this.getBoundingClientRect();
       const vw = rect.width || window.innerWidth;
       const vh = rect.height || window.innerHeight;
+      if (this._overview) { this._fitOverview(vw, vh); return; }
       const s = Math.min(vw / this.designWidth, vh / this.designHeight);
       this._fitScale = s;
       this._hotspotLayer?.style.setProperty('--hotspot-k', String(1 / s));
@@ -874,6 +1000,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     // reports, and controls on the slide (buttons, links, polls, embedded
     // frames) keep their own taps.
     _tapStart(e) {
+      if (this._overview) { this._tap = null; return; }
       const finger = e.pointerType === 'touch' && !(this.inking && this.inkFinger);
       const pen = e.pointerType === 'pen' && !this.inking;
       this._tap = (finger || pen) && e.isPrimary ? { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() } : null;
@@ -914,7 +1041,11 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       const key = e.key;
       let handled = true;
 
-      if (key === 'ArrowRight' || key === 'PageDown' || key === ' ' || key === 'Spacebar') {
+      if (this._overview && this.overviewKey(key)) {
+        // Arrows, Enter, Escape and O belong to the overview while it is open.
+      } else if ((key === 'o' || key === 'O') && this._isPage()) {
+        this.overview = true;
+      } else if (key === 'ArrowRight' || key === 'PageDown' || key === ' ' || key === 'Spacebar') {
         this.next('keyboard');
       } else if (key === 'ArrowLeft' || key === 'PageUp') {
         this.prev('keyboard');
@@ -930,6 +1061,9 @@ import { flight, durationFor, ease } from './zoom/camera.js'
         toggleFullscreen();
       } else if (key === 'r' || key === 'R') {
         this.reset();
+      } else if ((key === 'b' || key === 'B' || key === '.') && this._isPage() && !this.hasAttribute('data-watching')) {
+        // B, or the "blank" button of a presenter's clicker, which sends a full stop.
+        this.setBlank(!this._blank, 'keyboard');
       } else if (/^[0-9]$/.test(key) || key === 'Escape') {
         handled = this.hotspotKey(key);
       } else {
@@ -941,6 +1075,11 @@ import { flight, durationFor, ease } from './zoom/camera.js'
         this._flashOverlay();
       }
     }
+
+    // A stage that is the page (a deck window, the audience window, the
+    // presenter's slide); the reader's stage sits in its page and has an
+    // outline of its own.
+    _isPage() { return this.parentElement === document.body; }
 
     _go(i, reason = 'api') {
       if (!this._slides.length) return;
@@ -1369,7 +1508,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     }
 
     _zoomDown(e) {
-      if (e.pointerType !== 'touch' || !this.hasAttribute('data-zoomable') || this._inInkUi(e)) return false;
+      if (this._overview || e.pointerType !== 'touch' || !this.hasAttribute('data-zoomable') || this._inInkUi(e)) return false;
       this._touches.set(e.pointerId, [e.clientX, e.clientY]);
       if (this._touches.size === 2) {
         // A second finger: a pinch, not a tap or a finger's stroke.
@@ -1418,7 +1557,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
 
     // Ctrl + scroll is how a trackpad pinch arrives; plain scrolling moves a zoomed slide.
     _onWheel(e) {
-      if (!this.hasAttribute('data-zoomable') || this._inInkUi(e)) return;
+      if (this._overview || !this.hasAttribute('data-zoomable') || this._inInkUi(e)) return;
       if (e.ctrlKey) {
         e.preventDefault();
         const zoom = this.zoom;
@@ -1434,6 +1573,136 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     // iPad Safari's own pinch zoom, which would enlarge every bar on the page.
     _onGesture(e) {
       if (this.hasAttribute('data-zoomable') && !this._inInkUi(e)) e.preventDefault();
+    }
+
+    // Overview -----------------------------------------------------------------
+    //
+    // O shows every slide in a grid, in this window only: the presenter
+    // view opens it in its own slide frame, so the audience never sees it.
+    // Arrows move the cursor, Enter or a click goes to that slide, O or
+    // Escape go back to the slide shown. The slides show every step.
+    // `overviewchange` ({ open }) says when it opens or closes.
+
+    get overview() { return this._overview; }
+    set overview(on) {
+      on = !!on && this._slides.length > 0;
+      if (on === this._overview) return;
+      if (on) {
+        if (this.inking) this.inking = false;
+        this._stopZoomFlight();
+        this._hotspot = null;
+        if (this._zoom) this.setZoom(null, 'overview', { announce: false });
+        this._ovCursor = this._index;
+      }
+      this._overview = on;
+      this.toggleAttribute('data-overview', on);
+      if (on) this._buildOverview();
+      else {
+        this._ovCells?.replaceChildren();
+        if (this._canvas) { this._canvas.style.width = this.designWidth + 'px'; this._canvas.style.height = this.designHeight + 'px'; }
+      }
+      this._fit();
+      if (on) this._showCursor();
+      else if (this._stageEl) this._stageEl.scrollTop = 0;
+      this.dispatchEvent(new CustomEvent('overviewchange', { detail: { open: on }, bubbles: true, composed: true }));
+    }
+
+    /** Columns and scale of the grid for `count` slides in a `vw`×`vh` window. */
+    overviewLayout(count, vw, vh) {
+      const W = this.designWidth, H = this.designHeight;
+      const gap = Math.round(W * 0.06);
+      // Room under each slide for its number and title, in design pixels.
+      const label = Math.round(H * 0.12);
+      const pad = Math.max(16, Math.min(48, vw * 0.03));
+      const room = (cols) => {
+        const rows = Math.ceil(count / cols);
+        const k = Math.min((vw - 2 * pad) / (cols * W + (cols - 1) * gap), (vh - 2 * pad) / (rows * (H + label) + (rows - 1) * gap));
+        return { cols, rows, k };
+      };
+      // All slides at once, as large as they can be…
+      let best = room(1);
+      for (let cols = 2; cols <= count; cols++) { const next = room(cols); if (next.k > best.k) best = next; }
+      // …unless they get too small to read: then fewer columns, and scrolling.
+      const minWidth = 160;
+      if (best.k * W < minWidth) {
+        const cols = Math.max(1, Math.min(count, Math.floor((vw - 2 * pad + gap * minWidth / W) / (minWidth + gap * minWidth / W))));
+        const rows = Math.ceil(count / cols);
+        best = { cols, rows, k: (vw - 2 * pad) / (cols * W + (cols - 1) * gap) };
+      }
+      return { ...best, gap, label, pad };
+    }
+
+    _buildOverview() {
+      const cells = this._slides.map((slide, i) => {
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'ov-cell';
+        cell.dataset.i = String(i);
+        // The slide's heading; the label names only its layout.
+        const heading = slide.querySelector('h1, h2, h3');
+        const title = (heading?.textContent || '').replace(/\s+/g, ' ').trim();
+        cell.setAttribute('aria-label', `${i + 1}${title ? ` ${title}` : ''}`);
+        const caption = document.createElement('span');
+        caption.textContent = `${i + 1}  ${title}`;
+        cell.appendChild(caption);
+        if (i === this._index) cell.setAttribute('data-current', '');
+        return cell;
+      });
+      this._ovCells?.replaceChildren(...cells);
+    }
+
+    _fitOverview(vw, vh) {
+      const { cols, rows, k, gap, label, pad } = this.overviewLayout(this._slides.length, vw, vh);
+      const W = this.designWidth, H = this.designHeight;
+      const width = cols * W + (cols - 1) * gap;
+      const height = rows * (H + label) + (rows - 1) * gap;
+      this._fitScale = k;
+      // Centred across, and down too when it all fits.
+      const left = Math.max(pad, (vw - width * k) / 2);
+      const top = Math.max(pad, (vh - height * k) / 2);
+      this._canvas.style.width = width + 'px';
+      this._canvas.style.height = height + 'px';
+      this._canvas.style.transform = `translate(${left}px, ${top}px) scale(${k})`;
+      this._canvas.style.setProperty('--ov-k', String(1 / k));
+      if (this._ovSizer) { this._ovSizer.style.width = '1px'; this._ovSizer.style.height = `${Math.ceil(top * 2 + height * k)}px`; }
+      const cells = this._ovCells?.children ?? [];
+      this._slides.forEach((slide, i) => {
+        const x = (i % cols) * (W + gap), y = Math.floor(i / cols) * (H + label + gap);
+        slide.style.setProperty('--ov-x', x + 'px');
+        slide.style.setProperty('--ov-y', y + 'px');
+        const cell = cells[i];
+        if (cell) Object.assign(cell.style, { left: x + 'px', top: y + 'px', width: W + 'px', height: H + 'px' });
+      });
+      this._ovLayout = { cols };
+    }
+
+    _showCursor() {
+      const cells = this._ovCells?.children ?? [];
+      for (let i = 0; i < cells.length; i++) cells[i].toggleAttribute('data-cursor', i === this._ovCursor);
+      cells[this._ovCursor]?.scrollIntoView?.({ block: 'nearest' });
+    }
+
+    _overviewGo(i, reason = 'keyboard') {
+      this.overview = false;
+      if (i !== this._index) this._go(i, reason);
+    }
+
+    /** A key typed while the overview is open; says whether it did something. */
+    overviewKey(key) {
+      if (!this._overview) return false;
+      const count = this._slides.length;
+      const cols = this._ovLayout?.cols ?? 1;
+      const move = to => { this._ovCursor = Math.max(0, Math.min(count - 1, to)); this._showCursor(); };
+      if (key === 'ArrowRight' || key === 'PageDown') move(this._ovCursor + 1);
+      else if (key === 'ArrowLeft' || key === 'PageUp') move(this._ovCursor - 1);
+      else if (key === 'ArrowDown') move(this._ovCursor + cols);
+      else if (key === 'ArrowUp') move(this._ovCursor - cols);
+      else if (key === 'Home') move(0);
+      else if (key === 'End') move(count - 1);
+      else if (key === 'Enter' || key === ' ' || key === 'Spacebar') this._overviewGo(this._ovCursor);
+      else if (key === 'Escape' || key === 'o' || key === 'O') this.overview = false;
+      else return false;
+      return true;
     }
 
     // Hotspots ----------------------------------------------------------------
@@ -1467,6 +1736,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
 
     /** A digit or Escape, as typed in this window or the presenter view's; says whether it was used. */
     hotspotKey(key) {
+      if (this._overview) return false;
       if (key === 'Escape') {
         if (!this._zoom || this.inking) return false;
         this.wholeSlide();
@@ -1757,6 +2027,8 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     goTo(i) { this._go(i, 'api'); }
     /** Advance: reveals next step if the current slide has unrevealed steps, else goes to next slide. */
     next(reason = 'api') {
+      // On a black screen, the next press shows the slide again first.
+      if (this._blank) { this.setBlank(false, reason); return; }
       const steps = this._getSteps(this._slides[this._index]);
       const curr  = this._stepMap.get(this._index) ?? -1;
       if (steps.length > 0 && curr < steps.length - 1) {
@@ -1772,6 +2044,7 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     }
     /** Go back: hides last revealed step if any, else goes to previous slide. */
     prev(reason = 'api') {
+      if (this._blank) { this.setBlank(false, reason); return; }
       const steps = this._getSteps(this._slides[this._index]);
       const curr  = this._stepMap.get(this._index) ?? -1;
       if (steps.length > 0 && curr >= 0) {

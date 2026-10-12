@@ -80,6 +80,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--home-focus); ou
 .home-tile-body strong { font-weight: 600; color: var(--home-strong); font-size: 13px; }
 .home-tile-body span { color: var(--home-muted); font-size: 12px; overflow-wrap: anywhere; }
 
+/* ── Answers from the talk ─────────────────────────────────────────── */
+.home-answer-files { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.home-answer-files a { text-decoration: none; }
+.home-answers .home-hint { color: var(--home-faint); font-size: 12px; margin: 8px 0 0; }
+
 /* ── Share ────────────────────────────────────────────────────────────── */
 .home-outputs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .home-output { display: flex; gap: 12px; align-items: center; padding: 8px 10px; border: 1px solid var(--home-line); border-radius: var(--home-radius); background: var(--home-raised); }

@@ -93,6 +93,36 @@ test('received positions broadcast the final reveal state once with a sync reaso
   assert.equal(messages.length, count, 'an unchanged position does not broadcast again')
 })
 
+test('a black screen is part of the position, and the next press shows the slide again', () => {
+  const { stage: presenter, messages } = stageFixture()
+  const { stage: audience } = stageFixture()
+  presenter.setBlank(true, 'keyboard')
+  assert.equal(presenter.state.blank, true)
+  assert.equal(presenter['data-blank'], true)
+  const state = messages.at(-1).deckStateChanged
+  assert.equal(state.blank, true)
+  audience.setState(state)
+  assert.equal(audience.blank, true, 'the audience window goes black at the same slide')
+  presenter.next()
+  assert.equal(presenter.blank, false)
+  assert.equal(presenter.state.step, -1, 'showing the slide again does not advance')
+  audience.setState(messages.at(-1).deckStateChanged)
+  assert.equal(audience.blank, false)
+  presenter.next()
+  assert.equal(presenter.state.step, 0)
+})
+
+test('a position without blank leaves the black screen as it is', () => {
+  const { stage, messages } = stageFixture()
+  stage.setState({ index: 0, step: -1, blank: true })
+  assert.equal(stage.blank, true)
+  assert.equal(messages.at(-1).reason, 'sync')
+  stage.setState({ index: 1, step: 0 })
+  assert.equal(stage.blank, true)
+  stage.setState({ index: 1, step: 0, blank: false })
+  assert.equal(stage.blank, false)
+})
+
 test('print mode reveals every step and restores the positions afterwards', () => {
   const { stage, events } = stageFixture()
   stage.next()
@@ -158,4 +188,34 @@ test('a step on the same slide leaves the hotspot and shows the whole slide', ()
   assert.equal(stage.hotspot, null)
   assert.deepEqual(flights.at(-1), { zoom: null, reason: 'hotspot-reset' })
   assert.equal(stage.state.step, 0, 'and the step is shown too')
+})
+
+test('the overview fits every slide it can, and its keys move a cursor and go there', () => {
+  const { stage, messages } = stageFixture()
+  // Twelve slides in a 1600×900 window: all at once, in a grid of a few columns.
+  const layout = stage.overviewLayout(12, 1600, 900)
+  assert.ok(layout.cols >= 3 && layout.cols <= 5, `columns: ${layout.cols}`)
+  assert.ok(layout.rows * layout.cols >= 12)
+  assert.ok(layout.k * 1920 >= 160)
+  // Two hundred slides: the slides stay readable, and the grid scrolls.
+  const many = stage.overviewLayout(200, 1600, 900)
+  assert.ok(many.k * 1920 >= 159, 'thumbnails keep a readable width')
+  assert.ok(many.rows * (1080 + many.label) * many.k > 900)
+
+  stage._fit = () => {}
+  stage._ovLayout = { cols: 2 }
+  stage._overview = true
+  stage._ovCursor = 0
+  const before = messages.length
+  assert.equal(stage.overviewKey('ArrowRight'), true)
+  assert.equal(stage._ovCursor, 1)
+  assert.equal(stage.overviewKey('ArrowLeft'), true)
+  assert.equal(stage._ovCursor, 0)
+  assert.equal(messages.length, before, 'moving the cursor tells nobody')
+  stage.overviewKey('End')
+  assert.equal(stage.overviewKey('Enter'), true)
+  assert.equal(stage.overview, false)
+  assert.equal(stage.index, 1)
+  assert.equal(messages.at(-1).deckStateChanged.index, 1, 'going to a slide is an ordinary change')
+  assert.equal(stage.overviewKey('ArrowRight'), false, 'closed, the keys are the slides’ again')
 })

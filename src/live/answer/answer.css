@@ -52,3 +52,12 @@ footer { padding: 16px 20px; text-align: center; color: var(--muted); font-size:
 .answer-number { display: grid; grid-template-columns: 1fr auto; gap: 12px; }
 .answer-number input { width: 100%; min-width: 0; padding: 14px; border: 2px solid var(--rule); border-radius: 14px; background: var(--bg); color: var(--ink); font: inherit; font-size: 22px; font-variant-numeric: tabular-nums; }
 .answer-number button[type=submit] { background: var(--accent); border-color: var(--accent); color: var(--on-accent, var(--bg)); }
+/* Reactions: a row of emoji that float up on the presenter's screen. */
+.answer-reactions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; max-width: 520px; margin: 0 auto; padding: 0 20px 8px; }
+.answer-reactions button {
+  min-width: 46px; height: 46px; padding: 0 10px; border: 1px solid var(--rule); border-radius: 23px; background: var(--bg); color: var(--ink);
+  font: inherit; font-size: 24px; line-height: 1; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.answer-reactions button.is-sent { animation: answer-react .5s ease-out; }
+@keyframes answer-react { 30% { transform: scale(1.25); border-color: var(--accent); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .answer-reactions button.is-sent { animation: none; border-color: var(--accent); } }

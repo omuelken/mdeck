@@ -26,6 +26,18 @@ test('the presenter view lists its own keys', () => {
   assert.ok(!listed({ view: 'deck' }).some(line => line.startsWith('T:')), 'the timer is the presenter view’s')
 })
 
+test('B makes the screen black, and says how to show the slide again', () => {
+  assert.ok(listed({ view: 'presenter' }).includes('B/.: Black screen for the audience'))
+  assert.ok(listed({ view: 'deck' }).includes('B/.: Black screen for the audience'))
+  assert.ok(listed({ view: 'presenter', blank: true }).includes('B/.: Show the slide again'))
+})
+
+test('O lists the overview, and its own keys while it is open', () => {
+  assert.ok(listed({ view: 'presenter' }).includes('O: All slides, to pick one'))
+  assert.ok(titles({ view: 'deck', overview: true }).includes('All slides'))
+  assert.ok(!titles({ view: 'deck', overview: true, hotspots: true }).includes('Hotspots'), 'the number keys do nothing in the overview')
+})
+
 test('L, F and D only where they work', () => {
   assert.ok(!listed({ view: 'presenter' }).some(line => line.startsWith('L:')))
   assert.ok(listed({ view: 'presenter', languages: true }).includes('L: Next language'))

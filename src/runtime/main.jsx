@@ -43,6 +43,8 @@ import { RehearsalSummary } from './RehearsalSummary.jsx'
 import { planFor, scheduleAt, formatClock } from '../core/timing.js'
 import { KeyHelp, useKeyHelp, attachKeyHelp } from './KeyHelp.jsx'
 import { isHelpKey } from './helpKeys.js'
+import { Reactions } from './Reactions.jsx'
+import { reactionsOf } from '../core/reactions.js'
 
 const PresenterIcon = ({ name, size = 18 }) => <Icon name={name} size={size} style={{ display: 'block' }} />
 
@@ -110,10 +112,11 @@ function languageName(lang) {
 // announcement, the views connected), so the answer is kept until the text
 // changes: finding the tags reads the whole deck, which on an iPad made each
 // slide change noticeably slower.
-let activitiesOf = null, activitiesFound = false
+// A deck with reactions (`reactions:`) wants the phones too, between activities.
+let activitiesOf = null, activitiesFound = false, reactionsWanted = false
 const hasActivities = () => {
   if (activitiesOf !== slidesContent) { activitiesOf = slidesContent; activitiesFound = roomsIn(slidesContent).length > 0 }
-  return activitiesFound
+  return activitiesFound || reactionsWanted
 }
 // The heading the phones show for a room, found once per deck.
 const titlesByDeck = new WeakMap()
@@ -167,12 +170,15 @@ function injectSpeakerNotes(slides) {
 }
 
 // URL for the presenter's own iframe and preview pane (uses postMessage)
-function buildChildUrl(theme, palette, appearance, slideIndex = null, { draw = false } = {}) {
+function buildChildUrl(theme, palette, appearance, slideIndex = null, { draw = false, remote = false } = {}) {
   const url = new URL(window.location.href)
   url.searchParams.delete('v')
   url.searchParams.set('view', 'deck')
   url.searchParams.set('embedded', '1')
   if (draw) url.searchParams.set('draw', '1')
+  // A phone's small slide is for looking; it does not start drawing.
+  if (remote) url.searchParams.set('remote', '1')
+  else url.searchParams.delete('remote')
   if (theme) url.searchParams.set('theme', theme)
   else url.searchParams.delete('theme')
   setLookParams(url, palette, appearance)
@@ -277,6 +283,22 @@ function SlideJump({ index, total, onJump, pad = 0, style }) {
   )
 }
 
+const PRESENTER_LAYOUTS = ['speaker', 'slide', 'remote']
+// A slide's first heading, as plain words, for the phone's "Next:" line.
+function slideTitleOf(slide) {
+  const texts = [slide?.content ?? '', ...Object.values(slide?.regions ?? {}).map(region => region.content ?? '')]
+  for (const text of texts) {
+    const heading = text.replace(/^(```|~~~)[\s\S]*?^\1/gm, '').match(/^#{1,3}\s+(.+)$/m)
+    if (heading) return heading[1].replace(/[*_`]/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').trim()
+  }
+  return ''
+}
+// A phone gets the remote, a tablet the slide alone, a computer the speaker layout.
+function defaultLayout() {
+  if (!matchMedia('(pointer: coarse)').matches) return 'speaker'
+  return Math.min(screen.width, screen.height) < 600 ? 'remote' : 'slide'
+}
+
 function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [index, setIndex] = useState(0)
   // The notes, slide count and phones follow the language shown.
@@ -291,8 +313,14 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [palette, setPalette] = useState(deckConfig.palette ?? '')
   const [appearance, setAppearance] = useState(deckConfig.appearance ?? '')
   const [audienceConnected, setAudienceConnected] = useState(false)
-  const [noteSize, setNoteSize] = useState(13)
+  const [noteSize, setNoteSize] = useState(() => defaultLayout() === 'remote' ? 17 : 13)
   const [inking, setInking] = useState(false)
+  // Black screen (B): the audience's screens are black, this view veils its slide.
+  const [blank, setBlank] = useState(false)
+  // The overview (O) in this view's slide frame: keys go to it while it is open.
+  const [overviewOpen, setOverviewOpen] = useState(false)
+  const overviewRef = useRef(false)
+  overviewRef.current = overviewOpen
   // The keys that work now, over everything (?).
   const [helpOpen, setHelpOpen] = useKeyHelp()
   // Hotspots: the deck's setting until the presenter switches them (H).
@@ -316,10 +344,23 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     return () => document.removeEventListener('gesturestart', stop)
   }, [])
   // 'slide': the slide fills the screen (an iPad); the notes open as a drawer.
+  // 'remote': a phone in the hand, with the slide small, the notes and big
+  // buttons to go on and back.
   const [layout, setLayout] = useState(() => {
-    try { const saved = localStorage.getItem('mdeck-presenter-layout'); if (saved) return saved } catch {}
-    return matchMedia('(pointer: coarse)').matches ? 'slide' : 'speaker'
+    try { const saved = localStorage.getItem('mdeck-presenter-layout'); if (PRESENTER_LAYOUTS.includes(saved)) return saved } catch {}
+    return defaultLayout()
   })
+  const remoteLayout = layout === 'remote'
+  // A phone's screen must not lock in the middle of the talk (where the
+  // browser lets a page ask: https or this computer).
+  useEffect(() => {
+    if (!remoteLayout || !navigator.wakeLock) return
+    let lock = null, gone = false
+    const ask = () => { if (document.visibilityState === 'visible') navigator.wakeLock.request('screen').then(held => { if (gone) held.release(); else lock = held }, () => {}) }
+    ask()
+    document.addEventListener('visibilitychange', ask)
+    return () => { gone = true; document.removeEventListener('visibilitychange', ask); lock?.release().catch(() => {}) }
+  }, [remoteLayout])
   const [drawerOpen, setDrawerOpen] = useState(false)
   const slideLayout = layout === 'slide'
   function chooseLayout(next) {
@@ -374,6 +415,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   summaryRef.current = !!summary
 
   const iframeRef = useRef(null)
+  const toggleOverviewRef = useRef(null)
   const previewRef = useRef(null)
   const audienceRef = useRef(null)
   const bcRef = useRef(null)
@@ -402,7 +444,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   useEffect(() => { if (palette && !offered.some(p => p.id === palette)) setPalette('') }, [theme])
   const notes = useMemo(() => slides.map(s => s.meta?.notes ?? ''), [slides])
   // Preserve current slide when theme/palette causes an iframe reload
-  const iframeSrc = useMemo(() => buildChildUrl(theme, palette, appearance, indexRef.current, { draw: true }), [theme, palette, appearance])
+  const iframeSrc = useMemo(() => buildChildUrl(theme, palette, appearance, indexRef.current, { draw: true, remote: remoteLayout }), [theme, palette, appearance, remoteLayout])
   // previewSrc only recomputes on a change of look; slide changes use postMessage
   const previewSrc = useMemo(
     () => buildChildUrl(theme, palette, appearance, indexRef.current + 1),
@@ -436,6 +478,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       }
       if (source !== iframeRef.current?.contentWindow) return
       if (typeof data?.inkMode === 'boolean') { setInking(data.inkMode); return }
+      if (typeof data?.overview === 'boolean') { setOverviewOpen(data.overview); return }
       // ? typed while the slide's frame had the keyboard.
       if (data?.keyHelp === 'toggle') { setHelpOpen(open => !open); return }
       // Another screen (a paired iPad) switched the language; the notes follow.
@@ -460,6 +503,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       stateRef.current = state
       atEndRef.current = !!data.atEnd
       setIndex(i)
+      setBlank(!!state.blank)
       if (data.reason !== 'sync') {
         bcRef.current?.postMessage({ deckControl: { command: 'setState', value: state, order: orderRef.current.stamp() } })
       }
@@ -479,6 +523,12 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       if (e.target?.matches?.('input, select, textarea')) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
       if (summaryRef.current) return
+      if (overviewRef.current && ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'PageDown', 'PageUp', 'Home', 'End', 'Enter', ' ', 'Escape', 'o', 'O'].includes(e.key)) {
+        e.preventDefault()
+        sendTo(iframeRef.current?.contentWindow, 'overviewKey', e.key)
+        return
+      }
+      if (e.key === 'o' || e.key === 'O') { e.preventDefault(); toggleOverviewRef.current(); return }
       if (e.key === 't' || e.key === 'T') { e.preventDefault(); timerRef.current.toggle(); return }
       const cmd =
         (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') ? 'next' :
@@ -489,6 +539,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       if (e.key === 'n' || e.key === 'N') { e.preventDefault(); setDrawerOpen(open => !open); return }
       if ((e.key === 'l' || e.key === 'L') && LANGUAGES.length) { e.preventDefault(); nextLanguage(); return }
       if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleHotspots(); return }
+      // B, or a clicker's blank button (a full stop).
+      if (e.key === 'b' || e.key === 'B' || e.key === '.') { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'blank', 'toggle'); return }
       // Digits zoom to hotspots; Escape zooms out.
       if (/^[0-9]$/.test(e.key) || e.key === 'Escape') { if (e.key !== 'Escape') e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'hotspotKey', e.key); return }
       if (!cmd) return
@@ -546,6 +598,13 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   }, [lang])
   const nextLanguage = () => setLang(current => LANGUAGES[(LANGUAGES.indexOf(current) + 1) % LANGUAGES.length])
 
+  const toggleBlank = () => sendTo(iframeRef.current?.contentWindow, 'blank', 'toggle')
+  // In the slide-only layout the notes drawer would cover the grid.
+  const toggleOverview = () => { setDrawerOpen(false); sendTo(iframeRef.current?.contentWindow, 'overview', 'toggle') }
+  toggleOverviewRef.current = toggleOverview
+  const blankLabel = blank ? 'Show the slide again (B)' : 'Black screen for the audience (B)'
+  const blankOn = { background: '#f0f0f0', borderColor: '#f0f0f0', color: '#111' }
+
   // Nav buttons drive the presenter iframe; audience follows via slideIndexChanged
   function navCommand(cmd, value) {
     if (cmd === 'next' && atRehearsalEnd()) return finishRehearsal()
@@ -575,6 +634,64 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const deltaText = Math.abs(delta) < 30 ? 'on time' : delta > 0 ? `${formatClock(delta)} behind` : `${formatClock(-delta)} ahead`
   const deltaColor = Math.abs(delta) < 30 ? '#888' : delta > 0 ? '#f28b82' : '#81c995'
   const pill = { ...S.btn, minWidth: '40px', height: '40px', padding: '0 10px', fontSize: '15px' }
+  const notesHtml = note
+    ? marked.parse(renderCitations(note).markdown)
+    : '<p>No notes — add a <code>:::notes</code> block to the slide.</p>'
+  const notesDir = textDirection(deckConfig.lang) === 'rtl' ? 'rtl' : undefined
+
+  // Reactions from the phones float up here, never on the projector.
+  const reacting = !!reactionsOf(deckConfig)
+  const summaryPanel = summary && <RehearsalSummary
+    slides={slides}
+    plan={plan}
+    spent={summary}
+    onClose={() => { setSummary(null); timer.toggle() }}
+    onDiscard={() => { setSummary(null); timer.endRehearsal() }}
+    onSaved={(times, changed) => {
+      setSummary(null)
+      timer.endRehearsal()
+      setSavedTimes(saved => ({ ...saved, ...Object.fromEntries(Object.entries(times).map(([id, t]) => [id, t ?? undefined])) }))
+      setSavedNote(`Saved the times of ${changed} slide${changed === 1 ? '' : 's'} into the deck.`)
+      setTimeout(() => setSavedNote(null), 6000)
+    }}
+  />
+
+  // A phone in the hand: the slide small at the top, the notes, and the
+  // buttons to go on and back where the thumb is.
+  if (remoteLayout) {
+    const big = { ...S.btn, height: '72px', fontSize: '18px', fontWeight: 600, borderRadius: '14px' }
+    return (
+      <div class="presenter presenter--remote" style={{ display: 'flex', flexDirection: 'column', gap: '10px', height: '100dvh', boxSizing: 'border-box', padding: 'max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left))', background: '#111', color: '#ccc', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px', overflow: 'hidden', touchAction: 'manipulation' }}>
+        <div class="presenter-remote-bar" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+          <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ color: '#888' }} />
+          <button class="presenter-clock" style={{ ...pill, color: timer.running ? '#f0f0f0' : '#777', gap: '8px', marginInlineStart: 'auto' }} title="Start or pause the timer" onClick={timer.toggle}>
+            {clock}{timed && <span class="presenter-slide-time" style={{ color: slideColor, fontSize: '12px' }}>{slideText}</span>}
+          </button>
+          <button class="presenter-blank" title={blankLabel} aria-label="Black screen" aria-pressed={blank} style={{ ...pill, ...(blank ? blankOn : {}) }} onClick={toggleBlank}><PresenterIcon name="blank" /></button>
+          <button class="presenter-layout" style={pill} title="Slide only, notes in a drawer (for an iPad)" aria-label="Slide only" onClick={() => chooseLayout('slide')}><PresenterIcon name="tablet" /></button>
+        </div>
+        <SteeringNote />
+        <div style={{ position: 'relative', flexShrink: 0, width: '100%', maxHeight: '34dvh', aspectRatio: '16/9', margin: '0 auto', borderRadius: '8px', overflow: 'hidden', border: '1px solid #2a2a2a', background: '#000' }}>
+          <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ width: '100%', height: '100%', border: '0', display: 'block' }} />
+          {blank && <div class="presenter-blank-note" role="status" style={{ position: 'absolute', inset: 'auto 8px 8px', textAlign: 'center', padding: '4px 8px', borderRadius: '999px', background: 'rgba(17,17,17,0.9)', color: '#f0f0f0', fontSize: '13px', pointerEvents: 'none' }}>The audience sees a black screen</div>}
+        </div>
+        {timed && <div class="presenter-schedule" style={{ display: 'flex', justifyContent: 'space-between', flexShrink: 0, fontVariantNumeric: 'tabular-nums', fontSize: '13px' }}>
+          <span>{hasNext ? `Next: ${slideTitleOf(slides[index + 1]) || `slide ${index + 2}`}` : 'Last slide'}</span>
+          <span class="presenter-delta" style={{ color: deltaColor }}>{deltaText}</span>
+        </div>}
+        {!timed && <div style={{ flexShrink: 0, fontSize: '13px', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{hasNext ? `Next: ${slideTitleOf(slides[index + 1]) || `slide ${index + 2}`}` : 'Last slide'}</div>}
+        {savedNote && <div role="status" style={{ flexShrink: 0, color: '#81c995' }}>{savedNote}</div>}
+        <div class="notes-md" dir={notesDir} style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '10px 12px', lineHeight: 1.55, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', fontSize: `${noteSize}px`, color: note ? '#c8c8c8' : '#3a3a3a' }}
+          dangerouslySetInnerHTML={{ __html: notesHtml }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', flexShrink: 0 }}>
+          <button class="presenter-remote-prev" style={big} aria-label="Previous" onClick={() => navCommand('prev')}><PresenterIcon name="prev" size={28} /></button>
+          <button class="presenter-remote-next" style={{ ...big, background: '#f0f0f0', borderColor: '#f0f0f0', color: '#111' }} aria-label="Next" onClick={() => navCommand('next')}>Next<PresenterIcon name="next" size={28} /></button>
+        </div>
+        {reacting && <Reactions style={{ left: '16px', bottom: '100px' }} />}
+        {summaryPanel}
+      </div>
+    )
+  }
 
   return (
     <div class={`presenter presenter--${layout}`} style={{ display: 'grid', gridTemplateColumns: slideLayout ? '1fr' : '2fr 1fr', height: '100dvh', background: '#111', overflow: 'hidden', touchAction: 'pan-x pan-y' }}>
@@ -584,6 +701,10 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         src={iframeSrc}
         style={{ width: '100%', height: '100%', border: '0' }}
       />
+      {blank && <div class="presenter-blank-note" role="status" style={{ position: 'fixed', left: slideLayout ? '50%' : 'calc(100% / 3)', bottom: '24px', transform: 'translateX(-50%)', zIndex: 18, display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '999px', background: 'rgba(17,17,17,0.92)', border: '1px solid #3a3a3a', color: '#f0f0f0', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px', pointerEvents: 'none' }}>
+        <PresenterIcon name="blank" size={16} />The audience sees a black screen · B or → shows the slide
+      </div>}
+      {reacting && <Reactions />}
       {slideLayout && (
         <div class="presenter-pill" role="toolbar" aria-label="Presenter" style={{ position: 'fixed', top: 'max(10px, env(safe-area-inset-top))', right: 'max(10px, env(safe-area-inset-right))', zIndex: 20, display: 'flex', gap: '4px', alignItems: 'center', padding: '4px', borderRadius: '12px', background: 'rgba(17,17,17,0.88)', border: '1px solid #2a2a2a', color: '#ccc', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
           <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ padding: '0 4px', color: '#888' }} />
@@ -595,6 +716,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
           <button style={pill} title="Previous" aria-label="Previous" onClick={() => navCommand('prev')}><PresenterIcon name="prev" /></button>
           <button style={pill} title="Next" aria-label="Next" onClick={() => navCommand('next')}><PresenterIcon name="next" /></button>
           <button class="presenter-draw" title="Draw on the slide (D)" aria-pressed={inking} style={{ ...pill, ...(inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : {}) }} onClick={() => sendTo(iframeRef.current?.contentWindow, 'ink', 'toggle')}><PresenterIcon name="pen" /></button>
+          <button class="presenter-overview" title="All slides (O)" aria-label="All slides" aria-pressed={overviewOpen} style={{ ...pill, ...(overviewOpen ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={toggleOverview}><PresenterIcon name="overview" /></button>
+          <button class="presenter-blank" title={blankLabel} aria-label="Black screen" aria-pressed={blank} style={{ ...pill, ...(blank ? blankOn : {}) }} onClick={toggleBlank}><PresenterIcon name="blank" /></button>
           <button class="presenter-hotspots" title={hotspotsOn ? 'Hotspots on: 1–9 zoom in (H)' : 'Hotspots off (H)'} aria-label="Hotspots" aria-pressed={hotspotsOn} style={{ ...pill, ...(hotspotsOn ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={toggleHotspots}><PresenterIcon name="hotspots" /></button>
           <button class="presenter-notes" title="Notes (N)" aria-pressed={drawerOpen} style={{ ...pill, ...(drawerOpen ? { background: '#2a2a2a', color: '#fff' } : {}) }} onClick={() => setDrawerOpen(open => !open)}>Notes</button>
           {canFullscreen && <button class="presenter-fullscreen" style={pill} title={fullscreenLabel} aria-label={fullscreenLabel} aria-pressed={isFullscreen} onClick={() => fullscreen.toggle()}><PresenterIcon name={fullscreenIcon} /></button>}
@@ -625,6 +748,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
             {!slideLayout && canFullscreen && <button class="presenter-fullscreen" style={{ ...S.btn, padding: '3px 8px' }} title={fullscreenLabel} aria-label={fullscreenLabel} aria-pressed={isFullscreen} onClick={() => fullscreen.toggle()}><PresenterIcon name={fullscreenIcon} /></button>}
             {!slideLayout && launchPage && <a class="presenter-home" href={launchPage} style={{ ...S.btn, boxSizing: 'border-box', padding: '3px 8px', textDecoration: 'none' }} title="Back to the launch page" aria-label="Back to the launch page"><PresenterIcon name="home" /></a>}
             {!slideLayout && <button class="presenter-layout" style={{ ...S.btn, padding: '3px 8px' }} title="Slide only, notes in a drawer (for an iPad)" onClick={() => chooseLayout('slide')}><PresenterIcon name="tablet" /></button>}
+            <button class="presenter-layout-remote" style={{ ...S.btn, padding: '3px 8px' }} title="Remote: big buttons and the notes (for a phone)" aria-label="Remote layout" onClick={() => chooseLayout('remote')}><PresenterIcon name="phone" /></button>
             <SlideJump index={index} total={slides.length} pad={2} onJump={i => navCommand('goTo', i)} style={{ color: '#666', fontVariantNumeric: 'tabular-nums' }} />
           </span>
         </div>
@@ -678,7 +802,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
               style={{ width: '80px', accentColor: '#444', cursor: 'pointer', opacity: 0.6 }}
             />
           </div>
-          <div class="notes-md" dir={textDirection(deckConfig.lang) === 'rtl' ? 'rtl' : undefined} style={{
+          <div class="notes-md" dir={notesDir} style={{
             flex: 1,
             margin: 0,
             padding: '10px 12px',
@@ -691,11 +815,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
             fontFamily: 'inherit',
             overflow: 'auto',
           }}
-            dangerouslySetInnerHTML={{
-              __html: note
-                ? marked.parse(renderCitations(note).markdown)
-                : '<p>No notes — add a <code>:::notes</code> block to the slide.</p>',
-            }}
+            dangerouslySetInnerHTML={{ __html: notesHtml }}
           />
         </div>
 
@@ -775,7 +895,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         </div>}
 
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
             <button style={S.btn} onClick={() => navCommand('prev')}><PresenterIcon name="prev" size={15} />Prev</button>
             <button style={S.btn} onClick={() => navCommand('next')}>Next<PresenterIcon name="next" size={15} /></button>
             <button style={S.btn} onClick={() => navCommand('reset')}>Reset</button>
@@ -794,6 +914,22 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
               style={{ ...S.btn, ...(hotspotsOn ? { background: '#2a2a2a', borderColor: '#444', color: '#f0f0f0' } : {}) }}
               onClick={toggleHotspots}
             ><PresenterIcon name="hotspots" size={15} /></button>
+            <button
+              class="presenter-overview"
+              title="All slides: pick one to go to it (O)"
+              aria-pressed={overviewOpen}
+              aria-label="All slides"
+              style={{ ...S.btn, ...(overviewOpen ? { background: '#2a2a2a', borderColor: '#444', color: '#f0f0f0' } : {}) }}
+              onClick={toggleOverview}
+            ><PresenterIcon name="overview" size={15} /></button>
+            <button
+              class="presenter-blank"
+              title={blankLabel}
+              aria-pressed={blank}
+              aria-label="Black screen"
+              style={{ ...S.btn, ...(blank ? blankOn : {}) }}
+              onClick={toggleBlank}
+            ><PresenterIcon name="blank" size={15} /></button>
             {lookFolded && <button
               class="presenter-look-unfold"
               title={`Theme and palette: ${themeMeta?.title ?? theme}, ${shown.palette?.title ?? ''}`}
@@ -816,30 +952,17 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
             </button>
           </div>
           <div style={{ color: '#444', fontSize: '11px', textAlign: 'center' }}>
-            Arrow keys · Space · R reset · T timer{slideHotspots ? ' · 1–9 zoom' : ''} · ? all keys
+            Arrow keys · Space · T timer · O all slides · B black{slideHotspots ? ' · 1–9 zoom' : ''} · ? all keys
           </div>
         </div>
 
       </aside>
 
       {helpOpen && <KeyHelp
-        context={{ view: 'presenter', hotspots: slideHotspots, hotspotSwitch: hotspotsOn, inking, fullscreen: canFullscreen, drawer: slideLayout, languages: LANGUAGES.length > 0 }}
+        context={{ view: 'presenter', blank, overview: overviewOpen, hotspots: slideHotspots, hotspotSwitch: hotspotsOn, inking, fullscreen: canFullscreen, drawer: slideLayout, languages: LANGUAGES.length > 0 }}
         onClose={() => setHelpOpen(false)}
       />}
-      {summary && <RehearsalSummary
-        slides={slides}
-        plan={plan}
-        spent={summary}
-        onClose={() => { setSummary(null); timer.toggle() }}
-        onDiscard={() => { setSummary(null); timer.endRehearsal() }}
-        onSaved={(times, changed) => {
-          setSummary(null)
-          timer.endRehearsal()
-          setSavedTimes(saved => ({ ...saved, ...Object.fromEntries(Object.entries(times).map(([id, t]) => [id, t ?? undefined])) }))
-          setSavedNote(`Saved the times of ${changed} slide${changed === 1 ? '' : 's'} into the deck.`)
-          setTimeout(() => setSavedNote(null), 6000)
-        }}
-      />}
+      {summaryPanel}
       {themeModalOpen && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -938,6 +1061,7 @@ async function init() {
   setDeckLanguage(deckConfig)
   document.documentElement.lang = deckLanguage()
   configureLive(deckConfig)
+  reactionsWanted = !!reactionsOf(deckConfig)
   setSavedResults(savedResults)
   const { slides } = parsed
   const presenterMode = view === 'presenter'
@@ -989,6 +1113,11 @@ async function init() {
     // Digits and Escape typed in the presenter view, and its hotspots switch.
     else if (ctrl.command === 'hotspotKey' && typeof ctrl.value === 'string') stage.hotspotKey(ctrl.value)
     else if (ctrl.command === 'hotspots') stage.hotspotsForced = ctrl.value
+    // B in the presenter view: the screens the audience sees go black.
+    // O in the presenter view: the overview opens in its own slide frame.
+    else if (ctrl.command === 'overview') stage.overview = ctrl.value === 'toggle' ? !stage.overview : !!ctrl.value
+    else if (ctrl.command === 'overviewKey' && typeof ctrl.value === 'string') stage.overviewKey(ctrl.value)
+    else if (ctrl.command === 'blank') stage.setBlank(ctrl.value === 'toggle' ? !stage.blank : !!ctrl.value, 'keyboard')
   }
 
   // The same slide and step in another language, its words and mdeck's own;
@@ -1077,7 +1206,15 @@ async function init() {
   }
 
   // The presenter's slide shows the hotspots' keys; no screen the audience sees does.
-  if (inkStage && embedded && drawHere) inkStage.setAttribute('data-hotspot-badges', '')
+  // A black screen only veils it.
+  if (inkStage && embedded && drawHere) {
+    inkStage.setAttribute('data-hotspot-badges', '')
+    inkStage.setAttribute('data-presenter', '')
+    // The presenter view routes the keys to the overview while it is open.
+    inkStage.addEventListener('overviewchange', event => window.parent.postMessage({ overview: event.detail.open }, window.location.origin))
+    // A frame that reloaded (another theme) has none open.
+    window.parent.postMessage({ overview: false }, window.location.origin)
+  }
   // ? lists the keys that work now: in a deck window over the slide; in the
   // presenter's slide frame it goes to the presenter view, which shows them.
   if (inkStage && !embedded && !audienceMode && !followMode) attachKeyHelp(inkStage, { canDraw: drawHere })
@@ -1105,7 +1242,7 @@ async function init() {
     // it. A phone or tablet only browsing the deck keeps its taps. D or the
     // close button turns it off.
     const startDrawing = () => { inkStage._inkCollapsed = true; inkStage.inking = true }
-    if (embedded && matchMedia('(pointer: coarse)').matches) startDrawing()
+    if (embedded && matchMedia('(pointer: coarse)').matches && url.searchParams.get('remote') !== '1') startDrawing()
     else if (!embedded) {
       const onPen = event => {
         if (event.pointerType !== 'pen') return
@@ -1117,7 +1254,11 @@ async function init() {
   } else if (inkStage && followMode) {
     // The presenter's slide and ink, read from the stage room; counted as a phone.
     inkStage.setAttribute('data-follower', '')
-    onStagePosition(position => { if (position.lang) switchLanguage(position.lang, { announce: false }) })
+    inkStage.setAttribute('data-watching', '')
+    onStagePosition(position => {
+      if (position.lang) switchLanguage(position.lang, { announce: false })
+      if (typeof position.blank === 'boolean') inkStage.setBlank(position.blank, 'sync')
+    })
     startFollowing(inkStage, { onStagePosition, words: { live: t('follow.live'), back: t('follow.back'), waiting: t('follow.waiting') } })
     watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true, view: 'phone' })] })
   } else if (inkStage && audienceMode) {

@@ -47,7 +47,7 @@ There are two ways.
 **The iPad next to your laptop.** The laptop shows the slides on the projector; you draw and go through the slides on the iPad, with your notes on it.
 
 1. Start `mdeck run my-talk.md --network`, so the iPad in the same network can reach your laptop.
-2. On the launch page, under **Present from an iPad**, choose **Show pairing code** and scan it with the iPad's camera. The presenter view opens on the iPad, paired with your laptop, so it may save drawings and steer the phones of a poll. It is the same presenter view as on the laptop; pairing only gives it these rights. Once it is open, the launch page says so.
+2. On the launch page, under **Present from an iPad or a phone**, choose **Show pairing code** and scan it with the iPad's camera. The presenter view opens on the iPad, paired with your laptop, so it may save drawings and steer the phones of a poll. It is the same presenter view as on the laptop; pairing only gives it these rights. Once it is open, the launch page says so.
 3. On the laptop, open the **audience window** from the same place and move it to the projector. It follows the iPad: slides, revealed points, drawings as you draw them, and videos. Navigation in the audience window also updates the iPad's slide, notes and next-slide preview.
 
 **Videos.** A video file on a slide (`<videoplayer src="…" />`) plays, pauses and jumps on the projector as you tap it on the iPad. The sound comes from the projector: while the audience window is open, the iPad's copy plays silently. Browsers start sound only on a page someone has clicked, so click the audience window once before the talk (going full screen counts); otherwise the video plays there without sound and shows **Click for sound**.
@@ -60,7 +60,7 @@ A pairing code works once, for ten minutes. **Unpair** on the launch page ends e
 
 1. Tell mdeck where your server is: `server: https://rooms.example.org` in the deck's settings, or `MDECK_SERVER` in your shell, or the address after the option in the next step.
 2. Start `MDECK_SERVER_KEY=your-key mdeck run my-talk.md --server`. The key is the one the server was started with.
-3. On the launch page, choose **Show pairing code** under **Present from an iPad** and scan it. The address in the code is on your server and contains a long random name, so treat it like a private link.
+3. On the launch page, choose **Show pairing code** under **Present from an iPad or a phone** and scan it. The address in the code is on your server and contains a long random name, so treat it like a private link.
 4. Open the **audience window** on the laptop as before. It follows the iPad through the server.
 
 Everything else works as with `--network`: drawings are saved in the drawings file beside the deck, and the iPad may steer polls. Editing the slides on the laptop reloads the iPad too. The server only passes on what the presenter and audience pages need; the launch page, the editor and the other files in your folder are not reachable through it. Stopping `mdeck run` ends the connection, and a pairing code stops working when you unpair or stop.

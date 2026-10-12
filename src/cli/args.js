@@ -22,7 +22,7 @@ const commands = {
   server: { '--port': value, '--host': optional, max: 0 },
   skill: { '--print': flag, '--install': 'list', '--project': flag, max: 0 },
   migrate: { '--dry-run': flag, max: 1 },
-  results: { '--output': value, '-o': '--output', max: 1 },
+  results: { '--output': value, '-o': '--output', '--summary': flag, '--json': flag, max: 1 },
 }
 
 export function validateServerOrigin(address) {
