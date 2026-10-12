@@ -6,6 +6,7 @@ meta:
   organization: "FHNW"
   date: "2026-10-06"
 bibliography: refs.bib
+reactions: true
 ---
 
 ---
@@ -493,7 +494,7 @@ time: 1m
 :::
 
 :::notes
-Phones that joined at the poll stay in; **J** shows the join code again for latecomers. Answers appear as they come in.
+Phones that joined at the poll stay in; **J** shows the join code again for latecomers. Answers appear as they come in. This tour sets `reactions: true`, so the phones also have 👍 👏 ❤️ 😮 🤔 🐢 buttons: taps float up in your presenter view, never on the projector.
 
 Besides polls and word clouds there are ratings (`<scale>`), numbers with a right answer (`<numeric>`) and open questions (`<question>`). With several of them, `<qrcode join />` on an early slide shows the code once. `mdeck run` keeps the answers in `slides.results.json` beside the deck.
 :::
