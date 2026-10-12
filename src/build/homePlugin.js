@@ -180,18 +180,20 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
 
   // The one-time address an iPad opens to present from: the presenter view,
   // with a one-time pairing offer; the server's master key stays here.
-  function pairUrl() {
+  // `layout: 'remote'` opens it as the phone clicker instead.
+  function pairUrl(layout = 'slide') {
     const network = relay?.url ?? urls()?.network?.[0]
     if (!pairing || !network) throw Object.assign(new Error('Start mdeck run with --network or --server so an iPad can reach it'), { status: 409 })
     const url = new URL(network)
     url.searchParams.set('view', 'presenter')
+    url.searchParams.set('layout', layout === 'remote' ? 'remote' : 'slide')
     url.searchParams.set('pair', pairing.offer())
     return url.href
   }
 
-  async function act({ action, output } = {}) {
+  async function act({ action, output, layout } = {}) {
     if (Object.hasOwn(services, action)) return { url: await start(action) }
-    if (action === 'pair') return { url: pairUrl() }
+    if (action === 'pair') return { url: pairUrl(layout) }
     if (action === 'unpair') { pairing?.revoke(); return { ok: true } }
     if (action === 'build') {
       if (!Object.hasOwn(outputs, output)) throw Object.assign(new Error(`Unknown output: ${output}`), { status: 400 })

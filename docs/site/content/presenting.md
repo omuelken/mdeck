@@ -70,11 +70,11 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | T | Start or pause the timer, in the presenter view |
 | ? | Show the keys that work at this moment, over the slide; **?** again or Escape closes the list |
 
-## Use your phone as a remote
+## Use your phone as a clicker
 
-Pair your phone like an iPad: start `mdeck run my-talk.md --network`, choose **Show pairing code** under **Present from an iPad or a phone** on the launch page, and scan the code with the phone's camera. On a phone the presenter view becomes a remote: the slide small at the top, the next slide's heading, the time, your notes in large print, and big **Previous** and **Next** buttons where your thumb is. The button with the crossed-out screen makes the audience's screen black. The audience window on the laptop follows the phone. Where the browser allows it (`https://`, or a page on the laptop itself), the phone's screen stays on during the talk.
+Start `mdeck run my-talk.md --network`, choose **Use a phone as clicker** under **Present from an iPad or a phone** on the launch page, and scan the code with the phone's camera. The phone shows the slide small at the top, the next slide's heading, the time, your notes in large print, and big **Previous** and **Next** buttons where your thumb is; there is nothing to draw with. The button with the crossed-out screen makes the audience's screen black. The audience window on the laptop follows the phone. Where the browser allows it (`https://`, or a page on the laptop itself), the phone's screen stays on during the talk.
 
-The remote is a layout of the presenter view: the button with the phone, at the top of the speaker layout, switches any presenter view to it, and the tablet button in the remote switches back to the slide alone. Each device remembers its layout.
+The clicker is a layout of the presenter view: the phone button at the top of the speaker layout switches any presenter view to it, and the tablet button in the clicker switches back to the slide alone. Each device remembers its layout.
 
 ## Black out the screen
 

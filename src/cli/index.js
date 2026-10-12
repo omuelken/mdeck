@@ -656,7 +656,7 @@ if (command === 'new') {
   // Phones in the room follow the talk (the reader view would show slides ahead).
   if (exposed) for (const url of server.resolvedUrls.network) tip(`Follow:      ${new URL('?view=follow', url).href}`)
   console.log()
-  if (relay) tip(`iPad:        choose "Show pairing code" on the launch page; it opens ${relay.url}`)
+  if (relay) tip(`iPad:        choose "Pair an iPad" or "Use a phone as clicker" on the launch page; it opens ${relay.url}`)
   ok(`Watching ${c.cyan}${abs}${c.reset}`)
   tip('Edit and save to reload.\n')
 

@@ -71,7 +71,7 @@ try {
   assert.equal(info.relay.state, 'up'); assert.equal(info.pairing.available, true)
   const offered = await (await fetch(`${home}__mdeck/home/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pair' }) })).json()
   assert.equal(new URL(offered.url).searchParams.has('serverkey'), false)
-  assert.ok(offered.url.startsWith(url + '?view=presenter&pair='), offered.url)
+  assert.ok(offered.url.startsWith(url + '?view=presenter&layout=slide&pair='), offered.url)
 
   // The launch page and the editor are not reachable through the server.
   for (const path of ['home.html', '__mdeck/home/info', '__mdeck/deck', 'private.toml', 'private.js?raw', 'confidential.pdf', '@id/__x00__private', `@fs${temp}/private.js?raw`]) assert.equal((await fetch(`${ROOM}${base}${path}`)).status, 403, path)
@@ -79,7 +79,8 @@ try {
   browser = await launchChrome({ dir: temp, timeout: 45000 })
   // the iPad
   const ipad = await browser.open(offered.url)
-  await until(() => ipad.evaluate("document.body?.innerText.includes('Speaker View') || document.body?.innerText.includes('/ 02')"), 'presenter view renders')
+  // The iPad's code opens the slide layout, whatever the screen.
+  await until(() => ipad.evaluate("!!document.querySelector('.presenter--slide .presenter-pill')"), 'presenter view renders')
   await until(() => ipad.evaluate("(() => { try { return !!document.querySelector('iframe').contentDocument.querySelector('deck-stage') } catch { return false } })()"), 'deck inside presenter')
   await until(() => ipad.evaluate("document.querySelector('iframe')?.contentDocument?.querySelector('.relay-custom-layout img')?.naturalWidth === 10"), 'custom layout and referenced image render')
   const token = await ipad.evaluate("localStorage.getItem('mdeck-pair:' + location.origin + location.pathname)")
@@ -114,6 +115,23 @@ try {
   await until(() => projector.evaluate("document.querySelector('deck-stage')?.state.step === -1"), 'projector follows iPad undo reveal')
   await projector.evaluate("document.querySelector('deck-stage').next()")
   await until(() => ipad.evaluate("document.querySelector('iframe')?.contentDocument?.querySelector('deck-stage')?.state.step === 0"), 'projector can repeat its previous reveal')
+  // A phone paired as a clicker: notes and big buttons, nothing to draw with,
+  // and its Next moves the projector like the iPad.
+  const clickerOffer = await (await fetch(`${home}__mdeck/home/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pair', layout: 'remote' }) })).json()
+  assert.ok(clickerOffer.url.includes('layout=remote'), clickerOffer.url)
+  const phone = await browser.open(clickerOffer.url)
+  await until(() => phone.evaluate("!!document.querySelector('.presenter--remote .presenter-remote-next')"), 'the clicker opens')
+  await until(() => phone.evaluate("(() => { try { return !!document.querySelector('iframe').contentDocument.querySelector('deck-stage') } catch { return false } })()"), 'the clicker shows the slide')
+  await delay(500)
+  assert.equal(await phone.evaluate("(() => { const d = document.querySelector('iframe').contentDocument; return !!d.querySelector('.ink-toolbar-host') || d.querySelector('deck-stage').hasAttribute('data-hotspot-badges') })()"), false, 'nothing to draw with on the clicker')
+  await until(() => phone.evaluate("document.querySelector('iframe')?.contentDocument?.querySelector('deck-stage')?.index === 1"), 'the clicker is at the projector\'s slide')
+  await phone.evaluate("document.querySelector('.presenter-remote-next').click(); document.querySelector('.presenter-remote-next').click()")
+  await until(() => projector.evaluate("document.querySelector('deck-stage')?.index === 2"), 'the projector follows the clicker')
+  await phone.evaluate("document.querySelector('.presenter-remote-prev').click()")
+  await until(() => projector.evaluate("document.querySelector('deck-stage')?.index === 1"), 'the projector goes back with the clicker')
+  await phone.close()
+  // Both "devices" share this browser: the phone's pairing replaced the iPad's token.
+  await ipad.evaluate(`localStorage.setItem('mdeck-pair:' + location.origin + location.pathname, '${token}')`)
   const position = await stageState(home)
   assert.equal(position.index, 1)
   await delay(500)

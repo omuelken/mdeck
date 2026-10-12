@@ -293,10 +293,20 @@ function slideTitleOf(slide) {
   }
   return ''
 }
-// A phone gets the remote, a tablet the slide alone, a computer the speaker layout.
+// A touch screen gets the slide alone, a computer the speaker layout. The
+// phone remote is chosen, not guessed: its pairing code opens ?layout=remote.
 function defaultLayout() {
-  if (!matchMedia('(pointer: coarse)').matches) return 'speaker'
-  return Math.min(screen.width, screen.height) < 600 ? 'remote' : 'slide'
+  return matchMedia('(pointer: coarse)').matches ? 'slide' : 'speaker'
+}
+// ?layout= in the address (from a pairing code) chooses the layout; the
+// device then remembers it like a layout chosen with the buttons.
+function requestedLayout() {
+  const url = new URL(window.location.href)
+  const asked = url.searchParams.get('layout')
+  if (!asked) return null
+  url.searchParams.delete('layout')
+  try { history.replaceState(history.state, '', url) } catch {}
+  return PRESENTER_LAYOUTS.includes(asked) ? asked : null
 }
 
 function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
@@ -313,7 +323,12 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [palette, setPalette] = useState(deckConfig.palette ?? '')
   const [appearance, setAppearance] = useState(deckConfig.appearance ?? '')
   const [audienceConnected, setAudienceConnected] = useState(false)
-  const [noteSize, setNoteSize] = useState(() => defaultLayout() === 'remote' ? 17 : 13)
+  // Larger notes in the phone remote, whether the address or the device chose it.
+  const [noteSize, setNoteSize] = useState(() => {
+    let saved = null
+    try { saved = localStorage.getItem('mdeck-presenter-layout') } catch {}
+    return (new URL(window.location.href).searchParams.get('layout') ?? saved) === 'remote' ? 17 : 13
+  })
   const [inking, setInking] = useState(false)
   // Black screen (B): the audience's screens are black, this view veils its slide.
   const [blank, setBlank] = useState(false)
@@ -347,6 +362,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   // 'remote': a phone in the hand, with the slide small, the notes and big
   // buttons to go on and back.
   const [layout, setLayout] = useState(() => {
+    const asked = requestedLayout()
+    if (asked) { try { localStorage.setItem('mdeck-presenter-layout', asked) } catch {} return asked }
     try { const saved = localStorage.getItem('mdeck-presenter-layout'); if (PRESENTER_LAYOUTS.includes(saved)) return saved } catch {}
     return defaultLayout()
   })
@@ -670,7 +687,6 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
           <button class="presenter-blank" title={blankLabel} aria-label="Black screen" aria-pressed={blank} style={{ ...pill, ...(blank ? blankOn : {}) }} onClick={toggleBlank}><PresenterIcon name="blank" /></button>
           <button class="presenter-layout" style={pill} title="Slide only, notes in a drawer (for an iPad)" aria-label="Slide only" onClick={() => chooseLayout('slide')}><PresenterIcon name="tablet" /></button>
         </div>
-        <SteeringNote />
         <div style={{ position: 'relative', flexShrink: 0, width: '100%', maxHeight: '34dvh', aspectRatio: '16/9', margin: '0 auto', borderRadius: '8px', overflow: 'hidden', border: '1px solid #2a2a2a', background: '#000' }}>
           <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ width: '100%', height: '100%', border: '0', display: 'block' }} />
           {blank && <div class="presenter-blank-note" role="status" style={{ position: 'absolute', inset: 'auto 8px 8px', textAlign: 'center', padding: '4px 8px', borderRadius: '999px', background: 'rgba(17,17,17,0.9)', color: '#f0f0f0', fontSize: '13px', pointerEvents: 'none' }}>The audience sees a black screen</div>}
@@ -1207,8 +1223,10 @@ async function init() {
 
   // The presenter's slide shows the hotspots' keys; no screen the audience sees does.
   // A black screen only veils it.
+  // The phone remote's small slide only shows: no keys, no drawing.
+  const remoteFrame = embedded && url.searchParams.get('remote') === '1'
   if (inkStage && embedded && drawHere) {
-    inkStage.setAttribute('data-hotspot-badges', '')
+    if (!remoteFrame) inkStage.setAttribute('data-hotspot-badges', '')
     inkStage.setAttribute('data-presenter', '')
     // The presenter view routes the keys to the overview while it is open.
     inkStage.addEventListener('overviewchange', event => window.parent.postMessage({ overview: event.detail.open }, window.location.origin))
@@ -1225,7 +1243,13 @@ async function init() {
       window.parent.postMessage({ keyHelp: 'toggle' }, window.location.origin)
     })
   }
-  if (inkStage && drawHere) {
+  if (inkStage && remoteFrame) {
+    watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true, view: 'presenter', onPresence: presence => {
+      watchedOnServer = (presence?.views ?? []).some(entry => entry.view === 'audience' || entry.view === 'deck')
+      markWatched()
+      window.parent.postMessage({ presence }, window.location.origin)
+    } })] })
+  } else if (inkStage && drawHere) {
     attachInk(inkStage, {
       storageKey: inkStorageKey,
       // The presenter's main frame tells the presenter view who is connected.
@@ -1242,7 +1266,7 @@ async function init() {
     // it. A phone or tablet only browsing the deck keeps its taps. D or the
     // close button turns it off.
     const startDrawing = () => { inkStage._inkCollapsed = true; inkStage.inking = true }
-    if (embedded && matchMedia('(pointer: coarse)').matches && url.searchParams.get('remote') !== '1') startDrawing()
+    if (embedded && matchMedia('(pointer: coarse)').matches) startDrawing()
     else if (!embedded) {
       const onPen = event => {
         if (event.pointerType !== 'pen') return

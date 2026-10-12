@@ -262,14 +262,20 @@ function LivePolls({ live, presence, onRecheck }) {
   </section>
 }
 
-// Presenting from an iPad or a phone (as a remote): a one-time QR code opens the presenter view there,
-// paired with this server so it may save ink and steer the projector, which
-// shows the audience window on this computer.
+// Presenting from an iPad, or going through the slides with a phone: a
+// one-time QR code opens the presenter view there, paired with this server so
+// it may save ink and steer the projector, which shows the audience window on
+// this computer. The iPad gets the slide to draw on; the phone, the clicker:
+// notes, time and big buttons, nothing to draw with.
+const PAIRED = {
+  slide: { label: 'Pair an iPad', scan: "Scan this with the iPad's camera. It opens the presenter view there, where you draw and go through the slides." },
+  remote: { label: 'Use a phone as clicker', scan: "Scan this with the phone's camera. It opens a clicker there: your notes, the time, and big buttons to go on and back." },
+}
 function Tablet({ pairing, relay, presence, onChange, onError }) {
   const away = (presence?.views ?? []).filter(entry => entry.view === 'presenter' && entry.device !== 'computer')
-  const [url, setUrl] = useState(null)
-  const offer = () => api('/action', { action: 'pair' }).then(result => { setUrl(result.url); onChange() }).catch(error => onError(error.message))
-  const unpair = () => api('/action', { action: 'unpair' }).then(() => { setUrl(null); onChange() }).catch(error => onError(error.message))
+  const [code, setCode] = useState(null)
+  const offer = layout => api('/action', { action: 'pair', layout }).then(result => { setCode({ url: result.url, layout }); onChange() }).catch(error => onError(error.message))
+  const unpair = () => api('/action', { action: 'unpair' }).then(() => { setCode(null); onChange() }).catch(error => onError(error.message))
   return <section class="home-section home-tablet">
     <div class="home-section-head">
       <h2>Present from an iPad or a phone</h2>
@@ -278,22 +284,26 @@ function Tablet({ pairing, relay, presence, onChange, onError }) {
     {relay && <p class={`home-note home-relay home-relay--${relay.state}`}>{relay.state === 'up' ? 'Connected to your server: the iPad can reach this computer from any network.' : relay.state === 'refused' ? `Connecting to the server failed: ${relay.reason}` : relay.state === 'down' ? 'Lost the connection to the server; reconnecting…' : 'Connecting to your server…'}</p>}
     {away.length > 0 && <p class="home-ok"><HomeIcon name="check" /> Presenter view open on {devicesText(away)}.</p>}
     {!pairing.available
-      ? <p class="home-note">Start <code>mdeck run</code> with <code>--network</code>, so an iPad in the same network can reach it, or with <code>--server</code> to reach it through your server.</p>
-      : url
-        ? <div class="home-pair">
-          <QrCode url={url} size="180" />
-          <div>
-            <p>Scan this with the iPad's camera. It opens the presenter view there, where you draw and go through the slides. A phone gets a remote instead: the notes, the timer and big buttons to go on and back.</p>
-            <p>Show the <a href={`${BASE}?view=audience&session=${SESSION}`} target="_blank" rel="noopener">audience window</a> on the projector from this computer: it follows the iPad.</p>
-            <p class="home-note">The code works once, for ten minutes. {pairing.devices > 0 ? `${pairing.devices} paired so far.` : ''}</p>
+      ? <p class="home-note">Start <code>mdeck run</code> with <code>--network</code>, so an iPad or a phone in the same network can reach it, or with <code>--server</code> to reach it through your server.</p>
+      : <>
+        {code
+          ? <div class="home-pair">
+            <QrCode url={code.url} size="180" />
+            <div>
+              <p>{PAIRED[code.layout].scan}</p>
+              <p>Show the <a href={`${BASE}?view=audience&session=${SESSION}`} target="_blank" rel="noopener">audience window</a> on the projector from this computer: it follows.</p>
+              <p class="home-note">The code works once, for ten minutes. {pairing.devices > 0 ? `${pairing.devices} paired so far.` : ''}</p>
+            </div>
           </div>
+          : <>
+            <p>An iPad opens the presenter view, laid out for its screen: you draw and go through the slides there while this computer drives the projector. A phone becomes a clicker, with your notes and the time in your hand.</p>
+            <p class="home-note">Pairing is what lets the device save drawings and steer the audience window here. Other devices in the network can open the presenter view too, but only watch.</p>
+          </>}
+        <div class="home-pair-choice" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {Object.entries(PAIRED).map(([layout, { label }]) => <button key={layout} class={code?.layout === layout ? 'home-btn home-btn--small' : 'home-btn'} onClick={() => offer(layout)}>{label}</button>)}
         </div>
-        : <>
-          <p>The iPad opens the same presenter view as this computer, laid out for its screen: you draw and go through the slides there while this computer drives the projector. Drawings are saved in the drawings file beside the deck. A phone becomes a remote, with your notes and the timer in your hand.</p>
-          <p class="home-note">Pairing is what lets the iPad save drawings and steer the audience window here. Other devices in the network can open the presenter view too, but only watch.</p>
-          <button class="home-btn" onClick={offer}>Show pairing code</button>
-          {pairing.devices > 0 && <p class="home-note">{pairing.devices === 1 ? 'One device' : `${pairing.devices} devices`} paired.</p>}
-        </>}
+        {!code && pairing.devices > 0 && <p class="home-note">{pairing.devices === 1 ? 'One device' : `${pairing.devices} devices`} paired.</p>}
+      </>}
   </section>
 }
 
