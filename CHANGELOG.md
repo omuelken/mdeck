@@ -10,6 +10,7 @@
 - The slide-writing skill draws diagrams as SVG in the palette's colours, builds them up with numbered steps and checks them in light and dark.
 - Fixed: a YouTube video in `<videoplayer>` showed "This video is unavailable" on a device that opened the deck through a server, such as a paired iPad. Such pages send no referrer, which YouTube requires of embedded players; the player now sends the deck's origin (never its path).
 - Fixed: in a deck with polls, every slide change in the presenter view read the whole deck several times over to find out whether it has any. On an iPad presenting a large deck, slides changed noticeably slower than in the audience window. The answer is now kept until the deck changes.
+- `--slide 3,5-7` for `mdeck send`, `mdeck build` and `mdeck pdf` keeps only these slides, for example the part of a deck shown in one lecture, with their drawings. The numbers count the slides as written, like `mdeck snapshot --slide` and `mdeck check --render`. A `<style>` written on a slide that is left out moves to the first slide kept, since it styles the whole deck; the same now holds for slides left out with `--no-polls`.
 
 ## 3.10.1 — 2026-10-11
 
