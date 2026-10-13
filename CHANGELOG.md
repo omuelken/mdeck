@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed: after the laptop moved to another network while `mdeck run --network` ran, the code that pairs an iPad, and the join link for phones, still led to the address it had when it started, which no one reached. The addresses are now read each time a code is shown; the pairing panel says which address a code leads to, and when the laptop is in no network another device can reach (only a link-local or an IPv6-only network's address), it says so instead of showing a code.
 - Fixed: the join code shown with **J** on a paired iPad did not show in the audience window on the laptop, nor on phones following the talk. Screens in another browser hear of the presenter's position through the server's stage room, which carried the black screen but not the join code; it now carries both.
 - Fixed: two things circled with the laser one after the other were joined by a line, on the screen they were drawn on, from what was left of the first trail to the second, until the first had gone. A lifted trail retracts from its start; when the second's first points went while the first still showed, the second no longer said where it began. Other screens were not affected.
 
