@@ -173,14 +173,26 @@ function Diagnostics({ diagnostics, name }) {
 // links on this page drive each other.
 const SESSION = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)
 
+// Drops kept answers or drawings after asking; `what` says which.
+async function drop(body, what, onDone, onError) {
+  if (!window.confirm(`Drop ${what}? This cannot be undone here.`)) return
+  try { await api('/action', body); onDone() } catch (error) { onError(error.message) }
+}
+
+const DropButton = ({ label, onClick }) => <button class="home-btn home-btn--small" onClick={onClick} title={label} aria-label={label}><HomeIcon name="trash" size={13} />Drop</button>
+
 // The answers kept in the talk: each question with how it came out, and
 // the files to save them as (the same as `mdeck results`).
-function Answers({ results, file, onRefresh }) {
+function Answers({ results, file, onRefresh, onError }) {
   const href = format => `${devPath('__mdeck/home/results')}?format=${format}`
+  const name = question => question.slide ? `the answers to slide ${question.slide}` : `the answers in ${question.room}`
   return <section class="home-section home-section--wide home-answers">
     <div class="home-section-head">
       <h2>Answers from the talk</h2>
-      <button class="home-btn home-btn--small" onClick={onRefresh}>Refresh</button>
+      <div class="home-head-actions">
+        <button class="home-btn home-btn--small" onClick={onRefresh}>Refresh</button>
+        <button class="home-btn home-btn--small" onClick={() => drop({ action: 'drop-answers' }, `all ${results.length === 1 ? 'kept answers' : `answers to ${results.length} questions`}`, onRefresh, onError)}><HomeIcon name="trash" size={13} />Drop all</button>
+      </div>
     </div>
     <ul class="home-outputs">
       {results.map(question => {
@@ -191,6 +203,7 @@ function Answers({ results, file, onRefresh }) {
             <strong>{question.slide ? `Slide ${question.slide}: ` : ''}{question.question || question.room}</strong>
             <span>{phones === 1 ? '1 phone' : `${phones} phones`}{voted != null && voted !== phones ? `, ${voted} counted` : ''}{question.closed ? ', closed' : ''}{average != null ? ` · average ${average}` : ''}{top ? ` · ${top}` : ''}</span>
           </div>
+          <DropButton label={`Drop ${name(question)}`} onClick={() => drop({ action: 'drop-answers', room: question.room }, name(question), onRefresh, onError)} />
         </li>
       })}
     </ul>
@@ -199,7 +212,31 @@ function Answers({ results, file, onRefresh }) {
       <a class="home-btn" href={href('summary')} download><HomeIcon name="download" size={15} />Summary (CSV)</a>
       <a class="home-btn" href={href('json')} download><HomeIcon name="download" size={15} />Everything (JSON)</a>
     </div>
-    <p class="home-hint">Kept in <code>{file}</code> beside the deck while <code>mdeck run</code> runs; phones are numbered per question, never named.</p>
+    <p class="home-hint">Kept in <code>{file}</code> beside the deck while <code>mdeck run</code> runs; phones are numbered per question, never named. A poll that is still open keeps its answers again with the next one that comes in.</p>
+  </section>
+}
+
+// The drawings kept with the deck, slide by slide; builds, PDFs and files
+// sent to readers show them.
+function Drawings({ drawings, file, onRefresh, onError }) {
+  const strokes = n => n === 1 ? '1 stroke' : `${n} strokes`
+  const name = entry => entry.slide ? `the drawings on slide ${entry.slide}` : `the drawings of ${entry.id}`
+  return <section class="home-section home-section--wide home-answers">
+    <div class="home-section-head">
+      <h2>Drawings</h2>
+      <button class="home-btn home-btn--small" onClick={() => drop({ action: 'drop-drawings' }, drawings.length === 1 ? name(drawings[0]) : `the drawings on all ${drawings.length} slides`, onRefresh, onError)}><HomeIcon name="trash" size={13} />Drop all</button>
+    </div>
+    <ul class="home-outputs">
+      {drawings.map(entry => <li class="home-output" key={entry.id}>
+        <span class="home-tile-icon"><HomeIcon name="pen" size={18} /></span>
+        <div class="home-output-body">
+          <strong>{entry.slide ? `Slide ${entry.slide}: ${entry.title}` : entry.id}</strong>
+          <span>{strokes(entry.strokes)}{entry.slide ? '' : ' · on a slide the deck no longer has'}</span>
+        </div>
+        <DropButton label={`Drop ${name(entry)}`} onClick={() => drop({ action: 'drop-drawings', slide: entry.id }, name(entry), onRefresh, onError)} />
+      </li>)}
+    </ul>
+    <p class="home-hint">Kept in <code>{file}</code> beside the deck; builds show them. Dropping keeps a copy in <code>.mdeck-backups/</code>, and the open windows clear at once.</p>
   </section>
 }
 
@@ -251,6 +288,9 @@ export function Home() {
       <div class="home-heading">
         <h1>{info.title}</h1>
         <p class="home-meta">{meta.join(' · ')}</p>
+        {info.languages?.length > 0 && <p class="home-meta home-languages" title="L in the presenter view switches the language">
+          {info.languages.length} languages: {info.languages.map((language, i) => <span key={language.lang}>{i ? ' · ' : ''}<span class={language.current ? 'is-current' : ''} title={language.file}>{language.lang}</span></span>)}
+        </p>}
         <p class="home-file"><code>{info.file}</code> <button class="home-link" onClick={() => api('/action', { action: 'reveal', output: 'deck' }).catch(e => setError(e.message))}>Show</button></p>
       </div>
       {/* mdeck run --server: whether the connection to the server is up. */}
@@ -292,7 +332,8 @@ export function Home() {
       </section>
 
 
-      {info.results?.length > 0 && <Answers results={info.results} file={info.name.replace(/\.md$/i, '') + '.results.json'} onRefresh={load} />}
+      {info.results?.length > 0 && <Answers results={info.results} file={info.name.replace(/\.md$/i, '') + '.results.json'} onRefresh={load} onError={setError} />}
+      {info.drawings?.length > 0 && <Drawings drawings={info.drawings} file={info.name.replace(/\.md$/i, '') + '.drawings.json'} onRefresh={load} onError={setError} />}
 
 
       <section class="home-section home-section--wide">
