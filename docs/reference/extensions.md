@@ -10,6 +10,13 @@ mdeck can be extended in three ways, and all three follow the same rules.
 - A **palette** is a family of colours, light and dark, that repaints any
   theme. A deck picks one with `palette:` and the variant with `appearance:`.
 
+Themes and palettes are stable. Layouts are experimental: their manifest and
+`mdeck/layout` may still change in a minor release (see
+[layouts](layouts.md)). For something interactive on one slide, a deck can
+also have its own components (see "Deck-local components" in the
+[authoring reference](authoring.md)); their contract, `mdeck/component`, is
+stable.
+
 Every extension is a folder with an `extension.toml` file inside. The manifest
 says which kind it is and describes its supporting files and settings. The
 folder name is the identifier used in slide files.

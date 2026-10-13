@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The slide-writing skill says what to do when nothing fits, in order: another layout or block, a palette or theme, a deck-local layout, a component; never scripts or styles in the slides. The layout manifest and `mdeck/layout` are marked experimental; themes, palettes and `mdeck/component` are stable.
 - The default reactions leave out 🐢, which read as both "too slow" and "too fast". A deck can still list it: `reactions: [👍, 🤔, 🐢]`.
 
 ## 3.12.1 — 2026-10-12

@@ -4,6 +4,10 @@ Layouts define slide structure; themes supply typography and colors. Every
 built-in layout and every deck-local layout uses the same registry, manifest,
 property resolver, and slide frame. A local layout requires no framework edit.
 
+> **Experimental.** The layout manifest and `mdeck/layout` may still change in
+> a minor release, until layouts made outside mdeck have shown what they need.
+> Themes, palettes and `mdeck/component` are stable.
+
 ```text
 my-talk/
   slides.md

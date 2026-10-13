@@ -160,3 +160,14 @@ When the user wants a look the built-in themes and palettes do not give (their i
 - **Use it:** set `theme:` and `palette:` in the deck settings. `mdeck list <deck>.md` must show it as local, and `mdeck check <deck>.md` reports any mistake in its `extension.toml`.
 - **Hand over:** tell the user to run `mdeck design <deck>.md` (or `mdeck design <folder>` when there is no deck yet). It shows the look on a sample deck with every kind of slide, light and dark, and lets them fine-tune colours, fonts and sizes there.
 
+
+## 6. When nothing fits
+
+When the slides need something the built-in layouts and blocks do not offer, use the narrowest way that does the job, in this order. Never write `<script>` or `<style>` blocks into the slides: they are not checked, ignore the theme and break in the reader view and the PDF.
+
+1. **Another built-in layout**, or `:::columns`, `:::steps` and the callouts.
+2. **A palette or a theme** (section 5), for anything about the look.
+3. **A deck-local layout**, for a slide arrangement used more than once: `extensions/<id>/` with `kind = "layout"`, its regions and settings in `extension.toml` (see `docs/reference/layouts.md`). `mdeck check` checks it.
+4. **A component**, for something interactive or one of a kind: `components/<Name>.jsx`, used as `<name />` (see "Deck-local components" in `docs/reference/authoring.md`). It renders inside its slide and imports only `preact` and `mdeck/component`.
+
+Tell the user which of these you added and why.
