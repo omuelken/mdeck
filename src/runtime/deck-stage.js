@@ -1228,6 +1228,9 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     _onPointerDown(e) {
       this._tapStart(e);
       if (this._zoomDown(e)) return;
+      // The same pen down again while its stroke is still open: its pointerup
+      // was lost, so that stroke ends here and a new one begins.
+      if (this._inkDrawing && e.pointerType === 'pen' && this._inkDrawing.pointerId === e.pointerId && this._inkTakes(e)) this._endInk(this._inkDrawing);
       if (this._inkDrawing || !this._inkTakes(e)) return;
       e.preventDefault();
       e.stopPropagation();
@@ -1287,6 +1290,10 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       const drawing = this._inkDrawing;
       if (!drawing) { this._laserHover(e); return; }
       if (e.pointerId !== drawing.pointerId) return;
+      // A pen that moves without touching was lifted, though no pointerup
+      // came (iPad Safari, lifted and set down again quickly): the stroke
+      // ended, and the hover must not draw a line to where it lands next.
+      if (e.pointerType === 'pen' && e.buttons === 0) { this._inkUpAt = performance.now(); this._endInk(drawing); this._laserHover(e); return; }
       e.preventDefault();
       e.stopPropagation();
       const events = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
