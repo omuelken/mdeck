@@ -18,16 +18,15 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    container: node:22-bookworm
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
+      - uses: actions/checkout@v5
       - run: npm ci
       - run: node bin/mdeck.js docs --build
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with: { path: docs/site/dist }
       - id: deployment
         uses: actions/deploy-pages@v4
