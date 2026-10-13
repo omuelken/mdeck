@@ -77,9 +77,11 @@ writes to `dist/` in the current working folder.
 
 ## Releasing
 
-1. Update `CHANGELOG.md` and the version in `package.json`. Begin entries
-   that fix something with "Fixed"; for a larger release, an opening paragraph
-   and `###` sections of your own are kept as written.
+1. Update `CHANGELOG.md` and the version in `package.json`. Each entry is one
+   short line saying what changed for the user; details go in the guides
+   (`docs/site/content`). Begin entries that fix something with "Fixed"; for a
+   larger release, an opening paragraph and `###` sections of your own are
+   kept as written.
 2. For a release worth an introduction, write its notes in
    `docs/releases/X.Y.Z.md`: what the release is about, in headed sections
    (see `3.11.0.md`). Without that file, the notes are the changelog entry,
