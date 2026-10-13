@@ -173,9 +173,8 @@ function Diagnostics({ diagnostics, name }) {
 // links on this page drive each other.
 const SESSION = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)
 
-// Drops kept answers or drawings after asking; `what` says which.
-async function drop(body, what, onDone, onError) {
-  if (!window.confirm(`Drop ${what}? This cannot be undone here.`)) return
+// Drops kept answers or drawings, without asking.
+async function drop(body, onDone, onError) {
   try { await api('/action', body); onDone() } catch (error) { onError(error.message) }
 }
 
@@ -185,13 +184,12 @@ const DropButton = ({ label, onClick }) => <button class="home-btn home-btn--sma
 // the files to save them as (the same as `mdeck results`).
 function Answers({ results, file, onRefresh, onError }) {
   const href = format => `${devPath('__mdeck/home/results')}?format=${format}`
-  const name = question => question.slide ? `the answers to slide ${question.slide}` : `the answers in ${question.room}`
   return <section class="home-section home-section--wide home-answers">
     <div class="home-section-head">
       <h2>Answers from the talk</h2>
       <div class="home-head-actions">
         <button class="home-btn home-btn--small" onClick={onRefresh}>Refresh</button>
-        <button class="home-btn home-btn--small" onClick={() => drop({ action: 'drop-answers' }, `all ${results.length === 1 ? 'kept answers' : `answers to ${results.length} questions`}`, onRefresh, onError)}><HomeIcon name="trash" size={13} />Drop all</button>
+        <button class="home-btn home-btn--small" onClick={() => drop({ action: 'drop-answers' }, onRefresh, onError)}><HomeIcon name="trash" size={13} />Drop all</button>
       </div>
     </div>
     <ul class="home-outputs">
@@ -203,7 +201,7 @@ function Answers({ results, file, onRefresh, onError }) {
             <strong>{question.slide ? `Slide ${question.slide}: ` : ''}{question.question || question.room}</strong>
             <span>{phones === 1 ? '1 phone' : `${phones} phones`}{voted != null && voted !== phones ? `, ${voted} counted` : ''}{question.closed ? ', closed' : ''}{average != null ? ` · average ${average}` : ''}{top ? ` · ${top}` : ''}</span>
           </div>
-          <DropButton label={`Drop ${name(question)}`} onClick={() => drop({ action: 'drop-answers', room: question.room }, name(question), onRefresh, onError)} />
+          <DropButton label={`Drop the answers to ${question.question || question.room}`} onClick={() => drop({ action: 'drop-answers', room: question.room }, onRefresh, onError)} />
         </li>
       })}
     </ul>
@@ -220,11 +218,10 @@ function Answers({ results, file, onRefresh, onError }) {
 // sent to readers show them.
 function Drawings({ drawings, file, onRefresh, onError }) {
   const strokes = n => n === 1 ? '1 stroke' : `${n} strokes`
-  const name = entry => entry.slide ? `the drawings on slide ${entry.slide}` : `the drawings of ${entry.id}`
   return <section class="home-section home-section--wide home-answers">
     <div class="home-section-head">
       <h2>Drawings</h2>
-      <button class="home-btn home-btn--small" onClick={() => drop({ action: 'drop-drawings' }, drawings.length === 1 ? name(drawings[0]) : `the drawings on all ${drawings.length} slides`, onRefresh, onError)}><HomeIcon name="trash" size={13} />Drop all</button>
+      <button class="home-btn home-btn--small" onClick={() => drop({ action: 'drop-drawings' }, onRefresh, onError)}><HomeIcon name="trash" size={13} />Drop all</button>
     </div>
     <ul class="home-outputs">
       {drawings.map(entry => <li class="home-output" key={entry.id}>
@@ -233,10 +230,10 @@ function Drawings({ drawings, file, onRefresh, onError }) {
           <strong>{entry.slide ? `Slide ${entry.slide}: ${entry.title}` : entry.id}</strong>
           <span>{strokes(entry.strokes)}{entry.slide ? '' : ' · on a slide the deck no longer has'}</span>
         </div>
-        <DropButton label={`Drop ${name(entry)}`} onClick={() => drop({ action: 'drop-drawings', slide: entry.id }, name(entry), onRefresh, onError)} />
+        <DropButton label={`Drop the drawings on ${entry.slide ? `slide ${entry.slide}` : entry.id}`} onClick={() => drop({ action: 'drop-drawings', slide: entry.id }, onRefresh, onError)} />
       </li>)}
     </ul>
-    <p class="home-hint">Kept in <code>{file}</code> beside the deck; builds show them. Dropping keeps a copy in <code>.mdeck-backups/</code>, and the open windows clear at once.</p>
+    <p class="home-hint">Kept in <code>{file}</code> beside the deck; builds show them. Dropped drawings clear from the open windows at once.</p>
   </section>
 }
 
