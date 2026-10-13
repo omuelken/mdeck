@@ -1,7 +1,7 @@
 import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
 import { createServer, request } from 'node:http'
-import { mkdtempSync, copyFileSync, cpSync, writeFileSync, mkdirSync } from 'node:fs'
+import { mkdtempSync, copyFileSync, cpSync, writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { homeMiddleware, outputsFor, liveStatus } from '../src/build/homePlugin.js'
@@ -168,4 +168,38 @@ test('a poll server on an older mdeck is told apart', async () => {
   const answers = version => async () => ({ ok: true, json: async () => ({ canReset: true, ...(version ? { version } : {}) }) })
   assert.equal((await liveStatus({ server: 'http://x' }, { fetch: answers('3.12.0') })).serverVersion, '3.12.0')
   assert.equal((await liveStatus({ server: 'http://x' }, { fetch: answers(null) })).serverVersion, null, 'servers before 3.12 do not say')
+})
+
+test('kept answers can be dropped one question at a time, or all', async () => {
+  const file = resolve(dir, 'talk.results.json')
+  const room = (value) => ({ closed: true, answers: [{ phone: 1, at: 't', value }] })
+  writeFileSync(file, JSON.stringify({ version: 1, rooms: { lunch: room('Thai'), drink: room('Tea') } }))
+  assert.equal((await act({ action: 'drop-answers', room: 'lunch' })).status, 200)
+  assert.deepEqual((await (await get('/info')).json()).results.map(question => question.room), ['drink'])
+  assert.equal((await act({ action: 'drop-answers' })).status, 200)
+  assert.equal(existsSync(file), false, 'dropping all takes the file away')
+  assert.equal((await (await get('/info')).json()).results, null)
+})
+
+test('drawings show slide by slide and can be dropped, with a backup', async () => {
+  const { parseSlides } = await import('../src/core/parseSlides.js')
+  const [first] = parseSlides(readFileSync(deck, 'utf8')).slides
+  const stroke = id => ({ id, tool: 'pen', color: '#e11d48', size: 6, points: [[1, 1, 0.5], [9, 9, 0.5]] })
+  writeFileSync(resolve(dir, 'talk.drawings.json'), JSON.stringify({ version: 1, width: 1920, height: 1080, slides: { [first.id]: [stroke('a:1'), stroke('a:2')], gone: [stroke('a:3')] } }))
+  const { drawings } = await (await get('/info')).json()
+  assert.deepEqual(drawings.map(({ slide, strokes }) => ({ slide, strokes })), [{ slide: 1, strokes: 2 }, { slide: null, strokes: 1 }], 'slides of the deck first, then ones it no longer has')
+  assert.equal((await act({ action: 'drop-drawings', slide: 'gone' })).status, 200)
+  assert.deepEqual((await (await get('/info')).json()).drawings.map(entry => entry.id), [first.id])
+  assert.ok(readdirSync(resolve(dir, '.mdeck-backups')).some(name => name.startsWith('talk.drawings-')), 'the file as it was is kept')
+  assert.equal((await act({ action: 'drop-drawings' })).status, 200)
+  assert.equal((await (await get('/info')).json()).drawings, null)
+})
+
+test('a deck in several languages lists them', async () => {
+  assert.deepEqual((await (await get('/info')).json()).languages, [], 'one language, nothing to list')
+  const { homeMiddleware: middleware } = await import('../src/build/homePlugin.js')
+  const showcase = new URL('../examples/showcase/slides.en.md', import.meta.url).pathname
+  let body
+  await middleware(showcase, { urls: () => ({ local: [], network: [] }) })({ url: '/info', method: 'GET', headers: { host: '127.0.0.1' }, socket: { remoteAddress: '127.0.0.1' } }, { setHeader() {}, writeHead() {}, end(text) { body = JSON.parse(text) } }, () => {})
+  assert.deepEqual(body?.languages?.map(({ lang, current }) => [lang, current]), [['ar', false], ['de', false], ['en', true]])
 })

@@ -67,7 +67,7 @@ export const ICONS = {
   hotspots: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>', // scan-search
   rehearse: '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>', // timer
   blank: '<path d="M17 17H4a2 2 0 0 1-2-2V5c0-1.5 1-2 1-2"/><path d="M22 15V5a2 2 0 0 0-2-2H9"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="m2 2 20 20"/>', // monitor-off
-  overview: '<rect width="18" height="14" x="3" y="3" rx="2"/><path d="M4 21h1"/><path d="M9 21h1"/><path d="M14 21h1"/><path d="M19 21h1"/>', // gallery-horizontal-end
+  overview: '<rect width="8" height="5.5" x="2.5" y="5" rx="1"/><rect width="8" height="5.5" x="13.5" y="5" rx="1"/><rect width="8" height="5.5" x="2.5" y="13.5" rx="1"/><rect width="8" height="5.5" x="13.5" y="13.5" rx="1"/>', // drawn for mdeck on Lucide's grid: slides in a grid (landscape, unlike grid)
   pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>', // pause
   loading: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>', // loader-circle
 }

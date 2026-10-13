@@ -60,12 +60,14 @@ export function planFor(slides, deckConfig = {}, times = {}) {
 }
 
 // Where the talk stands on slide `index`: the time left on it (negative when
-// over), and how far behind the plan the talk is (negative: ahead).
+// over), and how far behind the plan the talk is (negative: ahead), in whole
+// seconds. The elapsed times may be exact; they are rounded only at the end,
+// so the two readings tick steadily.
 export function scheduleAt(plan, index, { totalElapsed, slideElapsed }) {
   const planned = plan.perSlide[index] ?? 0
-  const slideLeft = planned - slideElapsed
+  const slideLeft = Math.ceil(planned - slideElapsed)
   const due = (plan.start[index] ?? plan.total) + Math.min(slideElapsed, planned)
-  return { planned, slideLeft, delta: totalElapsed - due }
+  return { planned, slideLeft, delta: Math.floor(totalElapsed - due) }
 }
 
 // A rehearsal's new time for each slide, in seconds or null for none: the

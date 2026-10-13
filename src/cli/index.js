@@ -637,11 +637,14 @@ if (command === 'new') {
       return startDocs({ open: false })
     },
   }
+  // The launch page drops answers and drawings through the files these write.
+  const saving = request => isAllowedRequest(request) || pairing.allows(request)
+  const ink = inkPlugin(abs, { authorize: saving }), results = resultsPlugin(abs, { authorize: saving })
   const server = await createServer({
     ...base,
     // A paired iPad may save ink and steer the rooms, like this computer.
     ...(relay ? { base: relay.base } : {}),
-    plugins: [...(relay ? [stripRelayBase(relay.base)] : []), ...base.plugins, homePlugin(abs, { services, pairing, relay, server: relay?.server ?? null }), pairingPlugin(pairing), livePlugin({ pairing, upstream, key: process.env.MDECK_SERVER_KEY, session: () => sessionCode(parseSlides(readFileSync(abs, 'utf8')).deckConfig) }), inkPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) }), resultsPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) }), timingPlugin(abs, { authorize: request => isAllowedRequest(request) || pairing.allows(request) })],
+    plugins: [...(relay ? [stripRelayBase(relay.base)] : []), ...base.plugins, homePlugin(abs, { services, pairing, relay, server: relay?.server ?? null, resultsFile: results.api.file, inkFile: ink.api.file }), pairingPlugin(pairing), livePlugin({ pairing, upstream, key: process.env.MDECK_SERVER_KEY, session: () => sessionCode(parseSlides(readFileSync(abs, 'utf8')).deckConfig) }), ink, results, timingPlugin(abs, { authorize: saving })],
     publicDir: dirname(abs),
     server: {
       ...base.server,

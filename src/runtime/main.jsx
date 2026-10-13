@@ -628,7 +628,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const note = notes[index] || ''
   const hasNext = index + 1 < slides.length
 
-  const clock = formatClock(timer.totalElapsed).padStart(5, '0')
+  const clock = formatClock(Math.floor(timer.totalElapsed)).padStart(5, '0')
   // With times in the deck: what is left of this slide, and how the talk
   // stands against the plan (behind when positive).
   const timed = plan.total > 0
@@ -774,7 +774,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     <span><span class="presenter-delta" style={{ color: deltaColor }}>{deltaText}</span><span style={{ color: '#555' }}> · of {formatClock(plan.total)}</span></span>
   </div>
   const rehearsing = timer.rehearsing && <div class="presenter-rehearsing" role="status" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: '6px 10px', borderRadius: '8px', border: '1px solid #5c2b28', color: '#f28b82' }}>
-    <span>● Rehearsing{timer.running ? '' : ' (paused)'}: this slide {formatClock(timer.slideElapsed)}</span>
+    <span>● Rehearsing{timer.running ? '' : ' (paused)'}: this slide {formatClock(Math.floor(timer.slideElapsed))}</span>
     <button style={{ ...S.btn, padding: '2px 10px' }} onClick={finishRehearsal}>Finish</button>
   </div>
   const blankNote = blank && <div class="presenter-blank-note" role="status" style={{ position: 'fixed', left: layout === 'speaker' ? 'calc(100% / 3)' : '50%', bottom: remoteLayout ? '110px' : '76px', transform: 'translateX(-50%)', zIndex: 18, display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '999px', background: 'rgba(17,17,17,0.92)', border: '1px solid #3a3a3a', color: '#f0f0f0', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px', pointerEvents: 'none' }}>

@@ -184,6 +184,19 @@ test('states from named screens are ordered by when the server heard them, not b
   assert.equal(rooms.state('s').index, 3)
 })
 
+test('a state whose screen went quiet does not keep a new screen from the phones', () => {
+  let t = 1000
+  const rooms = createRooms({ now: () => t })
+  assert.equal(rooms.setState('s', { index: 4, screen: 'yesterday', at: 90000 }), true)
+  t += 4000
+  assert.equal(rooms.setState('s', { index: 0, screen: 'new-tab', at: 0 }), false, 'while the talk goes on, a screen that just opened waits')
+  t += 20000
+  assert.equal(rooms.setState('s', { index: 0, screen: 'presenter', at: 0 }), true, 'the talk ended: the new presenter view takes the phones')
+  assert.equal(rooms.state('s').index, 0)
+  t += 4000
+  assert.equal(rooms.setState('s', { index: 0, screen: 'new-tab', at: 0 }), true, 'another screen that just opened ties with it')
+})
+
 test('only the presenter relays ink; listeners get it at once and late ones get the changes', async () => {
   const relay = (messages, headers = {}) => fetch(`${live.url}/rooms/deck.stage/ink`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ messages }) })
   const op = { type: 'op', key: 'a:op', op: { type: 'add', slideId: 's', stroke: { id: 'a:1', points: [[1, 2, 0.5]] } } }
