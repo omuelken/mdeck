@@ -77,14 +77,22 @@ writes to `dist/` in the current working folder.
 
 ## Releasing
 
-1. Update `CHANGELOG.md` and the version in `package.json`.
-2. Commit, tag `vX.Y.Z`, push the tag.
-3. GitHub Actions runs the tests, publishes the package to npmjs.com
+1. Update `CHANGELOG.md` and the version in `package.json`. Begin entries
+   that fix something with "Fixed"; for a larger release, an opening paragraph
+   and `###` sections of your own are kept as written.
+2. For a release worth an introduction, write its notes in
+   `docs/releases/X.Y.Z.md`: what the release is about, in headed sections
+   (see `3.11.0.md`). Without that file, the notes are the changelog entry,
+   with its changes under "New and improved" and "Fixed".
+   `node tools/release-notes.mjs X.Y.Z` shows them.
+3. Commit, tag `vX.Y.Z`, push the tag.
+4. GitHub Actions runs the tests, publishes the package to npmjs.com
    (`publish.yml`, trusted publishing with provenance) and creates the GitHub
-   release from the changelog entry (`tools/release-notes.mjs`). Every push to
+   release from those notes (`tools/release-notes.mjs`). Every push to
    `main` deploys the documentation to GitHub Pages (`pages.yml`).
-4. Optionally give the release a fuller introduction:
-   `gh release edit vX.Y.Z --notes-file …`.
+5. To change the notes of a published release:
+   `node tools/release-notes.mjs X.Y.Z > notes.md` and
+   `gh release edit vX.Y.Z --notes-file notes.md`.
 
 ## License
 

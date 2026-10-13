@@ -80,6 +80,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--home-focus); ou
 .home-tile-body strong { font-weight: 600; color: var(--home-strong); font-size: 13px; }
 .home-tile-body span { color: var(--home-muted); font-size: 12px; overflow-wrap: anywhere; }
 
+/* ── Answers from the talk ─────────────────────────────────────────── */
+.home-answer-files { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.home-answer-files a { text-decoration: none; }
+.home-answers .home-hint { color: var(--home-faint); font-size: 12px; margin: 8px 0 0; }
+
 /* ── Share ────────────────────────────────────────────────────────────── */
 .home-outputs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .home-output { display: flex; gap: 12px; align-items: center; padding: 8px 10px; border: 1px solid var(--home-line); border-radius: var(--home-radius); background: var(--home-raised); }
@@ -90,8 +95,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--home-focus); ou
 .home-output-body details { margin-top: 6px; font-size: 12px; }
 .home-output-body pre { max-height: 220px; overflow: auto; padding: 8px; border-radius: 4px; background: var(--home-bg); white-space: pre-wrap; }
 .home-note { color: var(--home-warn) !important; }
-.home-relay--up { color: var(--home-ok) !important; }
-.home-relay--refused { color: var(--home-bad) !important; }
 .home-output-actions { flex: none; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .home-status { font-size: 12px; color: var(--home-faint); min-width: 90px; text-align: right; }
 .home-status--done { color: var(--home-ok); }
@@ -117,17 +120,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--home-focus); ou
 .home-line { margin-left: auto; flex: none; color: var(--home-faint); font-size: 12px; }
 
 /* ── Live polls ───────────────────────────────────────────────────────── */
-.home-live { display: grid; gap: 10px; margin: 0; }
-.home-live > div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; align-items: baseline; }
-.home-live dt { color: var(--home-muted); font-size: 12px; }
-.home-live dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; font-size: 13px; }
-.home-live dd > p { flex-basis: 100%; margin: 0; color: var(--home-muted); font-size: 12px; }
-.home-live code { overflow-wrap: anywhere; }
-.home-live a { color: var(--home-ink); }
-.home-code { padding: 1px 6px; border: 1px solid var(--home-control); border-radius: 4px; background: var(--home-button); color: var(--home-strong); }
-.home-pill { display: inline-block; padding: 0 8px; border: 1px solid var(--home-control); border-radius: 999px; font-size: 11px; color: var(--home-muted); }
-.home-pill.is-ok { border-color: #2c4a35; color: var(--home-ok); }
-.home-pill.is-bad { border-color: #5c2b28; color: var(--home-bad); }
 
 @media (max-width: 760px) {
   .home > :not(.home-header) { padding-left: 12px; padding-right: 12px; }
@@ -136,12 +128,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--home-focus); ou
   .home-output { flex-wrap: wrap; }
   .home-output-actions { width: 100%; justify-content: flex-start; }
   .home-status { text-align: left; min-width: 0; }
-  .home-live > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
 
-.home-pair { --qr-ink: #000; --qr-bg: #fff; display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
-.home-pair canvas, .home-pair img, .home-pair svg { background: #fff; padding: 8px; border-radius: 6px; flex-shrink: 0; }
-.home-pair p, .home-tablet > p { font-size: 13px; margin: 0 0 8px; }
 
 /* A view that is open now, next to its title; the section head lists who is connected. */
 .home-open { margin-left: 8px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 500; color: var(--home-ok); background: rgba(129, 201, 149, 0.12); white-space: nowrap; }

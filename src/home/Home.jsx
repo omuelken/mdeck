@@ -1,10 +1,9 @@
 import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import mark from '../../assets/logo/mark.svg'
-import QrCode from '../components/QrCode.jsx'
 import { Icon } from '../components/Icon.jsx'
 import { ConnectedViews } from '../components/ConnectedViews.jsx'
-import { devicesText, phonesText } from '../live/presence.js'
+import { devicesText } from '../live/presence.js'
 import { devPath } from '../core/devPath.js'
 
 // Where the dev server serves from: / normally, /t/<id>/ with `mdeck run --server`.
@@ -118,8 +117,6 @@ function Preview({ info }) {
       <button class="home-btn home-btn--small" onClick={() => control('prev')} aria-label="Previous"><HomeIcon name="prev" size={14} /></button>
       <button class="home-btn home-btn--small" onClick={() => control('next')} aria-label="Next"><HomeIcon name="next" size={14} /></button>
       <span class="home-preview-count">{index + 1} / {info.slides}</span>
-      <span class="home-spacer" />
-      <a class="home-btn home-btn--small" href={audienceUrl} target="_blank" rel="noopener">Open audience window <HomeIcon name="external" size={13} /></a>
     </div>
   </section>
 }
@@ -171,101 +168,44 @@ function Diagnostics({ diagnostics, name }) {
   </ul>
 }
 
-function CopyButton({ text, label = 'Copy' }) {
-  const [copied, setCopied] = useState(false)
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1400) } catch {}
-  }
-  return <button class="home-btn home-btn--small" onClick={copy}><HomeIcon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copied' : label}</button>
-}
 
 // One session pairs the presenter view with the audience window, so both
 // links on this page drive each other.
 const SESSION = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)
 
-// For decks with a `server` setting: the server's health, the viewers' link
-// and the key (MDECK_SERVER_KEY) that lets a browser steer phones and reset
-// polls.
-function LivePolls({ live, presence, onRecheck }) {
-  const presenterUrl = `${BASE}?view=presenter&session=${SESSION}${live.key ? `&serverkey=${encodeURIComponent(live.key)}` : ''}`
-  const keyState = !live.key ? null : live.keyAccepted ? ['is-ok', 'Accepted by the server'] : live.reachable ? ['is-bad', 'Not accepted by the server'] : ['is-idle', 'Not checked']
-  return <section class="home-section">
+// The answers kept in the talk: each question with how it came out, and
+// the files to save them as (the same as `mdeck results`).
+function Answers({ results, file, onRefresh }) {
+  const href = format => `${devPath('__mdeck/home/results')}?format=${format}`
+  return <section class="home-section home-section--wide home-answers">
     <div class="home-section-head">
-      <h2>Polls</h2>
-      <button class="home-btn home-btn--small" onClick={onRecheck}>Check again</button>
+      <h2>Answers from the talk</h2>
+      <button class="home-btn home-btn--small" onClick={onRefresh}>Refresh</button>
     </div>
-    <dl class="home-live">
-      <div>
-        <dt>Server</dt>
-        <dd>
-          {live.server
-            ? <><code>{live.server}</code><span class={`home-pill ${live.reachable ? 'is-ok' : 'is-bad'}`}>{live.reachable ? `Reachable · ${live.ms} ms` : `Not reachable · ${live.error}`}</span></>
-            : <span>Built into this dev server</span>}
-        </dd>
-      </div>
-      <div>
-        <dt>Join link for phones</dt>
-        <dd>
-          {live.joinUrl
-            ? <><a href={live.joinUrl} target="_blank" rel="noopener"><code>{live.joinUrl}</code></a> <CopyButton text={live.joinUrl} /></>
-            : <>
-              <p class="home-note">Phones cannot reach this computer. Start with <code>--network</code>, or set <code>server</code> in the deck.</p>
-              {live.localJoinUrl && <p><a href={live.localJoinUrl} target="_blank" rel="noopener">Try the answer page here</a> <span>in another browser tab or window.</span></p>}
-            </>}
-          <p>Session code <code class="home-code">{live.code}</code>, the same for every poll in this deck.</p>
-          {presence && <p>{presence.phones ? `${phonesText(presence.phones)} connected now.` : 'No phones connected yet.'}</p>}
-        </dd>
-      </div>
-      {live.server && <div>
-        <dt>Server key</dt>
-        <dd>
-          {live.key
-            ? <>
-              <code class="home-code">{live.key}</code> <CopyButton text={live.key} />
-              <span class={`home-pill ${keyState[0]}`}>{keyState[1]}</span>
-              <p>The presenter view and audience window buttons above carry it. Or open <a href={presenterUrl} target="_blank" rel="noopener">the presenter view with the key</a>.</p>
-            </>
-            : <p>Start <code>mdeck run</code> with <code>MDECK_SERVER_KEY</code> set to the server's key to see it here.</p>}
-        </dd>
-      </div>}
-    </dl>
+    <ul class="home-outputs">
+      {results.map(question => {
+        const { counts = [], voted, phones, average } = question.summary
+        const top = counts.slice(0, 3).map(row => `${row.answer} ${row.count}`).join(' · ')
+        return <li class="home-output" key={question.room}>
+          <div class="home-output-body">
+            <strong>{question.slide ? `Slide ${question.slide}: ` : ''}{question.question || question.room}</strong>
+            <span>{phones === 1 ? '1 phone' : `${phones} phones`}{voted != null && voted !== phones ? `, ${voted} counted` : ''}{question.closed ? ', closed' : ''}{average != null ? ` · average ${average}` : ''}{top ? ` · ${top}` : ''}</span>
+          </div>
+        </li>
+      })}
+    </ul>
+    <div class="home-answer-files">
+      <a class="home-btn home-btn--primary" href={href('csv')} download><HomeIcon name="download" size={15} />Answers (CSV)</a>
+      <a class="home-btn" href={href('summary')} download><HomeIcon name="download" size={15} />Summary (CSV)</a>
+      <a class="home-btn" href={href('json')} download><HomeIcon name="download" size={15} />Everything (JSON)</a>
+    </div>
+    <p class="home-hint">Kept in <code>{file}</code> beside the deck while <code>mdeck run</code> runs; phones are numbered per question, never named.</p>
   </section>
 }
 
-// Presenting from an iPad: a one-time QR code opens the presenter view there,
-// paired with this server so it may save ink and steer the projector, which
-// shows the audience window on this computer.
-function Tablet({ pairing, relay, presence, onChange, onError }) {
-  const away = (presence?.views ?? []).filter(entry => entry.view === 'presenter' && entry.device !== 'computer')
-  const [url, setUrl] = useState(null)
-  const offer = () => api('/action', { action: 'pair' }).then(result => { setUrl(result.url); onChange() }).catch(error => onError(error.message))
-  const unpair = () => api('/action', { action: 'unpair' }).then(() => { setUrl(null); onChange() }).catch(error => onError(error.message))
-  return <section class="home-section home-tablet">
-    <div class="home-section-head">
-      <h2>Present from an iPad</h2>
-      {pairing.devices > 0 && <button class="home-btn home-btn--small" onClick={unpair}>Unpair {pairing.devices === 1 ? 'the device' : `${pairing.devices} devices`}</button>}
-    </div>
-    {relay && <p class={`home-note home-relay home-relay--${relay.state}`}>{relay.state === 'up' ? 'Connected to your server: the iPad can reach this computer from any network.' : relay.state === 'refused' ? `Connecting to the server failed: ${relay.reason}` : relay.state === 'down' ? 'Lost the connection to the server; reconnecting…' : 'Connecting to your server…'}</p>}
-    {away.length > 0 && <p class="home-ok"><HomeIcon name="check" /> Presenter view open on {devicesText(away)}.</p>}
-    {!pairing.available
-      ? <p class="home-note">Start <code>mdeck run</code> with <code>--network</code>, so an iPad in the same network can reach it, or with <code>--server</code> to reach it through your server.</p>
-      : url
-        ? <div class="home-pair">
-          <QrCode url={url} size="180" />
-          <div>
-            <p>Scan this with the iPad's camera. It opens the presenter view there, where you draw and go through the slides.</p>
-            <p>Show the <a href={`${BASE}?view=audience&session=${SESSION}`} target="_blank" rel="noopener">audience window</a> on the projector from this computer: it follows the iPad.</p>
-            <p class="home-note">The code works once, for ten minutes. {pairing.devices > 0 ? `${pairing.devices} paired so far.` : ''}</p>
-          </div>
-        </div>
-        : <>
-          <p>The iPad opens the same presenter view as this computer, laid out for its screen: you draw and go through the slides there while this computer drives the projector. Drawings are saved in the drawings file beside the deck.</p>
-          <p class="home-note">Pairing is what lets the iPad save drawings and steer the audience window here. Other devices in the network can open the presenter view too, but only watch.</p>
-          <button class="home-btn" onClick={offer}>Show pairing code</button>
-          {pairing.devices > 0 && <p class="home-note">{pairing.devices === 1 ? 'One device' : `${pairing.devices} devices`} paired.</p>}
-        </>}
-  </section>
-}
+// For decks with a `server` setting: the server's health, the viewers' link
+// and the key (MDECK_SERVER_KEY) that lets a browser steer phones and reset
+// polls.
 
 export function Home() {
   const [info, setInfo] = useState(null)
@@ -313,6 +253,11 @@ export function Home() {
         <p class="home-meta">{meta.join(' · ')}</p>
         <p class="home-file"><code>{info.file}</code> <button class="home-link" onClick={() => api('/action', { action: 'reveal', output: 'deck' }).catch(e => setError(e.message))}>Show</button></p>
       </div>
+      {/* mdeck run --server: whether the connection to the server is up. */}
+      {info.relay && <span class={`home-health home-relay${info.relay.state === 'up' ? '' : info.relay.state === 'refused' ? ' is-bad' : ' is-warn'}`} title={info.relay.reason ?? info.relay.url}>
+        <HomeIcon name={info.relay.state === 'up' ? 'check' : 'alert'} />
+        {info.relay.state === 'up' ? 'Connected to your server' : info.relay.state === 'refused' ? 'Server refused the connection' : info.relay.state === 'down' ? 'Reconnecting to your server…' : 'Connecting to your server…'}
+      </span>}
       <a class={`home-health${errors ? ' is-bad' : warnings ? ' is-warn' : ''}`} href="#check">
         <HomeIcon name={errors || warnings ? 'alert' : 'check'} />
         {errors ? `${errors} error${errors === 1 ? '' : 's'}` : warnings ? `${warnings} warning${warnings === 1 ? '' : 's'}` : 'All good'}
@@ -330,14 +275,14 @@ export function Home() {
           <ConnectedViews presence={presence} phones={!!info.live} />
         </div>
         <div class="home-tiles">
-          <ViewTile icon="presenter" title="Presenter view" text="Present and draw, with notes, timer and next slide. Switch to slides only or fullscreen." href={`${BASE}?view=presenter&session=${SESSION}${code}`} open={openOn('presenter')} />
+          <ViewTile icon="presenter" title="Presenter view" text="Present and draw, with notes, timer and next slide. Pair an iPad or a phone clicker from it." href={`${BASE}?view=presenter&session=${SESSION}${code}`} open={openOn('presenter')} />
           <ViewTile icon="rehearse" title="Rehearse" text="Go through the talk as if giving it: each slide is timed, and the times can be saved into the deck." href={`${BASE}?view=presenter&rehearse=1&session=${SESSION}${code}`} />
           <ViewTile icon="projector" title="Audience window" text="Slides for the projector, without notes. Navigation stays in sync with the presenter." href={`${BASE}?view=audience&session=${SESSION}${code}`} open={openOn('audience')} />
           <ViewTile icon="reader" title="Reader view" text="Outline, reading mode and look picker, as people you send it to see it." href={`${BASE}?view=reader`} />
         </div>
       </section>
 
-      <section class={`home-section${info.live ? '' : ' home-section--wide'}`}>
+      <section class="home-section home-section--wide">
         <h2>Write and learn</h2>
         <div class="home-tiles">
           <ServiceTile icon="editor" title="Visual editor" text="Forms and a live preview; saves into the file and keeps a backup." action="editor" url={info.services.editor} onError={setError} onStarted={load} />
@@ -346,9 +291,9 @@ export function Home() {
         </div>
       </section>
 
-      {info.live && <LivePolls live={info.live} presence={presence} onRecheck={load} />}
 
-      {info.pairing && <Tablet pairing={info.pairing} relay={info.relay} presence={presence} onChange={load} onError={setError} />}
+      {info.results?.length > 0 && <Answers results={info.results} file={info.name.replace(/\.md$/i, '') + '.results.json'} onRefresh={load} />}
+
 
       <section class="home-section home-section--wide">
         <h2>Share</h2>

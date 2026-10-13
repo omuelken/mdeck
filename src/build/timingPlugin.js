@@ -9,7 +9,8 @@
 // only written when the deck still has the slides the page saw (`ids`);
 // otherwise the answer is 409. The deck is copied to .mdeck-backups/ before
 // the first write, and the write does not reload the open windows
-// (ownWrites.js).
+// (ownWrites.js). A slide from another file the deck includes (include.js)
+// gets its time in that file, as that file's own slide.
 import { readFileSync, writeFileSync, renameSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { parseSlides } from '../core/parseSlides.js'
@@ -17,37 +18,52 @@ import { setSlideMeta } from '../core/editDeck.js'
 import { parseTime, formatTime } from '../core/timing.js'
 import { isAllowedRequest, send, readJson, backupDeck } from './editorPlugin.js'
 import { markOwnWrite } from './ownWrites.js'
+import { expandDeck } from './include.js'
 
 export function createTimingFile(deckPath) {
   const abs = resolve(deckPath)
-  let backedUp = false
-  const read = () => { const source = readFileSync(abs, 'utf8'); return { source, deck: parseSlides(source) } }
+  const backedUp = new Set()
+  // The deck as shown, and for each slide the file it is written in.
+  const shown = () => {
+    const { source, origins } = expandDeck(abs)
+    return { deck: parseSlides(source), origins }
+  }
 
   return {
     path: abs,
-    ids: () => read().deck.slides.map(slide => slide.id),
+    ids: () => shown().deck.slides.map(slide => slide.id),
     save(ids, times) {
-      let { source, deck } = read()
-      const current = deck.slides.map(slide => slide.id)
+      const { deck: whole, origins } = shown()
+      const current = whole.slides.map(slide => slide.id)
       if (!Array.isArray(ids) || ids.join('\n') !== current.join('\n')) return { status: 409, error: 'The deck changed since the rehearsal began; rehearse again', ids: current }
-      const before = source
-      let changed = 0
+      // The new times, by the file the slide is written in and its id there.
+      const files = new Map()
       for (const [id, value] of Object.entries(times ?? {})) {
         if (!current.includes(id)) return { status: 400, error: `No slide "${id}" in the deck` }
         const seconds = value == null ? null : parseTime(value)
         if (value != null && seconds == null) return { status: 400, error: `"${value}" is not a time` }
         const time = seconds == null ? undefined : formatTime(seconds)
-        if (deck.slides.find(slide => slide.id === id).meta.time === time) continue
-        source = setSlideMeta(deck, id, { time })
-        deck = parseSlides(source)
-        changed++
+        if (whole.slides.find(slide => slide.id === id).meta.time === time) continue
+        const { file, id: own } = origins?.[id] ?? { file: abs, id }
+        if (!files.has(file)) files.set(file, [])
+        files.get(file).push([own, time])
       }
-      if (source === before) return { status: 200, ok: true, changed: 0 }
-      if (!backedUp) { backupDeck(abs, before); backedUp = true }
-      markOwnWrite(abs, source)
-      const temp = `${abs}.${process.pid}.tmp`
-      writeFileSync(temp, source, 'utf8')
-      renameSync(temp, abs)
+      let changed = 0
+      for (const [file, entries] of files) {
+        const before = readFileSync(file, 'utf8')
+        let source = before, deck = parseSlides(source)
+        for (const [id, time] of entries) {
+          source = setSlideMeta(deck, id, { time })
+          deck = parseSlides(source)
+          changed++
+        }
+        if (source === before) continue
+        if (!backedUp.has(file)) { backupDeck(file, before); backedUp.add(file) }
+        markOwnWrite(file, source)
+        const temp = `${file}.${process.pid}.tmp`
+        writeFileSync(temp, source, 'utf8')
+        renameSync(temp, file)
+      }
       return { status: 200, ok: true, changed }
     },
   }

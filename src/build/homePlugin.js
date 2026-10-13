@@ -1,6 +1,7 @@
 // Launch page API for `mdeck run`: what the deck contains, what `mdeck check`
-// says about it, the state of its server, and buttons that start the
-// editor and the guides or run a build. Like the editor API it answers loopback
+// says about it, the state of its server, the answers kept in the talk (to
+// save as CSV or JSON), and buttons that start the editor and the guides or
+// run a build. Like the editor API it answers loopback
 // requests from its own pages only, even when the server is shared on the
 // network for phones.
 import { spawn } from 'node:child_process'
@@ -14,6 +15,10 @@ import { roomsIn } from '../live/roomTag.js'
 import { isAllowedRequest, send, readJson } from './editorPlugin.js'
 import { findChrome } from './chrome.js'
 import { frameworkRoot } from '../paths.js'
+import { resultsFileFor, normalizeResults } from '../core/results.js'
+import { resultsReport, reportAnswersCsv, reportSummaryCsv, reportJson } from '../core/resultsReport.js'
+import { expandedSource } from './include.js'
+import { reactionsOf } from '../core/reactions.js'
 
 // Each output is one ordinary CLI run beside the deck, so the launch page
 // builds exactly what the command line would.
@@ -44,15 +49,26 @@ function reveal(file) {
   spawn(command, args, { stdio: 'ignore', detached: true }).on('error', () => {}).unref()
 }
 
-// The server named in the `server` setting: whether it answers, and whether it
-// accepts the key (MDECK_SERVER_KEY, as given to the server).
+// The server named in the `server` setting: whether it answers, whether it
+// accepts the key (MDECK_SERVER_KEY, as given to the server), and which mdeck
+// it runs (servers before 3.12 do not say).
+const VERSION = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version
+// Whether mdeck `a` is older than `b`, by major and minor: a server that
+// lacks a feature of this mdeck (reactions came with 3.12) is older.
+export function olderVersion(a, b) {
+  const [am, an] = String(a).split('.').map(Number), [bm, bn] = String(b).split('.').map(Number)
+  return am < bm || (am === bm && an < bn)
+}
+// A reachable server that runs an older mdeck than this computer, or does not say.
+const withVersion = status => status.reachable ? { ...status, version: VERSION, serverOutdated: !status.serverVersion || olderVersion(status.serverVersion, VERSION) } : status
+
 export async function liveStatus(live, { key = null, fetch: get = fetch, timeoutMs = 2500 } = {}) {
   const started = Date.now()
   try {
     const response = await get(`${live.server.replace(/\/+$/, '')}/info`, { headers: key ? { Authorization: `Bearer ${key}` } : {}, signal: AbortSignal.timeout(timeoutMs) })
     if (!response.ok) return { reachable: false, error: `It answered with status ${response.status}` }
     const body = await response.json()
-    return { reachable: true, ms: Date.now() - started, keyAccepted: key ? !!body.canReset : null }
+    return { reachable: true, ms: Date.now() - started, keyAccepted: key ? !!body.canReset : null, serverVersion: typeof body.version === 'string' ? body.version : null }
   } catch (error) {
     return { reachable: false, error: error.name === 'TimeoutError' ? `No answer within ${timeoutMs / 1000} s` : error.cause?.code ?? error.message }
   }
@@ -89,12 +105,14 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       theme: config.theme ?? 'neue',
       palette: config.palette ?? null,
       diagnostics: [...(registry?.warnings ?? []).map(message => ({ severity: 'warning', code: 'extension', message })), ...(registryError ? [{ severity: 'error', code: 'extension', message: registryError }] : []), ...diagnostics],
-      live: await live(config, source, { local, network }),
+      // Polls in included slides count too: the deck as shown.
+      live: await live(config, deck.source ?? source, { local, network }),
       presence: presenceUrl(config),
       // Presenting from an iPad needs an address it can reach (`--host`).
       pairing: pairing ? { available: !!relay || !!network[0], devices: pairing.devices } : null,
       relay: relay ? { url: relay.url, state: relay.state, reason: relay.reason } : null,
       chrome: !!findChrome(),
+      results: answers()?.map(({ answers: _, ...question }) => question) ?? null,
       services: Object.fromEntries(Object.keys(services).map(key => [key, serviceUrls[key] ?? null])),
       outputs: Object.fromEntries(Object.entries(outputs).map(([key, output]) => [key, {
         title: output.title,
@@ -115,25 +133,54 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
     return typeof address === 'string' && !serverKey ? `${address.replace(/\/+$/, '')}/${room}` : `__mdeck/live/${room}`
   }
 
-  // Decks with activities, or with a server of their own, get this
+  // Decks with activities or reactions, or with a server of their own, get this
   // section: the server and its health, the join link phones open and,
   // for a server of their own, the presenter code.
   async function live(config, source, { local, network }) {
     const address = serverAddress ?? config.server
     const settings = { server: address }
     const own = typeof address === 'string'
-    if (!own && roomsIn(source).length === 0) return null
+    if (!own && roomsIn(source).length === 0 && !reactionsOf(config)) return null
     const code = sessionCode(config)
     const builtIn = base => new URL(`__mdeck/live/${code}`, base).href
     const joinUrl = own ? `${settings.server.replace(/\/+$/, '')}/${code}` : network[0] ? builtIn(network[0]) : null
     return {
       server: own ? settings.server : null,
       code,
-      ...(own ? await liveStatus(settings, { key: serverKey, fetch: get }) : { reachable: true }),
+      ...(own ? withVersion(await liveStatus(settings, { key: serverKey, fetch: get })) : { reachable: true }),
       key: own ? serverKey : null,
       joinUrl,
       localJoinUrl: joinUrl ?? (local[0] ? builtIn(local[0]) : null),
     }
+  }
+
+  // The answers kept in the talk (<deck>.results.json), read against the
+  // deck as shown; null while none are kept.
+  function answers() {
+    const file = resultsFileFor(abs)
+    if (!existsSync(file)) return null
+    let results
+    try { results = normalizeResults(JSON.parse(readFileSync(file, 'utf8'))) } catch { return null }
+    if (!Object.keys(results.rooms).length) return null
+    let deck
+    try { deck = parseSlides(expandedSource(abs)) } catch { deck = parseSlides(readFileSync(abs, 'utf8')) }
+    return resultsReport(results, deck)
+  }
+
+  // GET /results?format=csv|summary|json: the answers as a file to save.
+  function download(request, response) {
+    const format = new URL(request.url, 'http://localhost').searchParams.get('format') ?? 'csv'
+    const report = answers()
+    if (!report) return send(response, 404, { error: 'No answers kept yet' })
+    const name = basename(abs).replace(/\.md$/i, '')
+    const [text, type, file] = format === 'json'
+      ? [reportJson(report, { title: parseSlides(readFileSync(abs, 'utf8')).deckConfig?.meta?.title ?? name }), 'application/json', `${name}-answers.json`]
+      : format === 'summary' ? [reportSummaryCsv(report), 'text/csv', `${name}-summary.csv`]
+      : [reportAnswersCsv(report), 'text/csv', `${name}-answers.csv`]
+    // A byte order mark, so that Excel reads the words as UTF-8.
+    const body = type === 'text/csv' ? `\uFEFF${text}` : text
+    response.writeHead(200, { 'Content-Type': `${type}; charset=utf-8`, 'Content-Disposition': `attachment; filename="${file}"`, 'Content-Length': Buffer.byteLength(body), 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' })
+    response.end(body)
   }
 
   // Each service starts once; a failed start can be retried.
@@ -144,18 +191,20 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
 
   // The one-time address an iPad opens to present from: the presenter view,
   // with a one-time pairing offer; the server's master key stays here.
-  function pairUrl() {
+  // `layout: 'remote'` opens it as the phone clicker instead.
+  function pairUrl(layout = 'slide') {
     const network = relay?.url ?? urls()?.network?.[0]
     if (!pairing || !network) throw Object.assign(new Error('Start mdeck run with --network or --server so an iPad can reach it'), { status: 409 })
     const url = new URL(network)
     url.searchParams.set('view', 'presenter')
+    url.searchParams.set('layout', layout === 'remote' ? 'remote' : 'slide')
     url.searchParams.set('pair', pairing.offer())
     return url.href
   }
 
-  async function act({ action, output } = {}) {
+  async function act({ action, output, layout } = {}) {
     if (Object.hasOwn(services, action)) return { url: await start(action) }
-    if (action === 'pair') return { url: pairUrl() }
+    if (action === 'pair') return { url: pairUrl(layout) }
     if (action === 'unpair') { pairing?.revoke(); return { ok: true } }
     if (action === 'build') {
       if (!Object.hasOwn(outputs, output)) throw Object.assign(new Error(`Unknown output: ${output}`), { status: 400 })
@@ -176,12 +225,13 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
 
   return async (request, response, next) => {
     const pathname = new URL(request.url, 'http://localhost').pathname
-    if (!['/info', '/action'].includes(pathname)) return next()
+    if (!['/info', '/action', '/results'].includes(pathname)) return next()
     if (!isAllowedRequest(request)) return send(response, 403, { error: 'The launch page only answers on this computer' })
     try {
+      if (pathname === '/results' && request.method === 'GET') return download(request, response)
       if (pathname === '/info' && request.method === 'GET') return send(response, 200, await info(request))
       if (pathname === '/action' && request.method === 'POST') return send(response, 200, await act(await readJson(request)))
-      response.setHeader('Allow', pathname === '/info' ? 'GET' : 'POST')
+      response.setHeader('Allow', pathname === '/action' ? 'POST' : 'GET')
       return send(response, 405, { error: 'Method not allowed' })
     } catch (error) {
       return send(response, error.status ?? 500, { error: error.message })

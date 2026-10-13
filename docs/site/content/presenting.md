@@ -34,17 +34,20 @@ can skip if I run out of time.
 mdeck run my-talk.md
 ```
 
-The launch page it opens has a **Presenter view** button.
+The launch page it opens has a **Presenter view** button. The presenter view shows the slide with a toolbar under it, and beside it the time, the next slide and your notes:
 
-Use its audience-window button to open a separate view of the slides. If you have a projector or second screen, move that audience window onto it. Keep the presenter window on your own screen.
+- **Under the slide**: previous and next, then drawing, black screen, all slides, hotspots and full screen, and **This slide**: what can be done on the slide shown, such as a poll's lock, results and right answer, or playing its video. Point at a button to see what it does and its key; **?** lists all keys.
+- **At the top of the notes**: the slide number (type one to jump there), the timer, the audience window button (a projector), the icons of who is connected, and the settings.
+- **Who is connected** (the icons): the audience windows, a paired iPad, phones; the join link for polls; and the codes that pair an iPad or a phone. A red dot means something needs you, such as phones that do not follow.
+- **Settings**: the layout (speaker, slide only, phone clicker), the theme, palette and light or dark to try, the language, the timer and rehearsal, the size of the notes, and the way back to the launch page.
+
+Open the audience window with the projector button. If you have a projector or second screen, move it there, and keep the presenter view on your own screen.
 
 The two windows follow the same slide and reveal position: navigate in either window and the other follows. This works between windows in the same browser and between your laptop and a paired iPad. To connect the iPad, see [Draw on your slides](drawing.html#present-from-an-ipad).
 
 A video file you play, pause or move in the presenter view does the same in the audience window, which plays the sound; the presenter view's copy stays silent while the audience window is open. Click the audience window once before the talk, so the browser lets it play sound.
 
-Small icons next to **Speaker View** show what is connected to the deck: presenter views, audience windows and, for decks with polls, how many phones. Point at them to see on which devices, such as "Presenter view on an iPad". The launch page shows the same under **Present**, and marks each view that is open.
-
-For a single screen, switch the presenter view to its slide-only layout. **F** or the fullscreen button fills the screen in either the presenter view or the audience window; fullscreen does not select another view.
+For a single screen, choose **Slide only** in the settings. **F** or the fullscreen button fills the screen in either the presenter view or the audience window; fullscreen does not select another view.
 
 To let people answer a question on their phones, put a poll on a slide. See [Ask your audience](audience.html).
 
@@ -57,15 +60,33 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | Home | Go to the first slide |
 | End | Go to the last slide when the slide view has focus |
 | R | Start again and clear the reveals |
+| B or . | Make the audience's screen black, and show the slide again (see below) |
+| J | Show the join code over the slide, on every screen, and hide it again, in the presenter view of a deck with polls ([Ask your audience](audience.html)) |
+| O | Show all slides in a grid, to pick one (see below) |
 | D | Start or stop drawing on the slide ([Draw on your slides](drawing.html)) |
 | I | Hide or show the drawings |
 | F | Full screen, where the browser allows it |
 | N | Open or close the notes drawer, in the presenter view's slide-only layout |
 | L | Switch to the talk's next language, for a talk written in several (see below) |
-| 1–9 | Zoom in on a part of the slide, with hotspots on (see below); without them, go to slide 1–9 |
+| 1–9 | Zoom in on a part of the slide, with hotspots on (see below); without them, nothing |
 | 0 or Escape | Show the whole slide again |
 | H | Turn hotspots on or off for this talk, in the presenter view |
 | T | Start or pause the timer, in the presenter view |
+| ? | Show the keys that work at this moment, over the slide; **?** again or Escape closes the list |
+
+## Use your phone as a clicker
+
+Start `mdeck run my-talk.md --network`, open the presenter view, click the connection icons at its top, choose **Phone clicker**, and scan the code with the phone's camera. The phone shows the slide small, the time and how you stand against the plan, your notes in large print, and big **Previous** and **Next** buttons where your thumb is. Under the slide it has the slide's own controls: close a poll, show its results or the right answer, play a video, zoom into a numbered part. The audience window on the laptop does what the phone does. Nothing on the phone draws. Where the browser allows it (`https://`, or a page on the laptop itself), the phone's screen stays on during the talk.
+
+The clicker is one of the presenter view's layouts: the settings switch any presenter view between **Speaker**, **Slide only** and **Clicker**, on the phone as well. Each device remembers its layout.
+
+## Black out the screen
+
+Press **B** when the room should look at you, not at the slide: the audience window goes black, and so do a paired iPad's audience window and phones following the talk. Your presenter view keeps the slide under a dark veil and says that the audience sees a black screen. **B** again, the next key (→, Space) or a click on the black screen shows the slide again, without moving on. Many presentation clickers have a button for this; it sends a full stop, which works like **B**. The presenter view also has a button for it.
+
+## Find a slide
+
+Press **O**, or the button with the row of slides, to see every slide of the talk in a grid: the slide shown has a red frame. Move with the arrow keys and press Enter, or click a slide, to go there. **O** or Escape closes the grid and leaves you where you were. In the presenter view the grid opens in your own slide, so the audience keeps the slide they are looking at until you pick another. Every slide in the grid shows all of its points, to make it easier to recognise.
 
 To jump to a slide, tap or click the slide number in the presenter view (beside the arrows on an iPad, at the top of the speaker layout), type the number and press Enter, or Go on an iPad's keyboard. Escape keeps the current slide.
 
@@ -101,7 +122,7 @@ You do not have to guess the times. Rehearse the talk and mdeck measures them:
 mdeck rehearse my-talk.md
 ```
 
-This opens the presenter view rehearsing: the timer starts, and every second on a slide counts towards it, including when you come back to it. **Rehearse** in the presenter view, and the tile on the launch page, start a rehearsal too. Press **Finish**, or go on past the last slide, and a table shows for each slide the time it has, the time you spent and the new time, rounded to 15 seconds. Change a new time in 15-second steps with **−** and **+** (or **↑** and **↓** on its row), put back the time the slide had, or take the slide's time out. **Save to deck** writes the new times into the slides' settings, so you can see them in the file and change them like any other setting. The open windows do not reload, and the deck is copied to `.mdeck-backups/` first.
+This opens the presenter view rehearsing: the timer starts, and every second on a slide counts towards it, including when you come back to it. **Rehearse** in the presenter view's settings, and the tile on the launch page, start a rehearsal too. Press **Finish**, or go on past the last slide, and a table shows for each slide the time it has, the time you spent and the new time, rounded to 15 seconds. Change a new time in 15-second steps with **−** and **+** (or **↑** and **↓** on its row), put back the time the slide had, or take the slide's time out. **Save to deck** writes the new times into the slides' settings, so you can see them in the file and change them like any other setting. The open windows do not reload, and the deck is copied to `.mdeck-backups/` first.
 
 Saving needs `mdeck run` or `mdeck rehearse`. A deck you built can still rehearse; **Copy** gives you the times to paste in yourself.
 
@@ -123,7 +144,7 @@ To see the whole slide again, press the same number again, **0** or **Escape**, 
 |---|---|
 | `hotspots: auto` | Pictures, code blocks, tables, formulas, videos, callouts, columns and polls, and anything marked `data-hotspot` |
 | `hotspots: marked` | Only what you marked with `data-hotspot`; nothing is found by itself |
-| `hotspots: off` | Nothing. This is the default: 1–9 go to slides 1–9 |
+| `hotspots: off` | Nothing. This is the default: the number keys do nothing |
 
 A slide can have its own setting in its frontmatter, such as `hotspots: false` for a slide whose numbers you do not want, or `hotspots: auto` on one slide of a deck without hotspots. Mark a part of your own in inline HTML with `data-hotspot`, and keep a found one out with `data-hotspot="off"`:
 

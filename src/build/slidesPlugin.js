@@ -16,6 +16,7 @@ import { marked } from 'marked'
 import { scanTags, replaceTagsIn, withAttribute } from '../core/tags.js'
 import { resolveBibliography, sampleBibliography } from './bibliography.js'
 import { languageOfFile, languageFiles } from '../core/languages.js'
+import { expandDeck, withoutSettings } from './include.js'
 
 const VIRTUAL_ID = 'virtual:slides'
 const RESOLVED_ID = '\0virtual:slides'
@@ -174,6 +175,27 @@ function outsideCodeFences(markdown, fn) {
   return out + fn(text)
 }
 
+// The local files a part of a deck names, each changed by `map(ref)` (the new
+// ref, or null to keep it): Markdown pictures (also those in a tag's
+// attributes, such as a poll's options), the `src` of pictures and media, and
+// `image:` and `logo:` settings. For an included file (include.js), whose
+// paths are written from its own folder. Paths from the root (/…) stay.
+export function rewriteAssetRefs(markdown, map) {
+  const swap = ref => (isLocalAssetRef(ref) && !ref.startsWith('/') ? map(ref) ?? ref : ref)
+  return outsideCodeFences(markdown, text => {
+    let out = text.replace(/(!\[[^\]]*\]\()([^)\s]+)/g, (m, head, ref) => head + swap(ref))
+    out = replaceTagsIn(out, tag => {
+      if (tag.closing || !(PICTURE_TAGS.has(tag.name) || MEDIA_TAGS.has(tag.name)) || !tag.attrs.src) return
+      const next = swap(tag.attrs.src)
+      return next === tag.attrs.src ? undefined : withAttribute(tag, 'src', next)
+    })
+    return out.replace(/^(\s*)(image|logo):\s*(["']?)([^"'\n]+)\3\s*$/gm, (m, indent, key, quote, value) => {
+      const next = swap(value.trim())
+      return next === value.trim() ? m : `${indent}${key}: ${quote || '"'}${next}${quote || '"'}`
+    })
+  })
+}
+
 export function maybeInlineAssets(markdown, abs, { inlineImages, inlineMedia }) {
   if (!inlineImages && !inlineMedia) return markdown
   const baseDir = dirname(abs)
@@ -232,7 +254,17 @@ export function deckLanguages(abs) {
 // the deck's other languages along, for `mdeck run`; a built file has one.
 export function slidesPlugin(slidesPath, { languages = false, inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, stripActivities = false, slides = null, ink = true, results = true, embedFonts: embedThemeFonts = false, deckLook = false, source: given = null } = {}) {
   const abs = resolve(slidesPath)
-  const readDeck = () => given ?? readFileSync(abs, 'utf-8')
+  // The deck as shown: other files it includes in place (include.js).
+  const readRaw = () => given ?? readFileSync(abs, 'utf-8')
+  const expand = (file, source) => given === null ? expandDeck(file, { source }) : { source, files: [], diagnostics: [] }
+  const readDeck = () => expand(abs, readRaw()).source
+  // The files the deck and its other languages include, from the last load;
+  // the dev server may serve their folders, for their pictures.
+  let included = [], devServer = null
+  const allowIncluded = () => {
+    const allow = devServer?.config.server.fs.allow
+    if (allow) for (const dir of included.map(file => dirname(file))) if (!allow.includes(dir)) allow.push(dir)
+  }
   const watchDeck = context => { if (given === null) context.addWatchFile(abs) }
   const sourceFor = raw => {
     const shared = stripNotes ? stripNotesFrom(raw) : raw
@@ -286,6 +318,7 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
     name: 'vite-plugin-slides',
     configResolved(config) { serving = config.command === 'serve' },
     configureServer(server) {
+      devServer = server
       server.watcher.add([abs, inkPath, ...watchDirs()])
       const refresh = file => {
         if (isWatched(file)) reload(server, ALL_IDS, resolve(file))
@@ -308,28 +341,35 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
     load(id) {
       if (id === RESOLVED_ID) {
         watchDeck(this)
-        const raw = readDeck()
+        const raw = readRaw()
         const registry = loadRegistry(abs)
         for (const warning of registry.warnings) this.warn(warning)
-        const diagnostics = validateDeck(parseSlides(raw), {
-          layouts: manifestsOf(registry, 'layout'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette'),
-        })
+        const manifests = { layouts: manifestsOf(registry, 'layout'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette') }
+        // Each file is checked as it is written, so that messages name its lines.
+        const expansion = expand(abs, raw)
+        const diagnostics = [...validateDeck(parseSlides(raw), manifests), ...expansion.diagnostics]
+        for (const file of expansion.files) {
+          const text = readFileSync(file, 'utf-8')
+          diagnostics.push(...withoutSettings(text, validateDeck(parseSlides(text), manifests)).map(d => ({ ...d, file })))
+        }
         const errors = diagnostics.filter(d => d.severity === 'error')
         if (errors.length && !editor) throw new Error(formatDiagnostics(errors, abs))
         if (diagnostics.length) this.warn(formatDiagnostics(diagnostics, abs))
-        const source = maybeInlineAssets(sourceFor(raw), abs, { inlineImages, inlineMedia })
+        const source = maybeInlineAssets(sourceFor(expansion.source), abs, { inlineImages, inlineMedia })
         // The other languages are read as they are: `mdeck check` checks each file.
         const others = otherLanguages()
         languageWatch = others.map(({ file }) => file)
         for (const file of languageWatch) this.addWatchFile(file)
+        const otherSources = others.map(({ lang, file }) => ({ lang, file, ...expand(file, readFileSync(file, 'utf-8')) }))
+        included = [...new Set([...expansion.files, ...otherSources.flatMap(other => other.files)])]
+        for (const file of included) this.addWatchFile(file)
+        allowIncluded()
         for (const { file } of others) {
-          const found = validateDeck(parseSlides(readFileSync(file, 'utf-8')), {
-            layouts: manifestsOf(registry, 'layout'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette'),
-          })
+          const found = validateDeck(parseSlides(readFileSync(file, 'utf-8')), manifests)
           if (found.length) this.warn(formatDiagnostics(found, file))
         }
         const translations = others.length && fileLanguage
-          ? { [fileLanguage]: source, ...Object.fromEntries(others.map(({ lang, file }) => [lang, maybeInlineAssets(sourceFor(readFileSync(file, 'utf-8')), file, { inlineImages, inlineMedia })])) }
+          ? { [fileLanguage]: source, ...Object.fromEntries(otherSources.map(({ lang, file, source: text }) => [lang, maybeInlineAssets(sourceFor(text), file, { inlineImages, inlineMedia })])) }
           : {}
         return `export default ${JSON.stringify(source)}\nexport const language = ${JSON.stringify(fileLanguage)}\nexport const languages = ${JSON.stringify(translations)}`
       }
@@ -341,7 +381,7 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
         // import. The dev server's watcher notices the file once it appears.
         if (existsSync(inkPath)) this.addWatchFile(inkPath)
         let size = {}
-        try { const config = parseSlides(readDeck()).deckConfig ?? {}; size = { width: config.width ?? 1920, height: config.height ?? 1080 } } catch {}
+        try { const config = parseSlides(readRaw()).deckConfig ?? {}; size = { width: config.width ?? 1920, height: config.height ?? 1080 } } catch {}
         let data = emptyInk(size)
         if (ink && existsSync(inkPath)) {
           try { data = normalizeInk(JSON.parse(readFileSync(inkPath, 'utf-8')), size) } catch (error) { this.warn(`${inkPath}: ${error.message}; showing no ink`) }
@@ -389,7 +429,7 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
         for (const record of registry.records) this.addWatchFile(record.file)
         if (!deckLook) return generateExtensionsModule(registry)
         let config = {}
-        try { config = parseSlides(readDeck()).deckConfig ?? {} } catch {}
+        try { config = parseSlides(readRaw()).deckConfig ?? {} } catch {}
         return generateExtensionsModule(deckLookOnly(registry, config))
       }
       if (id === RESOLVED_COMPONENTS_ID) {
@@ -409,7 +449,7 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
     async transformIndexHtml(html, context) {
       if (!/(^|[\/])index\.html$/.test(context.filename ?? context.path ?? '')) return html
       let config = {}
-      try { config = parseSlides(readDeck()).deckConfig ?? {} } catch {}
+      try { config = parseSlides(readRaw()).deckConfig ?? {} } catch {}
       const lang = config.lang ?? fileLanguage
       if (typeof lang === 'string' && /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(lang)) html = html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`)
       if (embedThemeFonts) {
@@ -430,10 +470,12 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
       // windows mid-talk: the pages refresh their ink on `mdeck:ink` instead.
       // The results file is written during the talk and read only by builds.
       if (changed === resultsPath) return []
-      const own = [inkPath, abs].includes(changed) && (() => { try { return isOwnWrite(changed, readFileSync(changed, 'utf-8')) } catch { return false } })()
+      // An included file counts as the deck (saved times are written into it too).
+      const deckFile = changed === abs || included.includes(changed)
+      const own = (changed === inkPath || deckFile) && (() => { try { return isOwnWrite(changed, readFileSync(changed, 'utf-8')) } catch { return false } })()
       if (own) {
-        invalidate(server, changed === abs ? SOURCE_IDS : [RESOLVED_INK_ID])
-        return changed === abs ? bibUpdate(server) : []
+        invalidate(server, deckFile ? SOURCE_IDS : [RESOLVED_INK_ID])
+        return deckFile ? bibUpdate(server) : []
       }
       if (changed === inkPath) {
         reload(server, [RESOLVED_INK_ID], changed)
@@ -446,6 +488,12 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
       }
       if (bibFiles.includes(changed)) {
         invalidate(server, [RESOLVED_BIB_ID])
+        if (editor) return bibUpdate(server)
+        server.ws.send({ type: 'full-reload' })
+        return []
+      }
+      if (included.includes(changed)) {
+        invalidate(server, SOURCE_IDS)
         if (editor) return bibUpdate(server)
         server.ws.send({ type: 'full-reload' })
         return []

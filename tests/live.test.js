@@ -224,3 +224,15 @@ test('windows that say what they are count as connected to their session, and le
   const quiet = await events('424243.stage', 1, undefined, '?view=nonsense&device=toaster')
   assert.equal(quiet[0].data.presence, undefined)
 })
+
+test('phones that joined another server count in the local stage room', () => {
+  const rooms = createRooms()
+  const heard = []
+  rooms.subscribe('123456.stage', event => { if (event.type === 'presence') heard.push(event.presence.phones) }, { view: 'presenter', device: 'computer' })
+  rooms.setAwayPhones('123456', 3)
+  assert.equal(rooms.presence('123456.stage').phones, 3)
+  assert.equal(rooms.presence('123456.stage').views.length, 1, 'the presenter view stays a view')
+  rooms.setAwayPhones('123456', 3)
+  rooms.setAwayPhones('123456', 1)
+  assert.deepEqual(heard.slice(-2), [3, 1], 'told only when the number changes')
+})

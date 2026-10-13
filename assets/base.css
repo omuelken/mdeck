@@ -241,6 +241,8 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 [data-step][data-step-visible] {
   opacity: 1;
 }
+/* The overview (O) shows each slide whole, to find it by. */
+deck-stage[data-overview] [data-step] { opacity: 1; }
 
 /* ── Print ───────────────────────────────────────────────────────────────── */
 @media print {

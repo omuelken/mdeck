@@ -4,8 +4,8 @@ const common = { '--port': value, '--no-open': flag }
 const output = { '--output': value, '-o': '--output', '--no-drawings': flag, '--no-results': flag }
 const commands = {
   new: { max: 0 },
-  run: { ...common, '--network': flag, '--server': optional, max: 1 },
-  rehearse: { ...common, '--network': flag, '--server': optional, max: 1 },
+  run: { ...common, '--network': flag, '--server': optional, '--no-server': flag, max: 1 },
+  rehearse: { ...common, '--network': flag, '--server': optional, '--no-server': flag, max: 1 },
   edit: { ...common, max: 1 },
   design: { ...common, max: 1 },
   themes: { '--local': flag, '--force': flag, '--check': flag, '--output': value, '-o': '--output', max: 4 },
@@ -22,7 +22,7 @@ const commands = {
   server: { '--port': value, '--host': optional, max: 0 },
   skill: { '--print': flag, '--install': 'list', '--project': flag, max: 0 },
   migrate: { '--dry-run': flag, max: 1 },
-  results: { '--output': value, '-o': '--output', max: 1 },
+  results: { '--output': value, '-o': '--output', '--summary': flag, '--json': flag, max: 1 },
 }
 
 export function validateServerOrigin(address) {

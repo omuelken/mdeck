@@ -34,7 +34,7 @@ Every poll in a presentation shows the same code, so people scan once. Their pho
 | `multiple` | Each phone may pick several options. The slide and the phones say “Several answers possible”. Without it, one option per phone. |
 | `buttons` | `letters` puts A, B, C … before the options on the slide, and the phones show only those letters; `numbers` does the same with 1, 2, 3 … For options that are pictures or long formulas, better read on the big screen. |
 | `results` | `hidden` starts with the bars hidden, e.g. to let people vote before they see what others chose. |
-| `qr` | `false` leaves out the QR code, when an earlier slide showed it with `<qrcode join />`. |
+| `qr` | Puts the deck's join code beside the question. Usually not needed: **J** shows it over any slide (see below). |
 
 The question and the options may contain formatting and formulas, written as on a slide, so a maths lecture can ask:
 
@@ -91,14 +91,16 @@ Besides a poll, four more kinds work the same way: one line on a slide, answered
 |---|---|---|
 | `<scale>` | The numbers from `min` to `max` (1 to 5 unless set, at most 11 steps), with `low` and `high` as labels at the ends | How many chose each number, and the average. Each phone's latest answer counts |
 | `<numeric>` | A field for a number: `0.5`, `0,5`, `1/2` or `1e-3` | The most frequent answers as bars, six unless `limit` says otherwise, and the rest as Other. With `answer`, the tick marks the right ones and counts them, and each phone hears whether it was right; `tolerance` (0 unless set) says how far off still counts. Each phone's latest answer counts |
-| `<wordcloud>` | A short text field | A cloud of every answer, packed around the middle, larger the more often it came in and some upright. Capitals and extra spaces do not matter. People may send several. `height` sets its height (520). Colours come from the palette; `--cloud-1` to `--cloud-6` override them |
+| `<wordcloud>` | A short text field | A cloud of every answer, packed around the middle, larger the more often it came in and some upright. Capitals and extra spaces do not matter. Each phone counts with one word: a new one replaces its earlier word. `height` sets its height (520). Colours come from the palette; `--cloud-1` to `--cloud-6` override them |
 | `<question>` | A text field | The newest answers as cards, eight unless `limit` says otherwise. People may send several |
 
 All of them take `room`, `question` and `qr` like a poll, and `placeholder` for the text fields. Their `question`, and the scale's `low` and `high`, may contain formatting and formulas like a poll's options. All of them have the lock that closes them; `<numeric>` also has the eye and the tick, and takes `results="hidden"`.
 
-## Show the code once
+## Let phones join
 
-Each question shows the QR code unless you say otherwise. To invite everybody once, at the start, put the code on a slide of its own and leave it out of the questions:
+Questions show no QR code of their own. When people should join, press **J** in the presenter view (or the QR-code button): the deck's join code appears large over the slide on the projector and every other screen, with the link below it. Phones that scanned it follow along to every question. **J** again, or the next step, shows the slide again; press it once more for people who arrive late.
+
+To keep the code on a slide of its own, or beside one question, write it there:
 
 ```markdown
 ---
@@ -109,10 +111,12 @@ Each question shows the QR code unless you say otherwise. To invite everybody on
 ---
 # How do you make slides today?
 
-<poll room="tools" options="PowerPoint|Keynote|Markdown" qr="false" />
+<poll room="tools" options="PowerPoint|Keynote|Markdown" />
 ```
 
-`<qrcode join />` shows the presentation's join code large, with the link below it. Phones that scanned it follow along to every question. With `qr="false"`, a question leaves out its own code. Leave the join slide up for a while, or come back to it, for people who arrive late. `size` sets the size of the code on the join slide.
+`<qrcode join />` shows the join code large on that slide (`size` sets its size); `qr` on a question puts the code beside it.
+
+The presenter view's connection icons show the join link to copy, and whether phones can reach the poll server.
 
 The code is drawn in the slide's colours, so it fits the theme; phone cameras also read light codes on dark slides.
 
@@ -121,6 +125,20 @@ The code is drawn in the slide's colours, so it fits the theme; phone cameras al
 `<qrcode follow />` shows a code that opens your slides on people's phones and laptops, following you: the slide you show, step by step, and what you draw. They can page back to read something again and return with **Back to live**; slides you have not shown yet stay hidden. The phones' answer page links to it too (**Follow the slides**), so one join code can do both.
 
 It needs their devices to reach your slides: present with `mdeck run --network` when everyone is on the same Wi-Fi (it prints the **Follow** address), or host the built deck with a `server` setting for people anywhere.
+
+### Reactions
+
+Let people react while you talk, with or without a question on screen:
+
+```markdown
+---
+reactions: true
+---
+```
+
+The phones' answer page then has a row of buttons, 👍 👏 ❤️ 😮 🤔, below the question or while they wait for the next one. A tap floats up in the corner of your presenter view for a moment, and a small tally keeps what came in the last minute, so a few 🤔 still show after they faded. The audience window and the projector never show them. Give your own, up to eight emoji or short words, for example to ask for a pace: `reactions: [👍, 🤔, slower, louder]`. Each phone can react about once a second; reactions are not kept anywhere.
+
+People reach the answer page through the join code: press **J** in the presenter view to show it, also in a deck with reactions and no questions.
 
 Hover over the results to see **Reset**, which clears the answers, for example before the real session. Only the presenter can reset.
 
@@ -206,7 +224,7 @@ server: https://rooms.example.org
 ---
 ```
 
-To keep the address out of the deck, leave the setting out and set `MDECK_SERVER=https://rooms.example.org` in your shell instead; `mdeck run --server` then finds it. A built or sent presentation reads the address from the deck only, because it has to carry it to wherever it is opened.
+To keep the address out of the deck, leave the setting out and set `MDECK_SERVER=https://rooms.example.org` in your shell instead. With `MDECK_SERVER_KEY` set as well, `mdeck run` then uses the server by itself, without `--server`; when the server does not answer, it says so and presents from your computer, and `--no-server` leaves it out on purpose. A built or sent presentation reads the address from the deck only, because it has to carry it to wherever it is opened.
 
 `MDECK_SERVER_KEY` is the server’s master key. `mdeck run` keeps it on your computer and lets your local browser, or an iPad with a revocable pairing token, move the phones along and reset polls for this deck. Pairing QR codes never include the master key. Start `mdeck run` with the same key (`MDECK_SERVER_KEY=choose-a-secret mdeck run my-talk.md`), and the launch page checks the server, shows the join link and opens the presenter view. Paired devices remember only their token, scoped to this presentation; it never appears in the address bar or in the slide file. A hosted presenter can still unlock the server by opening the presenter view once with `?serverkey=…` in its address. That browser remembers the master key. Without permission to control the server, phones wait. The presenter view says whether the phones follow it, and if not, why.
 
@@ -218,7 +236,17 @@ Two presentations with the same title share a session code. Give one of them `se
 
 Answers are anonymous. Each phone gets a random number so it can change its vote; nothing else identifies it. The server keeps answers in memory only. It forgets a room after twelve hours without visitors and everything when it restarts. Each phone can send a limited number of answers in a short time.
 
-While you present with `mdeck run`, the answers are also kept beside the presentation, in `my-talk.results.json`. It holds each answer with its time, and the phones numbered 1, 2, 3 … per question instead of their random numbers. Once a question was closed, only the answers that counted. **Reset** takes a question's answers out of the file; a new server that starts empty leaves the file as it is. `mdeck results my-talk.md` prints the answers as CSV (question, phone, time, answer), to open in a spreadsheet; `-o answers.csv` saves them to a file. A deck hosted with its own `server` keeps nothing beside it.
+While you present with `mdeck run`, the answers are also kept beside the presentation, in `my-talk.results.json`. It holds each answer with its time, and the phones numbered 1, 2, 3 … per question instead of their random numbers. Once a question was closed, only the answers that counted. **Reset** takes a question's answers out of the file; a new server that starts empty leaves the file as it is. A deck hosted with its own `server` keeps nothing beside it.
+
+### Save the answers
+
+Under **Answers from the talk**, the launch page lists each question with how many phones answered and how it came out, and saves the answers as a file:
+
+- **Answers (CSV)**: every answer on its own row, with the slide, the question, the phone's number and the time, to open in a spreadsheet.
+- **Summary (CSV)**: one row per option, number on a scale, number typed or word, with how many chose it and their share; for scales and numbers also the average and the median. It counts as the slide does: each phone's last vote.
+- **Everything (JSON)**: all of it, for other programs.
+
+On the command line, `mdeck results my-talk.md` prints the answers as CSV, `--summary` the summary and `--json` everything; `-o answers.csv` (or `.json`) saves them to a file.
 
 ## In a PDF or a shared file
 

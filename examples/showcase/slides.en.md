@@ -6,6 +6,7 @@ meta:
   organization: "FHNW"
   date: "2026-10-06"
 bibliography: refs.bib
+reactions: true
 ---
 
 ---
@@ -469,7 +470,7 @@ One line makes a poll; the heading is the question:
 
 `<poll room="tour" options="Writing|Layouts|Drawing|Polls" />`
 
-Phones join with the QR code. They can reach this computer when you start `mdeck run slides.md --network`.
+Press **J** to show the join code over the slide; phones scan it and stay in for every question after. They can reach this computer when you start `mdeck run slides.md --network`.
 :::
 
 ---
@@ -480,8 +481,7 @@ time: 1m
 # One word from everyone
 :::slot left
 ```markdown
-<wordcloud room="mood"
-  qr="false" />
+<wordcloud room="mood" />
 
 <scale room="pace" min="1" max="5"
   low="Too slow" high="Too fast" />
@@ -490,11 +490,11 @@ time: 1m
 ```
 :::
 :::slot right
-<wordcloud room="mood" placeholder="One word" qr="false" />
+<wordcloud room="mood" placeholder="One word" />
 :::
 
 :::notes
-Phones that joined with the poll's code stay in: `qr="false"` leaves the code out here. Answers appear as they come in.
+Phones that joined at the poll stay in; **J** shows the join code again for latecomers. Answers appear as they come in. This tour sets `reactions: true`, so the phones also have 👍 👏 ❤️ 😮 🤔 buttons: taps float up in your presenter view, never on the projector.
 
 Besides polls and word clouds there are ratings (`<scale>`), numbers with a right answer (`<numeric>`) and open questions (`<question>`). With several of them, `<qrcode join />` on an early slide shows the code once. `mdeck run` keeps the answers in `slides.results.json` beside the deck.
 :::

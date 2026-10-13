@@ -68,7 +68,8 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `nocite` | — | References to list without citing them; `['*']` lists the whole file |
 | `show.citations` | `true` | `false` leaves out each slide's own references above the footer |
 | `time` | — | How long the talk takes, such as `20m`: slides without their own `time` share what is left (see [Time your talk](../site/content/presenting.md#time-your-talk)) |
-| `hotspots` | `off` | Number keys zoom in on parts of a slide while presenting: `auto` (pictures, code, tables, formulas, videos, callouts, columns, polls and `data-hotspot` elements), `marked` (only `data-hotspot` elements) or `off` (1–9 go to slides) |
+| `hotspots` | `off` | Number keys zoom in on parts of a slide while presenting: `auto` (pictures, code, tables, formulas, videos, callouts, columns, polls and `data-hotspot` elements), `marked` (only `data-hotspot` elements) or `off` (the number keys do nothing) |
+| `reactions` | — | Reaction buttons on the phones' answer page; a tap floats up on the presenter's screen only, and is not kept: `true` (👍 👏 ❤️ 😮 🤔) or a list of 1 to 8 emoji or words of up to 16 characters |
 
 ### Theme params
 
@@ -112,6 +113,34 @@ removed from `mdeck send` files unless the command uses `--notes`, and even
 then the reader shows them only when `reader.notes` is `true`, so a file can
 carry notes for the presenter view without showing them to readers. The same
 view is reachable in any build through `?view=reader`.
+
+## Including other decks
+
+A slide that is nothing but an `:::include` line, with no settings, stands for the slides of another deck file:
+
+```markdown
+---
+:::include ./lectures/02-graphs.md
+---
+:::include ./lectures/02-graphs.md slides=3-7
+---
+:::include "./lectures/week 3.md"
+```
+
+- The included file is a complete deck and can be presented alone; a file of slides without deck settings can be included too. When it is included, its slides come along with what they need from its settings, and the look stays the including deck's:
+  - `hotspots` and `time` become each included slide's own, unless it has one. A slide without a time gets its share of the included deck's `time`, shared out as that deck does alone (its slides' own times first, the rest in equal parts); `slides=` keeps each chosen slide's share.
+  - `bibliography` files and `nocite` keys are added to the including deck's; `csl` too, when the including deck sets none. Its `<bibliography />` lists the works it cites itself (and its `nocite`), not every work of the including deck.
+  - `components` folders, and a `components/` folder beside the included file, are added to the including deck's.
+  - Callout names of its own under `callouts` are added, unless the including deck names them; titles it gives built-in callouts are not.
+  - `theme`, `palette`, `appearance`, `params`, `width`, `height`, `lang`, `labels`, `show`, `meta`, `reader`, `server` and `session` are ignored, and a problem with them is not reported for the including deck.
+- A block at the top of an included file with only `time:` or `hotspots:` (keys both a deck and a slide have) is read as the file's settings, for all its slides; `mdeck check` says so. For the first slide alone, write them in a `:::meta` block.
+- `slides=` keeps the slides with these numbers (`3`, `3,5`, `2-4`), counted as the included file shows them, like `--slide`.
+- Local paths (Markdown pictures, `<img>`, `<video>`, `<videoplayer>` and `<audio>` sources, `image:` and `logo:`) are read from the included file's folder. Paths from the root (`/…`) stay as written.
+- Includes may nest. A file that includes itself, directly or through others, is an error, as is a missing file or a slide number beyond the file.
+- In a deck whose file name gives a language (`course.de.md`), `./part.md` is read as `./part.de.md` when that file exists.
+- Ids: slides of the including deck keep the ids they have in it; included slides get the included file's name in front of theirs, without leading digits (`02-graphs.md` → `graphs-slide-3`, `graphs-dijkstra`), with `-2`, `-3` … when the same name comes up again. Drawings made while presenting are saved under these ids, in the including deck's drawings file.
+- Saved rehearsal times go into the file the slide is written in. The editor (`mdeck edit`) shows an include as one card; edit included slides in their own file.
+- Palettes, layouts and themes are found beside the including deck.
 
 ## Available themes
 
@@ -425,7 +454,7 @@ As @smith2020 showed, it works [see @smith2020, p. 12; @doe2019].
 | `@smith2020 [chap. 3]` | Smith et al. (2020, Chapter 3) | Smith et al. (1) |
 
 - **On the slide** each citation shows in the style's short form, and the full reference of every work the slide cites stands in small type above the footer, after any footnotes. `show.citations: false` leaves those out.
-- **`<bibliography />`** lists every cited work, plus those named in `nocite`, in the style's order. A list too long for one slide goes on several: `<bibliography part="1/2" />` on one and `<bibliography part="2/2" />` on the next split it in halves.
+- **`<bibliography />`** lists every cited work, plus those named in `nocite`, in the style's order. A list too long for one slide goes on several: `<bibliography part="1/2" />` on one and `<bibliography part="2/2" />` on the next split it in halves. `<bibliography keys="smith2020 doe2019" />` lists only these works. In a deck that includes others, an included deck's `<bibliography />` lists the works that deck cites, as it does when shown alone, and the including deck's own lists every work.
 - **Locators** after a comma: `p.`/`pp.`, `chap.`, `sec.`, `fig.`, `vol.`, `para.`, `no.`, `l.`, `eq.` and the German `S.`, `Kap.`, `Abb.`, `Bd.`, `Nr.`; a bare number is a page.
 - **`@key` without brackets** is a citation only when the key is in the reference file, so e-mail addresses and `@handles` stay text. Citations in code, in links' addresses and in `:::notes` blocks work as in slide text, except that notes show no reference footer.
 - **A key that is not in the file** shows as `@key?`, marked, and `mdeck check` and `mdeck build` warn about it.
@@ -807,7 +836,7 @@ For `play="auto"` the video pauses and resets to the beginning when you navigate
 | `room` | `poll` | Name of the room that collects the answers; unique per poll in a deck. Letters, digits, `.`, `-`, `_` |
 | `options` | — | Answers separated by `\|`. Markdown and `$…$` maths, as on a slide (see below). Or a list inside the tag |
 | `question` | — | Question text, Markdown and maths like `options`; phones fall back to the slide heading |
-| `qr` | `true` | `false` leaves out the QR code (shown earlier with `<qrcode join />`) |
+| `qr` | `false` | Puts the join code beside the question; **J** in the presenter view shows it over any slide |
 | `answer` | — | The right answer (several separated by `\|`): a button with a tick outlines its label, bar and count in green, also in the audience window and on paired devices, and each phone says whether its vote was right. `--poll-correct` sets the colour |
 | `multiple` | — | Each phone may pick several options; the slide and the phones say so. A vote is then the list of options picked, and is right when it is exactly the `answer` options |
 | `buttons` | — | `letters` puts A, B, C … before the options, and the phones show only those; `numbers` does the same with 1, 2, 3 …. For options better read on the slide, such as pictures (`options="![](a.svg)\|![](b.svg)"`) |
@@ -819,7 +848,7 @@ Four more activities take the same `room`, `question` and `qr`:
 |---|---|---|---|
 | `<scale>` | `min` (1), `max` (5), `low`, `high` | One button per number, `low`/`high` as labels | Count per number and the average; latest answer per device |
 | `<numeric>` | `answer`, `tolerance` (0), `limit` (6), `placeholder`, `results` | A number field: `0.5`, `0,5`, `1/2`, `1e-3`; latest answer per device | The most frequent answers as bars, the rest as Other; with `answer`, the tick marks the right ones, counts them and tells each phone |
-| `<wordcloud>` | `placeholder`, `limit` (60), `height` (520) | Text field, up to 40 characters, repeatable | A packed word cloud (d3-cloud): size by frequency, some words upright, case-insensitive |
+| `<wordcloud>` | `placeholder`, `limit` (60), `height` (520) | Text field, up to 40 characters; a phone's latest word counts | A packed word cloud (d3-cloud): size by frequency, some words upright, case-insensitive |
 | `<question>` | `placeholder`, `limit` (8) | Text field, up to 200 characters, repeatable | The newest answers as cards |
 
 `<qrcode follow />` shows the link for following the slides on phones and laptops (`?view=follow`), with `mdeck run --network` or a hosted deck with a `server` setting; the phones' answer page links to it as well. `<qrcode join />` shows the deck's join code large with its link (`size`, default 420), for a slide that invites everyone once; activities after it can use `qr="false"`. QR codes (`<qrcode>`, activities) are SVG in the slide's `--ink` on a transparent background; `--qr-ink` and `--qr-bg` override the colours.
@@ -844,7 +873,7 @@ The slide shows live bars, the number of answers, a QR code and a short link. Ph
 
 Every activity has a lock button that closes it: answers after that do not count, and the phones say it is closed until it opens again. Polls and `<numeric>` also have the eye that hides or shows the results. Below the results, polls, scales and `<numeric>` count “12 of 31 answered” while phones are connected (people following the slides count as phones). The lock, the eye and the tick reach every screen of the talk, also after a reload: they are kept in the activity room's state on the server, which only the presenter may set, and phones read it there. Reset clears the answers and opens the activity again.
 
-While `mdeck run` runs, the answers are kept beside the deck in `<slides>.results.json`: per activity room, each answer with its time, the phones numbered per room (their ids are not kept), and, once an activity was closed, only the answers that counted. Reset takes a room out of the file; a new, empty server leaves the file alone. Builds, `mdeck send` and `mdeck pdf` show the kept answers where no room server answers (`--no-results` leaves them out), and `mdeck results [slides.md] [-o file.csv]` prints them as CSV: `room,phone,at,answer`, several picks joined by `|`.
+While `mdeck run` runs, the answers are kept beside the deck in `<slides>.results.json`: per activity room, each answer with its time, the phones numbered per room (their ids are not kept), and, once an activity was closed, only the answers that counted. Reset takes a room out of the file; a new, empty server leaves the file alone. Builds, `mdeck send` and `mdeck pdf` show the kept answers where no room server answers (`--no-results` leaves them out), and `mdeck results [slides.md] [-o file.csv]` prints them as CSV: `slide,room,kind,question,phone,at,answer`, several picks joined by `|` (`kind` is poll, scale, number, words or question; a room the deck no longer asks has no slide). `--summary` prints `slide,room,kind,question,answer,count,share`: one row per option, scale step, number or word, counted as the slide counts them (each phone's latest answer for polls, scales and numbers; every answer for words and questions), and `average` and `median` rows for scales and numbers. `--json` (or `-o file.json`) writes `{ version, title, exportedAt, questions: [{ room, slide, kind, question, closed, savedAt, summary, answers }] }`. The launch page offers the same three files.
 
 `--no-polls` leaves slides with an activity or a join code (`<qrcode join />`) out of `mdeck send`, `mdeck build --reader` and `mdeck pdf`; without it they show as a record of the talk. Saved drawings follow the remaining slides.
 
@@ -965,8 +994,20 @@ export default function Counter() {
 - Choose names that belong to your component, such as `countdown` or
   `quiz:round`: every component in the deck shares one set of names.
 
-`mdeck/component` is the part of mdeck that components may rely on; it is
-kept stable across versions. A component renders inside its slide. Anything
+A button the presenter uses during the talk, such as one that starts or stops
+something, can be offered in the presenter view's toolbar and on the phone
+clicker: give it `data-presenter-control`, an `aria-label` (or a value for
+`data-presenter-control`) that says what it does, `aria-pressed` while it is
+on, and `data-presenter-icon` with one of mdeck's icon names. A press there
+clicks the button on the slide.
+
+```jsx
+<button data-presenter-control data-presenter-icon="play" aria-label="Start the countdown"
+  aria-pressed={running} onClick={toggle}>…</button>
+```
+
+`mdeck/component` and these attributes are the part of mdeck that components
+may rely on; they are kept stable across versions. A component renders inside its slide. Anything
 else it reaches, such as the page outside its slide, the `<deck-stage>`, mdeck's
 events or the presenter view, is not part of it and may change without notice.
 

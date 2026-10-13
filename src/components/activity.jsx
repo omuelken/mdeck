@@ -12,9 +12,10 @@ import 'katex/dist/katex.min.css'
 // the number of answers, the live dot, Reset and the presenter's controls.
 
 export const shortLink = url => url.replace(/^https?:\/\//, '')
-// `qr="false"` (or "no", "off") leaves the code out: it was on an earlier
-// slide (<qrcode join />), and people's phones follow along.
-export const wantsQr = qr => !/^(false|no|off|0)$/i.test(String(qr ?? 'true'))
+// An activity shows no join code of its own: the presenter puts it over the
+// slide when it is wanted (J), and phones that joined follow along. `qr` (or
+// `qr="true"`) still puts the code beside the question.
+export const wantsQr = qr => qr != null && !/^(false|no|off|0)$/i.test(String(qr))
 // A switch such as `multiple`: on when given, unless it says false.
 export const isSet = value => value != null && !/^(false|no|off|0)$/i.test(String(value))
 
@@ -86,11 +87,13 @@ export function useControls(room, live, { results = true, solution = null } = {}
  * A record of the talk (`offline`) can still show the answer and results.
  */
 export function ActivityControls({ controls, messages, offline = false, results = false, solve = false }) {
-  const button = (name, on, label, onClick, icon) => <button type="button" class={`poll-control poll-${name}${on ? ' is-on' : ''}`} title={label} aria-label={label} aria-pressed={on} onClick={onClick}>{icon}</button>
+  // data-presenter-control: the phone clicker offers them too (runtime/slideControls.js).
+  const button = (name, on, label, onClick, icon, iconName) => <button type="button" class={`poll-control poll-${name}${on ? ' is-on' : ''}`} title={label} aria-label={label} aria-pressed={on} data-presenter-control="" data-presenter-icon={iconName} onClick={onClick}>{icon}</button>
+  const lock = controls.closed ? 'lock' : 'lock-open', eye = controls.results ? 'eye' : 'eye-off'
   return <>
-    {!offline && button('close', controls.closed, t(controls.closed ? 'poll.open' : 'poll.close'), () => controls.close(messages), <Icon name={controls.closed ? 'lock' : 'lock-open'} size={22} />)}
-    {results && button('results', !controls.results, t(controls.results ? 'poll.hideResults' : 'poll.showResults'), () => controls.change({ results: !controls.results }), <Icon name={controls.results ? 'eye' : 'eye-off'} size={24} />)}
-    {solve && button('solve', controls.revealed, t(controls.revealed ? 'poll.hideAnswer' : 'poll.showAnswer'), () => controls.change({ revealed: !controls.revealed }), <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>)}
+    {!offline && button('close', controls.closed, t(controls.closed ? 'poll.open' : 'poll.close'), () => controls.close(messages), <Icon name={lock} size={22} />, lock)}
+    {results && button('results', !controls.results, t(controls.results ? 'poll.hideResults' : 'poll.showResults'), () => controls.change({ results: !controls.results }), <Icon name={eye} size={24} />, eye)}
+    {solve && button('solve', controls.revealed, t(controls.revealed ? 'poll.hideAnswer' : 'poll.showAnswer'), () => controls.change({ revealed: !controls.revealed }), <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>, 'check')}
   </>
 }
 
@@ -110,7 +113,7 @@ export function ActivityFooter({ count, connected, canReset, reset, offline, pre
     {of != null ? t('poll.answeredOf', { n: count, of }) : count === 1 ? t('poll.answer') : t('poll.answers', { n: count })}
     {closed && <span class="poll-closed">{t('poll.closed')}</span>}
     <span class="poll-spacer" />
-    {canReset && <button class="poll-reset" disabled={count === 0 && !closed} onClick={() => reset().catch(() => {})}>{t('poll.reset')}</button>}
+    {canReset && <button class="poll-reset" disabled={count === 0 && !closed} data-presenter-control="" data-presenter-icon="reset" aria-label={t('poll.reset')} onClick={() => reset().catch(() => {})}>{t('poll.reset')}</button>}
     {children}
   </p>
 }

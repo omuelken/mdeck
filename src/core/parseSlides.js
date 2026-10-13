@@ -1,8 +1,8 @@
 import yaml from 'js-yaml'
-import { sourceLines, fenceState, scanDirectives, diagnostic } from './source.js'
+import { sourceLines, fenceState, scanDirectives, diagnostic, isIncludeLine } from './source.js'
 export { sourceLines, fenceState } from './source.js'
 
-export const DECK_KEYS = new Set('theme palette appearance params meta width height show lang labels callouts reader components server session bibliography csl nocite hotspots time'.split(' '))
+export const DECK_KEYS = new Set('theme palette appearance params meta width height show lang labels callouts reader components server session bibliography csl nocite hotspots time reactions'.split(' '))
 export const SLIDE_KEYS = new Set('layout id title section number part description label image alt overlay eyebrow attribution props hotspots time'.split(' '))
 
 // Names from before 2.0. They are still recognised, so that an old deck gets a
@@ -32,7 +32,7 @@ function segmentsOf(source) {
     const before = fence
     fence = fenceState(line.text, fence)
     if (before || fence) continue
-    if (/^:::\s*[\w-]+/.test(line.text)) depth++
+    if (/^:::\s*[\w-]+/.test(line.text) && !isIncludeLine(line.text)) depth++
     else if (/^:::\s*$/.test(line.text)) depth = Math.max(0, depth - 1)
     if (!depth && /^---[ \t]*$/.test(line.text)) {
       segments.push({ start, end: line.start, delimiterEnd: line.end })
@@ -103,6 +103,15 @@ function extractBody(source, body, diagnostics) {
   return { content, notes: notes.join('\n\n'), regions, blocks }
 }
 
+// What a slide that is nothing but `:::include <file> [slides=3-7]` includes:
+// { file, slides } (slides as written, or null), or null for any other slide.
+export function includeOf(content) {
+  const match = /^:::\s*include\s+(?:"([^"]+)"|(\S+))((?:\s+[\w-]+=\S+)*)\s*$/.exec(String(content ?? '').trim())
+  if (!match) return null
+  const options = Object.fromEntries([...match[3].matchAll(/([\w-]+)=(\S+)/g)].map(([, key, value]) => [key, value]))
+  return { file: match[1] ?? match[2], slides: options.slides ?? null, options }
+}
+
 export function parseSlides(source) {
   const segments = segmentsOf(source)
   const diagnostics = []
@@ -150,9 +159,10 @@ export function parseSlides(source) {
     // source editing and validation, separate from the resolved block notes.
     delete meta.notes
     if (notes) meta.notes = notes
+    const include = Object.keys(authoredMeta).length ? null : includeOf(content)
     slides.push({ id: meta.id ?? `slide-${slides.length + 1}`, meta, authoredMeta, content, regions, blocks,
       source: { start: segment.start, end: body?.end ?? segment.end },
-      metaSource, bodySource: body ? { start: body.start, end: body.end } : null })
+      metaSource, bodySource: body ? { start: body.start, end: body.end } : null, ...(include ? { include } : {}) })
   }
   let currentSection = null
   for (const slide of slides) {

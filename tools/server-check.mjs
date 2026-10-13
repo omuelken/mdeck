@@ -71,7 +71,7 @@ try {
   assert.equal(info.relay.state, 'up'); assert.equal(info.pairing.available, true)
   const offered = await (await fetch(`${home}__mdeck/home/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pair' }) })).json()
   assert.equal(new URL(offered.url).searchParams.has('serverkey'), false)
-  assert.ok(offered.url.startsWith(url + '?view=presenter&pair='), offered.url)
+  assert.ok(offered.url.startsWith(url + '?view=presenter&layout=slide&pair='), offered.url)
 
   // The launch page and the editor are not reachable through the server.
   for (const path of ['home.html', '__mdeck/home/info', '__mdeck/deck', 'private.toml', 'private.js?raw', 'confidential.pdf', '@id/__x00__private', `@fs${temp}/private.js?raw`]) assert.equal((await fetch(`${ROOM}${base}${path}`)).status, 403, path)
@@ -79,7 +79,8 @@ try {
   browser = await launchChrome({ dir: temp, timeout: 45000 })
   // the iPad
   const ipad = await browser.open(offered.url)
-  await until(() => ipad.evaluate("document.body?.innerText.includes('Speaker View') || document.body?.innerText.includes('/ 02')"), 'presenter view renders')
+  // The iPad's code opens the slide layout, whatever the screen.
+  await until(() => ipad.evaluate("!!document.querySelector('.presenter--slide .presenter-pill')"), 'presenter view renders')
   await until(() => ipad.evaluate("(() => { try { return !!document.querySelector('iframe').contentDocument.querySelector('deck-stage') } catch { return false } })()"), 'deck inside presenter')
   await until(() => ipad.evaluate("document.querySelector('iframe')?.contentDocument?.querySelector('.relay-custom-layout img')?.naturalWidth === 10"), 'custom layout and referenced image render')
   const token = await ipad.evaluate("localStorage.getItem('mdeck-pair:' + location.origin + location.pathname)")
@@ -114,6 +115,23 @@ try {
   await until(() => projector.evaluate("document.querySelector('deck-stage')?.state.step === -1"), 'projector follows iPad undo reveal')
   await projector.evaluate("document.querySelector('deck-stage').next()")
   await until(() => ipad.evaluate("document.querySelector('iframe')?.contentDocument?.querySelector('deck-stage')?.state.step === 0"), 'projector can repeat its previous reveal')
+  // A phone paired as a clicker: notes and big buttons, nothing to draw with,
+  // and its Next moves the projector like the iPad.
+  const clickerOffer = await (await fetch(`${home}__mdeck/home/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pair', layout: 'remote' }) })).json()
+  assert.ok(clickerOffer.url.includes('layout=remote'), clickerOffer.url)
+  const phone = await browser.open(clickerOffer.url)
+  await until(() => phone.evaluate("!!document.querySelector('.presenter--remote .presenter-remote-next')"), 'the clicker opens')
+  await until(() => phone.evaluate("(() => { try { return !!document.querySelector('iframe').contentDocument.querySelector('deck-stage') } catch { return false } })()"), 'the clicker shows the slide')
+  await delay(500)
+  assert.equal(await phone.evaluate("(() => { const d = document.querySelector('iframe').contentDocument; return !!d.querySelector('.ink-toolbar-host') || d.querySelector('deck-stage').hasAttribute('data-hotspot-badges') })()"), false, 'nothing to draw with on the clicker')
+  await until(() => phone.evaluate("document.querySelector('iframe')?.contentDocument?.querySelector('deck-stage')?.index === 1"), 'the clicker is at the projector\'s slide')
+  await phone.evaluate("document.querySelector('.presenter-remote-next').click(); document.querySelector('.presenter-remote-next').click()")
+  await until(() => projector.evaluate("document.querySelector('deck-stage')?.index === 2"), 'the projector follows the clicker')
+  await phone.evaluate("document.querySelector('.presenter-remote-prev').click()")
+  await until(() => projector.evaluate("document.querySelector('deck-stage')?.index === 1"), 'the projector goes back with the clicker')
+  await phone.close()
+  // Both "devices" share this browser: the phone's pairing replaced the iPad's token.
+  await ipad.evaluate(`localStorage.setItem('mdeck-pair:' + location.origin + location.pathname, '${token}')`)
   const position = await stageState(home)
   assert.equal(position.index, 1)
   await delay(500)
@@ -122,7 +140,7 @@ try {
   await until(() => projector.evaluate("document.querySelector('deck-stage')?.index === 2"), 'iPad can move back to its previous position')
   // the launch page under the base path
   const launch = await browser.open(`${home}home.html`)
-  await until(() => launch.evaluate("document.body?.innerText.toLowerCase().includes('present from an ipad')"), 'launch page renders', 8000)
+  await until(() => launch.evaluate("!!document.querySelector('.home-header h1')?.textContent"), 'launch page renders', 8000)
   await until(() => launch.evaluate("document.body?.innerText.toLowerCase().includes('connected to your server')"), 'connection status shown')
   // Loading the iPad's pages asked for nothing that is kept private (the three above were asked for on purpose).
   // Two decks on the same relay keep independent tokens in one browser.
@@ -152,6 +170,18 @@ try {
   assert.equal(await control('654321', otherToken), 200, 'other pairing remains valid')
   const refused = dev.out().split('\n').filter(line => /not shared/.test(line) && !/home\.html|__mdeck\/home\/info|__mdeck\/deck|private|confidential/.test(line))
   assert.deepEqual(refused, [])
-  console.log('Server check passed: bidirectional slide/reveal sync and presenter previews without echoes, pairing through the server, refused addresses, scoped tokens, revocation, two concurrent decks, custom layouts and assets, live reload.')
+  // MDECK_SERVER with its key: the server is used without --server, and a
+  // server that does not answer leaves this computer presenting alone.
+  const envDeck = resolve(temp, 'env.md')
+  writeFileSync(envDeck, source(2).replace(`server: ${ROOM}\n`, '').replace('123456', '777777'))
+  const byEnv = run('env', ['bin/mdeck.js', 'run', envDeck, '--no-open', '--port', String(await freePort())], { MDECK_SERVER: ROOM, MDECK_SERVER_KEY: KEY })
+  await until(() => /Connected to/.test(byEnv.out()), 'MDECK_SERVER is used without --server')
+  const offline = run('offline', ['bin/mdeck.js', 'run', envDeck, '--no-open', '--port', String(await freePort())], { MDECK_SERVER: `http://127.0.0.1:${await freePort()}`, MDECK_SERVER_KEY: KEY })
+  await until(() => /does not answer/.test(offline.out()) && /Launch page: http/.test(offline.out()), 'an unreachable MDECK_SERVER falls back to this computer')
+  assert.ok(!/\/t\//.test(offline.out().match(/Launch page: (http\S+)/)[1]), 'presenting locally, not through the server')
+  const optOut = run('opt-out', ['bin/mdeck.js', 'run', envDeck, '--no-server', '--no-open', '--port', String(await freePort())], { MDECK_SERVER: ROOM, MDECK_SERVER_KEY: KEY })
+  await until(() => /Launch page: http/.test(optOut.out()), '--no-server starts')
+  assert.ok(!/Connected to|Using your server/.test(optOut.out()), '--no-server keeps the server out')
+  console.log('Server check passed: bidirectional slide/reveal sync and presenter previews without echoes, pairing through the server, refused addresses, scoped tokens, revocation, two concurrent decks, MDECK_SERVER without --server (and its fallback), custom layouts and assets, live reload.')
 } catch (error) { console.error('Server check failed:', error.stack, error.cause ?? '', devLog()); process.exitCode = 1 }
 finally { await browser?.close?.(); for (const k of kids) k.kill(); rmSync(temp, { recursive: true, force: true }) }

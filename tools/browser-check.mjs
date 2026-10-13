@@ -20,7 +20,7 @@ import { resultsPlugin } from '../src/build/resultsPlugin.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-browser-check-'))
-let browser, dev, pollDev, inkDev, stageDev, videoDev, langDev, tablet2
+let browser, dev, pollDev, inkDev, stageDev, videoDev, langDev, clickDev, tablet2
 try {
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', 'examples/custom-layouts/slides.md', '-o', resolve(temp, 'deck.html')], { cwd: root, stdio: 'pipe' })
   browser = await launchChrome({ dir: temp, timeout: 45000 })
@@ -324,6 +324,56 @@ try {
   assert.equal(await sharedAudience.evaluate("document.querySelector('.shared-counter').textContent"), '2', 'a preview does not change it')
   await Promise.all([sharedPresenter.close(), sharedAudience.close(), lateDeck.close()])
 
+  // The phone clicker (?layout=remote): nothing to draw with, and the slide's
+  // own controls as big buttons: a poll's right answer, a video, hotspots.
+  // What it presses reaches the audience window.
+  const clickDir = resolve(temp, 'clicker')
+  mkdirSync(clickDir, { recursive: true })
+  copyFileSync(resolve(root, 'tests/fixtures/video/clip.webm'), resolve(clickDir, 'clip.webm'))
+  writeFileSync(resolve(clickDir, 'slides.md'), '---\ntheme: neue\nhotspots: auto\n---\n\n---\n# Vote\n\n<poll room="q" options="Yes|No" answer="Yes" />\n\n---\n# Parts\n\n:::columns\n\n```js\nconst a = 1\n```\n\n+++\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n:::\n\n---\n# Clip\n\n<videoplayer src="./clip.webm" />\n')
+  // As mdeck run serves it: a poll's controls need the live server.
+  const clickConfig = baseConfig(resolve(clickDir, 'slides.md'))
+  clickDev = await createServer({ ...clickConfig, publicDir: clickDir, plugins: [...clickConfig.plugins, livePlugin()], server: { ...clickConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  await clickDev.listen()
+  const clickBase = clickDev.resolvedUrls.local[0]
+  const clicker = await open(new URL('?view=presenter&layout=remote&session=clicker-check', clickBase).href)
+  const clickFrame = "document.querySelector('iframe')?.contentWindow?.document"
+  await until(clicker, `!!document.querySelector('.presenter--remote') && ${clickFrame}?.querySelector('deck-stage')?.length === 3`)
+  const clickAudience = await open(new URL('?view=audience&session=clicker-check', clickBase).href)
+  await until(clickAudience, "document.querySelector('deck-stage')?.length === 3")
+  await delay(400)
+  assert.equal(await clicker.evaluate(`!!${clickFrame}.querySelector('.ink-toolbar-host') || ${clickFrame}.querySelector('deck-stage').hasAttribute('data-hotspot-badges')`), false, 'nothing to draw with on the clicker')
+  // The join code over the slide, from the clicker, on the projector too.
+  await until(clicker, "!!document.querySelector('.presenter-join')")
+  await clicker.evaluate("document.querySelector('.presenter-join').click()")
+  // Without --network the overlay says phones cannot reach this computer instead of a code.
+  await until(clickAudience, "!!document.querySelector('.join-overlay .poll-join-slide')")
+  await clicker.evaluate("document.querySelector('.presenter-join').click()")
+  await until(clickAudience, "!document.querySelector('.join-overlay')")
+  const clickButton = label => `[...document.querySelectorAll('.presenter-slide-control')].find(b => b.getAttribute('aria-label')?.includes(${JSON.stringify(label)}))`
+  await until(clicker, `!!${clickButton('Show the right answer')}`)
+  await clicker.evaluate(`${clickButton('Show the right answer')}.click()`)
+  await until(clickAudience, "!!document.querySelector('[data-deck-active] .poll-row.is-correct')")
+  await until(clicker, `${clickButton('Hide the right answer')}?.getAttribute('aria-pressed') === 'true'`)
+  // Hotspots are found in an animation frame: the phone's page is in front.
+  await clicker.send('Page.bringToFront')
+  await clicker.evaluate("document.querySelector('.presenter-remote-next').click()")
+  await until(clicker, "document.querySelectorAll('.presenter-slide-hotspot').length >= 2")
+  await clicker.evaluate("document.querySelector('.presenter-slide-hotspot').click()")
+  await until(clickAudience, "document.querySelector('deck-stage').zoom?.scale > 1")
+  await until(clicker, "document.querySelector('.presenter-slide-hotspot')?.getAttribute('aria-pressed') === 'true' && !!document.querySelector('.presenter-slide-whole')")
+  await clicker.evaluate("document.querySelector('.presenter-slide-whole').click()")
+  await until(clickAudience, "document.querySelector('deck-stage').zoom?.scale === 1")
+  await clicker.evaluate("document.querySelector('.presenter-remote-next').click()")
+  await until(clicker, `!!${clickButton('Play the video')}`)
+  await clicker.evaluate(`${clickButton('Play the video')}.click()`)
+  await until(clickAudience, "document.querySelector('[data-deck-active] video')?.paused === false")
+  await until(clicker, `!!${clickButton('Pause the video')}`)
+  await clicker.evaluate(`${clickButton('Pause the video')}.click()`)
+  await until(clickAudience, "document.querySelector('[data-deck-active] video')?.paused === true")
+  await Promise.all([clicker.close(), clickAudience.close()])
+  await clickDev.close()
+
   const presenter = await open('deck.html?view=presenter')
   const stage = "document.querySelector('iframe')?.contentWindow?.document.querySelector('deck-stage')"
   await until(presenter, `${stage}?.length === 2`)
@@ -388,6 +438,28 @@ try {
   await delay(300)
   assert.equal(await audience.evaluate(`${audienceStage}.state.index`), 1, 'Escape keeps the slide')
   assert.equal(await presenter.evaluate("document.querySelector('.presenter-jump input').value"), '02', 'Escape shows the current number again')
+  await presenter.evaluate(`${stage}.reset()`)
+  await until(audience, `${audienceStage}.state.index === 0`)
+
+  // B: the audience window goes black and the presenter's slide is only
+  // veiled; the next press shows the slide again without moving on.
+  const press = key => presenter.evaluate(`window.dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(key)}, bubbles: true }))`)
+  await press('b')
+  await until(audience, `${audienceStage}.blank === true`)
+  await until(presenter, "!!document.querySelector('.presenter-blank-note')")
+  assert.equal(await other.evaluate(`${audienceStage}.blank`), false, 'another presenter session stays as it is')
+  await press('ArrowRight')
+  await until(audience, `${audienceStage}.blank === false`)
+  assert.equal(await audience.evaluate(`${audienceStage}.state.index`), 0, 'showing the slide again does not move on')
+  // O: every slide in a grid in the presenter's frame only; Enter goes to
+  // the slide under the cursor, and the audience follows there.
+  await press('o')
+  await until(presenter, `${stage}.overview === true && ${stage}.shadowRoot.querySelectorAll('.ov-cell').length === 2`)
+  assert.equal(await audience.evaluate(`${audienceStage}.overview`), false, 'the audience never sees the overview')
+  await press('ArrowRight')
+  await press('Enter')
+  await until(audience, `${audienceStage}.state.index === 1`)
+  assert.equal(await presenter.evaluate(`${stage}.overview`), false)
   await presenter.evaluate(`${stage}.reset()`)
   await until(audience, `${audienceStage}.state.index === 0`)
 
@@ -575,7 +647,7 @@ try {
   // Relay mode: the projector announces the poll on screen, the phone opens the
   // server's own answer page at /<code>, and its vote reaches the slide.
   const pollDeck = resolve(temp, 'poll.md')
-  writeFileSync(pollDeck, '---\ntheme: neue\nlang: de\nmeta:\n  title: Poll check\nsession:\n  code: 424242\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" />\n\n---\n# Pace?\n\n<scale room="pace" min="1" max="5" qr="false" />\n\n---\n# Anything else?\n\n<question room="ask" qr="false" />\n\n---\n# One word?\n\n<wordcloud room="mood" qr="false" />\n\n---\n# Join\n\n<qrcode join />\n\n---\n# Primes\n\n<poll room="primes" question="Which are prime?" options="2|4|5" answer="2|5" multiple buttons="letters" qr="false" />\n\n---\n# Half\n\n<numeric room="half" question="Half of $x$, for $x > 0$ and $x = 1$?" answer="1/2" qr="false" />\n\n---\n# Derivative\n\n<poll room="deriv" question="$\\frac{d}{dx} x^2$?" qr="false">\n\n- [x] $2x$\n- [ ] `a|b`\n\n</poll>\n\nAfter the poll.\n')
+  writeFileSync(pollDeck, '---\ntheme: neue\nlang: de\nmeta:\n  title: Poll check\nsession:\n  code: 424242\n---\n\n---\n# Lunch?\n\n<poll room="lunch" options="Mensa|Thai" qr />\n\n---\n# Pace?\n\n<scale room="pace" min="1" max="5" qr="false" />\n\n---\n# Anything else?\n\n<question room="ask" qr="false" />\n\n---\n# One word?\n\n<wordcloud room="mood" qr="false" />\n\n---\n# Join\n\n<qrcode join />\n\n---\n# Primes\n\n<poll room="primes" question="Which are prime?" options="2|4|5" answer="2|5" multiple buttons="letters" qr="false" />\n\n---\n# Half\n\n<numeric room="half" question="Half of $x$, for $x > 0$ and $x = 1$?" answer="1/2" qr="false" />\n\n---\n# Derivative\n\n<poll room="deriv" question="$\\frac{d}{dx} x^2$?" qr="false">\n\n- [x] $2x$\n- [ ] `a|b`\n\n</poll>\n\nAfter the poll.\n')
   const pollConfig = baseConfig(pollDeck)
   pollDev = await createServer({ ...pollConfig, plugins: [...pollConfig.plugins, livePlugin(), resultsPlugin(pollDeck)], server: { ...pollConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await pollDev.listen()
@@ -738,6 +810,18 @@ try {
   await until(spotAudience, "!!document.querySelector('deck-stage')?.shadowRoot")
   await delay(300)
   assert.equal(await spotAudience.evaluate("getComputedStyle(document.querySelector('deck-stage').shadowRoot.querySelector('.hotspots')).display"), 'none', 'the audience sees no keys')
+  // ? lists the keys that work now, here with the number keys; Escape closes
+  // it and does nothing else; ? in the slide's frame opens it too.
+  const helpText = "(document.querySelector('.key-help')?.textContent ?? '')"
+  const typeKey = (page, key, where = 'document.body') => page.evaluate(`${where}.dispatchEvent(new KeyboardEvent('keydown', { key: '${key}', bubbles: true }))`)
+  await typeKey(spotPresenter, '?')
+  await until(spotPresenter, `${helpText}.includes('Zoom to a part of the slide') && ${helpText}.includes('Start or pause the timer')`)
+  await typeKey(spotPresenter, 'Escape')
+  await until(spotPresenter, "!document.querySelector('.key-help')")
+  await typeKey(spotPresenter, '?', "document.querySelector('iframe').contentWindow.document.body")
+  await until(spotPresenter, "!!document.querySelector('.key-help')")
+  await typeKey(spotPresenter, '?')
+  await until(spotPresenter, "!document.querySelector('.key-help')")
   const codeSpot = await spotPresenter.evaluate(`${spotFrame}.hotspots[1].zoom`)
   await spotPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }))")
   await until(spotPresenter, `${spotFrame}.hotspot === 2 && ${spotFrame}.zoom.scale > 1.5 && !${spotFrame}.hasAttribute('data-zoom-flying')`)
@@ -758,7 +842,18 @@ try {
   // H switches them on for this talk; the slide's own false still wins.
   await spotPresenter.evaluate("window.dispatchEvent(new KeyboardEvent('keydown', { key: 'h' }))")
   await until(spotPresenter, "document.querySelector('.presenter-hotspots').getAttribute('aria-pressed') === 'false'")
+  // Without hotspots on the slide, the help leaves out 1–9.
+  await typeKey(spotPresenter, '?')
+  await until(spotPresenter, `${helpText}.includes('Turn hotspots on') && !${helpText}.includes('1–9')`)
   await spotAudience.close()
+  // A deck window has its own help, with its own keys.
+  const spotWindow = await open('spots.html')
+  await until(spotWindow, "document.querySelector('deck-stage')?.hotspotMode === 'auto'")
+  await typeKey(spotWindow, '?')
+  await until(spotWindow, `${helpText}.includes('Last slide') && ${helpText}.includes('1–9') && !${helpText}.includes('timer')`)
+  await typeKey(spotWindow, 'Escape')
+  await until(spotWindow, "!document.querySelector('.key-help')")
+  await spotWindow.close()
   await spotPresenter.close()
   // A drawing builds up in the order its parts are numbered, parts with the
   // same number together; a marked part is a hotspot once it is shown.
@@ -787,7 +882,7 @@ try {
   assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
   await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
+  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, the phone clicker with the slide\'s controls and the join code over the slide, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()
@@ -796,6 +891,7 @@ try {
   await inkDev?.close()
   await stageDev?.close()
   await videoDev?.close()
+  await clickDev?.close()
   await langDev?.close()
   rmSync(temp, { recursive: true, force: true })
 }

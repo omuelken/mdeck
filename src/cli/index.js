@@ -13,6 +13,7 @@ import { BACKUP_DIR } from '../build/editorPlugin.js'
 import { createEditorServer, createDesignServer } from '../build/editorServer.js'
 import { homePlugin } from '../build/homePlugin.js'
 import { checkDeck, bibliographyDiagnostics } from '../build/check.js'
+import { expandedSource } from '../build/include.js'
 import { livePlugin, startLiveServer } from '../live/server.js'
 import { inkPlugin } from '../build/inkPlugin.js'
 import { resultsPlugin } from '../build/resultsPlugin.js'
@@ -30,7 +31,8 @@ import { parseSlides } from '../core/parseSlides.js'
 import { stripNotes as stripNotesFrom, shareSlides } from '../core/editDeck.js'
 import { parseArgs, parseSlideNumbers, validateServerOrigin } from './args.js'
 import { assertDrawings } from '../build/drawings.js'
-import { resultsFileFor, normalizeResults, resultsCsv } from '../core/results.js'
+import { resultsFileFor, normalizeResults } from '../core/results.js'
+import { resultsReport, reportAnswersCsv, reportSummaryCsv, reportJson } from '../core/resultsReport.js'
 import { createRelayAccess } from '../build/relayAccess.js'
 import { sessionCode } from '../live/code.js'
 import { migrateDeck } from './migrate.js'
@@ -59,6 +61,14 @@ function hasFlag(name, short = null) { return !!(parsed.options[name] ?? parsed.
 const positionals = () => parsed.positionals
 const outputOption = () => parsed.options['--output'] ?? null
 const serverOption = () => parsed.options['--server']
+// Whether a poll server answers at `address`, within a few seconds.
+async function serverAnswers(address) {
+  try {
+    validateServerOrigin(address)
+    const response = await fetch(new URL('info', address.replace(/\/*$/, '/')), { signal: AbortSignal.timeout(3000) })
+    return response.ok
+  } catch { return false }
+}
 const portOption = () => parsed.options['--port'] ?? null
 // --slide 3,5-7 for build, send and pdf: only these slides, numbered as written.
 function slideOption(input) {
@@ -196,7 +206,8 @@ async function copyLocalAssets(slidesPath, outDir, { stripNotes = false, stripAc
   const absSlides = resolve(slidesPath)
   const deckDir = dirname(absSlides)
   const absOutDir = resolve(outDir)
-  const raw = readFileSync(absSlides, 'utf-8')
+  // The deck as shown: pictures of included slides are copied too.
+  const raw = expandedSource(absSlides)
   let markdown = stripNotes ? stripNotesFrom(raw) : raw
   if (stripActivities || slides) markdown = shareSlides(markdown, { activities: stripActivities, slides }).source
 
@@ -323,7 +334,10 @@ const HELP = `
       --network              reach the slides from phones and tablets on the same network
       --server [address]     present from an iPad on any network, through your server
                              (the address, or the deck's server setting, or MDECK_SERVER;
-                              the key in MDECK_SERVER_KEY)
+                              the key in MDECK_SERVER_KEY). With both MDECK_SERVER and
+                              MDECK_SERVER_KEY set, the server is used without --server
+                              when it answers
+      --no-server            present from this computer only, even with MDECK_SERVER set
       --no-open   --port <number>
     ${c.green}mdeck rehearse${c.reset} [slides.md]                Like run, but opens the presenter view rehearsing: it times
                                               each slide and saves the times into the deck (time: 1m30s)
@@ -361,7 +375,9 @@ const HELP = `
       --slide <numbers>      only these slides: 3, 3,5 or 2-4
       --sheet                one picture of them all in a grid, each under its number and heading
       --dark | --light       in this appearance instead of the deck's own   -o <folder>
-    ${c.green}mdeck results${c.reset} [slides.md] [-o answers.csv]  The answers kept in the talk, as CSV (room, phone, time, answer)
+    ${c.green}mdeck results${c.reset} [slides.md] [-o answers.csv]  The answers kept in the talk, as CSV: slide, question, phone, time, answer
+      --summary              one row per option, number or word, with how many chose it
+      --json                 everything as JSON: each question, its summary and its answers (also -o answers.json)
     ${c.green}mdeck list${c.reset} [layouts|themes|palettes] [slides.md] [--json]
                                               List built-in and deck-local layouts, themes and palettes
     ${c.green}mdeck starter${c.reset} <layout> [slides.md]        Print starter Markdown for a layout
@@ -375,6 +391,7 @@ const HELP = `
                                               through it (MDECK_SERVER_KEY); put a web server in front
 
   Commands that take ${c.bold}slides.md${c.reset} use the one in the current folder when you leave it out.
+  ${c.green}mdeck --version${c.reset} shows which mdeck this is.
 
   ${c.dim}Install the${c.reset} ${c.bold}mdeck${c.reset} ${c.dim}command globally:${c.reset}
     npm link
@@ -385,6 +402,11 @@ const HELP = `
 
 // ── Argument parsing ──────────────────────────────────────────────────────────
 const [command, ...argv] = process.argv.slice(2)
+
+if (command === '--version' || command === '-v' || command === 'version') {
+  console.log(JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version)
+  process.exit(0)
+}
 
 if (!command || command === '--help' || command === '-h') {
   console.log(HELP)
@@ -491,11 +513,18 @@ if (command === 'new') {
   const input = requireInput('results')
   const file = resultsFileFor(resolve(input))
   if (!existsSync(file)) { err(`No answers kept for ${basename(input)} yet: ${basename(file)} appears beside it once people answer during mdeck run.`); process.exit(1) }
-  let csv
-  try { csv = resultsCsv(normalizeResults(JSON.parse(readFileSync(file, 'utf8')))) } catch (error) { err(`${basename(file)}: ${error.message}`); process.exit(1) }
+  let results
+  try { results = normalizeResults(JSON.parse(readFileSync(file, 'utf8'))) } catch (error) { err(`${basename(file)}: ${error.message}`); process.exit(1) }
+  // Read against the deck as shown, included slides too, for the slide and the question.
+  let deck
+  try { deck = parseSlides(expandedSource(resolve(input))) } catch { deck = parseSlides(readFileSync(resolve(input), 'utf8')) }
+  const report = resultsReport(results, deck)
   const out = outputOption()
-  if (out) { writeFileSync(out, csv); ok(`Saved ${relative(process.cwd(), resolve(out))}`) }
-  else process.stdout.write(csv)
+  const json = hasFlag('--json') || /\.json$/i.test(out ?? '')
+  const text = json ? reportJson(report, { title: deck.deckConfig?.meta?.title ?? basename(input).replace(/\.md$/i, '') })
+    : hasFlag('--summary') ? reportSummaryCsv(report) : reportAnswersCsv(report)
+  if (out) { writeFileSync(out, text); ok(`Saved ${relative(process.cwd(), resolve(out))}`) }
+  else process.stdout.write(text)
 } else if (command === 'check') {
   const input = requireInput('check')
   const registry = registryFor(input)
@@ -565,8 +594,18 @@ if (command === 'new') {
   // (src/build/tunnelClient.js). The dev server then serves under /t/<id>/, the
   // address the iPad uses on the server, and its own addresses follow it. The
   // address is the flag's value, else the deck's server setting, else MDECK_SERVER.
+  // With MDECK_SERVER and MDECK_SERVER_KEY set, the server is used without
+  // --server when it answers; otherwise this computer presents alone.
+  // --no-server keeps it out.
   let relay = null
-  const serverFlag = serverOption()
+  let serverFlag = serverOption()
+  if (serverFlag === undefined && !hasFlag('--no-server') && process.env.MDECK_SERVER && process.env.MDECK_SERVER_KEY) {
+    const address = process.env.MDECK_SERVER
+    if (await serverAnswers(address)) {
+      serverFlag = address
+      tip(`Using your server from MDECK_SERVER (${address}); --no-server presents without it.`)
+    } else tip(`Your server (MDECK_SERVER, ${address}) does not answer: presenting from this computer only.`)
+  }
   if (serverFlag !== undefined) {
     const inDeck = parseSlides(readFileSync(abs, 'utf8')).deckConfig?.server
     const address = serverFlag ?? (typeof inDeck === 'string' ? inDeck : null) ?? process.env.MDECK_SERVER ?? null
@@ -644,7 +683,7 @@ if (command === 'new') {
   // Phones in the room follow the talk (the reader view would show slides ahead).
   if (exposed) for (const url of server.resolvedUrls.network) tip(`Follow:      ${new URL('?view=follow', url).href}`)
   console.log()
-  if (relay) tip(`iPad:        choose "Show pairing code" on the launch page; it opens ${relay.url}`)
+  if (relay) tip(`iPad:        in the presenter view, click the connection icons and choose "iPad" or "Phone clicker"; it opens ${relay.url}`)
   ok(`Watching ${c.cyan}${abs}${c.reset}`)
   tip('Edit and save to reload.\n')
 

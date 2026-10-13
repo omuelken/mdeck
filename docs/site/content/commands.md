@@ -27,6 +27,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck list`, `mdeck starter` | Look up layouts, themes and palettes |
 | `mdeck docs` | Open this documentation |
 | `mdeck --help` | Show a short list of commands |
+| `mdeck --version` | Show which version of mdeck you have |
 
 ## The launch page
 
@@ -46,7 +47,8 @@ Two options make the slides reachable from other devices:
 | Option | What it does |
 |---|---|
 | `--network` | Phones and tablets on the same network can open the slides. |
-| `--server` | An iPad on any network can present through your own server. It takes the server's address, or finds it in the deck's `server` setting or in the `MDECK_SERVER` variable, in that order. The key goes in `MDECK_SERVER_KEY`. |
+| `--server` | An iPad on any network can present through your own server. It takes the server's address, or finds it in the deck's `server` setting or in the `MDECK_SERVER` variable, in that order. The key goes in `MDECK_SERVER_KEY`. With both `MDECK_SERVER` and `MDECK_SERVER_KEY` set in your shell, `mdeck run` uses the server without `--server` whenever it answers, and presents from this computer when it does not. |
+| `--no-server` | Present from this computer only, even with `MDECK_SERVER` set. |
 
 See [Draw on your slides](drawing.html#present-from-an-ipad) for both. The launch page itself and its buttons only work on your own computer. `--port 4000` chooses the port and `--no-open` starts without opening a browser.
 
@@ -100,7 +102,7 @@ The design page shows themes and palettes on a sample deck with every kind of sl
 | `mdeck pdf my-talk.md -o talk.pdf` | Render the slides to a PDF file (`--no-polls` leaves out the slides with polls) |
 | `--no-drawings` | Leave out the drawings from `my-talk.drawings.json`, for `build`, `send` and `pdf` |
 | `--no-results` | Leave out the answers kept in `my-talk.results.json`, for `build`, `send` and `pdf`; the polls then show their questions only |
-| `mdeck results my-talk.md` | The answers kept during the talk, as CSV; `-o answers.csv` saves them to a file |
+| `mdeck results my-talk.md` | The answers kept during the talk, as CSV with the slide and the question; `--summary` one row per option or word with how many chose it, `--json` everything; `-o answers.csv` (or `.json`) saves them to a file |
 
 See [Send, host or print your slides](sharing.html) for help choosing between them. Unknown options, missing option values and extra filenames stop the command before it changes any output. `--output=path` and `-o path` are both accepted. `mdeck preview --no-open --port 4200` previews without opening a browser and chooses a port.
 

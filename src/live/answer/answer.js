@@ -12,12 +12,14 @@
       pickSeveral: 'Tap all that apply.', thanksSeveral: 'Thanks! You chose {choice}. Tap to change.', closed: 'Closed: no more answers.',
       right: 'Right!', wrong: 'Not quite. The right answer: {answer}', solution: 'The right answer: {answer}',
       number: 'A number', invalid: 'Enter a number, such as 0.5 or 1/2.', numberSent: 'Sent: {value}. Send another to change.',
+      react: 'React',
     },
     de: {
       waiting: 'Die nächste Frage erscheint hier.', pick: 'Eine Antwort antippen.', thanks: 'Danke! Gewählt: „{choice}“. Zum Ändern eine andere antippen.', send: 'Senden', sent: 'Gesendet. Danke!', offline: 'Verbinde…',
       pickSeveral: 'Alle zutreffenden antippen.', thanksSeveral: 'Danke! Gewählt: {choice}. Zum Ändern antippen.', closed: 'Geschlossen: keine weiteren Antworten.',
       right: 'Richtig!', wrong: 'Leider nicht. Richtig ist: {answer}', solution: 'Richtig ist: {answer}',
       number: 'Eine Zahl', invalid: 'Eine Zahl eingeben, z. B. 0,5 oder 1/2.', numberSent: 'Gesendet: {value}. Zum Ändern eine andere senden.',
+      react: 'Reagieren',
     },
   }
   let words = FALLBACK[navigator.language?.slice(0, 2) === 'de' ? 'de' : 'en']
@@ -191,17 +193,23 @@
         solution ? verdict(sent != null, right, drawn(solution.html, solution.text)) : null,
       ]
     },
-    // { question, placeholder, maxLength }: short text, as often as people like.
+    // { question, placeholder, maxLength, once }: short text, as often as
+    // people like; with `once` (a word cloud) the latest one counts, and the
+    // phone says which it sent.
     text(activity, room) {
-      const input = el('textarea', { rows: 3, maxlength: activity.maxLength ?? 200, placeholder: activity.placeholder ?? '', disabled: !!controls.closed })
+      const sent = activity.once ? remembered(room) : null
+      const input = el('textarea', { rows: activity.once ? 1 : 3, maxlength: activity.maxLength ?? 200, placeholder: activity.placeholder ?? '', disabled: !!controls.closed })
       const form = el('form', { class: 'answer-text', onsubmit: async event => {
         event.preventDefault()
         const value = input.value.trim()
         if (!value) return
-        try { await answer(room, value); status = words.sent } catch (error) { status = error.message }
+        try {
+          await answer(room, value)
+          if (activity.once) { remember(room, value); status = '' } else status = words.sent
+        } catch (error) { status = error.message }
         render()
       } }, input, el('button', { type: 'submit', disabled: !!controls.closed }, words.send))
-      return [form, statusLine('')]
+      return [form, statusLine(sent != null ? fill(words.numberSent, { value: sent }) : '')]
     },
     // { question, min, max, minLabel, maxLabel }: a number on a scale.
     scale(activity, room) {
@@ -222,6 +230,25 @@
     },
   }
 
+  // Reactions (src/core/reactions.js): a row of buttons whenever the deck
+  // offers them; a tap floats up on the presenter's screen. One tap a
+  // second at most, so a thumb on a button is not a flood.
+  const REACT_MS = 1000
+  let reactedAt = 0
+  async function react(value, button) {
+    const now = Date.now()
+    if (now - reactedAt < REACT_MS) return
+    reactedAt = now
+    button.classList.remove('is-sent')
+    void button.offsetWidth
+    button.classList.add('is-sent')
+    try {
+      await fetch(new URL(`rooms/${encodeURIComponent(`${code}.reactions`)}`, base), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: me, data: { value } }) })
+    } catch {}
+  }
+  const reactions = list => el('nav', { class: 'answer-reactions', 'aria-label': words.react ?? 'React' },
+    list.map(value => el('button', { type: 'button', 'aria-label': value, onclick: event => react(value, event.currentTarget) }, value)))
+
   function render() {
     const activity = current?.activity
     const form = activity && FORMS[activity.type]
@@ -230,6 +257,7 @@
       form
         ? el('main', { class: 'answer' }, activity.question && el('h1', {}, drawn(activity.questionHtml, activity.question)), form(activity, current.room))
         : el('main', { class: 'answer answer--waiting' }, el('p', {}, connected ? words.waiting : words.offline)),
+      connected && Array.isArray(current?.reactions) && current.reactions.length ? reactions(current.reactions.filter(value => typeof value === 'string').slice(0, 8)) : null,
       current?.title ? el('footer', {}, current.title) : null,
       // The presenter's screen sends the link when other devices can follow the slides.
       /^https?:\/\//.test(current?.follow ?? '') ? el('a', { class: 'answer-follow', href: current.follow }, words.follow ?? 'Follow the slides') : null,

@@ -9,11 +9,17 @@ import { timingSafeEqual } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { CODE_RE } from './code.js'
 
+// This mdeck's version, in /info: a presenter on a newer mdeck can tell that
+// this server lacks what its deck uses (src/build/homePlugin.js).
+const VERSION = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version
+
 // The phones' answer page, served by the server itself at /<code>.
 const ANSWER_FILES = Object.fromEntries(['answer.html', 'answer.js', 'answer.css'].map(name => [name, readFileSync(new URL(`./answer/${name}`, import.meta.url))]))
 const ANSWER_TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8' }
 
 export const ROOM_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/
+// A session's reactions room: `<code>.reactions`.
+const isReactionRoom = id => id.endsWith('.reactions')
 // What a connected window may say it is, for the presenter's overview of
 // who is connected (src/components/ConnectedViews.jsx); phones only count.
 export const VIEWS = ['presenter', 'audience', 'deck', 'phone']
@@ -37,18 +43,30 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
   const broadcast = (room, event) => { for (const listener of room.listeners) listener(event) }
   // A session is a room and the rooms named after it (`<code>.stage`, …).
   const sessionRooms = id => { const session = id.split('.')[0]; return [...rooms].filter(([name]) => name === session || name.startsWith(`${session}.`)).map(([, room]) => room) }
+  // Phones connected elsewhere, by session: mdeck run keeps the stage room
+  // here but the phones join a standalone server (src/live/server.js).
+  const awayPhones = new Map()
   const presence = id => {
     const present = sessionRooms(id).flatMap(room => [...room.present.values()])
     const views = present.filter(entry => entry.view !== 'phone').sort((a, b) => VIEWS.indexOf(a.view) - VIEWS.indexOf(b.view))
-    return { views, phones: present.length - views.length }
+    return { views, phones: present.length - views.length + (awayPhones.get(id.split('.')[0]) ?? 0) }
   }
   const announcePresence = id => { const event = { type: 'presence', presence: presence(id) }; for (const room of sessionRooms(id)) broadcast(room, event) }
   return {
+    /** Phones of session `id` that joined another server; announced when the number changes. */
+    setAwayPhones(id, n) {
+      const session = id.split('.')[0]
+      if ((awayPhones.get(session) ?? 0) === n) return
+      awayPhones.set(session, n)
+      announcePresence(session)
+    },
     post(id, { from = null, data }) {
       const room = get(id)
-      if (room.messages.length >= maxMessages) throw Object.assign(new Error('This room is full'), { status: 429 })
+      // Reactions (src/core/reactions.js) are passed on and forgotten.
+      const keep = !isReactionRoom(id)
+      if (keep && room.messages.length >= maxMessages) throw Object.assign(new Error('This room is full'), { status: 429 })
       const message = { n: room.next++, at: new Date(now()).toISOString(), from, data }
-      room.messages.push(message)
+      if (keep) room.messages.push(message)
       broadcast(room, { type: 'message', message })
       return message
     },
@@ -181,12 +199,13 @@ function reply(response, status, body) {
 //                              ?presence=1 adds who is connected to the session
 //                              ?only=state sends the room's state alone
 //   GET  /rooms/<id>/presence  who is connected to the session, once
-//   POST /rooms/<id>           { from, data } → { n }
+//   POST /rooms/<id>           { from, data } → { n }; in <code>.reactions
+//                              passed on without being kept
 //   POST /rooms/<id>/reset     presenter only
 //   POST /rooms/<id>/state     { state } — presenter only
 //   POST /rooms/<id>/ink       { messages } — presenter only, live ink
 // Answers carry no cookies and no personal data, so any page may use them.
-export function liveHandler({ rooms = createRooms(), canReset = () => false, info = () => ({}), limit = createLimiter(), inkLimit = createLimiter({ burst: 60, perMs: 3000 }), heartbeatMs = 20000 } = {}) {
+export function liveHandler({ rooms = createRooms(), canReset = () => false, info = () => ({}), limit = createLimiter(), inkLimit = createLimiter({ burst: 60, perMs: 3000 }), reactionLimit = createLimiter({ burst: 120, perMs: 10000 }), heartbeatMs = 20000 } = {}) {
   return async (request, response, next = () => reply(response, 404, { error: 'Not found' })) => {
     const { pathname, searchParams } = new URL(request.url, 'http://localhost')
     response.setHeader('Access-Control-Allow-Origin', '*')
@@ -194,7 +213,7 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
     response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     if (request.method === 'OPTIONS') { response.writeHead(204); response.end(); return }
     try {
-      if (pathname === '/info' && request.method === 'GET') return reply(response, 200, { canReset: !!canReset(request, searchParams.get('session')), ...info(request) })
+      if (pathname === '/info' && request.method === 'GET') return reply(response, 200, { canReset: !!canReset(request, searchParams.get('session')), version: VERSION, ...info(request) })
       const page = pathname.slice(1)
       if (request.method === 'GET' && (CODE_RE.test(page) || Object.hasOwn(ANSWER_FILES, page))) {
         const name = CODE_RE.test(page) ? 'answer.html' : page
@@ -240,8 +259,11 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
         else if (!rooms.setState(id, (await readBody(request, MAX_STATE)).state)) return reply(response, 200, { ok: true, ignored: true })
         return reply(response, 200, { ok: true })
       }
-      if (!limit(clientAddress(request))) return reply(response, 429, { error: 'Too many answers at once; wait a moment' })
+      // Reactions have a limit of their own: a room behind one address (a
+      // lecture hall's network) must not use up its answers with them.
+      if (!(isReactionRoom(id) ? reactionLimit : limit)(clientAddress(request))) return reply(response, 429, { error: 'Too many answers at once; wait a moment' })
       const body = await readBody(request)
+      if (isReactionRoom(id) && (typeof body.data?.value !== 'string' || body.data.value.length > 16)) return reply(response, 400, { error: 'A reaction is a short text' })
       if (!('data' in body)) return reply(response, 400, { error: 'Send { data }' })
       const from = typeof body.from === 'string' ? body.from.slice(0, 64) : null
       return reply(response, 201, { n: rooms.post(id, { from, data: body.data }).n })
