@@ -84,7 +84,7 @@ export async function liveStatus(live, { key = null, fetch: get = fetch, timeout
 // without a browser or network. `resultsFile` and `inkFile` are the ones the
 // running server writes (resultsPlugin, inkPlugin), so that answers and
 // drawings dropped here are not written back from memory; `positionFile`,
-// the slide to open on after a restart, is the stage room's (src/live/server.js).
+// the slide the talk was on, is the stage room's (src/live/server.js).
 export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network: [] }), services = {}, pairing = null, relay = null, server: serverAddress = null, run = runCli, open = reveal, serverKey = process.env.MDECK_SERVER_KEY || null, fetch: get = fetch, resultsFile = null, inkFile = null, positionFile = null } = {}) {
   const abs = resolve(slidesPath)
   const outputs = outputsFor(abs)
@@ -195,8 +195,8 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
     return [...shown, ...gone]
   }
 
-  // The slide the presenter's screens open on after a restart
-  // (<deck>.position.json), with its number and title; null for the first.
+  // The slide the talk was on (<deck>.position.json), which the presenter
+  // view offers to go on from, with its number and title; null for the first.
   function resume() {
     const kept = positionFile?.resume()
     if (!kept) return null

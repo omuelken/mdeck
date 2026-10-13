@@ -10,20 +10,15 @@ import https from 'node:https'
 // In the dev server only the presenter's own browser, on this computer and on
 // a page this server served, or a paired device (src/build/pairing.js) may
 // reset rooms; phones in the network may answer. With `position`
-// (src/build/positionFile.js) the stage room keeps the slide the talk is on
-// and starts on the slide kept there.
+// (src/build/positionFile.js) the stage room keeps the slide the talk is on,
+// for the presenter view to offer after a restart.
 export function livePlugin({ pairing = null, upstream = null, key = null, session = () => null, position = null } = {}) {
   return {
     name: 'vite-plugin-mdeck-live',
     configureServer(server) {
       const stage = () => `${session()}.stage`
       // Only changes count (`at`), not a window that just opened.
-      const rooms = createRooms({ onState: (id, state) => { if (position && id === stage() && state?.at && state.screen !== RESUME) position.save(state.slideId) } })
-      // The slide kept counts as a change made when mdeck started: windows
-      // that open follow it, a slide changed anywhere after that wins.
-      const kept = position?.resume()
-      if (kept) rooms.setState(stage(), { index: kept.index, step: -1, slideId: kept.slideId, at: 1, screen: RESUME })
-      position?.onDrop(() => rooms.setState(stage(), null))
+      const rooms = createRooms({ onState: (id, state) => { if (position && id === stage() && state?.at) position.save(state.slideId) } })
       server.httpServer?.once('close', () => position?.flush())
       const handler = liveHandler({
         rooms,
@@ -55,8 +50,6 @@ export function livePlugin({ pairing = null, upstream = null, key = null, sessio
     },
   }
 }
-
-const RESUME = 'kept'
 
 // A request for the deck's stage room: /rooms/<code>.stage[/…], or its
 // /info?stage=1 (src/live/client.js).

@@ -320,9 +320,9 @@ export function Home() {
           <ViewTile icon="projector" title="Audience window" text="Slides for the projector, without notes. Navigation stays in sync with the presenter." href={`${BASE}?view=audience&session=${SESSION}${code}`} open={openOn('audience')} />
           <ViewTile icon="reader" title="Reader view" text="Outline, reading mode and look picker, as people you send it to see it." href={`${BASE}?view=reader`} />
         </div>
-        {/* Where the talk was when mdeck stopped: the screens open there. */}
+        {/* Where the talk was: the presenter view offers to go on there. */}
         {info.resume && <p class="home-meta home-resume">
-          Opens on slide {info.resume.slide}{info.resume.title ? `, ${info.resume.title}` : ''}, where the talk was. <button class="home-link" onClick={() => api('/action', { action: 'drop-position' }).then(load).catch(e => setError(e.message))}>Start from the first slide</button>
+          Last time: slide {info.resume.slide}{info.resume.title ? `, ${info.resume.title}` : ''}. The presenter view offers to go on there. <button class="home-link" onClick={() => api('/action', { action: 'drop-position' }).then(load).catch(e => setError(e.message))}>Forget</button>
         </p>}
       </section>
 

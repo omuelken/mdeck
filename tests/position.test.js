@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, readFileSync, existsSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { createPositionFile, positionFileFor } from '../src/build/positionFile.js'
+import { createPositionFile, positionFileFor, positionPlugin } from '../src/build/positionFile.js'
 import { livePlugin } from '../src/live/server.js'
 import { createServer } from 'node:http'
 
@@ -26,39 +26,48 @@ test('the slide the talk was on is kept beside the deck and found again by its i
   assert.equal(again.resume(), null, 'a slide the deck no longer has opens the first one')
 })
 
-test('dropping the slide kept removes the file and tells the stage room', () => {
+test('dropping the slide kept removes the file', () => {
   const deck = deckIn()
   writeFileSync(positionFileFor(deck), '{"slide":"b"}\n')
   const file = createPositionFile(deck, { slides: () => ['a', 'b'] })
-  let told = 0
-  file.onDrop(() => told++)
+  assert.deepEqual(file.resume(), { slideId: 'b', index: 1 })
   file.drop()
   assert.equal(existsSync(file.path), false)
   assert.equal(file.resume(), null)
-  assert.equal(told, 1)
 })
 
-test('the stage room starts on the slide kept, keeps it from windows that open and saves slide changes', async t => {
+const serve = async (t, use) => {
+  const server = createServer((request, response) => use(request, response, () => { response.writeHead(404); response.end() }))
+  await new Promise(done => server.listen(0, '127.0.0.1', done))
+  t.after(() => server.close())
+  return `http://localhost:${server.address().port}`
+}
+const mounted = plugin => { let use; plugin.configureServer({ middlewares: { use: (_, fn) => { use = fn } }, httpServer: null }); return use }
+
+test('the stage room saves slide changes, not windows that open, and moves nobody after a restart', async t => {
   const deck = deckIn()
   writeFileSync(positionFileFor(deck), '{"slide":"b"}\n')
   const position = createPositionFile(deck, { slides: () => ['a', 'b', 'c'], debounceMs: 0 })
-  let live
-  livePlugin({ position, session: () => 'deck' }).configureServer({ middlewares: { use: (_, use) => { live = use } }, httpServer: null })
-  const server = createServer((request, response) => live(request, response, () => { response.writeHead(404); response.end() }))
-  await new Promise(done => server.listen(0, '127.0.0.1', done))
-  t.after(() => server.close())
-  const room = `http://localhost:${server.address().port}/rooms/deck.stage`
+  const room = `${await serve(t, mounted(livePlugin({ position, session: () => 'deck' })))}/rooms/deck.stage`
   const state = async () => { const response = await fetch(`${room}/events`); const reader = response.body.getReader(); let text = ''; while (!text.includes('\n\n')) text += new TextDecoder().decode((await reader.read()).value); reader.cancel(); return JSON.parse(text.match(/^data: (.*)$/m)[1]).state }
   const post = body => fetch(`${room}/state`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: body }) })
 
-  assert.equal((await state()).slideId, 'b', 'windows that open get the slide kept')
-  assert.equal((await state()).step, -1, 'at its start')
+  assert.equal(await state(), null, 'nothing moves on its own')
   await post({ index: 0, step: -1, slideId: 'a', at: 0, screen: 'opened' })
-  assert.equal((await state()).slideId, 'b', 'a window that opens on the first slide follows it')
+  position.flush()
+  assert.deepEqual(JSON.parse(readFileSync(position.path, 'utf8')), { slide: 'b' }, 'a window that opens is no slide change')
   await post({ index: 2, step: 0, slideId: 'c', at: Date.now(), screen: 'laptop' })
-  assert.equal((await state()).slideId, 'c')
   position.flush()
   assert.deepEqual(JSON.parse(readFileSync(position.path, 'utf8')), { slide: 'c' }, 'a slide change is kept')
+})
+
+test('the presenter view asks where the talk was, on this computer or a paired iPad', async t => {
+  const deck = deckIn()
+  writeFileSync(positionFileFor(deck), '{"slide":"c"}\n')
+  const position = createPositionFile(deck, { slides: () => ['a', 'b', 'c'] })
+  const base = await serve(t, mounted(positionPlugin(position, { authorize: request => request.headers.authorization === 'Bearer ipad' })))
+  assert.equal((await fetch(`${base}/`)).status, 403)
+  assert.deepEqual(await (await fetch(`${base}/`, { headers: { Authorization: 'Bearer ipad' } })).json(), { slideId: 'c', index: 2 })
   position.drop()
-  assert.equal(await state(), null, 'starting from the first slide clears the stage room')
+  assert.deepEqual(await (await fetch(`${base}/`, { headers: { Authorization: 'Bearer ipad' } })).json(), { slideId: null })
 })
