@@ -26,7 +26,11 @@ export const VIEWS = ['presenter', 'audience', 'deck', 'phone']
 export const DEVICES = ['computer', 'ipad', 'tablet', 'phone']
 const HOUR = 60 * 60 * 1000
 
-export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500, idleMs = 12 * HOUR, now = Date.now } = {}) {
+// Screens repeat their state every 4 s (src/live/client.js); one silent for
+// longer has closed, such as a talk given earlier on this server.
+const QUIET_MS = 15000
+
+export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500, idleMs = 12 * HOUR, now = Date.now, quietMs = QUIET_MS } = {}) {
   const rooms = new Map()
   const prune = () => { for (const [id, room] of rooms) if (!room.listeners.size && now() - room.touched > idleMs) rooms.delete(id) }
   const get = id => {
@@ -34,7 +38,7 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
     if (!room) {
       if (rooms.size >= maxRooms) prune()
       if (rooms.size >= maxRooms) throw Object.assign(new Error('Too many rooms are open on this server'), { status: 503 })
-      room = { messages: [], state: null, stamp: 0, screens: new Map(), ink: [], listeners: new Set(), present: new Map(), next: 1, touched: now() }
+      room = { messages: [], state: null, stamp: 0, heard: 0, screens: new Map(), ink: [], listeners: new Set(), present: new Map(), next: 1, touched: now() }
       rooms.set(id, room)
     }
     room.touched = now()
@@ -81,7 +85,9 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
     // States that name their `screen` are ordered by when this server first
     // heard of the change, not by the clocks of the devices (an iPad and a
     // laptop rarely agree to the second); a screen that just opened says
-    // `at: 0` and is the oldest.
+    // `at: 0` and is the oldest. A state whose screen stopped repeating it
+    // holds nothing back: a talk that ended does not keep the phones from
+    // the next presenter view.
     setState(id, state) {
       const room = get(id)
       const next = state ?? null
@@ -95,8 +101,9 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
         if (room.screens.size > 50) room.screens.delete(room.screens.keys().next().value)
       }
       // A state without `at`, as from an outdated page, counts as the oldest.
-      if (next && room.state && stamp < room.stamp) return false
+      if (next && room.state && stamp < room.stamp && now() - room.heard < quietMs) return false
       room.stamp = next ? stamp : 0
+      room.heard = now()
       // The presenter repeats its state; listeners only hear changes.
       if (JSON.stringify(next) === JSON.stringify(room.state)) return true
       room.state = next
