@@ -1,23 +1,25 @@
 // The slide the talk was on, kept in <deck>.position.json beside the deck
-// while `mdeck run` runs, so that after a restart the presenter's screens
-// open on it again, at its start, instead of on the first slide. The stage
-// room (src/live/server.js) saves every slide change and starts with the
-// slide kept; the slide is found again by its id, so slides added before it
-// do not matter, and a slide the deck no longer has opens the first one.
+// while `mdeck run` runs. After a restart the presenter view offers to go
+// on there, at the slide's start; nothing moves on its own. The stage room
+// (src/live/server.js) saves every slide change. The slide is found again
+// by its id, so slides added before it do not matter; a slide the deck no
+// longer has is not offered.
 //
 //   { "slide": "<slide id>" }
 //
-// The launch page drops it, to start again from the first slide.
+//   GET /__mdeck/position   → { slideId, index } or { slideId: null }
+//
+// The launch page drops it.
 import { existsSync, readFileSync, writeFileSync, renameSync, unlinkSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { markOwnWrite } from './ownWrites.js'
+import { isAllowedRequest, send } from './editorPlugin.js'
 
 export const positionFileFor = deckPath => String(deckPath).replace(/\.md$/i, '') + '.position.json'
 
 /** `slides()` gives the ids of the deck's slides as shown, in order. */
 export function createPositionFile(deckPath, { slides = () => [], debounceMs = 500 } = {}) {
   const path = positionFileFor(resolve(deckPath))
-  const listeners = new Set()
   let kept, timer = null
 
   const read = () => {
@@ -56,15 +58,27 @@ export function createPositionFile(deckPath, { slides = () => [], debounceMs = 5
       clearTimeout(timer)
       timer = setTimeout(flush, debounceMs)
     },
-    // From the launch page: the next start opens the first slide.
+    // From the launch page: nothing to go on from.
     drop() {
       clearTimeout(timer)
       timer = null
       kept = null
       if (existsSync(path)) unlinkSync(path)
-      for (const listener of listeners) listener()
     },
-    onDrop(listener) { listeners.add(listener); return () => listeners.delete(listener) },
     flush,
+  }
+}
+
+// For the presenter view, on this computer or a paired iPad.
+export function positionPlugin(file, { authorize = isAllowedRequest } = {}) {
+  return {
+    name: 'vite-plugin-mdeck-position',
+    configureServer(server) {
+      server.middlewares.use('/__mdeck/position', (request, response, next) => {
+        if (request.method !== 'GET' || new URL(request.url, 'http://localhost').pathname !== '/') return next()
+        if (!authorize(request)) return send(response, 403, { error: 'Only the presenter goes on where the talk was' })
+        return send(response, 200, file.resume() ?? { slideId: null })
+      })
+    },
   }
 }
