@@ -19,6 +19,11 @@ import { resultsFileFor, normalizeResults } from '../core/results.js'
 import { resultsReport, reportAnswersCsv, reportSummaryCsv, reportJson } from '../core/resultsReport.js'
 import { expandedSource } from './include.js'
 import { reactionsOf } from '../core/reactions.js'
+import { slideTitle } from '../core/outline.js'
+import { languageOfFile } from '../core/languages.js'
+import { deckLanguages } from './slidesPlugin.js'
+import { createResultsFile } from './resultsPlugin.js'
+import { createInkFile } from './inkPlugin.js'
 
 // Each output is one ordinary CLI run beside the deck, so the launch page
 // builds exactly what the command line would.
@@ -76,12 +81,16 @@ export async function liveStatus(live, { key = null, fetch: get = fetch, timeout
 
 // `urls()` returns the server's addresses; `services` start the editor and the
 // guides; `fetch` reaches the server. All are injected so tests can run
-// without a browser or network.
-export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network: [] }), services = {}, pairing = null, relay = null, server: serverAddress = null, run = runCli, open = reveal, serverKey = process.env.MDECK_SERVER_KEY || null, fetch: get = fetch } = {}) {
+// without a browser or network. `resultsFile` and `inkFile` are the ones the
+// running server writes (resultsPlugin, inkPlugin), so that answers and
+// drawings dropped here are not written back from memory.
+export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network: [] }), services = {}, pairing = null, relay = null, server: serverAddress = null, run = runCli, open = reveal, serverKey = process.env.MDECK_SERVER_KEY || null, fetch: get = fetch, resultsFile = null, inkFile = null } = {}) {
   const abs = resolve(slidesPath)
   const outputs = outputsFor(abs)
   const jobs = {}
   const started = {}, serviceUrls = {}
+  const kept = () => resultsFile ??= createResultsFile(abs)
+  const ink = () => inkFile ??= createInkFile(abs)
 
   async function info(request) {
     const source = readFileSync(abs, 'utf8')
@@ -104,6 +113,8 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       notes: deck.slides.filter(slide => slide.meta.notes).length,
       theme: config.theme ?? 'neue',
       palette: config.palette ?? null,
+      // The same deck in other languages (talk.en.md beside talk.de.md).
+      languages: deckLanguages(abs).map(({ lang, file }) => ({ lang, file: basename(file), current: file === abs })),
       diagnostics: [...(registry?.warnings ?? []).map(message => ({ severity: 'warning', code: 'extension', message })), ...(registryError ? [{ severity: 'error', code: 'extension', message: registryError }] : []), ...diagnostics],
       // Polls in included slides count too: the deck as shown.
       live: await live(config, deck.source ?? source, { local, network }),
@@ -113,6 +124,7 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       relay: relay ? { url: relay.url, state: relay.state, reason: relay.reason } : null,
       chrome: !!findChrome(),
       results: answers()?.map(({ answers: _, ...question }) => question) ?? null,
+      drawings: drawings(),
       services: Object.fromEntries(Object.keys(services).map(key => [key, serviceUrls[key] ?? null])),
       outputs: Object.fromEntries(Object.entries(outputs).map(([key, output]) => [key, {
         title: output.title,
@@ -167,6 +179,20 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
     return resultsReport(results, deck)
   }
 
+  // The slides drawn on (<deck>.drawings.json), in the deck's order, then
+  // drawings of slides the deck no longer has; null while there are none.
+  function drawings() {
+    let slides
+    try { slides = ink().read().ink.slides } catch { return null }
+    if (!Object.keys(slides).length) return null
+    let deck
+    try { deck = parseSlides(expandedSource(abs)) } catch { deck = parseSlides(readFileSync(abs, 'utf8')) }
+    const shown = deck.slides.flatMap((slide, index) => slides[slide.id] ? [{ id: slide.id, slide: index + 1, title: slideTitle(slide, index, null), strokes: slides[slide.id].length }] : [])
+    const known = new Set(shown.map(entry => entry.id))
+    const gone = Object.entries(slides).filter(([id]) => !known.has(id)).map(([id, strokes]) => ({ id, slide: null, title: null, strokes: strokes.length }))
+    return [...shown, ...gone]
+  }
+
   // GET /results?format=csv|summary|json: the answers as a file to save.
   function download(request, response) {
     const format = new URL(request.url, 'http://localhost').searchParams.get('format') ?? 'csv'
@@ -202,7 +228,7 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
     return url.href
   }
 
-  async function act({ action, output, layout } = {}) {
+  async function act({ action, output, layout, room, slide } = {}) {
     if (Object.hasOwn(services, action)) return { url: await start(action) }
     if (action === 'pair') return { url: pairUrl(layout) }
     if (action === 'unpair') { pairing?.revoke(); return { ok: true } }
@@ -214,6 +240,10 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       jobs[output] = { status: code === 0 ? 'done' : 'failed', log, finishedAt: new Date().toISOString() }
       return jobs[output]
     }
+    // Dropping kept answers (one question's `room`, or all) and drawings
+    // (one `slide`, or all).
+    if (action === 'drop-answers') { kept().drop(typeof room === 'string' ? room : null); return { ok: true } }
+    if (action === 'drop-drawings') { ink().drop(typeof slide === 'string' ? slide : null); return { ok: true } }
     if (action === 'reveal') {
       const target = outputs[output]?.file ?? (output === 'deck' ? abs : null)
       if (!target || !existsSync(target)) throw Object.assign(new Error('Nothing to show yet'), { status: 404 })
@@ -239,7 +269,7 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
   }
 }
 
-export function homePlugin(slidesPath, { services, pairing, relay = null, server: serverAddress = null } = {}) {
+export function homePlugin(slidesPath, { services, pairing, relay = null, server: serverAddress = null, resultsFile = null, inkFile = null } = {}) {
   return {
     name: 'vite-plugin-mdeck-home',
     configureServer(server) {
@@ -252,7 +282,7 @@ export function homePlugin(slidesPath, { services, pairing, relay = null, server
         response.writeHead(302, { Location: `${base}home.html` })
         response.end()
       })
-      server.middlewares.use('/__mdeck/home', homeMiddleware(slidesPath, { urls: () => server.resolvedUrls, services, pairing, relay, server: serverAddress }))
+      server.middlewares.use('/__mdeck/home', homeMiddleware(slidesPath, { urls: () => server.resolvedUrls, services, pairing, relay, server: serverAddress, resultsFile, inkFile }))
     },
   }
 }

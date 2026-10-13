@@ -47,6 +47,15 @@ test('the schedule tells the time left on a slide and how far behind or ahead th
   assert.equal(scheduleAt(plan, 1, { totalElapsed: 20, slideElapsed: 0 }).delta, -40)
 })
 
+test('how far behind the talk is holds still while a slide is within its time', () => {
+  // The talk's and the slide's clocks have different fractions of a second;
+  // rounding each on its own made the difference flicker between two values.
+  const plan = planFor(slides('1m', '2m', '1m'))
+  const deltas = new Set()
+  for (let t = 0; t < 10; t += 0.1) deltas.add(scheduleAt(plan, 1, { totalElapsed: 122.7 + t, slideElapsed: 0.2 + t }).delta)
+  assert.deepEqual([...deltas], [62])
+})
+
 test('time is a setting of a slide and of the deck, and a wrong one is reported', () => {
   const codes = source => validateDeck(parseSlides(source)).filter(d => d.severity === 'error').map(d => d.code)
   assert.equal(parseSlides('---\ntime: 45m\n---\n# One\n').deckConfig.time, '45m')

@@ -83,6 +83,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--home-focus); ou
 /* ── Answers from the talk ─────────────────────────────────────────── */
 .home-answer-files { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .home-answer-files a { text-decoration: none; }
+.home-head-actions { display: flex; gap: 6px; }
+.home-output > .home-btn { flex: none; }
+.home-languages .is-current { color: var(--home-strong); font-weight: 600; }
 .home-answers .home-hint { color: var(--home-faint); font-size: 12px; margin: 8px 0 0; }
 
 /* ── Share ────────────────────────────────────────────────────────────── */

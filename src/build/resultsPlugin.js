@@ -7,7 +7,7 @@
 // Answers of none take the room out of the file, as Reset does. Writes wait
 // a moment, so a burst of votes is one write, and do not reload the open
 // windows (ownWrites.js).
-import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, renameSync, unlinkSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { resultsFileFor, normalizeResults, withRoom, serializeResults } from '../core/results.js'
 import { isAllowedRequest, send, readJson } from './editorPlugin.js'
@@ -45,6 +45,18 @@ export function createResultsFile(deckPath, { debounceMs = 500 } = {}) {
       clearTimeout(timer)
       timer = setTimeout(flush, debounceMs)
     },
+    // Drops one room's answers, or all of them (the file goes), from the
+    // launch page. Answers still waiting are written first, then the file is
+    // read again, so edits by hand count; an open poll that gets another
+    // answer keeps its room again.
+    drop(room = null) {
+      flush()
+      results = null
+      if (room !== null) results = withRoom(current(), room, { answers: [] })
+      if (room !== null && Object.keys(results.rooms).length) return flush()
+      results = normalizeResults({})
+      if (existsSync(path)) unlinkSync(path)
+    },
     flush,
   }
 }
@@ -65,11 +77,13 @@ export function resultsMiddleware(file, { authorize = isAllowedRequest } = {}) {
   }
 }
 
+// `api.file` lets the launch page drop answers through the same file.
 export function resultsPlugin(slidesPath, { authorize } = {}) {
+  const file = createResultsFile(slidesPath)
   return {
     name: 'vite-plugin-mdeck-results',
+    api: { file },
     configureServer(server) {
-      const file = createResultsFile(slidesPath)
       server.middlewares.use('/__mdeck/results', resultsMiddleware(file, { authorize }))
       server.httpServer?.once('close', () => file.flush())
     },

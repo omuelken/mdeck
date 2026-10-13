@@ -262,10 +262,10 @@ time: 45s
 # Tabellen und Formeln
 :::slot left
 ```markdown
-| Ebene | Wem sie gehört |
-|---|---|
-| Worte | Dir |
-| Aussehen | Dem Theme |
+| Ebene    | Wem sie gehört |
+|----------|----------------|
+| Worte    | Dir            |
+| Aussehen | Dem Theme      |
 
 $$
 A = \pi r^2
@@ -273,10 +273,10 @@ $$
 ```
 :::
 :::slot right
-| Ebene | Wem sie gehört |
-|---|---|
-| Worte | Dir |
-| Aussehen | Dem Theme |
+| Ebene    | Wem sie gehört |
+|----------|----------------|
+| Worte    | Dir            |
+| Aussehen | Dem Theme      |
 
 $$
 A = \pi r^2
@@ -447,10 +447,10 @@ hotspots: auto
 Drück in der Referentenansicht eine **Zahl**, um in diesen Teil zu zoomen. Dieselbe Zahl, **0** oder **Escape** führt zurück.
 :::
 :::slot right
-| Ebene | Wem sie gehört |
-|---|---|
-| Worte | Dir |
-| Aussehen | Dem Theme |
+| Ebene    | Wem sie gehört |
+|----------|----------------|
+| Worte    | Dir            |
+| Aussehen | Dem Theme      |
 
 $$
 A = \pi r^2

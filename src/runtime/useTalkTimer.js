@@ -47,7 +47,10 @@ export function useTalkTimer(key, slideId, { rehearse = false } = {}) {
   }, [state.running])
 
   const live = state.running ? Math.max(0, Date.now() - state.mark) : 0
-  const seconds = ms => Math.floor(ms / 1000)
+  // Exact, not whole seconds: the talk's and the slide's time have different
+  // fractions, and rounding each on its own made what lies between them
+  // (how far behind the plan) flicker by a second.
+  const seconds = ms => ms / 1000
   return {
     running: state.running,
     rehearsing: state.rehearsing,
