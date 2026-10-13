@@ -254,6 +254,17 @@ try {
   await tabletPen('mouseReleased', 540, 200)
   await until(tablet, `${laserPixels} === 0`)
   assert.equal(await tablet.evaluate("document.querySelectorAll('.slide-ink path').length"), 3, 'the laser is not saved')
+  // Two trails one after the other: the second, lifted while the first still
+  // retracts, loses its first points first, and is never joined to the first.
+  const laserJump = `Math.max(0, ...[...${tabletStage}._lasers.values()].flatMap(e => e.points.map((p, i, a) => i && !p[3] ? Math.hypot(p[0] - a[i - 1][0], p[1] - a[i - 1][1]) : 0)))`
+  for (const x of [200, 600]) {
+    await tabletPen('mousePressed', x, 300)
+    for (let i = 1; i <= 8; i++) await tabletPen('mouseMoved', x + i * 15, 300 + (i % 2) * 10)
+    await tabletPen('mouseReleased', x + 120, 300)
+    await delay(150)
+  }
+  for (let i = 0; i < 5; i++) { assert.ok(await tablet.evaluate(`${laserJump} < 60`), 'no line from one laser trail to the next'); await delay(150) }
+  await until(tablet, `${laserPixels} === 0`)
 
   // Zoom: two fingers enlarge the slide itself, not the toolbar; one finger
   // moves the zoomed slide; the audience window shows the same part; the
@@ -923,7 +934,7 @@ try {
   assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
   await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, data from a CSV file as a chart that builds up and a table, slide times and a rehearsal, the phone clicker with the slide\'s controls and the join code over the slide, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room (also the join code), video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
+  console.log('Browser checks passed: custom layout rendering, data from a CSV file as a chart that builds up and a table, slide times and a rehearsal, the phone clicker with the slide\'s controls and the join code over the slide, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down, never joined to the next trail), zoom, saving ink in dev, following on another device, a second device through the stage room (also the join code), video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()

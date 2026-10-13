@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed: two things circled with the laser one after the other were joined by a line, on the screen they were drawn on, from what was left of the first trail to the second, until the first had gone. A lifted trail retracts from its start; when the second's first points went while the first still showed, the second no longer said where it began. Other screens were not affected.
 - Fixed: the join code shown with **J** on a paired iPad did not show in the audience window on the laptop, nor on phones following the talk. Screens in another browser hear of the presenter's position through the server's stage room, which carried the black screen but not the join code; it now carries both.
 - Tapping the tool in use folds the drawing toolbar, as the fold button does; the folded button shows that tool and opens the toolbar again. On an iPad the hand no longer has to reach the fold button at the far end, which stays.
 - The slide-writing skill says what to do when nothing fits, in order: another layout or block, a palette or theme, a deck-local layout, a component; never scripts or styles in the slides. The layout manifest and `mdeck/layout` are marked experimental; themes, palettes and `mdeck/component` are stable.
