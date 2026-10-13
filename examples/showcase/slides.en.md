@@ -263,9 +263,9 @@ time: 45s
 :::slot left
 ```markdown
 | Layer | Who owns it |
-|---|---|
-| Words | You |
-| Look | The theme |
+|-------|-------------|
+| Words | You         |
+| Look  | The theme   |
 
 $$
 A = \pi r^2
@@ -274,9 +274,9 @@ $$
 :::
 :::slot right
 | Layer | Who owns it |
-|---|---|
-| Words | You |
-| Look | The theme |
+|-------|-------------|
+| Words | You         |
+| Look  | The theme   |
 
 $$
 A = \pi r^2
@@ -448,9 +448,9 @@ In the presenter view, press a **number** to zoom into that part. The same numbe
 :::
 :::slot right
 | Layer | Who owns it |
-|---|---|
-| Words | You |
-| Look | The theme |
+|-------|-------------|
+| Words | You         |
+| Look  | The theme   |
 
 $$
 A = \pi r^2
