@@ -197,6 +197,16 @@ test('a state whose screen went quiet does not keep a new screen from the phones
   assert.equal(rooms.setState('s', { index: 0, screen: 'new-tab', at: 0 }), true, 'another screen that just opened ties with it')
 })
 
+test('in the stage room a presenter who stays on a slide keeps it from a window that opens later', () => {
+  let t = 1000
+  const rooms = createRooms({ now: () => t })
+  assert.equal(rooms.setState('s.stage', { index: 4, screen: 'laptop', at: 90000 }), true)
+  t += 60000
+  assert.equal(rooms.setState('s.stage', { index: 0, screen: 'ipad', at: 0 }), false, 'the iPad opening on the first slide follows the laptop')
+  assert.equal(rooms.state('s.stage').index, 4)
+  assert.equal(rooms.setState('s.stage', { index: 5, screen: 'ipad', at: 95000 }), true, 'a change on the iPad still counts')
+})
+
 test('only the presenter relays ink; listeners get it at once and late ones get the changes', async () => {
   const relay = (messages, headers = {}) => fetch(`${live.url}/rooms/deck.stage/ink`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ messages }) })
   const op = { type: 'op', key: 'a:op', op: { type: 'add', slideId: 's', stroke: { id: 'a:1', points: [[1, 2, 0.5]] } } }

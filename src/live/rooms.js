@@ -87,7 +87,10 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
     // laptop rarely agree to the second); a screen that just opened says
     // `at: 0` and is the oldest. A state whose screen stopped repeating it
     // holds nothing back: a talk that ended does not keep the phones from
-    // the next presenter view.
+    // the next presenter view. Only the activity rooms' states are repeated;
+    // the stage room hears of a change once (src/runtime/ink/room.js), so a
+    // presenter who stays on a slide is not quiet there, and a window that
+    // opens on another device must not take the slide from it.
     setState(id, state) {
       const room = get(id)
       const next = state ?? null
@@ -101,7 +104,7 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
         if (room.screens.size > 50) room.screens.delete(room.screens.keys().next().value)
       }
       // A state without `at`, as from an outdated page, counts as the oldest.
-      if (next && room.state && stamp < room.stamp && now() - room.heard < quietMs) return false
+      if (next && room.state && stamp < room.stamp && (id.endsWith('.stage') || now() - room.heard < quietMs)) return false
       room.stamp = next ? stamp : 0
       room.heard = now()
       // The presenter repeats its state; listeners only hear changes.
