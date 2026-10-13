@@ -100,10 +100,10 @@ const stateListeners = new Set()
 export function followStageRoom(stage, { onLanguage } = {}) {
   stateListeners.add(state => {
     if (!state || state.screen === stageRoom().screen || !Number.isInteger(state.index)) return
-    const position = { index: state.index, step: state.step ?? -1, slideId: state.slideId, ...(typeof state.blank === 'boolean' ? { blank: state.blank } : {}) }
+    const position = { index: state.index, step: state.step ?? -1, slideId: state.slideId, ...(typeof state.blank === 'boolean' ? { blank: state.blank } : {}), ...(typeof state.join === 'boolean' ? { join: state.join } : {}) }
     if (state.lang && onLanguage?.(state.lang, position)) return
     const current = stage.state
-    if (current?.index === state.index && current?.step === state.step && (position.blank === undefined || current?.blank === position.blank)) return
+    if (current?.index === state.index && current?.step === state.step && (position.blank === undefined || current?.blank === position.blank) && (position.join === undefined || current?.join === position.join)) return
     stage.setState(position)
   })
 }
@@ -112,7 +112,7 @@ export function followStageRoom(stage, { onLanguage } = {}) {
 export function onStagePosition(listener) {
   stateListeners.add(state => {
     if (!state || state.screen === stageRoom().screen || !Number.isInteger(state.index)) return
-    listener({ index: state.index, step: state.step ?? -1, slideId: state.slideId, lang: state.lang, blank: state.blank })
+    listener({ index: state.index, step: state.step ?? -1, slideId: state.slideId, lang: state.lang, blank: state.blank, join: state.join })
   })
 }
 
@@ -125,9 +125,9 @@ export function announceStagePosition(stage, { language = () => null } = {}) {
   const room = stageRoom()
   let allowed = null, last = null
   async function post(event) {
-    const { index, step, slideId, blank } = stage.state
+    const { index, step, slideId, blank, join } = stage.state
     const lang = language() ?? undefined
-    const key = `${slideId}:${index}:${step}:${lang}:${blank}`
+    const key = `${slideId}:${index}:${step}:${lang}:${blank}:${join}`
     if (event?.detail.reason === 'sync') { last = key; return }
     if (key === last || allowed === false) return
     // Opening a window must not move the projector; only changes count.
@@ -138,7 +138,7 @@ export function announceStagePosition(stage, { language = () => null } = {}) {
       allowed = info.reachable && !!info.canReset
       if (!allowed) return
     }
-    fetch(`${room.url}/state`, { method: 'POST', headers: room.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state: { index, step, slideId, lang, blank, at, screen: room.screen } }) }).catch(() => {})
+    fetch(`${room.url}/state`, { method: 'POST', headers: room.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state: { index, step, slideId, lang, blank, join, at, screen: room.screen } }) }).catch(() => {})
   }
   stage.addEventListener('statechange', post)
   post()
