@@ -4,7 +4,7 @@
 // in what order (`rows`, `sort`), what stands out (`highlight`) and how the
 // data builds up (`steps`). What is wrong is reported, not thrown: the slide
 // shows it, `mdeck check` names it.
-import { parseCsv, typeTable } from './csv.js'
+import { parseCsv, typeTable, notNumbers } from './csv.js'
 
 /** Attributes the <data> tag reads itself; every other one is the dataview's option. */
 export const SHARED_ATTRIBUTES = ['src', 'show', 'title', 'x', 'y', 'rows', 'sort', 'highlight', 'steps', 'unit', 'height', 'caption', 'data-csv', 'children', 'class', 'style', 'id', 'data-hotspot']
@@ -80,7 +80,8 @@ export function buildDataset(csv, attrs = {}, { lang = null } = {}) {
   const series = valueColumns.map((column, index) => ({ name: columns[column].name, column, index }))
   for (const { name, column } of series) {
     if (columns[column].type === 'number') continue
-    const bad = typed.map((row, index) => ({ row: index + 1, text: row[column].text })).filter(cell => cell.text !== '')
+    // Only the cells that are not numbers: the message names the first of them.
+    const bad = notNumbers(parsed, column, { lang })
     problem(`The column "${name}" should hold numbers, but row ${bad[0]?.row} has "${bad[0]?.text}"${bad.length > 1 ? ` (and ${bad.length - 1} more)` : ''}`)
   }
 

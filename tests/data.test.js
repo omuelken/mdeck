@@ -177,3 +177,9 @@ test('a deck\'s own dataview folder is a dataview of its own', () => {
   assert.equal(registry.dataviews.meter.source, 'local')
   assert.equal(registry.dataviews.meter.manifest.size, 'fixed')
 })
+
+test('a column that is not all numbers names its first cell that is not one', () => {
+  const message = csv => buildDataset(csv, { y: 'value' }).problems.map(problem => problem.message).join('\n')
+  assert.match(message('name, value\na, 1\nb, 2\nc, abc'), /row 3 has "abc"$/)
+  assert.match(message('name, value\na, x\nb, 2\nc, y'), /row 1 has "x" \(and 1 more\)/)
+})
