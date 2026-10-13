@@ -292,6 +292,37 @@ Formeln werden in LaTeX geschrieben. Einfache Dollarzeichen setzen eine Formel i
 layout: split
 time: 45s
 :::
+# Aus Daten wird ein Diagramm
+:::slot left
+```markdown
+<data show="bar" highlight="2024">
+Jahr, Studierende
+2021, 120
+2022, 148
+2023, 161
+2024, 203
+</data>
+```
+:::
+:::slot right
+<data show="bar" highlight="2024">
+Jahr, Studierende
+2021, 120
+2022, 148
+2023, 161
+2024, 203
+</data>
+:::
+
+:::notes
+Die Zahlen stehen als einfaches CSV in der Folie oder in einer Datei daneben: src="einschreibungen.csv". show wählt, wie sie aussehen: table (Standard), bar, line, scatter, stat, heatmap oder dumbbell. Aus show="bar" wird mit show="line" eine Linie aus denselben Zahlen. Die Farben kommen aus der Palette.
+:::
+
+---
+:::meta
+layout: split
+time: 45s
+:::
 # Tipps und Warnungen
 :::slot left
 ```markdown

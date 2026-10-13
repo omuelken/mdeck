@@ -67,6 +67,34 @@ try {
   assert.ok(readFileSync(resolve(temp, 'with-notes.html'), 'utf8').includes('PRIVATE_READER_NOTES'))
   assert.ok(readFileSync(resolve(temp, 'with-notes.html'), 'utf8').includes('PRIVATE_NOTES_SVG_CONTENT'), '--notes preserves themed SVGs referenced by the notes')
 
+  // Data: a CSV file beside the deck travels in the build; a bar chart builds
+  // up series by series; a dark palette colours it; a table follows the
+  // theme; the chart is a hotspot; a dataview that does not exist says so.
+  const dataDeck = resolve(temp, 'data.md')
+  writeFileSync(resolve(temp, 'yields.csv'), 'region;wheat;barley\nAargau;7,1;5,9\nBern;7,8;6,0\n')
+  writeFileSync(dataDeck, '---\ntheme: neue\nappearance: dark\nhotspots: auto\n---\n\n---\n# Bars\n\n:::columns\n<data show="bar" src="yields.csv" steps="series" title="Yield" />\n+++\nWheat yields more everywhere.\n:::\n\n---\n# Table\n\n<data highlight="Bern">\nregion, wheat\nAargau, 7.1\nBern, 7.8\n</data>\n\n---\n# Wrong\n\n<data show="pie">\na, b\nx, 1\n</data>\n')
+  execFileSync(process.execPath, ['bin/mdeck.js', 'build', dataDeck, '-o', resolve(temp, 'data.html')], { cwd: root, stdio: 'pipe' })
+  rmSync(resolve(temp, 'yields.csv'))
+  const dataPage = await open('data.html?view=deck')
+  await until(dataPage, "document.querySelectorAll('.dataview--bar svg path').length === 4")
+  assert.equal(await dataPage.evaluate("[...document.querySelectorAll('.dataview--bar .dataview-legend > span')].map(s => s.textContent).join()"), 'wheat,barley')
+  assert.equal(await dataPage.evaluate("document.querySelectorAll('.dataview--bar [data-step]').length"), 4, 'every bar is part of its series\' step')
+  assert.equal(await dataPage.evaluate("document.querySelectorAll('.dataview--bar [data-step-visible]').length"), 0)
+  await dataPage.evaluate("document.querySelector('deck-stage').next()")
+  await until(dataPage, "document.querySelectorAll('.dataview--bar [data-step-visible]').length === 2")
+  assert.equal(await dataPage.evaluate("document.querySelector('.dataview--bar [data-step-visible] path').getAttribute('fill')"), 'var(--dataview-1)', 'the first series comes first')
+  // Dark: the first series is the palette's accent, drawn on the dark slide.
+  const [accent, fill] = await dataPage.evaluate("(() => { const path = document.querySelector('.dataview--bar path'); return [getComputedStyle(path.closest('.slide')).getPropertyValue('--accent').trim(), getComputedStyle(path).fill] })()")
+  assert.ok(accent && fill !== 'rgb(0, 0, 0)', `the bars take the palette's colour (${fill})`)
+  // A chart as wide as the slide gains nothing from a zoom; in a column it does.
+  assert.ok(await dataPage.evaluate("document.querySelector('deck-stage')._hotspots.some(spot => spot.element.querySelector('.dataview') || spot.element.closest('.dataview'))"), 'the chart is a hotspot')
+  assert.match(await dataPage.evaluate("document.querySelector('.dataview--bar .dataview-sr').textContent"), /Aargau.*7\.1.*5\.9/, 'a table for screen readers, numbers in the deck\'s language (a semicolon file with decimal commas, an English deck)')
+  await dataPage.evaluate("document.querySelector('deck-stage').goTo(1)")
+  await until(dataPage, "!!document.querySelector('[data-deck-active] .dataview-table tr.is-highlight')")
+  assert.equal(await dataPage.evaluate("document.querySelector('[data-deck-active] .dataview-table tr.is-highlight th').textContent"), 'Bern')
+  assert.match(await dataPage.evaluate("document.querySelectorAll('.dataview-problem')[0]?.textContent ?? ''"), /No dataview "pie".*Available: bar/)
+  await dataPage.close()
+
   // Saved ink from <deck>.drawings.json is bundled and drawn in the deck and in Read mode.
   const inkDeck = resolve(temp, 'ink.md')
   writeFileSync(inkDeck, '---\ntheme: neue\n---\n\n---\nid: marked\n---\n# Marked up\n\n---\n# Second\n')
@@ -882,7 +910,7 @@ try {
   assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
   await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, slide times and a rehearsal, the phone clicker with the slide\'s controls and the join code over the slide, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
+  console.log('Browser checks passed: custom layout rendering, data from a CSV file as a chart that builds up and a table, slide times and a rehearsal, the phone clicker with the slide\'s controls and the join code over the slide, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down), zoom, saving ink in dev, following on another device, a second device through the stage room, video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()

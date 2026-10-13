@@ -1,6 +1,6 @@
-# Extensions: layouts, themes and palettes
+# Extensions: layouts, themes, palettes and dataviews
 
-mdeck can be extended in three ways, and all three follow the same rules.
+mdeck can be extended in four ways, and all four follow the same rules.
 
 - A **layout** is an arrangement for a slide: which content areas it has, which
   settings it accepts, and how it is arranged. The built-in layouts such as
@@ -9,6 +9,9 @@ mdeck can be extended in three ways, and all three follow the same rules.
   default colours. A deck picks one with `theme:`.
 - A **palette** is a family of colours, light and dark, that repaints any
   theme. A deck picks one with `palette:` and the variant with `appearance:`.
+- A **dataview** is a way to show the data of a `<data>` tag: a table, a bar
+  chart, a line chart … A tag picks one with `show="…"`. Its manifest and the
+  component that draws are described in [Dataviews](dataviews.md).
 
 Every extension is a folder with an `extension.toml` file inside. The manifest
 says which kind it is and describes its supporting files and settings. The

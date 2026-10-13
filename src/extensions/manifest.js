@@ -9,7 +9,7 @@ import { propertyErrors } from '../layouts/layoutProps.js'
 import { paramSettingProblems, paramSettings } from './params.js'
 
 export const SCHEMA_VERSION = 1
-export const KINDS = ['layout', 'theme', 'palette']
+export const KINDS = ['layout', 'theme', 'palette', 'dataview']
 export const ID_RE = /^[a-z][a-z0-9-]*$/
 export const MANIFEST_FILENAME = 'extension.toml'
 
@@ -23,6 +23,7 @@ const KEYS = {
   layout: [...SHARED_KEYS, 'frame', 'files', 'regions', 'properties'],
   theme: [...SHARED_KEYS, ...PACKAGE_KEYS, 'palette', 'palettes', 'appearance', 'fonts', 'files', 'tokens', 'params', 'guide'],
   palette: [...SHARED_KEYS, ...PACKAGE_KEYS, 'theme', 'light', 'dark'],
+  dataview: [...SHARED_KEYS, ...PACKAGE_KEYS, 'files', 'options', 'needs', 'steps', 'size'],
 }
 export const VERSION_RE = /^\d+\.\d+\.\d+$/
 export const RANGE_RE = /^>=\s*(\d+\.\d+\.\d+)$/
@@ -77,6 +78,7 @@ export function validateManifest(raw, { file, dir, folderName, fileExists = exis
   const shared = { id: raw.id, title: raw.title.trim(), description: raw.description?.trim() || '' }
   const manifest = kind === 'layout' ? validateLayout(raw, shared, fail)
     : kind === 'theme' ? validateTheme(raw, shared, fail)
+    : kind === 'dataview' ? validateDataview(raw, shared, fail)
     : validatePalette(raw, shared, fail)
   const pkg = kind === 'layout' ? null : validatePackage(raw, fail)
   return { kind, id: raw.id, title: shared.title, description: shared.description, dir, file, manifest, files, ...(pkg ? { package: pkg } : {}) }
@@ -93,8 +95,8 @@ function validatePackage(raw, fail) {
   return pkg
 }
 
-const FILE_KEYS = { layout: ['layout', 'styles', 'starter'], theme: ['styles'], palette: [] }
-const FILE_DEFAULTS = { layout: { layout: 'layout.jsx', styles: 'styles.css', starter: 'starter.md' }, theme: { styles: 'styles.css' } }
+const FILE_KEYS = { layout: ['layout', 'styles', 'starter'], theme: ['styles'], palette: [], dataview: ['view', 'styles'] }
+const FILE_DEFAULTS = { layout: { layout: 'layout.jsx', styles: 'styles.css', starter: 'starter.md' }, theme: { styles: 'styles.css' }, dataview: { view: 'view.jsx', styles: 'styles.css' } }
 
 function resolveFiles(section, kind, { dir, fail, fileExists }) {
   if (section != null && !isPlainObject(section)) fail('files must be a table', 'files')
@@ -120,6 +122,7 @@ function resolveFiles(section, kind, { dir, fail, fileExists }) {
       const abs = fallback ? resolve(dir ?? '.', fallback) : null
       if (abs && fileExists(abs)) files[key] = key === 'styles' ? [abs] : abs
       else if (kind === 'layout' && key === 'layout') fail(`layout.jsx is missing; add it or point files.layout at the layout file`, path)
+      else if (kind === 'dataview' && key === 'view') fail(`view.jsx is missing; add it or point files.view at the file that draws the data`, path)
       else files[key] = key === 'styles' ? [] : null
     } else if (key === 'styles') {
       const list = Array.isArray(value) ? value : [value]
@@ -151,6 +154,38 @@ function validateLayout(raw, shared, fail) {
     properties[name] = validatePropertySchema(schema, path, fail)
   }
   return { ...shared, frame: raw.frame ?? 'standard', regions, properties }
+}
+
+// A dataview: a way to show the data of a <data> tag (src/core/dataset.js).
+// Its options are the tag's other attributes, typed like a layout's
+// properties; `needs` says what data it can show (`numbers`: at least this
+// many columns of numbers; `series` and `rows`: at most this many; `x =
+// "number"`: the label column holds numbers or dates); `steps`
+// the ways it builds up (rows, series); `size` whether it fills a box of the
+// tag's height ("fixed", charts) or is as tall as what it shows ("content").
+export const DATAVIEW_STEPS = ['rows', 'series']
+const NEEDS_KEYS = ['numbers', 'series', 'rows', 'x']
+function validateDataview(raw, shared, fail) {
+  if (raw.options != null && !isPlainObject(raw.options)) fail('options must be a table', 'options')
+  const options = {}
+  for (const [name, schema] of Object.entries(raw.options ?? {})) {
+    const path = `options.${name}`
+    if (!/^[a-z][a-z0-9-]*$/.test(name)) fail('option names are attribute names: lowercase letters, digits and hyphens, starting with a letter', path)
+    if (['src', 'show', 'title', 'x', 'y', 'rows', 'sort', 'highlight', 'steps', 'unit', 'height', 'caption'].includes(name)) fail(`"${name}" is an attribute every dataview shares`, path)
+    if (isPlainObject(schema) && ['array', 'object'].includes(schema.type)) fail('an option is a string, number, integer or boolean: it is written as an attribute', `${path}.type`)
+    options[name] = validatePropertySchema(schema, path, fail)
+  }
+  const needs = {}
+  if (raw.needs != null && !isPlainObject(raw.needs)) fail('needs must be a table such as { numbers = 1 }', 'needs')
+  for (const [key, value] of Object.entries(raw.needs ?? {})) {
+    if (!NEEDS_KEYS.includes(key)) fail(`Unknown need. Allowed: ${NEEDS_KEYS.join(', ')}`, `needs.${key}`)
+    if (key === 'x') { if (value !== 'number') fail('x = "number" says the label column must hold numbers or dates', 'needs.x'); needs.x = value; continue }
+    if (!Number.isInteger(value) || value < (key === 'numbers' ? 0 : 1)) fail(`must be a whole number${key === 'numbers' ? '' : ' of at least 1'}`, `needs.${key}`)
+    needs[key] = value
+  }
+  if (raw.steps != null && (!Array.isArray(raw.steps) || raw.steps.some(step => !DATAVIEW_STEPS.includes(step)))) fail(`steps must be a list of: ${DATAVIEW_STEPS.join(', ')}`, 'steps')
+  if (raw.size != null && !['fixed', 'content'].includes(raw.size)) fail('size must be "fixed" (a box of the tag\'s height) or "content" (as tall as it is)', 'size')
+  return { ...shared, options, needs, steps: [...new Set(raw.steps ?? [])], size: raw.size ?? 'fixed' }
 }
 
 function validatePropertySchema(schema, path, fail) {

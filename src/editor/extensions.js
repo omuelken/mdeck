@@ -49,7 +49,8 @@ export function toToml(model) {
     regions: table(model.regions ?? [], region => clean({ description: region.description, required: region.required || undefined })),
     properties: table(model.properties ?? [], property => propertySchema(property)),
   }
-  else raw = { ...base, ...model.extra }
+  // A dataview's options, needs and steps stay as written (the forms do not edit them).
+  else raw = { ...base, ...model.extra, ...(Object.keys(model.files ?? {}).length ? { files: model.files } : {}) }
   if (raw.params && !Object.keys(raw.params).length) delete raw.params
   if (raw.properties && !Object.keys(raw.properties).length) delete raw.properties
   return stringify(raw) + '\n'
@@ -73,6 +74,8 @@ export function toRuntimeManifest(model) {
     params: table(model.params ?? [], param => ({ ...paramSettings(param), default: tokens[param.token] ?? '' })),
     ...(model.extra?.guide ? { guide: runtimeGuide(model.extra.guide) } : {}),
   }
+  // Plain objects, as the manifest check makes them, not the TOML parser's.
+  if (model.kind === 'dataview') return JSON.parse(JSON.stringify({ ...shared, options: model.extra?.options ?? {}, needs: model.extra?.needs ?? {}, steps: [...new Set(model.extra?.steps ?? [])], size: model.extra?.size ?? 'fixed' }))
   return shared
 }
 

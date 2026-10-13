@@ -104,7 +104,7 @@ export function renderPage(page, markdown) {
     table(token) { return `<div class="table-scroll" tabindex="0" role="region" aria-label="Reference table">${Renderer.prototype.table.call(this, token)}</div>` },
     link({ href, title: linkTitle, tokens }) {
       const text = this.parser.parseInline(tokens)
-      const aliases = { 'layouts.md': 'custom-layouts.html', 'extensions.md': 'extensions.html', 'themes.md': 'theme-authoring.html', 'palettes.md': 'theme-authoring.html', '../../examples/custom-layouts/slides.md': 'downloads/comparison.md' }
+      const aliases = { 'layouts.md': 'custom-layouts.html', 'extensions.md': 'extensions.html', 'themes.md': 'theme-authoring.html', 'palettes.md': 'theme-authoring.html', 'dataviews.md': 'dataviews.html', 'authoring.md#data-tables-and-charts': 'data.html', '../../examples/custom-layouts/slides.md': 'downloads/comparison.md' }
       href = href.replace(/^extensions\.md#/, 'extensions.html#')
       href = aliases[href] ?? href
       return `<a href="${escape(href)}"${linkTitle ? ` title="${escape(linkTitle)}"` : ''}>${text}</a>`

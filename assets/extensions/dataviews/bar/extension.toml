@@ -1,0 +1,35 @@
+schema = 1
+kind = "dataview"
+id = "bar"
+title = "Bar chart"
+description = "Compares values across categories: columns, or bars when the labels are long; grouped or stacked for several series."
+steps = ["rows", "series"]
+
+[needs]
+numbers = 1
+rows = 40
+
+[options.orientation]
+type = "string"
+enum = ["auto", "vertical", "horizontal"]
+default = "auto"
+description = "Columns (vertical) or bars (horizontal); auto turns to bars when the labels do not fit under the columns"
+
+[options.stacked]
+type = "boolean"
+default = false
+description = "Several series stacked into one bar instead of side by side"
+
+[options.values]
+type = "string"
+enum = ["auto", "all", "highlight", "none"]
+default = "auto"
+description = "Values at the bars: auto shows them for one series of up to 12 bars, else only the highlighted ones"
+
+[options.min]
+type = "number"
+description = "The value axis starts here"
+
+[options.max]
+type = "number"
+description = "The value axis ends here"

@@ -1,0 +1,20 @@
+schema = 1
+kind = "dataview"
+id = "scatter"
+title = "Scatter plot"
+description = "Two measurements against each other: x names the column across, the others go up; points can be named by a label column."
+steps = ["rows", "series"]
+
+[needs]
+numbers = 1
+x = "number"
+
+[options.labels]
+type = "string"
+default = ""
+description = "A column whose text names the points: all of them when there are up to 12, else the highlighted ones"
+
+[options.zero]
+type = "boolean"
+default = false
+description = "Both axes start at 0"

@@ -1,0 +1,2 @@
+.dataview .dataview-bar { stroke: color-mix(in oklab, var(--muted) 40%, var(--bg)); stroke-width: 8; stroke-linecap: round; }
+.dataview .dataview-dot { stroke: var(--bg); stroke-width: 3; }

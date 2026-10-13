@@ -1,4 +1,4 @@
-// One discovery layer for layouts, themes and palettes. The same registry
+// One discovery layer for layouts, themes, palettes and dataviews. The same registry
 // backs `mdeck check`, CLI listings, the dev server and builds.
 import { palettesFor } from './tokens.js'
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
@@ -79,15 +79,15 @@ function loadManifest({ dir, file, folderName }) {
 }
 
 export function discoverExtensions(roots) {
-  const registry = { layouts: {}, themes: {}, palettes: {}, records: [], warnings: [] }
+  const registry = { layouts: {}, themes: {}, palettes: {}, dataviews: {}, records: [], warnings: [] }
   const byKey = new Map()
   const RANK = { 'built-in': 0, user: 1, local: 2 }
   const add = (record, source) => {
     const key = `${record.kind}:${record.id}`
     const existing = byKey.get(key)
     const entry = { ...record, source }
-    // Themes and palettes may be replaced from a later place; layouts and two
-    // with one id in the same place may not.
+    // Themes, palettes and dataviews may be replaced from a later place;
+    // layouts and two with one id in the same place may not.
     const replaces = existing && record.kind !== 'layout' && RANK[source] > RANK[existing.source]
     if (replaces) {
       if (existing.source === 'user') registry.warnings.push(`The ${record.kind} "${record.id}" in this deck's extensions replaces the one installed in ${dirname(existing.dir)}`)
@@ -104,8 +104,8 @@ export function discoverExtensions(roots) {
       if (!root.hidden?.includes(`${record.kind}:${record.id}`)) add(record, root.source)
     }
   }
-  // Themes and palettes in name order, wherever they come from.
-  for (const kind of ['themes', 'palettes']) registry[kind] = Object.fromEntries(Object.entries(registry[kind]).sort(([a], [b]) => a.localeCompare(b, 'en')))
+  // Themes, palettes and dataviews in name order, wherever they come from.
+  for (const kind of ['themes', 'palettes', 'dataviews']) registry[kind] = Object.fromEntries(Object.entries(registry[kind]).sort(([a], [b]) => a.localeCompare(b, 'en')))
   checkPaletteReferences(registry)
   return registry
 }

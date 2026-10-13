@@ -508,6 +508,78 @@ Standard GFM table syntax:
 | Behaviour | Preact   | Developer   |
 ```
 
+For numbers, a `<data>` tag is easier to keep and can also be a chart (next section).
+
+---
+
+## Data: tables and charts
+
+`<data>` holds a table of data as CSV, between its tags or in a file beside
+the deck, and a *dataview* shows it: a table unless `show` names another.
+
+```markdown
+<data show="bar" title="Yield per hectare" unit="t" highlight="2024">
+year, wheat, barley
+2022, 7.1, 5.9
+2023, 6.4, 6.2
+2024, 7.8, 6.0
+</data>
+
+<data src="data/yields.csv" show="line" />
+```
+
+The first row names the columns. Cells are separated by commas, semicolons or
+tabs (the first row decides); a cell with a separator, a quote or a line break
+is written in double quotes, a quote in it doubled. Numbers may use a decimal
+point, or a decimal comma in a deck whose `lang` writes one and in files
+separated by semicolons or tabs; thousands may be separated (`1,234`, `1.234`,
+`1'234`); `12 %` is a percentage, `2024-03` a date. A column is of numbers when
+every filled cell is one; an empty cell is no value. The first column may go
+without a name, as the row names of a matrix often do. A file (`src`) is read
+from the deck's folder, bundled into builds, and redraws its slides under
+`mdeck run` when it changes.
+
+Attributes every dataview reads:
+
+| Attribute | Meaning |
+|---|---|
+| `src` | A CSV file instead of the text between the tags |
+| `show` | The dataview: `table` (default), `bar`, `line`, `scatter`, `stat`, `heatmap`, `dumbbell`, or one of the deck's own |
+| `title` | A title above the data |
+| `x` | The column that names the rows; default: the first that is not numbers, else the first |
+| `y` | The value columns, separated by commas (`y="wheat, barley"`); default: every column of numbers but `x` |
+| `rows` | Rows to show, counted after sorting: `1-10`, `1,3,5` |
+| `sort` | A column to sort by, with `desc` for largest first: `sort="wheat desc"` |
+| `highlight` | Rows to pick out, by their label (or any of their cells): `highlight="2024"`, `highlight="Bern, Zug"` |
+| `steps` | Build up: `rows` (one row a press) or `series` (one value column a press), where the dataview can |
+| `unit` | The unit of the values, shown in headers and axis titles |
+| `height` | The height of a chart in slide pixels (default 520) |
+| `caption` | A line under the data, such as its source |
+
+Every other attribute is an option of the dataview (`mdeck list dataviews`
+lists them):
+
+| Dataview | Shows | Options |
+|---|---|---|
+| `table` | The data as the theme draws tables; numbers right, the unit in their headers, highlighted rows marked | `max-rows` (12; the rest are counted), `numbers` (`as-written` or `formatted`) |
+| `bar` | Columns from a baseline at 0, bars when the labels are long; several series side by side or `stacked` | `orientation` (`auto`, `vertical`, `horizontal`), `stacked`, `values` (`auto`, `all`, `highlight`, `none`), `min`, `max` |
+| `line` | One line per series, the last value at its end; numbers or dates in `x` are spaced by their value | `points` (`auto`, `all`, `none`), `fill` (one series), `zero`, `min`, `max` |
+| `scatter` | Points: `x` across (a column of numbers or dates), each value column up | `labels` (a column naming the points), `zero` |
+| `stat` | One to four figures, large, as the data writes them, each with its row's label | `change` (a column with each figure's change) |
+| `heatmap` | A grid coloured by value; values either side of 0 in two colours | `values`, `scale` (`auto`, `sequential`, `diverging`), `min`, `max` |
+| `dumbbell` | Two values per row joined by a line | `values`, `zero` |
+
+A switch (`stacked`, `fill`, `zero`, `values`) is on when written without a
+value or as `true`. Series take the palette's accents in order (`--accent`,
+`--accent-2`, `--accent-3`), then mixes of them with the ink; numbers are
+written as the deck's `lang` writes them. Charts carry a table of their data
+for screen readers. `mdeck check` reports a missing file, columns the data
+does not have, cells that are not numbers, options a dataview does not take,
+data it cannot show, and more value columns than the palette has accents.
+
+A deck can add its own dataview as an extension (`kind = "dataview"`); see
+[the dataview guide](dataviews.md).
+
 ---
 
 ## Math

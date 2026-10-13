@@ -23,6 +23,8 @@ A table compares things side by side. Vertical lines separate the columns:
 
 Keep tables small enough to read from the back of the room.
 
+For numbers, especially ones you might also want as a chart, use a `<data>` tag instead: see [Show data: tables and charts](data.html).
+
 ## Add a tip or reminder
 
 A callout is a short note with a visible label. Choose `note`, `tip`, `important`, `warning`, or `caution`:
