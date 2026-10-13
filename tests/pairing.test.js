@@ -90,7 +90,7 @@ test('an iPad trades the code for its own token and may then save ink', async ()
   assert.equal((await call(ink, { url: '/', method: 'GET', headers: { host: '192.168.1.20:5173' } })).status, 403)
   assert.equal((await call(ink, { url: '/', method: 'GET', headers: { host: '192.168.1.20:5173', authorization: `Bearer ${claimed.body.token}` } })).status, 200)
   const info = await call(home, { url: '/info', method: 'GET', headers: { host: 'localhost:5173' } })
-  assert.deepEqual(info.body.pairing, { available: true, devices: 1 })
+  assert.deepEqual(info.body.pairing, { available: true, offline: false, devices: 1 })
 })
 
 

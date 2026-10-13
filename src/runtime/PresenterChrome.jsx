@@ -149,7 +149,9 @@ export function Connections({ presence, phones, problem }) {
     </PanelSection>
     {info?.live && phones && <Polls live={info.live} recheck={reload} />}
     {info?.pairing && <PanelSection title="Pair a device" class="presenter-pairing">
-      {!info.pairing.available
+      {info.pairing.offline
+        ? <span style={{ color: '#f28b82' }}>This computer is in no network an iPad or a phone can reach right now. Connect it to their Wi-Fi, then open this again.</span>
+        : !info.pairing.available
         ? <span style={muted}>Start <code>mdeck run</code> with <code>--network</code> so an iPad or a phone in the same network can reach it, or with <code>--server</code>.</span>
         : <>
           <span style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -159,7 +161,7 @@ export function Connections({ presence, phones, problem }) {
           {code && <span style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start', '--qr-ink': '#000', '--qr-bg': '#fff' }}>
             <span style={{ background: '#fff', padding: '8px', borderRadius: '8px', lineHeight: 0 }}><QrCode url={code.url} size="168" /></span>
             <span>{PAIR[code.layout].scan}</span>
-            <span style={muted}>The code works once, for ten minutes.</span>
+            <span style={muted}>The code works once, for ten minutes. It leads to {new URL(code.url).host}; the device must be in that network.</span>
           </span>}
           {error && <span style={{ color: '#f28b82' }}>{error}</span>}
         </>}
