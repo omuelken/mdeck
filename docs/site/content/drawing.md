@@ -54,7 +54,7 @@ There are two ways.
 
 Online videos (`<videoplayer url="…" />` from YouTube, Vimeo or SwitchTube) do not follow the iPad. They run inside the video service's own player, which mdeck cannot start or stop, so they play only on the screen where you start them. For a talk from the iPad, start them in the audience window on the laptop, or download the video and use a video file.
 
-A pairing code works once, for ten minutes. **Unpair** on the launch page ends every pairing; so does stopping `mdeck run`. Scan a new code afterwards.
+A pairing code works once, for ten minutes. It leads to the laptop's address in the network it is in when the code is shown; the panel says which, and says so when the laptop is in no network the iPad could reach. **Unpair** on the launch page ends every pairing; so does stopping `mdeck run`. Scan a new code afterwards.
 
 **The iPad on another network.** Some networks, often big Wi-Fi networks at universities, do not let devices reach each other, and a laptop's firewall may not let the iPad in. With a server of your own (see [Ask your audience](audience.html#use-it-in-a-real-session)) the iPad does not need to reach your laptop at all: your laptop connects out to the server, and the server passes the iPad's requests to it. The slides are not uploaded or stored anywhere.
 
