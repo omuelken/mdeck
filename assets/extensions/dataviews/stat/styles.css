@@ -1,0 +1,8 @@
+.dataview-stats { display: flex; flex-wrap: wrap; gap: 1.2em 2.4em; }
+.dataview-stat { display: flex; flex-direction: column; gap: 0.15em; min-width: 0; padding-inline-start: 0.6em; border-inline-start: 6px solid var(--dataview-1); }
+.dataview-stat.is-highlight { border-inline-start-color: var(--dataview-3); }
+/* Large figures keep their own proportional digits. */
+.dataview-stat-value { font-size: 3.2em; font-weight: 700; line-height: 1; font-variant-numeric: proportional-nums; color: var(--ink); font-family: var(--font-display, inherit); letter-spacing: -0.02em; }
+.dataview-stat-unit { font-size: 0.45em; font-weight: 600; margin-inline-start: 0.2em; color: var(--muted); letter-spacing: 0; }
+.dataview-stat-label { color: var(--ink-soft, var(--ink)); font-size: 0.95em; }
+.dataview-stat-change { color: var(--muted); font-size: var(--dataview-small); }

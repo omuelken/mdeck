@@ -1,0 +1,4 @@
+.dataview svg .dataview-cell-text { fill: var(--ink); font-size: var(--dataview-small); }
+/* On a strong colour, the text takes the colour made for text on an accent. */
+.dataview svg .dataview-cell-text.is-strong { fill: var(--on-accent, var(--bg)); }
+.dataview svg .dataview-cell.is-highlight { stroke: var(--ink); stroke-width: 3; }

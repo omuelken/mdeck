@@ -5,6 +5,7 @@ import { marked, Parser } from 'marked'
 import { registry } from '../runtime/registry'
 import { scanTags, closeTags } from '../core/tags.js'
 import { expandPollLists } from '../core/pollList.js'
+import { expandDataTags } from '../core/dataTag.js'
 import { textDirection } from '../core/languages.js'
 import { sourceLines, fenceState } from '../core/source.js'
 import { InkLayer } from '../runtime/ink/InkLayer.jsx'
@@ -57,8 +58,9 @@ export { t } from '../core/labels.js'
 
 export function extractContent(markdown, { headingLevels = [], paragraph = false } = {}) {
   // marked's preprocess hook (src/runtime/markedSetup.js) does not run for
-  // marked.lexer, so the lists of polls become their options here.
-  const processed = expandPollLists(markdown)
+  // marked.lexer, so the lists of polls become their options here, and the
+  // CSV of a <data> tag its data-csv.
+  const processed = expandDataTags(expandPollLists(markdown))
   const footnotesHtml = ''
   const tokens = marked.lexer(processed)
   const headings = {}

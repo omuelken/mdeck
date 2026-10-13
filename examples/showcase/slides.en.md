@@ -292,6 +292,37 @@ Formulas use LaTeX. Single dollar signs put a formula inside a sentence; two dol
 layout: split
 time: 45s
 :::
+# Data becomes a chart
+:::slot left
+```markdown
+<data show="bar" highlight="2024">
+year, students
+2021, 120
+2022, 148
+2023, 161
+2024, 203
+</data>
+```
+:::
+:::slot right
+<data show="bar" highlight="2024">
+year, students
+2021, 120
+2022, 148
+2023, 161
+2024, 203
+</data>
+:::
+
+:::notes
+The numbers sit in the slide as plain CSV, or in a file beside it: src="enrolment.csv". show picks how they look: table (the default), bar, line, scatter, stat, heatmap or dumbbell. Change show="bar" to show="line" and the same numbers become a line. The colours come from the palette.
+:::
+
+---
+:::meta
+layout: split
+time: 45s
+:::
 # Tips and warnings
 :::slot left
 ```markdown

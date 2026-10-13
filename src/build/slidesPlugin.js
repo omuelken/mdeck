@@ -17,6 +17,7 @@ import { scanTags, replaceTagsIn, withAttribute } from '../core/tags.js'
 import { resolveBibliography, sampleBibliography } from './bibliography.js'
 import { languageOfFile, languageFiles } from '../core/languages.js'
 import { expandDeck, withoutSettings } from './include.js'
+import { dataTagsIn } from '../core/dataTag.js'
 
 const VIRTUAL_ID = 'virtual:slides'
 const RESOLVED_ID = '\0virtual:slides'
@@ -33,6 +34,8 @@ const BIB_ID = 'virtual:bibliography'
 const RESOLVED_BIB_ID = '\0virtual:bibliography'
 const RESULTS_ID = 'virtual:deck-results'
 const RESOLVED_RESULTS_ID = '\0virtual:deck-results'
+const DATA_ID = 'virtual:deck-data'
+const RESOLVED_DATA_ID = '\0virtual:deck-data'
 
 const MIME_BY_EXT = {
   '.png': 'image/png',
@@ -78,6 +81,24 @@ export function themedSvgs(deckFile, source = readFileSync(deckFile, 'utf8')) {
     if (themedSvg(file)) svgs[ref] = { file, markup: readFileSync(file, 'utf8').replace(/^\s*<\?xml[^>]*>\s*/, '').replace(/<!DOCTYPE[^>]*>\s*/i, '') }
   }
   return svgs
+}
+
+// The data files the deck's <data src="…"> tags name, beside the deck:
+// { ref: { file, text } } for those that exist. Builds carry their text, so
+// a file sent to readers and the PDF show the data without the file.
+export function dataFiles(deckFile, source = readFileSync(deckFile, 'utf8')) {
+  const files = {}
+  for (const slide of parseSlides(source).slides) {
+    for (const text of [slide.content ?? '', ...Object.values(slide.regions ?? {}).map(region => region.content ?? '')]) {
+      for (const { attrs } of dataTagsIn(text)) {
+        const ref = cleanAssetRef(String(attrs.src ?? '').trim())
+        if (!ref || !isLocalAssetRef(ref) || files[ref]) continue
+        const file = resolve(dirname(deckFile), ref)
+        if (existsSync(file)) files[ref] = { file, text: readFileSync(file, 'utf8') }
+      }
+    }
+  }
+  return files
 }
 
 function toDataUrl(ref, baseDir) {
@@ -185,7 +206,7 @@ export function rewriteAssetRefs(markdown, map) {
   return outsideCodeFences(markdown, text => {
     let out = text.replace(/(!\[[^\]]*\]\()([^)\s]+)/g, (m, head, ref) => head + swap(ref))
     out = replaceTagsIn(out, tag => {
-      if (tag.closing || !(PICTURE_TAGS.has(tag.name) || MEDIA_TAGS.has(tag.name)) || !tag.attrs.src) return
+      if (tag.closing || !(PICTURE_TAGS.has(tag.name) || MEDIA_TAGS.has(tag.name) || tag.name === 'data') || !tag.attrs.src) return
       const next = swap(tag.attrs.src)
       return next === tag.attrs.src ? undefined : withAttribute(tag, 'src', next)
     })
@@ -226,7 +247,12 @@ export function generateExtensionsModule(registry) {
     return `${JSON.stringify(t.id)}: { manifest: ${JSON.stringify(t.manifest)}, load: () => Promise.all([${loads.join(', ')}]).then(mods => mods.map(m => m.default).join('\\n')) }`
   })
   const palettes = Object.values(registry.palettes).map(p => `${JSON.stringify(p.id)}: { manifest: ${JSON.stringify(p.manifest)} }`)
-  return `${imports.join('\n')}\nexport const layouts = {\n${layouts.join(',\n')}\n}\nexport const themes = {\n${themes.join(',\n')}\n}\nexport const palettes = {\n${palettes.join(',\n')}\n}\n`
+  // Dataviews are small and any <data> tag may name one: all come along.
+  const dataviews = Object.values(registry.dataviews ?? {}).map((d, i) => {
+    imports.push(`import D${i} from ${JSON.stringify(d.files.view)}`, ...d.files.styles.map(s => `import ${JSON.stringify(s)}`))
+    return `${JSON.stringify(d.id)}: { manifest: ${JSON.stringify(d.manifest)}, render: D${i} }`
+  })
+  return `${imports.join('\n')}\nexport const layouts = {\n${layouts.join(',\n')}\n}\nexport const themes = {\n${themes.join(',\n')}\n}\nexport const palettes = {\n${palettes.join(',\n')}\n}\nexport const dataviews = {\n${dataviews.join(',\n')}\n}\n`
 }
 
 // A file for readers carries only the deck's own theme and the palette it
@@ -290,8 +316,10 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
     for (const dir of next) if (!allow.includes(dir)) allow.push(dir)
     return true
   }
-  const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID, RESOLVED_BIB_ID]
-  const SOURCE_IDS = [RESOLVED_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID, RESOLVED_BIB_ID]
+  const ALL_IDS = [RESOLVED_ID, RESOLVED_COMPONENTS_ID, RESOLVED_EXTENSIONS_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID, RESOLVED_BIB_ID, RESOLVED_DATA_ID]
+  const SOURCE_IDS = [RESOLVED_ID, RESOLVED_INK_ID, RESOLVED_SVGS_ID, RESOLVED_BIB_ID, RESOLVED_DATA_ID]
+  // The data files of <data src="…">, from the last load.
+  let dataPaths = []
   // The reference files (and .csl style) the deck names, from the last load.
   let bibFiles = []
   // The dev and edit servers also show the sample deck (?sample=1, the
@@ -330,6 +358,7 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
       if (id === 'mdeck/template-api') throw new Error('mdeck/template-api is now mdeck/layout. Run mdeck migrate to update local imports.')
       if (id === 'mdeck/layout') return fileURLToPath(new URL('../layouts/layoutApi.jsx', import.meta.url))
       if (id === 'mdeck/live') return fileURLToPath(new URL('../live/client.js', import.meta.url))
+      if (id === 'mdeck/dataview') return fileURLToPath(new URL('../dataviews/api.js', import.meta.url))
       if (id === VIRTUAL_ID) return RESOLVED_ID
       if (id === COMPONENTS_ID) return RESOLVED_COMPONENTS_ID
       if (id === EXTENSIONS_ID) return RESOLVED_EXTENSIONS_ID
@@ -337,6 +366,7 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
       if (id === SVGS_ID) return RESOLVED_SVGS_ID
       if (id === BIB_ID) return RESOLVED_BIB_ID
       if (id === RESULTS_ID) return RESOLVED_RESULTS_ID
+      if (id === DATA_ID) return RESOLVED_DATA_ID
     },
     load(id) {
       if (id === RESOLVED_ID) {
@@ -405,6 +435,15 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
           try { data = normalizeResults(JSON.parse(readFileSync(resultsPath, 'utf-8'))) } catch (error) { this.warn(`${resultsPath}: ${error.message}; showing no results`) }
         }
         return `export default ${JSON.stringify(data)}`
+      }
+      // The data files of <data src="…">, as text; a change to one redraws its slides.
+      if (id === RESOLVED_DATA_ID) {
+        watchDeck(this)
+        const sources = [sourceFor(readDeck()), ...otherLanguages().map(({ file }) => expand(file, readFileSync(file, 'utf-8')).source)]
+        const files = Object.assign({}, ...sources.map(text => dataFiles(abs, text)))
+        dataPaths = Object.values(files).map(({ file }) => file)
+        for (const file of dataPaths) this.addWatchFile(file)
+        return `export default ${JSON.stringify(Object.fromEntries(Object.entries(files).map(([ref, { text }]) => [ref, text])))}`
       }
       if (id === RESOLVED_SVGS_ID) {
         watchDeck(this)
@@ -484,6 +523,14 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
       if (languageWatch.includes(changed)) {
         invalidate(server, [RESOLVED_ID])
         if (!editor) server.ws.send({ type: 'full-reload' })
+        return []
+      }
+      // A data file changed: its slides show the new data.
+      if (dataPaths.includes(changed)) {
+        invalidate(server, [RESOLVED_DATA_ID])
+        const mod = server.moduleGraph.getModuleById(RESOLVED_DATA_ID)
+        if (editor) return mod ? [mod] : []
+        server.ws.send({ type: 'full-reload' })
         return []
       }
       if (bibFiles.includes(changed)) {

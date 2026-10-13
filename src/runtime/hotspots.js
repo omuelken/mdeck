@@ -1,7 +1,7 @@
 // Hotspots: the parts of a slide the presenter can zoom to with 1–9.
 //
 // A slide's mode is 'off', 'auto' (pictures, code, tables, maths, videos,
-// callouts, columns and activities, plus anything marked `data-hotspot`) or
+// callouts, columns, data and activities, plus anything marked `data-hotspot`) or
 // 'marked' (only the marked ones). The zoom that shows a hotspot is worked
 // out for the slide's own shape, not the window's, so every screen that
 // follows shows the same part; the stage keeps the view on the slide, so a
@@ -19,7 +19,7 @@ const MIN_SCALE = 1.15
 const MIN_SIDE = 48
 
 const AUTO = [
-  'img', 'svg', '.themed-picture', '.code-block-wrapper', 'pre', 'table', '.katex-display',
+  '.dataview', 'img', 'svg', '.themed-picture', '.code-block-wrapper', 'pre', 'table', '.katex-display',
   '.video-player-container', 'video', '.callout', '.columns > .column', '.poll',
 ].join(', ')
 // Never a hotspot, nor anything inside it.

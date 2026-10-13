@@ -1,0 +1,33 @@
+schema = 1
+kind = "dataview"
+id = "line"
+title = "Line chart"
+description = "Change over time or along an order: one line per series, the last value at its end, gaps where data is missing."
+steps = ["rows", "series"]
+
+[needs]
+numbers = 1
+
+[properties.points]
+type = "string"
+enum = ["auto", "all", "none"]
+default = "auto"
+description = "Dots on the values: auto puts one on each value for up to 16 rows, else only at the ends"
+
+[properties.fill]
+type = "boolean"
+default = false
+description = "A light wash of the series' colour under each line"
+
+[properties.zero]
+type = "boolean"
+default = false
+description = "The value axis starts at 0"
+
+[properties.min]
+type = "number"
+description = "The value axis starts here"
+
+[properties.max]
+type = "number"
+description = "The value axis ends here"

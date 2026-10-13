@@ -292,6 +292,37 @@ $$
 layout: split
 time: 45s
 :::
+# البيانات تصبح رسمًا بيانيًا
+:::slot left
+```markdown
+<data show="bar" highlight="2024">
+السنة, الطلاب
+2021, 120
+2022, 148
+2023, 161
+2024, 203
+</data>
+```
+:::
+:::slot right
+<data show="bar" highlight="2024">
+السنة, الطلاب
+2021, 120
+2022, 148
+2023, 161
+2024, 203
+</data>
+:::
+
+:::notes
+تُكتب الأرقام في الشريحة بصيغة CSV بسيطة، أو في ملف بجانبها: src="enrolment.csv". تحدد show طريقة عرضها: table (الافتراضي) أو bar أو line أو scatter أو stat أو heatmap أو dumbbell. غيّر show="bar" إلى show="line" فتصبح الأرقام نفسها خطًا. الألوان تأتي من لوحة الألوان.
+:::
+
+---
+:::meta
+layout: split
+time: 45s
+:::
 # نصائح وتحذيرات
 :::slot left
 ```markdown
