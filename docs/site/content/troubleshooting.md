@@ -11,11 +11,9 @@ what it reports.
 
 ## The command is not recognized
 
-If the terminal cannot find `mdeck`, open the mdeck project folder and run `npm link`. Close and reopen the terminal if needed, then try `mdeck --help`.
+If the terminal cannot find `mdeck`, install it with `npm install -g mdeck` (see [Install mdeck](install.html)). Close and reopen the terminal, then try `mdeck --help`.
 
 If it cannot find `npm` or `node`, Node.js needs to be installed or made available in your terminal first. Ask the person who manages your computer if you do not normally install software yourself.
-
-You can still run the checkout directly from its project folder with `node bin/mdeck.js --help`. This runs the same command.
 
 ## The slide file cannot be found
 

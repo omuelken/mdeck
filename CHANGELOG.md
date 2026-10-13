@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`, and the guides say `npm install -g mdeck` where they did.
 - Fixed: the join code shown with **J** on a paired iPad did not show in the audience window on the laptop, nor on phones following the talk. Screens in another browser hear of the presenter's position through the server's stage room, which carried the black screen but not the join code; it now carries both.
 - Fixed: two things circled with the laser one after the other were joined by a line, on the screen they were drawn on, from what was left of the first trail to the second, until the first had gone. A lifted trail retracts from its start; when the second's first points went while the first still showed, the second no longer said where it began. Other screens were not affected.
 
