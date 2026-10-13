@@ -1972,7 +1972,15 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       ctx.lineJoin = 'round';
       ctx.shadowColor = LASER_GLOW;
       for (const [key, entry] of this._lasers) {
-        entry.points = entry.points.filter(p => now - p[2] < LASER_MS);
+        // A lifted trail retracts from its start, so the first point of a
+        // newer trail can go while an older one still shows: its mark that a
+        // trail begins there passes to the next point, or the two would join.
+        let begins = false;
+        entry.points = entry.points.filter(p => {
+          if (now - p[2] >= LASER_MS) { begins ||= !!p[3]; return false; }
+          if (begins) { p[3] = true; begins = false; }
+          return true;
+        });
         if (!entry.points.length && !entry.dot) { this._lasers.delete(key); continue; }
         // A held trail needs frames too: a zoom, a new size or another slide
         // must move it while the pen stays still.
