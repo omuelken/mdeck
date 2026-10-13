@@ -32,3 +32,16 @@ export async function claimPairing() {
     return false
   }
 }
+
+/**
+ * Whether this browser was paired but `mdeck run` no longer knows it (the
+ * laptop was unpaired, or the pairing was forgotten): what is done here then
+ * stays here. False where there is nothing to ask, such as a hosted deck.
+ */
+export async function pairingLost() {
+  if (!pairToken()) return false
+  try {
+    const response = await fetch(devPath('__mdeck/pair/status'), { headers: pairHeaders(), cache: 'no-store' })
+    return response.ok && (await response.json()).paired === false
+  } catch { return false }
+}
