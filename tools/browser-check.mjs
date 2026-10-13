@@ -283,6 +283,14 @@ try {
   await until(tablet, "document.querySelectorAll('.ink-toolbar button').length === 1 && document.querySelector('.ink-toolbar.is-collapsed')")
   await tablet.evaluate("document.querySelector('.ink-expand').click()")
   await until(tablet, "!!document.querySelector('.ink-btn[title=\"Fold the toolbar\"]')")
+  // The tool in use, tapped again, folds it too; another tool is only chosen.
+  const tabletTool = "document.querySelector('deck-stage').inkTool.tool"
+  await tablet.evaluate(`document.querySelector('.ink-btn[title="Highlighter"]').click()`)
+  await until(tablet, `${tabletTool} === 'highlighter' && !document.querySelector('.ink-toolbar.is-collapsed')`)
+  await tablet.evaluate(`document.querySelector('.ink-btn[title="Highlighter"]').click()`)
+  await until(tablet, `${tabletTool} === 'highlighter' && !!document.querySelector('.ink-toolbar.is-collapsed .ink-expand')`)
+  await tablet.evaluate("document.querySelector('.ink-expand').click()")
+  await until(tablet, "!!document.querySelector('.ink-btn[title=\"Fold the toolbar\"]')")
   const tabletPresenter = await open('about:blank')
   await tabletPresenter.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   await tabletPresenter.send('Page.navigate', { url: new URL('ink.html?view=presenter', await tablet.evaluate('location.href')).href })
