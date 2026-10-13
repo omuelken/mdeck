@@ -1,0 +1,11 @@
+/* The theme draws the table, as any table on its slides; the table view
+   adds numbers aligned right, the unit in the header and highlighted rows. */
+.dataview--table { font-size: inherit; }
+.dataview-table { margin-bottom: 0; }
+.slide-body .dataview-table .is-number { text-align: end; font-variant-numeric: tabular-nums; }
+.slide-body .dataview-table tbody th { border-bottom: 1px solid var(--rule); font-weight: 600; }
+.dataview-table .dataview-unit { font-weight: 400; color: var(--muted); }
+.slide-body .dataview-table tr.is-highlight > * { background: color-mix(in oklab, var(--dataview-1) 14%, transparent); color: var(--ink); font-weight: 600; }
+.slide-body .dataview-table tr.is-highlight > :first-child { box-shadow: inset 4px 0 0 var(--dataview-1); }
+.slide[dir="rtl"] .dataview-table tr.is-highlight > :first-child { box-shadow: inset -4px 0 0 var(--dataview-1); }
+.dataview-table tfoot td { color: var(--muted); font-size: var(--dataview-small, 0.8em); border-bottom: 0; }

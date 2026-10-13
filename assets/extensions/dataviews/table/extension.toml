@@ -1,0 +1,19 @@
+schema = 1
+kind = "dataview"
+id = "table"
+title = "Table"
+description = "The data as a table: numbers aligned, highlighted rows picked out, rows revealed one at a time."
+size = "content"
+steps = ["rows"]
+
+[properties.max-rows]
+type = "integer"
+minimum = 1
+default = 12
+description = "Rows shown at most; the rest are counted below the table"
+
+[properties.numbers]
+type = "string"
+enum = ["as-written", "formatted"]
+default = "as-written"
+description = "Numbers as the file writes them, or with the deck's language's separators and the column's decimals"

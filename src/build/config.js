@@ -31,6 +31,8 @@ function preactAliases() {
   }
   // What deck components may use from mdeck (src/runtime/component.js).
   aliases.push({ find: /^mdeck\/component$/, replacement: fileURLToPath(new URL('../runtime/component.js', import.meta.url)) })
+  // What dataviews may use from mdeck (src/dataviews/api.js).
+  aliases.push({ find: /^mdeck\/dataview$/, replacement: fileURLToPath(new URL('../dataviews/api.js', import.meta.url)) })
   return aliases
 }
 

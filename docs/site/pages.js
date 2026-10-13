@@ -7,6 +7,7 @@ export const pages = [
   { slug: 'editing', title: 'Edit slides in your browser', group: 'Make your presentation', file: 'editing.md', description: 'Change text, layouts, colors and themes with a visual editor that saves to your slide file.' },
   { slug: 'layouts', title: 'Choose a slide layout', group: 'Make your presentation', file: 'layouts.md', description: 'Choose a title slide, a big statement, a picture, or two columns.', preview: 'first-talk' },
   { slug: 'pictures-and-video', title: 'Add pictures and video', group: 'Make your presentation', file: 'media.md', description: 'Put an image or a video into your talk and keep its files together.' },
+  { slug: 'data', title: 'Show data: tables and charts', group: 'Make your presentation', file: 'data.md', description: 'Numbers as a table, a bar or line chart, key figures or a heatmap, from CSV in the slide or a file beside it.' },
   { slug: 'appearance', title: 'Change the look', group: 'Make your presentation', file: 'appearance.md', description: 'Choose fonts and colors with themes and palettes.' },
   { slug: 'theme-repository', title: 'Install, remove or share a theme', group: 'Make your presentation', file: 'theme-repository.md', description: 'Packs of themes and palettes: those that come with mdeck, more from the theme repository, and how to share your own.' },
   { slug: 'notes-and-presenting', title: 'Add notes and present', group: 'Present and share', file: 'presenting.md', description: 'See your notes, reveal points one at a time, and open the audience screen.' },
@@ -20,8 +21,9 @@ export const pages = [
   { slug: 'troubleshooting', title: 'When something goes wrong', group: 'Help and reference', file: 'troubleshooting.md', description: 'Find a missing picture, fix a typing mistake, or recover a command that will not run.' },
   { slug: 'custom-layouts', title: 'Create a custom layout', group: 'Advanced customization', source: '../reference/layouts.md', description: 'The files behind a layout, its content areas, and its settings, as an assistant or a JavaScript author writes them.' },
   { slug: 'components', title: 'Create interactive content', group: 'Advanced customization', file: 'components.md', description: 'Interactive slide content as Preact components, written by your assistant or by hand.' },
+  { slug: 'dataviews', title: 'Create a dataview', group: 'Advanced customization', source: '../reference/dataviews.md', description: 'A new way to show the data of a <data> tag: its manifest, what it receives, and the helpers it draws with.' },
   { slug: 'theme-authoring', title: 'Create a theme or palette', group: 'Advanced customization', file: 'theme-authoring.md', description: 'The files behind a visual identity for a whole deck, as an assistant or a CSS author writes them.' },
-  { slug: 'extensions', title: 'Extension manifests', group: 'Advanced customization', source: '../reference/extensions.md', description: 'The one manifest format shared by templates, themes and palettes.' },
+  { slug: 'extensions', title: 'Extension manifests', group: 'Advanced customization', source: '../reference/extensions.md', description: 'The one manifest format shared by layouts, themes, palettes and dataviews.' },
   { slug: 'source-model', title: 'Build tools around mdeck', group: 'Advanced customization', source: '../reference/structured-slides.md', description: 'The source-preserving document model and editing helpers for tool authors.' },
 ]
 

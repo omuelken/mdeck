@@ -1,0 +1,21 @@
+schema = 1
+kind = "dataview"
+id = "dumbbell"
+title = "Dumbbell chart"
+description = "Two values per row joined by a line: before and after, two groups, two conditions. y names the two columns."
+steps = ["rows"]
+
+[needs]
+numbers = 2
+series = 2
+rows = 30
+
+[properties.values]
+type = "boolean"
+default = true
+description = "The two values beside their dots"
+
+[properties.zero]
+type = "boolean"
+default = false
+description = "The axis starts at 0"

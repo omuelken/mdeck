@@ -1,0 +1,4 @@
+.dataview .dataview-line { fill: none; stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
+.dataview .dataview-fill { opacity: 0.12; stroke: none; }
+/* A ring in the slide's colour keeps a dot clear of the lines it sits on. */
+.dataview .dataview-dot { stroke: var(--bg); stroke-width: 3; }

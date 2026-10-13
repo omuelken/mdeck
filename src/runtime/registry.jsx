@@ -7,6 +7,7 @@ import WordCloud from '../components/WordCloud.jsx'
 import Scale from '../components/Scale.jsx'
 import Numeric from '../components/Numeric.jsx'
 import Bibliography from '../components/Bibliography.jsx'
+import Data from '../components/Data.jsx'
 import deckComponents from 'virtual:deck-components'
 
 // Maps lowercase HTML tag names to Preact components.
@@ -26,5 +27,6 @@ export const registry = {
   scale: Scale,
   numeric: Numeric,
   bibliography: Bibliography,
+  data: Data,
   ...deckComponents,
 }

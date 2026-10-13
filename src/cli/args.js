@@ -88,7 +88,7 @@ export function parseArgs(command, argv) {
   if (command === 'build' && options['--notes'] && !options['--reader']) throw new Error('--notes requires --reader for mdeck build')
   if (command === 'build' && options['--no-polls'] && !options['--reader']) throw new Error('--no-polls requires --reader for mdeck build')
   if (command === 'build' && options['--launchers'] && options['--single-file']) throw new Error('--launchers is only available for folders, not with --single-file.')
-  if (command === 'list' && positionals.length === 2 && !['layouts', 'themes', 'palettes'].includes(positionals[0])) throw new Error('Use mdeck list [layouts|themes|palettes] [slides.md]')
+  if (command === 'list' && positionals.length === 2 && !['layouts', 'themes', 'palettes', 'dataviews'].includes(positionals[0])) throw new Error('Use mdeck list [layouts|themes|palettes|dataviews] [slides.md]')
   if (command === 'snapshot' && options['--dark'] && options['--light']) throw new Error('Choose --dark or --light')
   if (command === 'skill' && options['--print'] && options['--install']) throw new Error('Choose --print or --install')
   return { options, positionals }

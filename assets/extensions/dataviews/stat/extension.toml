@@ -1,0 +1,16 @@
+schema = 1
+kind = "dataview"
+id = "stat"
+title = "Key figures"
+description = "One to four numbers, large, each with its label: the result a slide is about."
+size = "content"
+steps = ["rows"]
+
+[needs]
+numbers = 1
+rows = 4
+
+[properties.change]
+type = "string"
+default = ""
+description = "A column with each figure's change, written signed beside it (+12 %, −0.4)"

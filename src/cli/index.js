@@ -378,7 +378,7 @@ const HELP = `
     ${c.green}mdeck results${c.reset} [slides.md] [-o answers.csv]  The answers kept in the talk, as CSV: slide, question, phone, time, answer
       --summary              one row per option, number or word, with how many chose it
       --json                 everything as JSON: each question, its summary and its answers (also -o answers.json)
-    ${c.green}mdeck list${c.reset} [layouts|themes|palettes] [slides.md] [--json]
+    ${c.green}mdeck list${c.reset} [layouts|themes|palettes|dataviews] [slides.md] [--json]
                                               List built-in and deck-local layouts, themes and palettes
     ${c.green}mdeck starter${c.reset} <layout> [slides.md]        Print starter Markdown for a layout
     ${c.green}mdeck docs${c.reset} [guide]                        Open the local documentation
@@ -553,10 +553,10 @@ if (command === 'new') {
   } catch (error) { err(error.message); process.exitCode = 1 }
 
 } else if (command === 'list') {
-  const KIND_WORDS = { layouts: 'layout', themes: 'theme', palettes: 'palette' }
+  const KIND_WORDS = { layouts: 'layout', themes: 'theme', palettes: 'palette', dataviews: 'dataview' }
   const [first, ...others] = positionals()
   const word = Object.hasOwn(KIND_WORDS, first) ? first : null
-  if (first && !word && !/\.md$/i.test(first)) { err(`Unknown kind: ${first}`); tip('Use layouts, themes or palettes.'); process.exit(1) }
+  if (first && !word && !/\.md$/i.test(first)) { err(`Unknown kind: ${first}`); tip('Use layouts, themes, palettes or dataviews.'); process.exit(1) }
   const file = (word ? others[0] : first) ?? 'slides.md'
   const registry = registryFor(file)
   if (hasFlag('--json')) {
@@ -571,6 +571,9 @@ if (command === 'new') {
       // The settings a deck may change under params:, with the kind of value each takes.
       const params = Object.entries(record.manifest?.params ?? {})
       if (params.length) console.log(`      ${c.dim}Settings: ${params.map(([name, param]) => name + paramKind(param)).join(' · ')}${c.reset}`)
+      // A dataview's options are attributes of the <data> tag.
+      const options = Object.entries(record.manifest?.properties ?? {})
+      if (options.length) console.log(`      ${c.dim}Options: ${options.map(([name, schema]) => `${name} (${schema.enum ? schema.enum.join(', ') : schema.type})`).join(' · ')}${c.reset}`)
     }
   }
 
