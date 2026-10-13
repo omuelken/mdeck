@@ -7,13 +7,13 @@ import { stepOf, format, formatTick, color, niceTicks, linear, extent, textWidth
 // there are several; highlighted rows get their values too. A missing value
 // leaves a gap. With steps="rows" the lines draw on one row at a time.
 
-export default function Line({ data, options, width, height, font }) {
+export default function Line({ data, props, width, height, font }) {
   const small = font * 0.8
   const n = data.rows.length, k = data.series.length
   const xColumn = data.columns[data.x]
   const positions = data.rows.map((row, i) => xColumn.type !== 'text' && typeof row.cells[data.x].value === 'number' ? row.cells[data.x].value : i)
-  const [low, high] = extent(data, { options })
-  const scale = niceTicks(low, high, { zero: !!options.zero || Number.isFinite(options.min) })
+  const [low, high] = extent(data, { props })
+  const scale = niceTicks(low, high, { zero: !!props.zero || Number.isFinite(props.min) })
   const compact = Math.max(Math.abs(scale.min), Math.abs(scale.max)) >= 100000
   const fmt = (value, series = 0) => format(data, value, series, { compact })
   const legend = k > 1 ? small * 1.9 : 0
@@ -27,7 +27,7 @@ export default function Line({ data, options, width, height, font }) {
   const [first, last] = [Math.min(...positions), Math.max(...positions)]
   const x = first === last ? () => (plot.x0 + plot.x1) / 2 : linear([first, last], [plot.x0, plot.x1])
   const y = linear([scale.min, scale.max], [plot.y1, plot.y0])
-  const dots = options.points === 'all' || (options.points === 'auto' && n <= 16)
+  const dots = props.points === 'all' || (props.points === 'auto' && n <= 16)
   // A label under every row that fits, else every second, third …
   const every = Math.max(1, Math.ceil(Math.max(...data.rows.map(row => textWidth(row.label, small))) * n / Math.max(1, plot.x1 - plot.x0) * 1.3))
 
@@ -50,7 +50,7 @@ export default function Line({ data, options, width, height, font }) {
       let d = '', open = false
       for (const point of points) { if (!point) { open = false; continue } d += `${open ? 'L' : 'M'}${point[0]},${point[1]}`; open = true }
       // A wash under one line; under several they would cover each other.
-      if (options.fill && k === 1) {
+      if (props.fill && k === 1) {
         const filled = points.filter(Boolean)
         if (filled.length > 1) parts.push(<path key="fill" d={`M${filled[0][0]},${y(Math.max(scale.min, Math.min(0, scale.max)))}${filled.map(p => `L${p[0]},${p[1]}`).join('')}L${filled.at(-1)[0]},${y(Math.max(scale.min, Math.min(0, scale.max)))}Z`} fill={stroke} class="dataview-fill" />)
       }

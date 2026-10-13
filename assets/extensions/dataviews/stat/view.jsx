@@ -5,8 +5,8 @@ import { stepOf } from 'mdeck/dataview'
 // colour, the unit beside it, the row's label under it, and a change when
 // the `change` column has one. The figure is a number to read, not a mark.
 
-export default function Stat({ data, options }) {
-  const changeColumn = options.change ? data.columns.findIndex(column => column.name.toLowerCase() === options.change.toLowerCase()) : -1
+export default function Stat({ data, props }) {
+  const changeColumn = props.change ? data.columns.findIndex(column => column.name.toLowerCase() === props.change.toLowerCase()) : -1
   return <div class="dataview-stats">
     {data.rows.map((row, i) => {
       const change = changeColumn >= 0 ? row.cells[changeColumn] : null

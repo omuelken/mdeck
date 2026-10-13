@@ -574,7 +574,7 @@ value or as `true`. Series take the palette's accents in order (`--accent`,
 `--accent-2`, `--accent-3`), then mixes of them with the ink; numbers are
 written as the deck's `lang` writes them. Charts carry a table of their data
 for screen readers. `mdeck check` reports a missing file, columns the data
-does not have, cells that are not numbers, options a dataview does not take,
+does not have, cells that are not numbers, properties a dataview does not take,
 data it cannot show, and more value columns than the palette has accents.
 
 A deck can add its own dataview as an extension (`kind = "dataview"`); see

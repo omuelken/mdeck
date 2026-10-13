@@ -9,12 +9,12 @@ steps = ["rows", "series"]
 numbers = 1
 x = "number"
 
-[options.labels]
+[properties.labels]
 type = "string"
 default = ""
 description = "A column whose text names the points: all of them when there are up to 12, else the highlighted ones"
 
-[options.zero]
+[properties.zero]
 type = "boolean"
 default = false
 description = "Both axes start at 0"

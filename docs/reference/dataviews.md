@@ -8,6 +8,9 @@ layouts. A dataview is an extension like a layout or a theme: a folder with an
 `extension.toml` and the file that draws, beside the deck in `extensions/`
 (any folder below it), installed for the user, or built in.
 
+> **Experimental.** The dataview manifest and `mdeck/dataview` may still
+> change in a minor release, as layouts may.
+
 ```text
 extensions/
   meter/
@@ -33,7 +36,7 @@ numbers = 1                     # at least this many columns of numbers
 # rows = 20                     # at most this many rows
 # x = "number"                  # the label column holds numbers or dates
 
-[options.goal]                  # <data show="meter" goal="50">
+[properties.goal]               # <data show="meter" goal="50">
 type = "number"                 # string, number, integer or boolean
 default = 100
 description = "The value of a full bar"
@@ -44,11 +47,12 @@ description = "The value of a full bar"
 | `size` | `fixed`: the dataview gets a box of the tag's `height` (520 slide pixels by default) and its width, as charts need; `content`: it is as tall as what it draws, as a table is |
 | `steps` | The `steps` values it supports; `mdeck check` reports others |
 | `needs` | What data it can show; `mdeck check` and the slide say what is missing |
-| `options` | Its own attributes, typed like a layout's properties (`type`, `enum`, `default`, `minimum`, `maximum`, `description`). Attribute values are text: `number` and `integer` read them as numbers, `boolean` takes `true`, `false`, or the attribute alone. The attributes every dataview shares (`src`, `show`, `title`, `x`, `y`, `rows`, `sort`, `highlight`, `steps`, `unit`, `height`, `caption`) cannot be options |
+| `properties` | Its own attributes, typed like a layout's properties (`type`, `enum`, `default`, `minimum`, `maximum`, `description`). Attribute values are text: `number` and `integer` read them as numbers, `boolean` takes `true`, `false`, or the attribute alone. The attributes every dataview shares (`src`, `show`, `title`, `x`, `y`, `rows`, `sort`, `highlight`, `steps`, `unit`, `height`, `caption`) cannot be properties |
 | `files` | `view` (default `view.jsx`) and `styles` (default `styles.css`, or a list) |
 
-Dataviews in a deck's `extensions/` folder replace built-in ones of the same
-id for that deck. `mdeck list dataviews` lists them with their options.
+A dataview's id must be unique: one beside the deck cannot take the name of a
+built-in one, as with layouts. `mdeck list dataviews` lists them with their
+properties.
 
 ## The view
 
@@ -58,10 +62,10 @@ id for that deck. `mdeck list dataviews` lists them with their options.
 import { h } from 'preact'
 import { stepOf, format, color } from 'mdeck/dataview'
 
-export default function Meter({ data, options, width, height, font }) {
+export default function Meter({ data, props, width, height, font }) {
   return <div class="meter">{data.rows.map((row, i) => <div key={row.index} {...stepOf(data, i)}>
     <span>{row.label}: {format(data, row.values[0], 0)}</span>
-    <div class="meter-track"><div style={{ width: `${row.values[0] / options.goal * 100}%`, background: color(0) }} /></div>
+    <div class="meter-track"><div style={{ width: `${row.values[0] / props.goal * 100}%`, background: color(0) }} /></div>
   </div>)}</div>
 }
 ```
@@ -75,7 +79,7 @@ It receives:
 | `data.series` | The value columns, in order: `{ name, column, index }` |
 | `data.rows` | The rows shown, in order: `{ index, label, cells: [{ text, value }], values, highlight }`. `values` holds a number (or `null`) per series; `index` is the row's number in the file |
 | `data.title`, `data.unit`, `data.steps`, `data.lang` | From the tag and the deck |
-| `options` | Its options, typed, with their defaults |
+| `props` | Its properties, typed, with their defaults |
 | `width`, `height` | Its box in slide pixels (`height` for `size = "fixed"`) |
 | `font` | The text size in its box, in slide pixels; labels look right at 0.8 of it |
 
@@ -96,7 +100,7 @@ so a dataview only draws the data.
 | `linear([d0, d1], [r0, r1])` | A linear scale |
 | `bands(count, [r0, r1], { padding })` | Slots for bars: `{ start(i), center(i), size, slot }` |
 | `barPath({ base, end, across, thickness, vertical, radius })` | A bar rounded at its data end, as an SVG path |
-| `extent(data, { options, series, stacked })` | The lowest and highest value, or the `min` and `max` options |
+| `extent(data, { props, series, stacked })` | The lowest and highest value, or the `min` and `max` properties |
 | `textWidth(text, size)` | About how wide a label is, to leave room for it |
 | `Legend` | A legend for two or more series (`<Legend data={data} marker="line" />`) |
 | `useBox(ref)` | The size and text size of an element, in slide pixels |

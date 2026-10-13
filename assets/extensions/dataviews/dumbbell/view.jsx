@@ -5,16 +5,16 @@ import { stepOf, format, formatTick, color, niceTicks, linear, extent, textWidth
 // second colour, joined by a thick line in the grid's colour, so the gap
 // between them is what one sees. The values sit outside the dots.
 
-export default function Dumbbell({ data, options, width, height, font }) {
+export default function Dumbbell({ data, props, width, height, font }) {
   const small = font * 0.8
   const n = data.rows.length
   const [low, high] = extent(data)
-  const scale = niceTicks(low, high, { zero: !!options.zero })
+  const scale = niceTicks(low, high, { zero: !!props.zero })
   const fmt = (value, s = 0) => format(data, value, s)
   const legend = small * 1.9
   const svgHeight = Math.max(80, height - legend)
   const left = Math.min(width * 0.32, Math.max(0, ...data.rows.map(row => textWidth(row.label, small))) + 18)
-  const room = options.values ? Math.max(0, ...data.rows.flatMap(row => row.values.map((v, s) => textWidth(fmt(v, s), small)))) + 16 : 12
+  const room = props.values ? Math.max(0, ...data.rows.flatMap(row => row.values.map((v, s) => textWidth(fmt(v, s), small)))) + 16 : 12
   const plot = { x0: left + room, x1: width - room, y0: 4, y1: svgHeight - small * 1.8 }
   const x = linear([scale.min, scale.max], [plot.x0, plot.x1])
   const slot = (plot.y1 - plot.y0) / Math.max(1, n)
@@ -36,7 +36,7 @@ export default function Dumbbell({ data, options, width, height, font }) {
           {a != null && b != null && <line x1={x(a)} x2={x(b)} y1={yOf(i)} y2={yOf(i)} class="dataview-bar" />}
           {row.values.map((value, s) => value == null ? null : <g key={s}>
             <circle cx={x(value)} cy={yOf(i)} r={r} fill={color(s)} class="dataview-dot" />
-            {options.values && <text class="dataview-value" x={x(value) + (s === order[0] ? -(r + 8) : r + 8)} y={yOf(i)} text-anchor={s === order[0] ? 'end' : 'start'} dominant-baseline="middle">{fmt(value, s)}</text>}
+            {props.values && <text class="dataview-value" x={x(value) + (s === order[0] ? -(r + 8) : r + 8)} y={yOf(i)} text-anchor={s === order[0] ? 'end' : 'start'} dominant-baseline="middle">{fmt(value, s)}</text>}
           </g>)}
         </g>
       })}

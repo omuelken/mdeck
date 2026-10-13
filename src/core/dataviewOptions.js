@@ -1,5 +1,5 @@
 // A dataview's options are the <data> tag's other attributes, typed by the
-// dataview's manifest ([options], like a layout's properties). Attributes are
+// dataview's manifest ([properties], like a layout's). Attributes are
 // text; here they become what the option takes: a number, a whole number,
 // true or false, or text. The slides and `mdeck check` use the same reading.
 import { SHARED_ATTRIBUTES } from './dataset.js'
@@ -18,7 +18,7 @@ function coerce(text, schema) {
 /** The options for `manifest` from the tag's attributes: { options, problems: [{ severity, message }] }. */
 export function dataviewOptions(manifest, attrs = {}) {
   const options = {}, problems = []
-  const schemas = manifest?.options ?? {}
+  const schemas = manifest?.properties ?? {}
   for (const [name, schema] of Object.entries(schemas)) {
     if (attrs[name] == null) { if (schema.default !== undefined) options[name] = schema.default; continue }
     const value = coerce(attrs[name], schema)
@@ -31,7 +31,7 @@ export function dataviewOptions(manifest, attrs = {}) {
   for (const name of Object.keys(attrs)) {
     if (SHARED_ATTRIBUTES.includes(name) || name.startsWith('data-') || name.startsWith('aria-') || Object.hasOwn(schemas, name)) continue
     const known = Object.keys(schemas)
-    problems.push({ severity: 'warning', message: `${manifest?.id ?? 'This dataview'} has no option "${name}"${known.length ? `; it takes: ${known.join(', ')}` : ''}` })
+    problems.push({ severity: 'warning', message: `${manifest?.id ?? 'This dataview'} has no property "${name}"${known.length ? `; it takes: ${known.join(', ')}` : ''}` })
   }
   return { options, problems }
 }

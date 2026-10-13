@@ -4,17 +4,17 @@ import { stepOf, format, t } from 'mdeck/dataview'
 // The data as a table. Without y, every column, in the file's order; with
 // y, the label column and those. Numbers sit right, under their header with
 // the unit; highlighted rows stand out; rows past max-rows are counted.
-export default function Table({ data, options }) {
+export default function Table({ data, props }) {
   const columns = data.series.length && data.series.length < data.columns.length - 1
     ? [data.x, ...data.series.map(series => series.column)]
     : data.columns.map((column, index) => index)
-  const shown = data.rows.slice(0, options['max-rows'])
+  const shown = data.rows.slice(0, props['max-rows'])
   const rest = data.rows.length - shown.length
   const isNumber = column => data.columns[column].type === 'number'
   const seriesOf = column => data.series.findIndex(series => series.column === column)
   const cell = (row, column) => {
     const { text, value } = row.cells[column]
-    if (!isNumber(column) || options.numbers !== 'formatted' || value == null) return text
+    if (!isNumber(column) || props.numbers !== 'formatted' || value == null) return text
     const series = seriesOf(column)
     return series >= 0 ? format(data, value, series) : text
   }

@@ -6,16 +6,16 @@ import { stepOf, format, formatTick, color, markColor, niceTicks, linear, extent
 // `labels` names a column to name the points by: every point of a small
 // set, else the highlighted ones (highlight="…" matches that name too).
 
-export default function Scatter({ data, options, width, height, font }) {
+export default function Scatter({ data, props, width, height, font }) {
   const small = font * 0.8
   const k = data.series.length
-  const labelColumn = options.labels ? data.columns.findIndex(column => column.name.toLowerCase() === options.labels.toLowerCase()) : -1
+  const labelColumn = props.labels ? data.columns.findIndex(column => column.name.toLowerCase() === props.labels.toLowerCase()) : -1
   const nameOf = row => labelColumn >= 0 ? row.cells[labelColumn].text : ''
   const named = row => labelColumn >= 0 && (data.rows.length <= 12 || row.highlight)
   const xs = data.rows.map(row => row.cells[data.x].value)
-  const xScale = niceTicks(Math.min(...xs.filter(v => v != null)), Math.max(...xs.filter(v => v != null)), { zero: !!options.zero })
+  const xScale = niceTicks(Math.min(...xs.filter(v => v != null)), Math.max(...xs.filter(v => v != null)), { zero: !!props.zero })
   const [low, high] = extent(data)
-  const yScale = niceTicks(low, high, { zero: !!options.zero })
+  const yScale = niceTicks(low, high, { zero: !!props.zero })
   const xColumn = data.columns[data.x]
   const fmtX = value => xColumn.type === 'date' ? new Date(value).getUTCFullYear() : formatTick({ ...data, series: [{ column: data.x }] }, value, xScale.step)
   const fmtY = value => formatTick(data, value, yScale.step)

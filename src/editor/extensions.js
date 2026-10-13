@@ -31,6 +31,8 @@ export function toModel(raw) {
   if (kind === 'palette') return { ...model, theme: theme ?? '', light: entries(light), dark: entries(dark) }
   if (kind === 'theme') return { ...model, palette: palette ?? '', palettes: palettes ?? [], appearance: appearance ?? 'light', fonts: fonts ?? [], tokens: entries(tokens), params: entries(params) }
   if (kind === 'layout') return { ...model, frame: frame ?? 'standard', regions: entries(regions), properties: entries(properties).map(property => ({ ...property, enum: property.enum ?? [], items: property.items ?? null })) }
+  // A dataview's properties stay as written, with its needs and steps.
+  if (kind === 'dataview' && properties) return { ...model, extra: { ...extra, properties } }
   return model
 }
 
@@ -49,7 +51,7 @@ export function toToml(model) {
     regions: table(model.regions ?? [], region => clean({ description: region.description, required: region.required || undefined })),
     properties: table(model.properties ?? [], property => propertySchema(property)),
   }
-  // A dataview's options, needs and steps stay as written (the forms do not edit them).
+  // A dataview's properties, needs and steps stay as written (the forms do not edit them).
   else raw = { ...base, ...model.extra, ...(Object.keys(model.files ?? {}).length ? { files: model.files } : {}) }
   if (raw.params && !Object.keys(raw.params).length) delete raw.params
   if (raw.properties && !Object.keys(raw.properties).length) delete raw.properties
@@ -75,7 +77,7 @@ export function toRuntimeManifest(model) {
     ...(model.extra?.guide ? { guide: runtimeGuide(model.extra.guide) } : {}),
   }
   // Plain objects, as the manifest check makes them, not the TOML parser's.
-  if (model.kind === 'dataview') return JSON.parse(JSON.stringify({ ...shared, options: model.extra?.options ?? {}, needs: model.extra?.needs ?? {}, steps: [...new Set(model.extra?.steps ?? [])], size: model.extra?.size ?? 'fixed' }))
+  if (model.kind === 'dataview') return JSON.parse(JSON.stringify({ ...shared, properties: model.extra?.properties ?? {}, needs: model.extra?.needs ?? {}, steps: [...new Set(model.extra?.steps ?? [])], size: model.extra?.size ?? 'fixed' }))
   return shared
 }
 

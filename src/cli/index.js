@@ -572,7 +572,7 @@ if (command === 'new') {
       const params = Object.entries(record.manifest?.params ?? {})
       if (params.length) console.log(`      ${c.dim}Settings: ${params.map(([name, param]) => name + paramKind(param)).join(' · ')}${c.reset}`)
       // A dataview's options are attributes of the <data> tag.
-      const options = Object.entries(record.manifest?.options ?? {})
+      const options = Object.entries(record.manifest?.properties ?? {})
       if (options.length) console.log(`      ${c.dim}Options: ${options.map(([name, schema]) => `${name} (${schema.enum ? schema.enum.join(', ') : schema.type})`).join(' · ')}${c.reset}`)
     }
   }

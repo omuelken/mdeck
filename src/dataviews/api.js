@@ -2,12 +2,12 @@
 // folder with an extension.toml (kind = "dataview") and a view.jsx whose
 // default export draws the data of a <data> tag:
 //
-//   export default function View({ data, options, width, height }) { … }
+//   export default function View({ data, props, width, height }) { … }
 //
 //   data     the dataset (src/core/dataset.js): columns, the label column x,
 //            the value series, the rows with their values, title, unit,
 //            steps, and lang
-//   options  the tag's other attributes, typed by the manifest's [options]
+//   props    the tag's other attributes, typed by the manifest's [properties]
 //   width    the room it has, in slide pixels; height its height
 //   font     the text size there, in slide pixels (labels are 0.8 of it)
 //
@@ -144,8 +144,8 @@ export function barPath({ base, end, across, thickness, vertical = true, radius 
   return `M${base},${y0}H${end - sign * r}Q${end},${y0} ${end},${y0 + r}V${y1 - r}Q${end},${y1} ${end - sign * r},${y1}H${base}Z`
 }
 
-/** The lowest and highest value of the data's series (or of `series` alone), and the `min`/`max` options when set. */
-export function extent(data, { options = {}, series = null, stacked = false } = {}) {
+/** The lowest and highest value of the data's series (or of `series` alone), and the `min`/`max` properties when set. */
+export function extent(data, { props = {}, series = null, stacked = false } = {}) {
   let low = Infinity, high = -Infinity
   for (const row of data.rows) {
     const values = series == null ? row.values : [row.values[series]]
@@ -156,7 +156,7 @@ export function extent(data, { options = {}, series = null, stacked = false } = 
     } else for (const value of values) if (value != null) { low = Math.min(low, value); high = Math.max(high, value) }
   }
   if (!Number.isFinite(low)) { low = 0; high = 1 }
-  if (Number.isFinite(options.min)) low = options.min
-  if (Number.isFinite(options.max)) high = options.max
+  if (Number.isFinite(props.min)) low = props.min
+  if (Number.isFinite(props.max)) high = props.max
   return [low, high]
 }

@@ -9,6 +9,8 @@ import { propertyErrors } from '../layouts/layoutProps.js'
 import { paramSettingProblems, paramSettings } from './params.js'
 
 export const SCHEMA_VERSION = 1
+import { SHARED_ATTRIBUTES } from '../core/dataset.js'
+
 export const KINDS = ['layout', 'theme', 'palette', 'dataview']
 export const ID_RE = /^[a-z][a-z0-9-]*$/
 export const MANIFEST_FILENAME = 'extension.toml'
@@ -23,7 +25,7 @@ const KEYS = {
   layout: [...SHARED_KEYS, 'frame', 'files', 'regions', 'properties'],
   theme: [...SHARED_KEYS, ...PACKAGE_KEYS, 'palette', 'palettes', 'appearance', 'fonts', 'files', 'tokens', 'params', 'guide'],
   palette: [...SHARED_KEYS, ...PACKAGE_KEYS, 'theme', 'light', 'dark'],
-  dataview: [...SHARED_KEYS, ...PACKAGE_KEYS, 'files', 'options', 'needs', 'steps', 'size'],
+  dataview: [...SHARED_KEYS, 'files', 'properties', 'needs', 'steps', 'size'],
 }
 export const VERSION_RE = /^\d+\.\d+\.\d+$/
 export const RANGE_RE = /^>=\s*(\d+\.\d+\.\d+)$/
@@ -157,8 +159,7 @@ function validateLayout(raw, shared, fail) {
 }
 
 // A dataview: a way to show the data of a <data> tag (src/core/dataset.js).
-// Its options are the tag's other attributes, typed like a layout's
-// properties; `needs` says what data it can show (`numbers`: at least this
+// Its properties are the tag's other attributes, typed like a layout's; `needs` says what data it can show (`numbers`: at least this
 // many columns of numbers; `series` and `rows`: at most this many; `x =
 // "number"`: the label column holds numbers or dates); `steps`
 // the ways it builds up (rows, series); `size` whether it fills a box of the
@@ -166,14 +167,14 @@ function validateLayout(raw, shared, fail) {
 export const DATAVIEW_STEPS = ['rows', 'series']
 const NEEDS_KEYS = ['numbers', 'series', 'rows', 'x']
 function validateDataview(raw, shared, fail) {
-  if (raw.options != null && !isPlainObject(raw.options)) fail('options must be a table', 'options')
-  const options = {}
-  for (const [name, schema] of Object.entries(raw.options ?? {})) {
-    const path = `options.${name}`
-    if (!/^[a-z][a-z0-9-]*$/.test(name)) fail('option names are attribute names: lowercase letters, digits and hyphens, starting with a letter', path)
-    if (['src', 'show', 'title', 'x', 'y', 'rows', 'sort', 'highlight', 'steps', 'unit', 'height', 'caption'].includes(name)) fail(`"${name}" is an attribute every dataview shares`, path)
-    if (isPlainObject(schema) && ['array', 'object'].includes(schema.type)) fail('an option is a string, number, integer or boolean: it is written as an attribute', `${path}.type`)
-    options[name] = validatePropertySchema(schema, path, fail)
+  if (raw.properties != null && !isPlainObject(raw.properties)) fail('properties must be a table', 'properties')
+  const properties = {}
+  for (const [name, schema] of Object.entries(raw.properties ?? {})) {
+    const path = `properties.${name}`
+    if (!/^[a-z][a-z0-9-]*$/.test(name)) fail('property names are attribute names: lowercase letters, digits and hyphens, starting with a letter', path)
+    if (SHARED_ATTRIBUTES.includes(name)) fail(`"${name}" is an attribute every dataview shares`, path)
+    if (isPlainObject(schema) && ['array', 'object'].includes(schema.type)) fail('a property is a string, number, integer or boolean: it is written as an attribute', `${path}.type`)
+    properties[name] = validatePropertySchema(schema, path, fail)
   }
   const needs = {}
   if (raw.needs != null && !isPlainObject(raw.needs)) fail('needs must be a table such as { numbers = 1 }', 'needs')
@@ -185,7 +186,7 @@ function validateDataview(raw, shared, fail) {
   }
   if (raw.steps != null && (!Array.isArray(raw.steps) || raw.steps.some(step => !DATAVIEW_STEPS.includes(step)))) fail(`steps must be a list of: ${DATAVIEW_STEPS.join(', ')}`, 'steps')
   if (raw.size != null && !['fixed', 'content'].includes(raw.size)) fail('size must be "fixed" (a box of the tag\'s height) or "content" (as tall as it is)', 'size')
-  return { ...shared, options, needs, steps: [...new Set(raw.steps ?? [])], size: raw.size ?? 'fixed' }
+  return { ...shared, properties, needs, steps: [...new Set(raw.steps ?? [])], size: raw.size ?? 'fixed' }
 }
 
 function validatePropertySchema(schema, path, fail) {

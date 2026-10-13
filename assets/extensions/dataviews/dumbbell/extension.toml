@@ -10,12 +10,12 @@ numbers = 2
 series = 2
 rows = 30
 
-[options.values]
+[properties.values]
 type = "boolean"
 default = true
 description = "The two values beside their dots"
 
-[options.zero]
+[properties.zero]
 type = "boolean"
 default = false
 description = "The axis starts at 0"

@@ -87,22 +87,22 @@ test('CSV between the tags moves into data-csv, so Markdown never reads it', () 
   assert.equal(expandDataTags('```\n<data>\n```'), '```\n<data>\n```', 'a tag in code is no tag')
 })
 
-test('options are typed by the dataview\'s manifest; unknown attributes are named', () => {
-  const manifest = { id: 'bar', options: { stacked: { type: 'boolean', default: false }, min: { type: 'number' }, orientation: { type: 'string', enum: ['auto', 'vertical'], default: 'auto' } } }
+test('properties are typed by the dataview\'s manifest; unknown attributes are named', () => {
+  const manifest = { id: 'bar', properties: { stacked: { type: 'boolean', default: false }, min: { type: 'number' }, orientation: { type: 'string', enum: ['auto', 'vertical'], default: 'auto' } } }
   assert.deepEqual(dataviewOptions(manifest, { stacked: '', min: '-5', title: 'x', 'data-csv': 'a' }), { options: { stacked: true, min: -5, orientation: 'auto' }, problems: [] })
   const { options, problems } = dataviewOptions(manifest, { orientation: 'diagonal', colour: 'red', min: 'low' })
   assert.equal(options.orientation, 'auto', 'a value it cannot take leaves the default')
   assert.deepEqual(problems.map(problem => problem.severity), ['error', 'error', 'warning'])
-  assert.match(problems[2].message, /no option "colour"; it takes: stacked, min, orientation/)
+  assert.match(problems[2].message, /no property "colour"; it takes: stacked, min, orientation/)
 })
 
-test('dataview manifests: options, needs, steps and size are checked', () => {
+test('dataview manifests: properties, needs, steps and size are checked', () => {
   const check = raw => validateManifest({ schema: 1, kind: 'dataview', id: 'x', title: 'X', ...raw }, { dir: '/x', folderName: 'x', fileExists: () => true })
-  const record = check({ options: { goal: { type: 'number', default: 100 } }, needs: { numbers: 1, x: 'number' }, steps: ['rows'], size: 'content' })
-  assert.deepEqual(record.manifest, { id: 'x', title: 'X', description: '', options: { goal: { type: 'number', default: 100 } }, needs: { numbers: 1, x: 'number' }, steps: ['rows'], size: 'content' })
+  const record = check({ properties: { goal: { type: 'number', default: 100 } }, needs: { numbers: 1, x: 'number' }, steps: ['rows'], size: 'content' })
+  assert.deepEqual(record.manifest, { id: 'x', title: 'X', description: '', properties: { goal: { type: 'number', default: 100 } }, needs: { numbers: 1, x: 'number' }, steps: ['rows'], size: 'content' })
   assert.match(record.files.view, /view\.jsx$/)
-  assert.throws(() => check({ options: { title: { type: 'string' } } }), /every dataview shares/)
-  assert.throws(() => check({ options: { list: { type: 'array' } } }), /written as an attribute/)
+  assert.throws(() => check({ properties: { title: { type: 'string' } } }), /every dataview shares/)
+  assert.throws(() => check({ properties: { list: { type: 'array' } } }), /written as an attribute/)
   assert.throws(() => check({ needs: { colours: 3 } }), /Unknown need/)
   assert.throws(() => check({ steps: ['cells'] }), /steps must be a list of: rows, series/)
   assert.throws(() => validateManifest({ schema: 1, kind: 'dataview', id: 'x', title: 'X' }, { dir: '/x', folderName: 'x', fileExists: () => false }), ManifestError)
@@ -137,7 +137,7 @@ test('mdeck check names the problems of <data> tags at their lines', () => {
   assert.deepEqual(found.map(d => [d.line, d.severity]), [[3, 'error'], [11, 'error'], [13, 'warning'], [15, 'warning']])
   assert.match(found[0].message, /no dataview is named so\. Available: bar,/)
   assert.match(found[1].message, /Missing data file: gone\.csv/)
-  assert.match(found[2].message, /no option "colour"/)
+  assert.match(found[2].message, /no property "colour"/)
   assert.match(found[3].message, /4 value columns; the palette has three accents/)
 })
 

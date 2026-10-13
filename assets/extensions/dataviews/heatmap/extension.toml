@@ -9,21 +9,21 @@ steps = ["rows", "series"]
 numbers = 1
 rows = 30
 
-[options.values]
+[properties.values]
 type = "boolean"
 default = true
 description = "The numbers in the cells"
 
-[options.scale]
+[properties.scale]
 type = "string"
 enum = ["auto", "sequential", "diverging"]
 default = "auto"
 description = "One colour from light to strong, or two colours either side of 0; auto takes two when there are values below and above 0"
 
-[options.min]
+[properties.min]
 type = "number"
 description = "The value of the lightest colour"
 
-[options.max]
+[properties.max]
 type = "number"
 description = "The value of the strongest colour"

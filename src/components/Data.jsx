@@ -17,7 +17,7 @@ import './dataview.css'
 // shown by a dataview: a table unless `show` names another, such as bar or
 // line. Dataviews are extensions (kind = "dataview"): built in, installed or
 // beside the deck. The tag reads the attributes every dataview shares
-// (src/core/dataset.js); the others are the dataview's options.
+// (src/core/dataset.js); the others are the dataview's properties.
 
 /** The text of a data file the deck names, as the build bundled it. */
 export function dataFile(src) {
@@ -64,7 +64,7 @@ export default function Data(props) {
   return <figure class={`dataview dataview--${show}`} style={style} aria-label={data.title || undefined}>
     {data.title && <figcaption class="dataview-title">{data.title}</figcaption>}
     <div ref={ref} class={`dataview-body${fixed ? ' dataview-body--fixed' : ''}`}>
-      {(!fixed || box.width > 0) && h(view.render, { data, options, width: box.width, height: box.height, font: box.font })}
+      {(!fixed || box.width > 0) && h(view.render, { data, props: options, width: box.width, height: box.height, font: box.font })}
     </div>
     {show !== 'table' && <ScreenReaderTable data={data} />}
     {caption && <p class="dataview-caption">{caption}</p>}

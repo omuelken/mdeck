@@ -86,9 +86,10 @@ export function discoverExtensions(roots) {
     const key = `${record.kind}:${record.id}`
     const existing = byKey.get(key)
     const entry = { ...record, source }
-    // Themes, palettes and dataviews may be replaced from a later place;
-    // layouts and two with one id in the same place may not.
-    const replaces = existing && record.kind !== 'layout' && RANK[source] > RANK[existing.source]
+    // Themes and palettes, which are installed as packages, may be replaced
+    // from a later place; layouts and dataviews, and two with one id in the
+    // same place, may not.
+    const replaces = existing && ['theme', 'palette'].includes(record.kind) && RANK[source] > RANK[existing.source]
     if (replaces) {
       if (existing.source === 'user') registry.warnings.push(`The ${record.kind} "${record.id}" in this deck's extensions replaces the one installed in ${dirname(existing.dir)}`)
       registry.records.splice(registry.records.indexOf(existing), 1)

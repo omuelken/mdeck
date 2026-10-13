@@ -15,20 +15,20 @@ const fit = (text, room, size) => {
   return text.slice(0, chars) + '…'
 }
 
-export default function Bar({ data, options, width, height, font }) {
+export default function Bar({ data, props, width, height, font }) {
   const small = font * 0.8
   const n = data.rows.length, k = data.series.length
-  const stacked = options.stacked && k > 1
-  const [low, high] = extent(data, { options, stacked })
+  const stacked = props.stacked && k > 1
+  const [low, high] = extent(data, { props, stacked })
   const scale = niceTicks(low, high)
   const compact = Math.max(Math.abs(scale.min), Math.abs(scale.max)) >= 100000
   const fmt = (value, series = 0) => format(data, value, series, { compact })
-  const valuesShown = options.values === 'all' || (options.values === 'auto' && k === 1 && n <= 12)
-  const showValue = row => valuesShown || (options.values !== 'none' && row.highlight)
+  const valuesShown = props.values === 'all' || (props.values === 'auto' && k === 1 && n <= 12)
+  const showValue = row => valuesShown || (props.values !== 'none' && row.highlight)
   const longest = Math.max(0, ...data.rows.map(row => textWidth(row.label, small)))
   const tick = value => formatTick(data, value, scale.step, { compact })
   const tickWidth = Math.max(...scale.ticks.map(value => textWidth(tick(value), small)))
-  const horizontal = options.orientation === 'horizontal' || (options.orientation === 'auto' && longest > ((width - tickWidth - 20) / Math.max(1, n)) * 0.92)
+  const horizontal = props.orientation === 'horizontal' || (props.orientation === 'auto' && longest > ((width - tickWidth - 20) / Math.max(1, n)) * 0.92)
   const legend = k > 1 ? small * 1.9 : 0
   const svgHeight = Math.max(80, height - legend)
   const valueRoom = Math.max(0, ...data.rows.filter(showValue).flatMap(row => row.values.map((value, s) => textWidth(fmt(value, s), small))))

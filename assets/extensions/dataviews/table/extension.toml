@@ -6,13 +6,13 @@ description = "The data as a table: numbers aligned, highlighted rows picked out
 size = "content"
 steps = ["rows"]
 
-[options.max-rows]
+[properties.max-rows]
 type = "integer"
 minimum = 1
 default = 12
 description = "Rows shown at most; the rest are counted below the table"
 
-[options.numbers]
+[properties.numbers]
 type = "string"
 enum = ["as-written", "formatted"]
 default = "as-written"

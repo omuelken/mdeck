@@ -10,11 +10,11 @@ import { stepOf, format, extent, textWidth } from 'mdeck/dataview'
 const GAP = 3
 let keys = 0
 
-export default function Heatmap({ data, options, width, height, font }) {
+export default function Heatmap({ data, props, width, height, font }) {
   const small = font * 0.8
   const n = data.rows.length, k = data.series.length
-  const [low, high] = extent(data, { options })
-  const diverging = options.scale === 'diverging' || (options.scale === 'auto' && low < 0 && high > 0)
+  const [low, high] = extent(data, { props })
+  const diverging = props.scale === 'diverging' || (props.scale === 'auto' && low < 0 && high > 0)
   const reach = Math.max(Math.abs(low), Math.abs(high)) || 1
   const share = value => diverging ? Math.abs(value) / reach : high === low ? 1 : (value - low) / (high - low)
   const fill = value => {
@@ -40,7 +40,7 @@ export default function Heatmap({ data, options, width, height, font }) {
       <text x={left - 12} y={top + cellH * (i + 0.5)} text-anchor="end" dominant-baseline="middle" class={row.highlight ? 'dataview-value' : null}>{row.label}</text>
       {row.values.map((value, s) => <g key={s} {...stepOf(data, i, s)}>
         <rect x={left + cellW * s + GAP / 2} y={top + cellH * i + GAP / 2} width={cellW - GAP} height={cellH - GAP} rx="4" fill={fill(value)} class={row.highlight ? 'dataview-cell is-highlight' : 'dataview-cell'} />
-        {options.values && value != null && cellH >= small * 1.2 && <text x={left + cellW * (s + 0.5)} y={top + cellH * (i + 0.5)} text-anchor="middle" dominant-baseline="middle" class={strong(value) ? 'dataview-cell-text is-strong' : 'dataview-cell-text'}>{fmt(value, s)}</text>}
+        {props.values && value != null && cellH >= small * 1.2 && <text x={left + cellW * (s + 0.5)} y={top + cellH * (i + 0.5)} text-anchor="middle" dominant-baseline="middle" class={strong(value) ? 'dataview-cell-text is-strong' : 'dataview-cell-text'}>{fmt(value, s)}</text>}
       </g>)}
     </g>)}
     <g class="dataview-key" transform={`translate(${left}, ${gridBottom + small * 0.9})`}>

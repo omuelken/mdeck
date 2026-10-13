@@ -9,27 +9,27 @@ steps = ["rows", "series"]
 numbers = 1
 rows = 40
 
-[options.orientation]
+[properties.orientation]
 type = "string"
 enum = ["auto", "vertical", "horizontal"]
 default = "auto"
 description = "Columns (vertical) or bars (horizontal); auto turns to bars when the labels do not fit under the columns"
 
-[options.stacked]
+[properties.stacked]
 type = "boolean"
 default = false
 description = "Several series stacked into one bar instead of side by side"
 
-[options.values]
+[properties.values]
 type = "string"
 enum = ["auto", "all", "highlight", "none"]
 default = "auto"
 description = "Values at the bars: auto shows them for one series of up to 12 bars, else only the highlighted ones"
 
-[options.min]
+[properties.min]
 type = "number"
 description = "The value axis starts here"
 
-[options.max]
+[properties.max]
 type = "number"
 description = "The value axis ends here"
