@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A paired iPad stays paired when `mdeck run` or the laptop restarts: reload its presenter view. The laptop keeps the pairing in `~/.mdeck/paired/` (one file per deck, readable only by you) and forgets an iPad unused for 30 days; **Unpair** still ends every pairing. An iPad that is no longer paired says so over the slide and under the connection icons, instead of steering nothing without a word.
 - After a restart of `mdeck run` the presenter view, the audience window and a paired iPad open on the slide the talk was on, at its start, instead of on the first slide. The slide is kept beside the deck in `<deck>.position.json` and found again by its id; if the deck no longer has it, the first slide opens. The launch page says where the views will open and has **Start from the first slide**.
 - Fixed (since 3.13.0): opening the presenter view on an iPad, or reloading it, took the laptop back to the first slide when nobody had changed slides for 15 s. A screen that went quiet holds the phones no longer, but the stage room hears of a slide once and not again, so there a presenter who stays on a slide kept it from no one; it keeps it now.
 - Tapping the tool in use folds the drawing toolbar, as the fold button does; the folded button shows that tool and opens the toolbar again. On an iPad the hand no longer has to reach the fold button at the far end, which stays.

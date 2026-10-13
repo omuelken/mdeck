@@ -19,7 +19,7 @@ import { inkPlugin } from '../build/inkPlugin.js'
 import { resultsPlugin } from '../build/resultsPlugin.js'
 import { createPositionFile } from '../build/positionFile.js'
 import { timingPlugin } from '../build/timingPlugin.js'
-import { createPairing, pairingPlugin } from '../build/pairing.js'
+import { createPairing, pairingPlugin, pairingStoreFor } from '../build/pairing.js'
 import { isAllowedRequest } from '../build/editorPlugin.js'
 import { renderPdf, attachPdf, findChrome } from '../build/pdf.js'
 import { installSkill, readSkill, TARGETS } from './skill.js'
@@ -592,7 +592,7 @@ if (command === 'new') {
   try { assertDrawings(abs) } catch (error) { err(error.message); process.exit(1) }
   const port = portOption()
   const exposed = hasFlag('--network')
-  const pairing = createPairing()
+  const pairing = createPairing({ store: pairingStoreFor(abs) })
 
   // --server: the server relays an iPad's requests to this computer
   // (src/build/tunnelClient.js). The dev server then serves under /t/<id>/, the
