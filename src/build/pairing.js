@@ -3,7 +3,8 @@
 // only answers on this computer, offers a one-time address as a QR code; the
 // device trades the one-time token in it for a token of its own, which it
 // sends as `Authorization: Bearer …`. Tokens live in memory: restarting
-// `mdeck run` or "Unpair" on the launch page ends every pairing.
+// `mdeck run` or "Unpair" on the launch page ends every pairing, and the
+// device asks whether it is still paired (GET /status) to say so.
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { send, readJson } from './editorPlugin.js'
 
@@ -56,11 +57,13 @@ export function createPairing({ now = Date.now } = {}) {
   }
 }
 
-// POST /claim { token } → { token }: open to the network, like the page the
-// QR code leads to; everything else about pairing is on the launch page.
+// POST /claim { token } → { token } and GET /status → { paired }: open to
+// the network, like the page the QR code leads to; everything else about
+// pairing is on the launch page.
 export function pairingMiddleware(pairing) {
   return async (request, response, next) => {
     const { pathname } = new URL(request.url, 'http://localhost')
+    if (pathname === '/status' && request.method === 'GET') return send(response, 200, { paired: pairing.allows(request) })
     if (pathname !== '/claim') return next()
     if (request.method !== 'POST') { response.setHeader('Allow', 'POST'); return send(response, 405, { error: 'Method not allowed' }) }
     try {

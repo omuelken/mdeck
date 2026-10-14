@@ -13,6 +13,7 @@ import { launchChrome } from '../src/build/chrome.js'
 import { baseConfig } from '../src/build/config.js'
 import { homePlugin } from '../src/build/homePlugin.js'
 import { livePlugin } from '../src/live/server.js'
+import { createPairing, pairingPlugin } from '../src/build/pairing.js'
 import { sessionCode } from '../src/live/code.js'
 import { parseSlides } from '../src/core/parseSlides.js'
 import { inkPlugin } from '../src/build/inkPlugin.js'
@@ -804,7 +805,8 @@ try {
   writeFileSync(resolve(temp, 'talk.de.md'), '---\ntheme: neue\n---\n# Enzymkinetik\n\n---\n\n# Geschwindigkeit\n\n:::notes\nDEUTSCHE_NOTIZEN\n:::\n\n---\n\n::: tip\nFrüh messen.\n:::\n')
   writeFileSync(resolve(temp, 'talk.fa.md'), '---\ntheme: neue\n---\n# سینتیک آنزیم\n\n---\n\n# سرعت\n\n:::notes\nیادداشت_فارسی\n:::\n\n---\n\n```python\nrate = 2\n```\n')
   const langConfig = baseConfig(langDeck)
-  langDev = await createServer({ ...langConfig, plugins: [...langConfig.plugins, livePlugin()], server: { ...langConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
+  const langPairing = createPairing()
+  langDev = await createServer({ ...langConfig, plugins: [...langConfig.plugins, livePlugin(), pairingPlugin(langPairing)], server: { ...langConfig.server, port: 0, host: '127.0.0.1' }, logLevel: 'silent' })
   await langDev.listen()
   const langBase = langDev.resolvedUrls.local[0]
   const langPresenter = await open(new URL('?view=presenter', langBase).href)
@@ -850,6 +852,19 @@ try {
   await until(langPresenter, "!document.querySelector('iframe[title=\"Next slide preview\"]')")
   await langPresenter.evaluate(`${langFrame}.prev()`)
   await until(langPresenter, "document.querySelector('iframe[title=\"Next slide preview\"]')?.contentDocument?.querySelector('deck-stage')?.textContent.includes('rate = 2') && document.querySelector('iframe[title=\"Next slide preview\"]').contentDocument.documentElement.lang === 'fa'")
+  // An iPad the computer no longer knows (mdeck run restarted) says so; paired again, it does not.
+  const pairKey = "'mdeck-pair:' + location.origin + '/'"
+  await langIpad.evaluate(`localStorage.setItem(${pairKey}, 'from-before-the-restart')`)
+  const langStale = await open(new URL('?view=presenter', langBase).href)
+  await until(langStale, "!!document.querySelector('.presenter-unpaired') && /No longer paired/.test(document.querySelector('.presenter-unpaired').textContent)")
+  await langIpad.evaluate(`localStorage.setItem(${pairKey}, ${JSON.stringify(langPairing.claim(langPairing.offer()))})`)
+  const langPaired = await open(new URL('?view=presenter', langBase).href)
+  await until(langPaired, "!!document.querySelector('.presenter-language')")
+  await delay(500)
+  assert.equal(await langPaired.evaluate("!!document.querySelector('.presenter-unpaired')"), false, 'a paired iPad shows no warning')
+  await langIpad.evaluate(`localStorage.removeItem(${pairKey})`)
+  await langStale.close()
+  await langPaired.close()
   await langIpad.close()
   await langAudience.close()
   await langFollower.close()

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- An iPad that is no longer paired, after a restart of `mdeck run` or **Unpair**, says so over the slide and in its connections panel. Before, it went on showing what the laptop did while its own slide changes, drawings and polls stayed on it, without a word.
 - Fixed: after a restart of `mdeck run`, a presenter view opened or reloaded took the audience window on the projector back to the first slide, while it showed the slide the talk was on itself. A window that just opened no longer moves another, and the windows still open say where they are when they connect again, so a presenter view opened then takes up the projector's slide.
 - Fixed (since 3.13.0): opening the presenter view on an iPad, or reloading it, took the laptop back to the first slide when nobody had changed slides for 15 s. A screen that went quiet holds the phones no longer, but the stage room hears of a slide once and not again, so there a presenter who stays on a slide kept it from no one; it keeps it now.
 - Fixed: after the laptop moved to another network while `mdeck run --network` ran, the code that pairs an iPad, and the join link for phones, still led to the address it had when it started, which no one reached. The addresses are now read each time a code is shown; the pairing panel says which address a code leads to, and when the laptop is in no network another device can reach (only a link-local or an IPv6-only network's address), it says so instead of showing a code.
