@@ -25,8 +25,8 @@ const COLOR_NAMES = { '#e11d48': 'Red', '#2563eb': 'Blue', '#16a34a': 'Green', a
   '#ffeb3b': 'Yellow', '#76ff03': 'Green', '#ff4081': 'Pink', '#40c4ff': 'Blue', '#ff9100': 'Orange' }
 const SIZES = { pen: [3, 6, 12], highlighter: [18, 30, 48] }
 // Each tool's icon has the tool's name.
-const FOLD_WAIT_MS = 600
-const FOLD_MS = 350
+const FOLD_WAIT_MS = 400
+const FOLD_MS = 250
 
 const TOOLS = [
   ['pen', 'Pen'],
