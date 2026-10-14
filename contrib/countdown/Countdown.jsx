@@ -410,6 +410,13 @@ const STYLES = `
 .countdown-toggle.is-time.is-shown::after { right: 3px; bottom: 3px; width: 8px; height: 8px; }
 @media (max-width: 1000px) { .countdown-controls .countdown-toggle { min-width: 34px; height: 34px; } }
 @media (pointer: coarse) { .countdown-controls .countdown-toggle { min-width: 44px; height: 44px; } }
+/* The iPad's presenter view, where the folded ink toolbar is smaller too and
+   the open one has a strip below the slide (data-ink-reserve): as small,
+   so the button sits in that strip. */
+:root:has(deck-stage[data-ink-reserve]) .countdown-controls { left: max(10px, env(safe-area-inset-left)); bottom: max(6px, env(safe-area-inset-bottom)); }
+:root:has(deck-stage[data-ink-reserve]) .countdown-fab { padding: 3px; }
+:root:has(deck-stage[data-ink-reserve]) .countdown-controls .countdown-toggle { min-width: 36px; height: 36px; font-size: 14px; }
+:root:has(deck-stage[data-ink-reserve]) .countdown-controls .countdown-toggle.is-time { padding: 0 11px; }
 .countdown-panel {
   display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px;
   background: rgba(17, 17, 17, 0.95); border: 1px solid #2a2a2a; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
