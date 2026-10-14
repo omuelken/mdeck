@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed: after a restart of `mdeck run`, a presenter view opened or reloaded took the audience window on the projector back to the first slide, while it showed the slide the talk was on itself. A window that just opened no longer moves another, and the windows still open say where they are when they connect again, so a presenter view opened then takes up the projector's slide.
 - Fixed (since 3.13.0): opening the presenter view on an iPad, or reloading it, took the laptop back to the first slide when nobody had changed slides for 15 s. A screen that went quiet holds the phones no longer, but the stage room hears of a slide once and not again, so there a presenter who stays on a slide kept it from no one; it keeps it now.
 - Fixed: the join code shown with **J** on a paired iPad did not show in the audience window on the laptop, nor on phones following the talk. Screens in another browser hear of the presenter's position through the server's stage room, which carried the black screen but not the join code; it now carries both.
 - Fixed: two things circled with the laser one after the other were joined by a line, on the screen they were drawn on, from what was left of the first trail to the second, until the first had gone. A lifted trail retracts from its start; when the second's first points went while the first still showed, the second no longer said where it began. Other screens were not affected.
