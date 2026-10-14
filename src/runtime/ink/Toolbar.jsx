@@ -25,6 +25,9 @@ const COLOR_NAMES = { '#e11d48': 'Red', '#2563eb': 'Blue', '#16a34a': 'Green', a
   '#ffeb3b': 'Yellow', '#76ff03': 'Green', '#ff4081': 'Pink', '#40c4ff': 'Blue', '#ff9100': 'Orange' }
 const SIZES = { pen: [3, 6, 12], highlighter: [18, 30, 48] }
 // Each tool's icon has the tool's name.
+const FOLD_WAIT_MS = 600
+const FOLD_MS = 350
+
 const TOOLS = [
   ['pen', 'Pen'],
   ['highlighter', 'Highlighter'],
@@ -94,18 +97,31 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
     stage.setAttribute('data-ink-tool', tool)
     if (tool !== 'select') selection?.clear()
   }, [tool, style])
-  // A choice made on a touch screen folds the toolbar at the next stroke.
+  // A choice made on a touch screen folds the toolbar at the next stroke:
+  // a moment later it slides away towards its corner (FOLD_WAIT_MS, then
+  // FOLD_MS), so it does not vanish from under the eye. Another choice in
+  // the meantime keeps it open.
   const chosen = useRef(false)
-  const choose = id => { setTool(id); chosen.current = touch && id !== 'select' }
-  const setOwn = change => { setStyle(all => ({ ...all, [tool]: { ...all[tool], ...change } })); chosen.current = touch }
+  const [folding, setFolding] = useState(false)
+  const foldTimer = useRef(null)
+  const stopFolding = () => { clearTimeout(foldTimer.current); foldTimer.current = null; setFolding(false) }
+  const choose = id => { stopFolding(); setTool(id); chosen.current = touch && id !== 'select' }
+  const setOwn = change => { stopFolding(); setStyle(all => ({ ...all, [tool]: { ...all[tool], ...change } })); chosen.current = touch }
   useEffect(() => {
     if (!touch) return
-    const draws = () => { if (chosen.current) { chosen.current = false; setCollapsed(true) } }
+    const draws = () => {
+      if (!chosen.current) return
+      chosen.current = false
+      foldTimer.current = setTimeout(() => {
+        setFolding(true)
+        foldTimer.current = setTimeout(() => { foldTimer.current = null; setFolding(false); setCollapsed(true) }, FOLD_MS)
+      }, FOLD_WAIT_MS)
+    }
     const events = ['inkprogress', 'inkerase']
     for (const type of events) stage.addEventListener(type, draws)
-    return () => { for (const type of events) stage.removeEventListener(type, draws) }
+    return () => { for (const type of events) stage.removeEventListener(type, draws); clearTimeout(foldTimer.current) }
   }, [stage, touch])
-  useEffect(() => { if (collapsed) chosen.current = false }, [collapsed])
+  useEffect(() => { if (collapsed) { chosen.current = false; stopFolding() } }, [collapsed])
   useEffect(() => { stage._inkCollapsed = collapsed }, [collapsed])
   useEffect(() => { stage.toggleAttribute('data-ink-hidden', hidden) }, [hidden])
   useEffect(() => { stage.inkFinger = finger }, [finger])
@@ -121,7 +137,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
       <button type="button" class="ink-btn ink-expand" title={`${label}: show the toolbar`} aria-label={`${label}: show the toolbar`} style={writing ? { '--tool-color': inkPaint(style[tool].color) } : {}} onClick={() => setCollapsed(false)}><Icon name={tool} size={20} /></button>
     </div>
   }
-  return <div class="ink-toolbar" role="toolbar" aria-label="Ink" data-ink-ui>
+  return <div class={`ink-toolbar${folding ? ' is-folding' : ''}`} role="toolbar" aria-label="Ink" data-ink-ui>
     <div class="ink-group">
       {TOOLS.map(([id, label]) => button(label, id, () => choose(id), { active: tool === id }))}
     </div>
