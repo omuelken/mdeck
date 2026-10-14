@@ -14,6 +14,24 @@
   <a href="LICENSE">MIT license</a>
 </p>
 
+> [!NOTE]
+> **This is the `unterricht` branch of [omuelken/mdeck](https://github.com/omuelken/mdeck)**, a fork of
+> [tilman-schieber/mdeck](https://github.com/tilman-schieber/mdeck) used for teaching
+> (Mechanik & Wärme, FHNW). It follows Tilman's `main` (now 3.13.0) and adds:
+>
+> | Change | Status |
+> |---|---|
+> | A countdown for the room, set in the presenter view, with a sound at the end (`<countdown />`, in [`contrib/countdown`](contrib/countdown/Countdown.jsx)) | only here |
+> | After a restart of `mdeck run`, a presenter view opened or reloaded no longer takes the projector back to the first slide; also the 3.13.0 case of an iPad that reloads after 15 s on one slide | [PR #18](https://github.com/tilman-schieber/mdeck/pull/18) |
+> | After a restart the presenter view offers to go on where the talk was (**Go on there**), nothing moves on its own | [PR #19](https://github.com/tilman-schieber/mdeck/pull/19) |
+> | Pairing codes and join links use the laptop's address of now, after a change of network | [PR #20](https://github.com/tilman-schieber/mdeck/pull/20) |
+> | A bin beside a selection of strokes deletes it | [PR #21](https://github.com/tilman-schieber/mdeck/pull/21) |
+> | On an iPad the presenter view's bars no longer cover the slide; smaller bars, toolbar open at the start, full screen at the first touch | [PR #22](https://github.com/tilman-schieber/mdeck/pull/22) |
+> | A paired iPad stays paired when `mdeck run` restarts | waiting for [issue #17](https://github.com/tilman-schieber/mdeck/issues/17) |
+>
+> To use it: clone, `git switch unterricht`, `npm install`, `npm link` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+> Everything below is Tilman's README.
+
 ## What you can do with it
 
 <table>
