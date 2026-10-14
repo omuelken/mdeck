@@ -221,7 +221,7 @@ try {
   // A finger's tap selects the straight line; the pen moves one of its ends.
   const lastPathBox = "(() => { const b = [...document.querySelectorAll('.slide-ink path')].at(-1).getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom].map(Math.round) })()"
   await finger('touchStart', 420, 120); await finger('touchEnd'); await delay(200)
-  await until(tablet, "!!document.querySelector('.ink-btn[title^=\"Delete selection\"]') && document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-handle').length === 2")
+  await until(tablet, "document.querySelector('deck-stage').shadowRoot.querySelector('.ink-selection-delete').hasAttribute('data-shown') && document.querySelector('deck-stage').shadowRoot.querySelectorAll('.ink-handle').length === 2")
   const [, , right] = await tablet.evaluate(lastPathBox)
   await tabletPen('mousePressed', right - 4, 120)
   for (let i = 1; i <= 6; i++) await tabletPen('mouseMoved', right - 4, 120 + i * 25)

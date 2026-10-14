@@ -12,7 +12,7 @@ import './toolbar.css'
 // showing the current tool, and drawing goes on while it is folded. On a
 // touch screen, once a tool, colour or size is chosen, it folds when drawing
 // starts, so a colour is changed right after the tool; choosing "select"
-// leaves it open. Folded, it keeps a button for deleting the selection. It drives
+// leaves it open. It drives
 // a <deck-stage> (inkTool, inkFinger, data-ink-hidden), an ink controller and
 // the selection.
 
@@ -118,7 +118,6 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   if (collapsed) {
     const [, label] = TOOLS.find(([id]) => id === tool)
     return <div class="ink-toolbar is-collapsed" role="toolbar" aria-label="Ink" data-ink-ui>
-      {selected > 0 && button('Delete selection (Delete)', 'trash', () => selection.remove())}
       <button type="button" class="ink-btn ink-expand" title={`${label}: show the toolbar`} aria-label={`${label}: show the toolbar`} style={writing ? { '--tool-color': inkPaint(style[tool].color) } : {}} onClick={() => setCollapsed(false)}><Icon name={tool} size={20} /></button>
     </div>
   }

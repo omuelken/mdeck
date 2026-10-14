@@ -3,7 +3,7 @@
 ## Unreleased
 
 - A bin beside a selection of strokes deletes it: off the top right corner of its box, or beside the middle of a straight line, away from its handles. It keeps its size when the slide is zoomed, stays inside the window, and only shows on the screen that draws. On an iPad the folded toolbar no longer has to be opened to delete a stroke tapped with a finger.
-- On a touch screen the drawing toolbar folds when drawing starts after a tool, a colour or a size was chosen in it, so the colour can be changed right after the tool; opened without a choice, it stays open. **Select and move** leaves it open. Folded, it shows a button for deleting the selection beside its own. On a laptop it stays open as before.
+- On a touch screen the drawing toolbar folds when drawing starts after a tool, a colour or a size was chosen in it, so the colour can be changed right after the tool; opened without a choice, it stays open. **Select and move** leaves it open. On a laptop it stays open as before.
 - `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`, and the guides say `npm install -g mdeck` where they did.
 - The launch page drops answers and drawings at once, without asking and without a backup.
 - Fixed: after a restart of `mdeck run`, a presenter view opened or reloaded took the audience window on the projector back to the first slide, while it showed the slide the talk was on itself. A window that just opened no longer moves another, and the windows still open say where they are when they connect again, so a presenter view opened then takes up the projector's slide.

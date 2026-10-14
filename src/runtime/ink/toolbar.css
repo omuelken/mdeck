@@ -12,11 +12,10 @@
   /* Taps only: a pinch here must not zoom the page, and the toolbar with it. */
   touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
-/* Folded: one button in the bottom right corner, with the tool's colour,
-   and beside it deleting what is selected. */
+/* Folded: one button in the bottom right corner, with the tool's colour. */
 .ink-toolbar.is-collapsed {
   left: auto; right: max(16px, env(safe-area-inset-right)); margin: 0;
-  padding: 4px; border-radius: 999px; gap: 4px;
+  padding: 4px; border-radius: 50%;
 }
 .ink-toolbar.is-collapsed .ink-btn { border-radius: 50%; position: relative; }
 .ink-expand[style*="--tool-color"]::after {
