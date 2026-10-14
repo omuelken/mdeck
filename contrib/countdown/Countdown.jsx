@@ -293,7 +293,7 @@ function Panel({ timer, change }) {
         <button title={timer.running ? 'Pause' : 'Start'} onClick={() => change(t => t.running ? pause(t) : start(t))}>{timer.running ? '❚❚' : '▶'}</button>
         <button title="One more minute" onClick={() => change(t => addTime(t, 1))}>+1′</button>
         <button title="Back to the full length" onClick={() => change(reset)}>↺</button>
-        <button class={on(timer.visible)} title={timer.visible ? 'Hide from the room' : 'Show to the room'} aria-pressed={timer.visible} onClick={() => change(t => ({ ...t, visible: !t.visible }))}>{timer.visible ? 'Shown' : 'Hidden'}</button>
+        <button class={on(timer.visible)} title={timer.visible ? 'Hide from the room' : 'Show to the room'} onClick={() => change(t => ({ ...t, visible: !t.visible }))}>{timer.visible ? 'Hide' : 'Show'}</button>
       </span>
     </div>
     <div class="countdown-row">
