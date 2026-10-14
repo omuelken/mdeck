@@ -6,7 +6,8 @@
 // a file only this user may read, so that a restart of `mdeck run` (or of
 // the computer) does not end the pairing in the middle of a talk; a device
 // unused for 30 days is forgotten. "Unpair" on the launch page ends every
-// pairing. `mdeck run` keeps one file per deck (pairingStoreFor).
+// pairing. `mdeck run` keeps one file per deck (pairingStoreFor). The device
+// asks whether it is still paired (GET /status) to say so.
 import { randomBytes, timingSafeEqual, createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync, renameSync, mkdirSync, unlinkSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
@@ -97,9 +98,9 @@ export function createPairing({ now = Date.now, store = null } = {}) {
   }
 }
 
-// POST /claim { token } → { token }: open to the network, like the page the
-// QR code leads to; everything else about pairing is on the launch page.
-// GET /status → { paired }: whether the token this device shows still counts.
+// POST /claim { token } → { token } and GET /status → { paired }: open to
+// the network, like the page the QR code leads to; everything else about
+// pairing is on the launch page.
 export function pairingMiddleware(pairing) {
   return async (request, response, next) => {
     const { pathname } = new URL(request.url, 'http://localhost')

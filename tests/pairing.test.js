@@ -83,14 +83,18 @@ test('an iPad trades the code for its own token and may then save ink', async ()
   const claimed = await call(claim, { url: '/claim', method: 'POST', headers: { host: '192.168.1.20:5173' }, body: { token: url.searchParams.get('pair') } })
   assert.equal(claimed.status, 200)
   assert.equal((await call(claim, { url: '/claim', method: 'POST', headers: { host: '192.168.1.20:5173' }, body: { token: url.searchParams.get('pair') } })).status, 403)
-  assert.deepEqual((await call(claim, { url: '/status', method: 'GET', headers: { host: '192.168.1.20:5173', authorization: `Bearer ${claimed.body.token}` } })).body, { paired: true })
-  assert.deepEqual((await call(claim, { url: '/status', method: 'GET', headers: { host: '192.168.1.20:5173', authorization: 'Bearer forgotten-by-the-laptop' } })).body, { paired: false }, 'the iPad can tell that it is no longer paired')
+  const status = token => call(claim, { url: '/status', method: 'GET', headers: { host: '192.168.1.20:5173', ...(token ? { authorization: `Bearer ${token}` } : {}) } })
+  assert.deepEqual((await status(claimed.body.token)).body, { paired: true })
+  assert.deepEqual((await status(null)).body, { paired: false })
 
   const ink = inkMiddleware(createInkFile(deck), { authorize: request => isAllowedRequest(request) || pairing.allows(request) })
   assert.equal((await call(ink, { url: '/', method: 'GET', headers: { host: '192.168.1.20:5173' } })).status, 403)
   assert.equal((await call(ink, { url: '/', method: 'GET', headers: { host: '192.168.1.20:5173', authorization: `Bearer ${claimed.body.token}` } })).status, 200)
   const info = await call(home, { url: '/info', method: 'GET', headers: { host: 'localhost:5173' } })
   assert.deepEqual(info.body.pairing, { available: true, offline: false, devices: 1 })
+  // After "Unpair" (or a restart of mdeck run) the iPad hears it is no longer paired.
+  pairing.revoke()
+  assert.deepEqual((await status(claimed.body.token)).body, { paired: false })
 })
 
 

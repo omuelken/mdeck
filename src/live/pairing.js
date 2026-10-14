@@ -13,6 +13,22 @@ export function pairToken() {
 /** Authorization for a paired device, or nothing. */
 export const pairHeaders = (headers = {}) => { const token = pairToken(); return token ? { ...headers, Authorization: `Bearer ${token}` } : headers }
 
+/**
+ * Whether this device was paired and the server no longer knows it, after a
+ * restart of `mdeck run` or "Unpair"; false when it never was, or the server
+ * does not answer.
+ */
+export async function pairingLost() {
+  const token = pairToken()
+  if (!token) return false
+  try {
+    const response = await fetch(devPath('__mdeck/pair/status'), { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } })
+    return response.ok && (await response.json())?.paired === false
+  } catch {
+    return false
+  }
+}
+
 /** Claims `?pair=…` if the address has one; resolves to whether it worked. */
 export async function claimPairing() {
   const url = new URL(location.href)
@@ -31,17 +47,4 @@ export async function claimPairing() {
     console.warn('mdeck: pairing failed:', error.message)
     return false
   }
-}
-
-/**
- * Whether this browser was paired but `mdeck run` no longer knows it (the
- * laptop was unpaired, or the pairing was forgotten): what is done here then
- * stays here. False where there is nothing to ask, such as a hosted deck.
- */
-export async function pairingLost() {
-  if (!pairToken()) return false
-  try {
-    const response = await fetch(devPath('__mdeck/pair/status'), { headers: pairHeaders(), cache: 'no-store' })
-    return response.ok && (await response.json()).paired === false
-  } catch { return false }
 }

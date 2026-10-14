@@ -153,9 +153,8 @@ const STEERING = {
   unreachable: 'Phones don’t follow: server not answering.',
   'other-screen': 'Phones follow another screen. Change slide to take them back.',
 }
-
-const UNPAIRED = 'Not paired with the laptop any more: what you do here stays here. Scan a new code from the laptop’s presenter view.'
-const PAIRING_CHECK_MS = 15000
+// A paired device the computer no longer knows (src/live/pairing.js).
+const UNPAIRED = 'No longer paired: slide changes, drawings and polls stay on this device. Show a new pairing code on the computer and scan it.'
 
 function injectSpeakerNotes(slides) {
   let tag = document.getElementById('speaker-notes')
@@ -669,14 +668,17 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
 
   // Whether the phones follow this screen; told only when they do not.
   const steering = useSteering()
-  // A paired iPad that the laptop no longer knows steers nothing: say so.
+  // A paired iPad that the computer no longer knows (mdeck run restarted,
+  // or Unpair) says so, instead of keeping what it does to itself.
   const [unpaired, setUnpaired] = useState(false)
   useEffect(() => {
-    const check = () => { if (!document.hidden) pairingLost().then(setUnpaired) }
+    if (!import.meta.env.DEV) return
+    let gone = false
+    const check = () => { if (document.visibilityState === 'visible') pairingLost().then(lost => { if (!gone) setUnpaired(lost) }) }
     check()
-    const timer = setInterval(check, PAIRING_CHECK_MS)
+    const timer = setInterval(check, 10000)
     document.addEventListener('visibilitychange', check)
-    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', check) }
+    return () => { gone = true; clearInterval(timer); document.removeEventListener('visibilitychange', check) }
   }, [])
   const note = notes[index] || ''
   const hasNext = index + 1 < slides.length
@@ -833,14 +835,13 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const blankNote = blank && <div class="presenter-blank-note" role="status" style={{ position: 'fixed', left: layout === 'speaker' ? 'calc(100% / 3)' : '50%', bottom: remoteLayout ? '110px' : '76px', transform: 'translateX(-50%)', zIndex: 18, display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '999px', background: 'rgba(17,17,17,0.92)', border: '1px solid #3a3a3a', color: '#f0f0f0', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px', pointerEvents: 'none' }}>
     <PresenterIcon name="blank" size={16} />The audience sees a black screen
   </div>
-  // Over the slide, not only in the connections: the presenter looks there.
-  const unpairedNote = unpaired && <div class="presenter-unpaired" role="alert" style={{ position: 'fixed', left: '50%', top: remoteLayout ? '64px' : '72px', transform: 'translateX(-50%)', zIndex: 18, maxWidth: 'min(560px, calc(100vw - 32px))', boxSizing: 'border-box', padding: '8px 14px', borderRadius: '12px', background: 'rgba(17,17,17,0.94)', border: '1px solid #5c2b28', color: '#f28b82', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px', lineHeight: 1.4, textAlign: 'center', pointerEvents: 'none' }}>
+  const unpairedNote = unpaired && <div class="presenter-unpaired" role="alert" style={{ position: 'fixed', left: layout === 'speaker' ? 'calc(100% / 3)' : '50%', top: slideLayout && pillBottom ? `${pillBottom + 8}px` : '12px', transform: 'translateX(-50%)', zIndex: 18, maxWidth: 'calc(100vw - 32px)', boxSizing: 'border-box', padding: '8px 14px', borderRadius: '12px', background: 'rgba(17,17,17,0.94)', border: '1px solid #5c2b28', color: '#f28b82', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px', pointerEvents: 'none' }}>
     {UNPAIRED}
   </div>
   const font = { fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '13px', color: '#ccc' }
   const extras = <>
-    {blankNote}
     {unpairedNote}
+    {blankNote}
     {reacting && <Reactions style={remoteLayout ? { left: '16px', bottom: '100px' } : undefined} />}
     {helpOpen && <KeyHelp
       context={{ view: 'presenter', blank, join: hasActivities() || reacting, joinShown: join, overview: overviewOpen, hotspots: slideHotspots, hotspotSwitch: hotspotsOn, inking, fullscreen: canFullscreen, drawer: slideLayout, languages: LANGUAGES.length > 0 }}
