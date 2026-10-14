@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- On an iPad the presenter view starts with the drawing toolbar open, in its strip below the slide, and goes full screen at the first touch, on the bar or the slide (a page may only ask for full screen then). Left, full screen stays left until the page is opened again.
 - On an iPad, the presenter view's bar and the open drawing toolbar no longer cover the slide: it sits below the bar and above the toolbar, as large as fits, and takes the toolbar's strip back while the toolbar is folded. Both bars, and the timer in the bar, are a little smaller there. The audience window and the laptop's presenter view still show the whole slide as before.
 - `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`, and the guides say `npm install -g mdeck` where they did.
 - The launch page drops answers and drawings at once, without asking and without a backup.
