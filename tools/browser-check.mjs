@@ -314,6 +314,16 @@ try {
   await until(tabletPresenter, `${tabletFrame}?.querySelector('deck-stage')?.inking === true && !!${tabletFrame}.querySelector('.ink-toolbar.is-collapsed')`)
   assert.equal(await tabletPresenter.evaluate(`${tabletFrame}.querySelector('deck-stage').inkTool.tool`), 'laser')
   await until(tabletPresenter, "document.querySelector('.presenter-draw').getAttribute('aria-pressed') === 'true'")
+  // Neither bar covers the slide: it starts below the presenter's bar, and
+  // the open drawing toolbar has a strip of its own below it.
+  const tabletCanvas = `(() => { const frame = document.querySelector('iframe').getBoundingClientRect(); const c = ${tabletFrame}.querySelector('deck-stage').shadowRoot.querySelector('.canvas').getBoundingClientRect(); return [frame.top + c.top, frame.top + c.bottom] })()`
+  const pillBottom = await tabletPresenter.evaluate("document.querySelector('.presenter-pill').getBoundingClientRect().bottom")
+  assert.ok((await tabletPresenter.evaluate(tabletCanvas))[0] >= pillBottom, 'the slide starts below the bar')
+  await tabletPresenter.evaluate(`${tabletFrame}.querySelector('.ink-expand').click()`)
+  await until(tabletPresenter, `!!${tabletFrame}.querySelector('.ink-toolbar.is-compact:not(.is-collapsed)')`)
+  await until(tabletPresenter, `(${tabletCanvas})[1] <= document.querySelector('iframe').getBoundingClientRect().top + ${tabletFrame}.querySelector('.ink-toolbar').getBoundingClientRect().top`)
+  await tabletPresenter.evaluate(`${tabletFrame}.querySelector('.ink-btn[title="Fold the toolbar"]').click()`)
+  await until(tabletPresenter, `!${tabletFrame}.querySelector('deck-stage').style.bottom`)
   await tabletPresenter.evaluate("document.querySelector('.presenter-notes').click()")
   await until(tabletPresenter, "getComputedStyle(document.querySelector('.presenter-aside')).display === 'flex'")
 
