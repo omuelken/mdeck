@@ -195,6 +195,30 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     .zoom-reset svg { width: 16px; height: 16px; }
     :host([data-zoomed]) .zoom-reset { display: inline-flex; }
     :host([data-follower]) .zoom-reset { display: none; }
+    /* Deleting a selection, beside it; placed in screen pixels by
+       _placeSelectionDelete so it keeps its size when the slide zooms. */
+    .ink-selection-delete {
+      position: fixed;
+      z-index: 2147483000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      margin: -22px 0 0 -22px;
+      padding: 0;
+      border: 1px solid #3a3a3a;
+      border-radius: 50%;
+      background: rgba(22, 22, 22, 0.94);
+      color: #e6e6e6;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ink-selection-delete[data-shown] { display: inline-flex; }
+    .ink-selection-delete svg { width: 20px; height: 20px; }
+    :host([data-overview]) .ink-selection-delete, :host(:not([data-inking])) .ink-selection-delete { display: none; }
     /* Overview (O): every slide in a grid, local to this window. The slides
        keep their place in the canvas, which grows to hold the grid; a
        sizer gives the stage the grid's height to scroll. */
@@ -729,7 +753,17 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       blank.setAttribute('data-ink-ui', '');
       blank.addEventListener('click', () => { if (!this.hasAttribute('data-watching')) this.setBlank(false, 'click'); });
 
-      this._root.append(style, stage, inkInput, inkLaser, zoomReset, blank, overlay);
+      const selectionDelete = document.createElement('button');
+      selectionDelete.type = 'button';
+      selectionDelete.className = 'ink-selection-delete export-hidden';
+      selectionDelete.setAttribute('data-ink-ui', '');
+      selectionDelete.setAttribute('aria-label', 'Delete the selection');
+      selectionDelete.title = 'Delete the selection';
+      selectionDelete.innerHTML = iconSvg('trash', 20);
+      selectionDelete.addEventListener('click', e => { e.stopPropagation(); this.inkSelectionRemove?.(); });
+      this._selectionDelete = selectionDelete;
+
+      this._root.append(style, stage, inkInput, inkLaser, zoomReset, selectionDelete, blank, overlay);
       this._canvas = canvas;
       this._slot = slot;
       this._overlay = overlay;
@@ -997,11 +1031,12 @@ import { flight, durationFor, ease } from './zoom/camera.js'
       this._fitScale = s;
       this._hotspotLayer?.style.setProperty('--hotspot-k', String(1 / s));
       const zoom = this._zoom;
-      if (!zoom) { this._canvas.style.transform = `scale(${s})`; return; }
+      if (!zoom) { this._canvas.style.transform = `scale(${s})`; this._placeSelectionDelete(); return; }
       const tx = (this.designWidth / 2 - zoom.x) * s * zoom.scale;
       const ty = (this.designHeight / 2 - zoom.y) * s * zoom.scale;
       this._canvas.style.transform = `translate(${tx}px, ${ty}px) scale(${s * zoom.scale})`;
       this._kickLaser();
+      this._placeSelectionDelete();
     }
 
     _onResize() { this._fit(); this._queueHotspots(); }
@@ -1440,10 +1475,15 @@ import { flight, durationFor, ease } from './zoom/camera.js'
     /**
      * Shows a selection on the current slide, in design pixels: `box` is
      * [x0, y0, x1, y1], `lasso` a list of points, `handles` the end points
-     * of a selected straight line; null clears it.
+     * of a selected straight line; null clears it. `remove` places a button
+     * that deletes the selection (it calls `inkSelectionRemove`): `at`, a
+     * point in design pixels, and `toward`, the direction in which the button
+     * sits off it.
      */
     showSelection(selection) {
-      const { box = null, lasso = null, handles = [] } = selection ?? {};
+      const { box = null, lasso = null, handles = [], remove = null } = selection ?? {};
+      this._selectionDeleteAt = remove;
+      this._placeSelectionDelete();
       if (!this._inkLive) return;
       this._inkLive.querySelector('.ink-selection-group')?.remove();
       if (!box && !lasso?.length && !handles.length) return;
@@ -1470,6 +1510,23 @@ import { flight, durationFor, ease } from './zoom/camera.js'
         group.appendChild(polygon);
       }
       this._inkLive.appendChild(group);
+    }
+
+    _placeSelectionDelete() {
+      const button = this._selectionDelete;
+      if (!button) return;
+      const place = this._selectionDeleteAt;
+      const canvas = place && this._canvas.getBoundingClientRect();
+      if (!canvas?.width) { button.removeAttribute('data-shown'); return; }
+      const [dx, dy] = place.toward ?? [0, -1];
+      const length = Math.hypot(dx, dy) || 1;
+      const OFF = 34, EDGE = 26; // screen pixels: the button's centre off the point, and off the window's edge
+      const x = canvas.left + place.at[0] * canvas.width / this.designWidth + dx / length * OFF;
+      const y = canvas.top + place.at[1] * canvas.height / this.designHeight + dy / length * OFF;
+      const clamp = (value, max) => Math.min(max - EDGE, Math.max(EDGE, value));
+      button.style.left = `${clamp(x, window.innerWidth)}px`;
+      button.style.top = `${clamp(y, window.innerHeight)}px`;
+      button.setAttribute('data-shown', '');
     }
 
     // Zoom --------------------------------------------------------------------

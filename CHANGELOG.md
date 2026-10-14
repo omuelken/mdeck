@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A bin beside a selection of strokes deletes it: off the top right corner of its box, or beside the middle of a straight line, away from its handles. It keeps its size when the slide is zoomed, stays inside the window, and only shows on the screen that draws. On an iPad the folded toolbar no longer has to be opened to delete a stroke tapped with a finger.
 - `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`, and the guides say `npm install -g mdeck` where they did.
 - The launch page drops answers and drawings at once, without asking and without a backup.
 - Fixed: the join code shown with **J** on a paired iPad did not show in the audience window on the laptop, nor on phones following the talk. Screens in another browser hear of the presenter's position through the server's stage room, which carried the black screen but not the join code; it now carries both.

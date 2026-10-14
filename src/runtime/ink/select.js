@@ -5,7 +5,9 @@
 // then takes the pen that lands on it, whatever the tool: inside its box the
 // pen moves it, and a straight line (two points) shows handles at its ends
 // that the pen moves one at a time. Changes show at once in this window and
-// become one change (undo puts the strokes back) when the pen lifts.
+// become one change (undo puts the strokes back) when the pen lifts. A button
+// beside the selection deletes it: off the box's top right corner, or off the
+// middle of a straight line, away from its handles.
 import { slideStrokes, changeInk, onInkChange } from './store.js'
 import { strokesInLasso, strokesBox, translateStroke, hitTest, snapAngle } from '../../core/ink.js'
 
@@ -22,7 +24,19 @@ export function createInkSelection(stage, controller) {
 
   function show(lasso = null) {
     const strokes = slideId ? selected() : []
-    stage.showSelection({ box: strokes.length ? strokesBox(strokes, PAD) : null, lasso, handles: drag?.handle == null ? handles() : [] })
+    const box = strokes.length ? strokesBox(strokes, PAD) : null
+    stage.showSelection({ box, lasso, handles: drag?.handle == null ? handles() : [], remove: box && !drag ? removeAt(box) : null })
+  }
+  // Where the delete button goes: beside a straight line's middle, on the
+  // side above it (right of a vertical one); else off the box's corner.
+  function removeAt(box) {
+    const ends = handles()
+    if (!ends.length) return { at: [box[2], box[1]], toward: [1, -1] }
+    const [[x0, y0], [x1, y1]] = ends
+    let toward = [y0 - y1, x1 - x0]
+    if (toward[1] > 0 || (toward[1] === 0 && toward[0] < 0)) toward = [-toward[0], -toward[1]]
+    if (!toward[0] && !toward[1]) toward = [0, -1]
+    return { at: [(x0 + x1) / 2, (y0 + y1) / 2], toward }
   }
   function select(id, strokes) {
     slideId = id
@@ -39,6 +53,7 @@ export function createInkSelection(stage, controller) {
   // The stage asks before it lets the pen draw.
   stage.inkSelectionHit = point => !!ids.size && stage._inkSlideId?.() === slideId && (handleAt(point) >= 0 || insideBox(point))
   stage.inkSelectionClear = () => clear()
+  stage.inkSelectionRemove = () => remove()
 
   stage.addEventListener('inktap', ({ detail }) => {
     const hit = [...slideStrokes(detail.slideId)].reverse().find(stroke => hitTest(stroke, detail.point, detail.radius ?? 22))
@@ -101,6 +116,12 @@ export function createInkSelection(stage, controller) {
     else show()
   })
   function clear() { drag = null; if (ids.size || slideId) select(null, []) }
+  function remove() {
+    const strokes = selected()
+    if (!strokes.length) return
+    controller.removeStrokes({ slideId, strokes })
+    select(slideId, [])
+  }
   stage.addEventListener('slidechange', clear)
   stage.addEventListener('inkmode', event => { if (!event.detail.inking) clear() })
 
@@ -109,12 +130,7 @@ export function createInkSelection(stage, controller) {
     subscribe(listener) { listeners.add(listener); listener(ids.size); return () => listeners.delete(listener) },
     clear,
     count: () => ids.size,
-    remove() {
-      const strokes = selected()
-      if (!strokes.length) return
-      controller.removeStrokes({ slideId, strokes })
-      select(slideId, [])
-    },
+    remove,
   }
 }
 
