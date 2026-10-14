@@ -419,6 +419,32 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   // The button enters and leaves full screen, and shows which it will do.
   const [isFullscreen, setIsFullscreen] = useState(() => !!fullscreen?.element())
   useEffect(() => fullscreen?.onChange?.(setIsFullscreen), [])
+  // The iPad goes full screen at the first touch, on the bar or the slide
+  // (a page may only ask for it then), once: left, it stays left.
+  useEffect(() => {
+    if (!slideLayout || !canFullscreen || !matchMedia('(pointer: coarse)').matches) return
+    let frameDoc = null
+    const types = ['touchend', 'click']
+    const stop = () => {
+      for (const type of types) { document.removeEventListener(type, go, true); frameDoc?.removeEventListener(type, go, true) }
+      iframeRef.current?.removeEventListener('load', watchFrame)
+    }
+    // Only a real touch may ask; a click sent by a script would use the try up.
+    const go = event => {
+      const activation = (event.view ?? window).navigator?.userActivation
+      if (activation && !activation.isActive) return
+      stop()
+      if (!fullscreen.element()) Promise.resolve(fullscreen.toggle()).catch(() => {})
+    }
+    const watchFrame = () => {
+      try { frameDoc = iframeRef.current?.contentDocument } catch { frameDoc = null }
+      for (const type of types) frameDoc?.addEventListener(type, go, true)
+    }
+    for (const type of types) document.addEventListener(type, go, true)
+    iframeRef.current?.addEventListener('load', watchFrame)
+    watchFrame()
+    return stop
+  }, [slideLayout])
   const fullscreenLabel = isFullscreen ? 'Exit full screen (F)' : 'Full screen (F)'
   const fullscreenIcon = isFullscreen ? 'fullscreen-exit' : 'fullscreen'
 
@@ -1233,19 +1259,19 @@ async function init() {
       } : null })],
       onMode: inking => { if (embedded) window.parent.postMessage({ inkMode: inking }, window.location.origin) },
     })
-    // Drawing turns itself on, with the laser and the toolbar folded into
-    // its corner button, where it is wanted: in the presenter view on a
-    // touch screen (an iPad), and in a deck window as soon as a pen touches
-    // it. A phone or tablet only browsing the deck keeps its taps. D or the
-    // close button turns it off.
-    const startDrawing = () => { inkStage._inkCollapsed = true; inkStage.inking = true }
-    // There the open toolbar has its own strip below the slide.
-    if (embedded && matchMedia('(pointer: coarse)').matches) { inkStage.setAttribute('data-ink-reserve', ''); startDrawing() }
+    // Drawing turns itself on, with the laser, where it is wanted: in the
+    // presenter view on a touch screen (an iPad), with the toolbar open in
+    // a strip of its own below the slide, and in a deck window as soon as a
+    // pen touches it, with the toolbar folded into its corner button. A
+    // phone or tablet only browsing the deck keeps its taps. D or the close
+    // button turns it off.
+    const startDrawing = folded => { inkStage._inkCollapsed = folded; inkStage.inking = true }
+    if (embedded && matchMedia('(pointer: coarse)').matches) { inkStage.setAttribute('data-ink-reserve', ''); startDrawing(false) }
     else if (!embedded) {
       const onPen = event => {
         if (event.pointerType !== 'pen') return
         window.removeEventListener('pointerdown', onPen, true)
-        if (!inkStage.inking) startDrawing()
+        if (!inkStage.inking) startDrawing(true)
       }
       window.addEventListener('pointerdown', onPen, true)
     }

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- On an iPad the presenter view starts with the drawing toolbar open, in its strip below the slide, and goes full screen at the first touch, on the bar or the slide (a page may only ask for full screen then). Left, full screen stays left until the page is opened again.
 - On an iPad, the presenter view's bar and the open drawing toolbar no longer cover the slide: it sits below the bar and above the toolbar, as large as fits, and takes the toolbar's strip back while the toolbar is folded. Both bars, and the timer in the bar, are a little smaller there. The audience window and the laptop's presenter view still show the whole slide as before.
 - A bin beside a selection of strokes deletes it: off the top right corner of its box, or beside the middle of a straight line, away from its handles. It keeps its size when the slide is zoomed, stays inside the window, and only shows on the screen that draws. On an iPad the folded toolbar no longer has to be opened to delete a stroke tapped with a finger.
 - `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`, and the guides say `npm install -g mdeck` where they did.
