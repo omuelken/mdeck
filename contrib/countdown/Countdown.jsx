@@ -94,11 +94,12 @@ function decode(message, now = Date.now()) {
 /** What a window shows after a message: `incoming`, unless it only repeats `current`. */
 function follow(current, incoming) {
   if (!current || !incoming) return incoming ?? current
-  const same = current.running && incoming.running && current.duration === incoming.duration
+  const time = current.running && incoming.running ? Math.abs(current.endsAt - incoming.endsAt) < DRIFT_MS
+    : !current.running && !incoming.running && current.remaining === incoming.remaining
+  const same = time && current.duration === incoming.duration
     && current.visible === incoming.visible && current.position === incoming.position
     && current.sound === incoming.sound && current.volume === incoming.volume
     && current.quiet === incoming.quiet && current.test === incoming.test
-    && Math.abs(current.endsAt - incoming.endsAt) < DRIFT_MS
   return same ? current : incoming
 }
 
@@ -202,6 +203,9 @@ function silentSound() {
  */
 function useEndSound(timer, { plays, first, lock }) {
   const audioRef = useRef(null), rung = useRef(false), sawRunning = useRef(false), lastTest = useRef(null)
+  // What plays: the end sound stops when the countdown runs again or is
+  // reset; a test plays to its end, unless stopped.
+  const ringing = useRef(null)
   const [offer, setOffer] = useState(false)
   const [autoplay, setAutoplay] = useState(false)
   useEffect(() => {
@@ -224,8 +228,9 @@ function useEndSound(timer, { plays, first, lock }) {
     return element
   }
   const stop = () => { const element = audioRef.current; if (element && !element.paused) { element.pause(); element.currentTime = 0 } }
-  const play = () => {
+  const play = kind => {
     if (!plays) return
+    ringing.current = kind
     const element = audio()
     if (!element) return
     const go = () => {
@@ -246,26 +251,26 @@ function useEndSound(timer, { plays, first, lock }) {
     const left = timeLeft(timer)
     if (left > 0) {
       rung.current = false
-      stop()
+      if (ringing.current === 'end') stop()
       if (!timer.running) return
       sawRunning.current = true
-      const id = setTimeout(() => { if (!rung.current) { rung.current = true; play() } }, left)
+      const id = setTimeout(() => { if (!rung.current) { rung.current = true; play('end') } }, left)
       return () => clearTimeout(id)
     }
-    if (sawRunning.current && !rung.current) { rung.current = true; play() }
+    if (sawRunning.current && !rung.current) { rung.current = true; play('end') }
   }, [timer])
   useEffect(() => {
     if (!timer) return
     // A window that hears of the countdown with this very try plays it too;
     // one that opens later and learns an old try from a repetition does not.
-    if (timer.test !== lastTest.current && (lastTest.current !== null || (timer.fresh && timer.test > 0))) play()
+    if (timer.test !== lastTest.current && (lastTest.current !== null || (timer.fresh && timer.test > 0))) play('test')
     lastTest.current = timer.test
   }, [timer?.test])
   const allow = () => {
     setOffer(false)
     const element = audio()
     if (!element) return
-    if (timer && !timer.quiet && timeLeft(timer) === 0 && sawRunning.current) { play(); return }
+    if (timer && !timer.quiet && timeLeft(timer) === 0 && sawRunning.current) { play('end'); return }
     element.muted = true
     element.play().then(() => { element.pause(); element.currentTime = 0; element.muted = false }).catch(() => { element.muted = false })
   }
