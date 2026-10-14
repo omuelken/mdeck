@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- On a touch screen the drawing toolbar folds again once a tool, a colour or a size is chosen, as a menu closes; the folded button shows the tool and opens it again. **Select and move** leaves it open, for deleting the selection. On a laptop it stays open as before.
+- On a touch screen the drawing toolbar folds when drawing starts after a tool, a colour or a size was chosen in it, so the colour can be changed right after the tool; opened without a choice, it stays open. **Select and move** leaves it open. Folded, it shows a button for deleting the selection beside its own. On a laptop it stays open as before.
 - `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`, and the guides say `npm install -g mdeck` where they did.
 - The launch page drops answers and drawings at once, without asking and without a backup.
 - Fixed: the join code shown with **J** on a paired iPad did not show in the audience window on the laptop, nor on phones following the talk. Screens in another browser hear of the presenter's position through the server's stage room, which carried the black screen but not the join code; it now carries both.
