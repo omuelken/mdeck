@@ -1,5 +1,5 @@
 import { h } from 'preact'
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon.jsx'
 import { inkPaint } from '../../core/ink.js'
 import './toolbar.css'
@@ -99,14 +99,31 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   const button = (label, icon, action, { active = false, disabled = false } = {}) =>
     <button type="button" class={`ink-btn${active ? ' is-active' : ''}`} title={label} aria-label={label} aria-pressed={active} disabled={disabled} onClick={action}><Icon name={icon} size={20} /></button>
 
+  // A stage with data-ink-reserve (the iPad's presenter view) gives the open
+  // toolbar a strip of its own below the slide, and takes it back when the
+  // toolbar is folded. The toolbar is a little smaller there.
+  const reserve = stage.hasAttribute('data-ink-reserve')
+  const barRef = useRef(null)
+  useLayoutEffect(() => {
+    const bar = barRef.current
+    if (!reserve || !bar) return
+    const fit = () => { stage.style.bottom = collapsed ? '' : `${Math.ceil(window.innerHeight - bar.getBoundingClientRect().top) + 4}px` }
+    fit()
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null
+    observer?.observe(bar)
+    window.addEventListener('resize', fit)
+    return () => { observer?.disconnect(); window.removeEventListener('resize', fit); stage.style.bottom = '' }
+  }, [collapsed, reserve])
+  const compact = reserve ? ' is-compact' : ''
+
   const writing = !!COLORS[tool]
   if (collapsed) {
     const [, label] = TOOLS.find(([id]) => id === tool)
-    return <div class="ink-toolbar is-collapsed" role="toolbar" aria-label="Ink" data-ink-ui>
+    return <div ref={barRef} class={`ink-toolbar is-collapsed${compact}`} role="toolbar" aria-label="Ink" data-ink-ui>
       <button type="button" class="ink-btn ink-expand" title={`${label}: show the toolbar`} aria-label={`${label}: show the toolbar`} style={writing ? { '--tool-color': inkPaint(style[tool].color) } : {}} onClick={() => setCollapsed(false)}><Icon name={tool} size={20} /></button>
     </div>
   }
-  return <div class="ink-toolbar" role="toolbar" aria-label="Ink" data-ink-ui>
+  return <div ref={barRef} class={`ink-toolbar${compact}`} role="toolbar" aria-label="Ink" data-ink-ui>
     <div class="ink-group">
       {TOOLS.map(([id, label]) => button(label, id, () => setTool(id), { active: tool === id }))}
     </div>
