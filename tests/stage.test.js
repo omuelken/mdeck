@@ -1,12 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import vm from 'node:vm'
-import { readFileSync } from 'node:fs'
-import { inkPaint } from '../src/core/ink.js'
-import { iconSvg } from '../src/core/icons.js'
-import { findHotspots, hotspotMode, zoomToCamera, cameraToZoom } from '../src/runtime/hotspots.js'
-import { flight, durationFor, ease } from '../src/runtime/zoom/camera.js'
-import { slideSteps } from '../src/runtime/steps.js'
+import { fileURLToPath } from 'node:url'
+import { build } from 'vite'
+
+// The stage and its feature modules, bundled into one script that each
+// fixture runs in a context of its own.
+const [{ output: [{ code: stageScript }] }] = await build({
+  configFile: false, logLevel: 'silent',
+  build: { write: false, minify: false, lib: { entry: fileURLToPath(new URL('../src/runtime/deck-stage.js', import.meta.url)), formats: ['iife'], name: 'deckStage' } },
+})
 
 // Exercise the real stage state machine without a browser layout engine.
 function stageFixture() {
@@ -15,12 +18,7 @@ function stageFixture() {
   const events = []
   const window = { postMessage: message => messages.push(message) }
   window.parent = window
-  // The stage is a module only for its imports; the script context supplies them.
-  const source = readFileSync(new URL('../src/runtime/deck-stage.js', import.meta.url), 'utf8').replace(/^import .*$/gm, '')
-  vm.runInNewContext(source, {
-    iconSvg,
-    inkPaint,
-    findHotspots, hotspotMode, zoomToCamera, cameraToZoom, flight, durationFor, ease, slideSteps,
+  vm.runInNewContext(stageScript, {
     HTMLElement: class {
       attachShadow() { return {} }
       dispatchEvent(event) { events.push(event) }
