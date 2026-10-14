@@ -28,12 +28,6 @@ try {
   async function until(page, expression, { attempts = 150 } = {}) {
     if (!await page.waitFor(expression, { attempts, interval: 50 })) throw new Error(`Condition did not become true: ${expression}`)
   }
-  // A button of the toolbar, opened first when a stroke folded it.
-  async function tapOpen(page, selector) {
-    await page.evaluate(`document.querySelector('.ink-expand')?.click()`)
-    await until(page, `!!document.querySelector(${JSON.stringify(selector)})`)
-    await page.evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`)
-  }
   // Drawing starts with the laser; strokes need the pen. `doc` is the
   // document with the stage (the presenter view's frame).
   async function choosePen(page, doc = 'document') {
@@ -228,11 +222,11 @@ try {
   await tabletPen('mouseReleased', right - 4, 270)
   await until(tablet, `(${lastPathBox})[3] > 250`)
   assert.equal(await tablet.evaluate("document.querySelectorAll('.slide-ink path').length"), 4, 'moving an end point draws nothing new')
-  await tapOpen(tablet, '.ink-btn[title=Undo]')
+  await tablet.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
   await until(tablet, `(${lastPathBox})[3] < 200`)
-  await tapOpen(tablet, '.ink-btn[title=Undo]')
+  await tablet.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
   await until(tablet, "document.querySelectorAll('.slide-ink path').length === 3")
-  await tapOpen(tablet, '.ink-btn[title=\"Select and move\"]')
+  await tablet.evaluate("document.querySelector('.ink-btn[title=\"Select and move\"]').click()")
   await until(tablet, `${tabletStage}.inkTool.tool === 'select'`)
   const lasso = [[270, 260], [560, 260], [560, 380], [270, 380], [270, 262]]
   await tabletPen('mousePressed', ...lasso[0])
@@ -243,7 +237,7 @@ try {
   for (let i = 1; i <= 5; i++) await tabletPen('mouseMoved', 400, 330 + i * 20)
   await tabletPen('mouseReleased', 400, 430)
   await until(tablet, `(${pathBox})[1] >= ${before[1] + 90}`)
-  await tapOpen(tablet, '.ink-btn[title=Undo]')
+  await tablet.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
   await until(tablet, `(${pathBox})[1] === ${before[1]}`)
   // Beside the selection a button deletes it (here a straight line's: off its middle).
   const selectionDelete = `${tabletStage}.shadowRoot.querySelector('.ink-selection-delete')`
@@ -260,7 +254,7 @@ try {
   // The laser: a trail on its own layer that stays while the pen is down and
   // retracts once it is lifted, never saved. Frames only run in the visible tab.
   await tablet.send('Page.bringToFront')
-  await tapOpen(tablet, '.ink-btn[title=\"Laser pointer\"]')
+  await tablet.evaluate("document.querySelector('.ink-btn[title=\"Laser pointer\"]').click()")
   await until(tablet, `${tabletStage}.inkTool.tool === 'laser'`)
   const laserPixels = `(() => { const c = ${tabletStage}.shadowRoot.querySelector('.ink-laser'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n })()`
   await tabletPen('mousePressed', 300, 200)
@@ -307,32 +301,10 @@ try {
   await until(inkAudience, `document.querySelector('deck-stage').zoom.scale === 1`)
 
   // The toolbar folds into one button in the corner; the pen keeps drawing.
-  // On a touch screen a choice folds it at the next stroke, not at once.
-  const folded = "document.querySelectorAll('.ink-toolbar button').length === 1 && !!document.querySelector('.ink-toolbar.is-collapsed')"
-  // Choosing the laser above folded it when the laser drew.
-  await until(tablet, folded)
-  await tablet.evaluate("document.querySelector('.ink-expand').click()")
   await tablet.evaluate("document.querySelector('.ink-btn[title=\"Fold the toolbar\"]').click()")
-  await until(tablet, folded)
+  await until(tablet, "document.querySelectorAll('.ink-toolbar button').length === 1 && document.querySelector('.ink-toolbar.is-collapsed')")
   await tablet.evaluate("document.querySelector('.ink-expand').click()")
-  await tablet.evaluate("document.querySelector('.ink-btn[title=Pen]').click()")
-  await tablet.evaluate("document.querySelector('.ink-color:not(.is-active)').click()")
-  await delay(200)
-  assert.equal(await tablet.evaluate(folded), false, 'a choice leaves the toolbar open until drawing starts')
-  const strokes = await tablet.evaluate("document.querySelectorAll('.slide-ink path').length")
-  await tabletPen('mousePressed', 300, 240)
-  for (let i = 1; i <= 4; i++) await tabletPen('mouseMoved', 300 + i * 20, 240)
-  await tabletPen('mouseReleased', 380, 240)
-  await until(tablet, `${folded} && document.querySelectorAll('.slide-ink path').length === ${strokes + 1}`)
-  await tablet.evaluate("document.querySelector('.ink-expand').click()")
-  await tabletPen('mousePressed', 300, 290)
-  for (let i = 1; i <= 4; i++) await tabletPen('mouseMoved', 300 + i * 20, 290)
-  await tabletPen('mouseReleased', 380, 290)
-  await until(tablet, `document.querySelectorAll('.slide-ink path').length === ${strokes + 2}`)
-  assert.equal(await tablet.evaluate(folded), false, 'opened without a choice, it stays open')
-  await tablet.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
-  await tablet.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
-  await until(tablet, `document.querySelectorAll('.slide-ink path').length === ${strokes}`)
+  await until(tablet, "!!document.querySelector('.ink-btn[title=\"Fold the toolbar\"]')")
   const tabletPresenter = await open('about:blank')
   await tabletPresenter.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   await tabletPresenter.send('Page.navigate', { url: new URL('ink.html?view=presenter', await tablet.evaluate('location.href')).href })
