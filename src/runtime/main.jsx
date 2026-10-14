@@ -310,6 +310,8 @@ function requestedLayout() {
 
 function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [index, setIndex] = useState(0)
+  // Slide changes made here, not a frame that (re)loaded or followed another screen.
+  const [moves, setMoves] = useState(0)
   // The notes, slide count and phones follow the language shown.
   const [lang, setLang] = useState(deckLang)
   const { slides, deckConfig } = useMemo(() => {
@@ -496,6 +498,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       // Another screen (a paired iPad) switched the language; the notes follow.
       if (LANGUAGES.includes(data?.deckLanguage)) { setLang(data.deckLanguage); return }
       if (!data?.deckStateChanged) return
+      if (data.reason && data.reason !== 'init' && data.reason !== 'sync') setMoves(n => n + 1)
       const state = data.deckStateChanged
       const i = state.index
       // Theme reloads must not reset the current reveal position.
@@ -637,8 +640,9 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     document.addEventListener('visibilitychange', check)
     return () => { clearInterval(timer); document.removeEventListener('visibilitychange', check) }
   }, [])
-  // After a restart of mdeck run: the slide the talk was on, offered while
-  // this view is still on the first slide (src/build/positionFile.js).
+  // After a restart of mdeck run: the slide the talk was on, offered until
+  // the presenter goes there, says no or changes slide; a frame that reloads
+  // or follows another screen does not count (src/build/positionFile.js).
   const [goOn, setGoOn] = useState(null)
   useEffect(() => {
     if (!import.meta.env.DEV) return
@@ -646,7 +650,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       .then(response => response.ok ? response.json() : null)
       .then(kept => { const at = kept?.slideId ? slides.findIndex(slide => slide.id === kept.slideId) : -1; if (at > 0) setGoOn(at) }, () => {})
   }, [])
-  useEffect(() => { if (index !== 0) setGoOn(null) }, [index])
+  useEffect(() => { if (moves) setGoOn(null) }, [moves])
   const note = notes[index] || ''
   const hasNext = index + 1 < slides.length
 
@@ -806,7 +810,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const unpairedNote = unpaired && <div class="presenter-unpaired" role="alert" style={{ position: 'fixed', left: '50%', top: remoteLayout ? '64px' : '72px', transform: 'translateX(-50%)', zIndex: 18, maxWidth: 'min(560px, calc(100vw - 32px))', boxSizing: 'border-box', padding: '8px 14px', borderRadius: '12px', background: 'rgba(17,17,17,0.94)', border: '1px solid #5c2b28', color: '#f28b82', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px', lineHeight: 1.4, textAlign: 'center', pointerEvents: 'none' }}>
     {UNPAIRED}
   </div>
-  const goOnNote = goOn != null && index === 0 && <div class="presenter-go-on" role="status" style={{ position: 'fixed', left: layout === 'speaker' ? 'calc(100% / 3)' : '50%', bottom: remoteLayout ? '110px' : '76px', transform: 'translateX(-50%)', zIndex: 18, display: 'flex', alignItems: 'center', gap: '10px', maxWidth: 'calc(100vw - 32px)', boxSizing: 'border-box', padding: '6px 6px 6px 14px', borderRadius: '999px', background: 'rgba(17,17,17,0.94)', border: '1px solid #3a3a3a', color: '#f0f0f0', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px' }}>
+  const goOnNote = goOn != null && index !== goOn && <div class="presenter-go-on" role="status" style={{ position: 'fixed', left: layout === 'speaker' ? 'calc(100% / 3)' : '50%', bottom: remoteLayout ? '110px' : '76px', transform: 'translateX(-50%)', zIndex: 18, display: 'flex', alignItems: 'center', gap: '10px', maxWidth: 'calc(100vw - 32px)', boxSizing: 'border-box', padding: '6px 6px 6px 14px', borderRadius: '999px', background: 'rgba(17,17,17,0.94)', border: '1px solid #3a3a3a', color: '#f0f0f0', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px' }}>
     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Last time: slide {goOn + 1}{slideTitleOf(slides[goOn]) ? `, ${slideTitleOf(slides[goOn])}` : ''}</span>
     <button type="button" class="presenter-go-on-yes" style={{ ...S.btn, padding: '4px 12px', borderRadius: '999px', background: '#f0f0f0', borderColor: '#f0f0f0', color: '#111', whiteSpace: 'nowrap' }} onClick={() => { navCommand('goTo', goOn); setGoOn(null) }}>Go on there</button>
     <button type="button" class="presenter-go-on-no" aria-label="Start from the first slide" title="Start from the first slide" style={{ ...S.btn, padding: '4px 9px', borderRadius: '999px' }} onClick={() => setGoOn(null)}>✕</button>
