@@ -11,9 +11,11 @@ permissions:
   pages: write
   id-token: write
 
+# A second push waits for the deployment under way: one cancelled halfway
+# stays "in progress" for Pages, which then refuses the next.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
