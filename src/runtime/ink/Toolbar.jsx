@@ -10,8 +10,9 @@ import './toolbar.css'
 // finger, and the drawings file. Swipes and the deck's own controls and keys
 // turn the slides. It folds into one button in the bottom right corner,
 // showing the current tool, and drawing goes on while it is folded. On a
-// touch screen it folds again once a tool, colour or size is chosen, as a menu
-// closes; choosing "select" leaves it open for deleting the selection. It drives
+// touch screen, once a tool, colour or size is chosen, it folds when drawing
+// starts, so a colour is changed right after the tool; choosing "select"
+// leaves it open. Folded, it keeps a button for deleting the selection. It drives
 // a <deck-stage> (inkTool, inkFinger, data-ink-hidden), an ink controller and
 // the selection.
 
@@ -93,9 +94,18 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
     stage.setAttribute('data-ink-tool', tool)
     if (tool !== 'select') selection?.clear()
   }, [tool, style])
-  const fold = () => { if (touch) setCollapsed(true) }
-  const choose = id => { setTool(id); if (id !== 'select') fold() }
-  const setOwn = change => { setStyle(all => ({ ...all, [tool]: { ...all[tool], ...change } })); fold() }
+  // A choice made on a touch screen folds the toolbar at the next stroke.
+  const chosen = useRef(false)
+  const choose = id => { setTool(id); chosen.current = touch && id !== 'select' }
+  const setOwn = change => { setStyle(all => ({ ...all, [tool]: { ...all[tool], ...change } })); chosen.current = touch }
+  useEffect(() => {
+    if (!touch) return
+    const draws = () => { if (chosen.current) { chosen.current = false; setCollapsed(true) } }
+    const events = ['inkprogress', 'inkerase']
+    for (const type of events) stage.addEventListener(type, draws)
+    return () => { for (const type of events) stage.removeEventListener(type, draws) }
+  }, [stage, touch])
+  useEffect(() => { if (collapsed) chosen.current = false }, [collapsed])
   useEffect(() => { stage._inkCollapsed = collapsed }, [collapsed])
   useEffect(() => { stage.toggleAttribute('data-ink-hidden', hidden) }, [hidden])
   useEffect(() => { stage.inkFinger = finger }, [finger])
@@ -108,6 +118,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   if (collapsed) {
     const [, label] = TOOLS.find(([id]) => id === tool)
     return <div class="ink-toolbar is-collapsed" role="toolbar" aria-label="Ink" data-ink-ui>
+      {selected > 0 && button('Delete selection (Delete)', 'trash', () => selection.remove())}
       <button type="button" class="ink-btn ink-expand" title={`${label}: show the toolbar`} aria-label={`${label}: show the toolbar`} style={writing ? { '--tool-color': inkPaint(style[tool].color) } : {}} onClick={() => setCollapsed(false)}><Icon name={tool} size={20} /></button>
     </div>
   }
