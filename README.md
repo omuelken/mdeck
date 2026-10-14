@@ -22,7 +22,6 @@
 > | Change | Status |
 > |---|---|
 > | A countdown for the room, set in the presenter view, with a sound at the end (`<countdown />`, in [`contrib/countdown`](contrib/countdown/Countdown.jsx)) | only here |
-> | On an iPad the presenter view's bars no longer cover the slide; smaller bars, toolbar open at the start, full screen at the first touch | [PR #22](https://github.com/tilman-schieber/mdeck/pull/22) |
 > | A paired iPad stays paired when `mdeck run` restarts | waiting for [issue #17](https://github.com/tilman-schieber/mdeck/issues/17) |
 >
 > To use it: clone, `git switch unterricht`, `npm install`, `npm link` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
