@@ -1,5 +1,5 @@
 import { h } from 'preact'
-import { useEffect, useRef } from 'preact/hooks'
+import { useEffect, useLayoutEffect, useRef } from 'preact/hooks'
 import { render } from 'preact'
 import { marked, Parser } from 'marked'
 import { registry } from '../runtime/registry'
@@ -154,7 +154,11 @@ const COMPONENT_TAGS = new Set(Object.keys(registry))
 export function HtmlContent({ html, class: className, ...attributes }) {
   const ref = useRef()
 
-  useEffect(() => {
+  // Mounted as the page is drawn, not after: a plain effect still waiting
+  // when the slide is drawn again (two language switches in quick
+  // succession) runs inside that drawing, and its render() of the components
+  // broke it half way, leaving the slide in the language before.
+  useLayoutEffect(() => {
     if (!ref.current) return
     ref.current.querySelectorAll('.themed-picture > svg').forEach(ownIds)
     const mounted = []

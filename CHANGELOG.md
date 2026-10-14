@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed: two language switches in quick succession (L, L) could leave a slide with a component on it, such as a code block, in the language before, and the windows showing it stopped updating their slides. The components on a slide are now mounted as it is drawn.
 - An iPad that is no longer paired, after a restart of `mdeck run` or **Unpair**, says so over the slide and in its connections panel. Before, it went on showing what the laptop did while its own slide changes, drawings and polls stayed on it, without a word.
 - Fixed: after a restart of `mdeck run`, a presenter view opened or reloaded took the audience window on the projector back to the first slide, while it showed the slide the talk was on itself. A window that just opened no longer moves another, and the windows still open say where they are when they connect again, so a presenter view opened then takes up the projector's slide.
 - Fixed (since 3.13.0): opening the presenter view on an iPad, or reloading it, took the laptop back to the first slide when nobody had changed slides for 15 s. A screen that went quiet holds the phones no longer, but the stage room hears of a slide once and not again, so there a presenter who stays on a slide kept it from no one; it keeps it now.
