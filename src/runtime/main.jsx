@@ -280,6 +280,15 @@ function SlideJump({ index, total, onJump, pad = 0, style }) {
 }
 
 const PRESENTER_LAYOUTS = ['speaker', 'slide', 'remote']
+// The iPad's bar, smaller than the computer's buttons (inline styles, hence
+// !important); the timer with them.
+const SLIM_PILL = `
+  .presenter--slide .presenter-pill { padding: 3px !important; gap: 2px !important; }
+  .presenter--slide .presenter-pill button { min-width: 34px !important; height: 34px !important; padding: 0 7px !important; border-radius: 9px !important; font-size: 13px !important; }
+  .presenter--slide .presenter-pill button svg { width: 16px; height: 16px; }
+  .presenter--slide .presenter-pill .presenter-clock { gap: 6px !important; }
+  .presenter--slide .presenter-pill .presenter-slide-time { font-size: 11px !important; }
+`
 // A slide's first heading, as plain words, for the phone's "Next:" line.
 function slideTitleOf(slide) {
   const texts = [slide?.content ?? '', ...Object.values(slide?.regions ?? {}).map(region => region.content ?? '')]
@@ -379,6 +388,19 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     return () => { gone = true; document.removeEventListener('visibilitychange', ask); lock?.release().catch(() => {}) }
   }, [remoteLayout])
   const [drawerOpen, setDrawerOpen] = useState(false)
+  // The iPad: the slide sits below the bar, which never covers it.
+  const pillRef = useRef(null)
+  const [pillBottom, setPillBottom] = useState(0)
+  useEffect(() => {
+    const pill = pillRef.current
+    if (!pill || typeof ResizeObserver === 'undefined') return
+    const measure = () => setPillBottom(Math.ceil(pill.getBoundingClientRect().bottom))
+    const observer = new ResizeObserver(measure)
+    observer.observe(pill)
+    window.addEventListener('resize', measure)
+    measure()
+    return () => { observer.disconnect(); window.removeEventListener('resize', measure) }
+  }, [layout])
   const slideLayout = layout === 'slide'
   function chooseLayout(next) {
     setLayout(next)
@@ -846,11 +868,15 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     {notesBox}
   </aside>
 
-  // The iPad: the slide fills the screen, one slim bar on top.
+  // The iPad: the slide as large as it fits below one slim bar on top, which
+  // is a little smaller than a computer's; the drawing toolbar keeps its own
+  // strip below it (the stage's data-ink-reserve).
+  const slideTop = pillBottom ? pillBottom + 4 : 0
   if (slideLayout) return (
-    <div class="presenter presenter--slide" style={{ height: '100dvh', background: '#111', overflow: 'hidden', touchAction: 'pan-x pan-y' }}>
-      <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ width: '100%', height: '100%', border: '0', display: 'block' }} />
-      <div class="presenter-pill" role="toolbar" aria-label="Presenter" style={{ ...font, position: 'fixed', top: 'max(10px, env(safe-area-inset-top))', right: 'max(10px, env(safe-area-inset-right))', zIndex: 20, display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 'calc(100vw - 20px)', padding: '4px', borderRadius: '14px', background: 'rgba(17,17,17,0.9)', border: '1px solid #2a2a2a', fontVariantNumeric: 'tabular-nums' }}>
+    <div class="presenter presenter--slide" style={{ position: 'relative', height: '100dvh', background: '#111', overflow: 'hidden', touchAction: 'pan-x pan-y' }}>
+      <style>{SLIM_PILL}</style>
+      <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ position: 'absolute', top: `${slideTop}px`, left: 0, width: '100%', height: `calc(100% - ${slideTop}px)`, border: '0', display: 'block' }} />
+      <div ref={pillRef} class="presenter-pill" role="toolbar" aria-label="Presenter" style={{ ...font, position: 'fixed', top: 'max(6px, env(safe-area-inset-top))', right: 'max(10px, env(safe-area-inset-right))', zIndex: 20, display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 'calc(100vw - 20px)', padding: '4px', borderRadius: '14px', background: 'rgba(17,17,17,0.9)', border: '1px solid #2a2a2a', fontVariantNumeric: 'tabular-nums' }}>
         <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ padding: '0 4px', color: '#888' }} />
         {finishButton}{timerChip}
         {separator}{nav}
@@ -1173,7 +1199,8 @@ async function init() {
     // it. A phone or tablet only browsing the deck keeps its taps. D or the
     // close button turns it off.
     const startDrawing = () => { inkStage._inkCollapsed = true; inkStage.inking = true }
-    if (embedded && matchMedia('(pointer: coarse)').matches) startDrawing()
+    // There the open toolbar has its own strip below the slide.
+    if (embedded && matchMedia('(pointer: coarse)').matches) { inkStage.setAttribute('data-ink-reserve', ''); startDrawing() }
     else if (!embedded) {
       const onPen = event => {
         if (event.pointerType !== 'pen') return

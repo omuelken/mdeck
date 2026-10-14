@@ -40,6 +40,12 @@
 @media (max-width: 1000px) { .ink-btn, .ink-color, .ink-size { width: 34px; height: 34px; } .ink-group { gap: 2px; padding: 0 3px; } .ink-toolbar { gap: 4px; padding: 5px; } }
 /* Fingers need bigger targets than a mouse. */
 @media (pointer: coarse) { .ink-btn, .ink-color, .ink-size { width: 44px; height: 44px; } }
+/* The iPad's presenter view, where the toolbar has its own strip below the
+   slide: smaller, so the slide stays large. */
+.ink-toolbar.is-compact { bottom: max(6px, env(safe-area-inset-bottom)); gap: 4px; padding: 4px; }
+.ink-toolbar.is-compact .ink-btn, .ink-toolbar.is-compact .ink-color, .ink-toolbar.is-compact .ink-size { width: 36px; height: 36px; }
+.ink-toolbar.is-compact .ink-group { gap: 2px; padding: 0 3px; }
+.ink-toolbar.is-compact.is-collapsed { padding: 3px; }
 /* The small confirmation popover over the clear button. */
 .ink-anchor { position: relative; display: flex; }
 .ink-pop {

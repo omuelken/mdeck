@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- On an iPad, the presenter view's bar and the open drawing toolbar no longer cover the slide: it sits below the bar and above the toolbar, as large as fits, and takes the toolbar's strip back while the toolbar is folded. Both bars, and the timer in the bar, are a little smaller there. The audience window and the laptop's presenter view still show the whole slide as before.
 - `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`, and the guides say `npm install -g mdeck` where they did.
 - The launch page drops answers and drawings at once, without asking and without a backup.
 - Fixed: the join code shown with **J** on a paired iPad did not show in the audience window on the laptop, nor on phones following the talk. Screens in another browser hear of the presenter's position through the server's stage room, which carried the black screen but not the join code; it now carries both.
