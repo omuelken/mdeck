@@ -227,7 +227,8 @@ function useEndSound(timer, { plays, first, lock }) {
     element.volume = timer.volume ?? 0.8
     return element
   }
-  const stop = () => { const element = audioRef.current; if (element && !element.paused) { element.pause(); element.currentTime = 0 } }
+  // Also a sound that is only about to start.
+  const stop = () => { const element = audioRef.current; if (element) { element.pause(); element.currentTime = 0 } }
   const play = kind => {
     if (!plays) return
     ringing.current = kind
@@ -311,7 +312,7 @@ function Panel({ timer, change }) {
         {SOUNDS.map(({ name }) => <option value={name}>♪ {name}</option>)}
       </select>
       <input type="range" min="0" max="1" step="0.05" aria-label="Volume" title="Volume" value={timer.volume ?? 0.8} onChange={event => { const volume = Number(event.currentTarget.value); change(t => ({ ...t, volume })) }} />
-      <button title="Play the sound once where the room hears it" disabled={!timer.sound} onClick={() => change(t => ({ ...t, test: (t.test || 0) + 1 }))}>Try</button>
+      <button title="Play the sound once where the room hears it" disabled={!timer.sound} onClick={() => change(t => ({ ...t, test: (t.test || 0) + 1, quiet: false }))}>Try</button>
       {/* At the end, Stop also takes the countdown off the screen. */}
       <button title={left === 0 ? 'Stop the sound and hide the countdown' : 'Stop the sound'} disabled={!timer.sound && left > 0} onClick={() => change(t => ({ ...t, quiet: true, visible: timeLeft(t) === 0 ? false : t.visible }))}>Stop</button>
     </div>}
