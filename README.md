@@ -22,8 +22,6 @@
 > | Change | Status |
 > |---|---|
 > | A countdown for the room, set in the presenter view, with a sound at the end (`<countdown />`, in [`contrib/countdown`](contrib/countdown/Countdown.jsx)) | only here |
-> | After a restart of `mdeck run`, a presenter view opened or reloaded no longer takes the projector back to the first slide; also the 3.13.0 case of an iPad that reloads after 15 s on one slide | [PR #18](https://github.com/tilman-schieber/mdeck/pull/18) |
-> | After a restart the presenter view offers to go on where the talk was (**Go on there**), nothing moves on its own | [PR #19](https://github.com/tilman-schieber/mdeck/pull/19) |
 > | Pairing codes and join links use the laptop's address of now, after a change of network | [PR #20](https://github.com/tilman-schieber/mdeck/pull/20) |
 > | A bin beside a selection of strokes deletes it | [PR #21](https://github.com/tilman-schieber/mdeck/pull/21) |
 > | On an iPad the presenter view's bars no longer cover the slide; smaller bars, toolbar open at the start, full screen at the first touch | [PR #22](https://github.com/tilman-schieber/mdeck/pull/22) |
