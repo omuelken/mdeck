@@ -23,7 +23,6 @@
 > |---|---|
 > | A countdown for the room, set in the presenter view, with a sound at the end (`<countdown />`, in [`contrib/countdown`](contrib/countdown/Countdown.jsx)) | only here |
 > | A paired iPad stays paired when `mdeck run` restarts (same laptop address) | only here; Tilman wants it as an option for mdeck as a whole ([issue #17](https://github.com/tilman-schieber/mdeck/issues/17)) |
-> | Without full screen, the iPad's presenter view fits what Safari shows | [PR #23](https://github.com/tilman-schieber/mdeck/pull/23) open |
 >
 > To use it: clone, `git switch unterricht`, `npm install`, `npm link` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 > Everything below is Tilman's README.
