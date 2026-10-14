@@ -72,7 +72,7 @@
 import { iconSvg } from '../core/icons.js';
 import { slideSteps } from './steps.js';
 import { stylesheet } from './stage/styles.js';
-import { fullscreenAvailable, fullscreenElement, toggleFullscreen, onFullscreenChange } from './stage/fullscreen.js';
+import { fullscreenAvailable, toggleFullscreen, onFullscreenChange } from './stage/fullscreen.js';
 import { Taps } from './stage/taps.js';
 import { Ink } from './stage/ink.js';
 import { Laser } from './stage/laser.js';
@@ -91,8 +91,6 @@ const isEmbedded = new URLSearchParams(location.search).has('embedded');
 const hideControls = isEmbedded && !new URLSearchParams(location.search).has('controls');
 
 const pad2 = (n) => String(n).padStart(2, '0');
-
-window.mdeckFullscreen = { available: fullscreenAvailable, element: fullscreenElement, toggle: toggleFullscreen, onChange: onFullscreenChange };
 
 const features = [Taps, Ink, Laser, Zoom, Hotspots, Overview];
 
@@ -499,7 +497,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     if (on && this._join) this._applyJoin(false);
   }
 
-  /** Whether the join code shows over the slide (J). Setting it tells the other screens; main.jsx draws it. */
+  /** Whether the join code shows over the slide (J). Setting it tells the other screens; JoinOverlay.jsx draws it. */
   get join() { return this._join; }
   setJoin(on, reason = 'api') {
     on = !!on;
@@ -515,7 +513,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   }
 
   _broadcastState(reason) {
-    // atEnd: nothing comes after this, which ends a rehearsal (main.jsx).
+    // atEnd: nothing comes after this, which ends a rehearsal (presenter/PresenterView.jsx).
     const state = this.state;
     const atEnd = state.index === this._slides.length - 1 && state.step >= this._getSteps(this._slides[state.index]).length - 1;
     const message = { deckStateChanged: state, atEnd, reason };
@@ -621,7 +619,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     } else if (key === 'r' || key === 'R') {
       this.reset();
     } else if ((key === 'j' || key === 'J') && this._isPage() && !this.hasAttribute('data-watching') && this.hasAttribute('data-joinable')) {
-      // J: the join code over the slide, in a deck phones join (main.jsx sets data-joinable).
+      // J: the join code over the slide, in a deck phones join (deckWindow.jsx sets data-joinable).
       this.setJoin(!this._join, 'keyboard');
     } else if ((key === 'b' || key === 'B' || key === '.') && this._isPage() && !this.hasAttribute('data-watching')) {
       // B, or the "blank" button of a presenter's clicker, which sends a full stop.

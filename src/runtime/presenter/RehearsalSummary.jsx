@@ -5,12 +5,12 @@
 // (build/timingPlugin.js); a built deck can only copy the times.
 import { h } from 'preact'
 import { useEffect, useMemo, useState } from 'preact/hooks'
-import { S } from './chrome.jsx'
-import { Icon } from '../components/Icon.jsx'
-import { slideTitle } from '../core/outline.js'
-import { devPath } from '../core/devPath.js'
-import { pairHeaders } from '../live/pairing.js'
-import { formatTime, formatClock, roundTime, initialTimes, changedTimes, TIME_STEP } from '../core/timing.js'
+import { S } from '../chrome.jsx'
+import { Icon } from '../../components/Icon.jsx'
+import { slideTitle } from '../../core/outline.js'
+import { devPath } from '../../core/devPath.js'
+import { pairHeaders } from '../../live/pairing.js'
+import { formatTime, formatClock, roundTime, initialTimes, changedTimes, TIME_STEP } from '../../core/timing.js'
 
 const ENDPOINT = devPath('__mdeck/timing')
 

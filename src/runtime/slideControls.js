@@ -1,5 +1,5 @@
 // What the presenter can do on the slide shown, for the phone clicker
-// (main.jsx): the buttons components mark with `data-presenter-control` (a
+// (presenter/PresenterView.jsx): the buttons components mark with `data-presenter-control` (a
 // poll's lock, eye, tick and Reset), the slide's videos (play or pause), and
 // its hotspots (zoom to a part, back to the whole slide). The clicker's slide
 // frame reports them; a tap on the clicker presses the original here, so the

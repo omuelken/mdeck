@@ -31,7 +31,7 @@ deck-stage[data-follower] .poll-reset { display: none; }
 .poll-control:hover, .poll-control:focus-visible { opacity: 1; }
 .poll-close.is-on, .poll-results.is-on { opacity: 1; background: var(--muted, #666); border-color: var(--muted, #666); color: #fff; }
 deck-stage[data-follower] .poll-control { display: none; }
-/* The presenter view has them in its toolbar (runtime/PresenterChrome.jsx). */
+/* The presenter view has them in its toolbar (runtime/presenter/PresenterChrome.jsx). */
 deck-stage[data-presenter] :is(.poll-control, .poll-reset) { display: none; }
 /* Closed: no more answers count. */
 .poll-closed { padding: 2px 12px; border-radius: 999px; background: color-mix(in srgb, var(--ink, #111) 10%, transparent); color: var(--ink, #111); font-weight: 600; }
