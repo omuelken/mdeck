@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 3.14.0 — 2026-10-14
 
+- On an iPad without full screen, the presenter view fits the part of the window Safari shows: its bar no longer slips under Safari's, and no white strip shows below the drawing toolbar.
 - Fixed: two language switches in quick succession (L, L) could leave a slide with a component on it, such as a code block, in the language before, and the windows showing it stopped updating their slides. The components on a slide are now mounted as it is drawn.
 - An iPad that is no longer paired, after a restart of `mdeck run` or **Unpair**, says so over the slide and in its connections panel. Before, it went on showing what the laptop did while its own slide changes, drawings and polls stayed on it, without a word.
 - Fixed: after a restart of `mdeck run`, a presenter view opened or reloaded took the audience window on the projector back to the first slide, while it showed the slide the talk was on itself. A window that just opened no longer moves another, and the windows still open say where they are when they connect again, so a presenter view opened then takes up the projector's slide.
