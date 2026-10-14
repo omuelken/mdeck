@@ -10,7 +10,7 @@ Press **D** in standalone slides or in the presenter view, or use the pen button
 |---|---|
 | Pen | Thin to thick with the pencil's pressure. Kept. |
 | Highlighter | A wide, see-through stroke in its own colours, always below the pen's strokes. Kept. |
-| Select and move | Draw a loop around strokes, or tap one, to select it; a finger's tap on a stroke selects it with any tool. Drag inside the dashed box with the pen to move it; a straight line shows handles at its ends, which the pen moves. **Delete** (or the toolbar's bin) removes the selection. |
+| Select and move | Draw a loop around strokes, or tap one, to select it; a finger's tap on a stroke selects it with any tool. Drag inside the dashed box with the pen to move it; a straight line shows handles at its ends, which the pen moves. **Delete**, the bin beside the selection, or the toolbar's bin removes the selection. |
 | Laser pointer | A red dot with a white core and a trail that stays as long as the pen or finger is down and disappears by itself once it is lifted, for pointing at something or circling it. With a pencil that can hover, the dot follows it without touching. Never kept. |
 | Eraser | Removes whole strokes you touch. |
 

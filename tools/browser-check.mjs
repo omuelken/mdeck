@@ -245,6 +245,17 @@ try {
   await until(tablet, `(${pathBox})[1] >= ${before[1] + 90}`)
   await tapOpen(tablet, '.ink-btn[title=Undo]')
   await until(tablet, `(${pathBox})[1] === ${before[1]}`)
+  // Beside the selection a button deletes it (here a straight line's: off its middle).
+  const selectionDelete = `${tabletStage}.shadowRoot.querySelector('.ink-selection-delete')`
+  await until(tablet, `!!${selectionDelete}.hasAttribute('data-shown')`)
+  const [deleteX, deleteY] = await tablet.evaluate(`(() => { const b = ${selectionDelete}.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2] })()`)
+  const selectionBox = await tablet.evaluate(`(() => { const b = ${tabletStage}.shadowRoot.querySelector('.ink-selection').getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom] })()`)
+  assert.ok(deleteX > selectionBox[0] - 50 && deleteX < selectionBox[2] + 50 && deleteY > selectionBox[1] - 50 && deleteY < selectionBox[3] + 50, 'the delete button sits at the selection')
+  const before3 = await tablet.evaluate("document.querySelectorAll('.slide-ink path').length")
+  await tablet.evaluate(`${selectionDelete}.click()`)
+  await until(tablet, `document.querySelectorAll('.slide-ink path').length < ${before3} && !${selectionDelete}.hasAttribute('data-shown')`)
+  await tablet.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
+  await until(tablet, `document.querySelectorAll('.slide-ink path').length === ${before3}`)
 
   // The laser: a trail on its own layer that stays while the pen is down and
   // retracts once it is lifted, never saved. Frames only run in the visible tab.
