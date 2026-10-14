@@ -5,24 +5,26 @@ on:
     branches: [main]
   pull_request:
 
+# The jobs run in Debian with Node 22, the oldest Node mdeck supports, so a
+# change of the runner's own image does not change what is tested.
 jobs:
   unit:
     runs-on: ubuntu-latest
+    container: node:22-bookworm
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
+      - uses: actions/checkout@v5
       - run: npm ci
       - run: npm test
 
   browser:
     runs-on: ubuntu-latest
-    env:
-      MDECK_CHROME: /usr/bin/google-chrome
+    container:
+      image: node:22-bookworm
+      # Chromium needs more shared memory than Docker's 64 MB.
+      options: --shm-size=1g
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
+      - run: apt-get update && apt-get install -y --no-install-recommends chromium fonts-dejavu-core fonts-noto-core fonts-noto-color-emoji
+      - uses: actions/checkout@v5
       - run: npm ci
       - run: npm run test:browser
       - run: npm run test:themes

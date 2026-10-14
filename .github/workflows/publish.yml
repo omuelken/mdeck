@@ -15,15 +15,16 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    container: node:22-bookworm
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, registry-url: 'https://registry.npmjs.org' }
+      - run: apt-get update && apt-get install -y --no-install-recommends gh
+      - uses: actions/checkout@v5
       - run: npm install -g npm@latest
       - run: npm ci
       - run: npm test
       - run: npm publish --provenance --access public
       - run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           node tools/release-notes.mjs "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
           gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 ||
             gh release create "$GITHUB_REF_NAME" --verify-tag \

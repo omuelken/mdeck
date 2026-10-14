@@ -157,9 +157,13 @@ test('data files: bundled by the path the deck writes, followed when they change
   const module = async () => (await server.transformRequest('virtual:deck-data')).code
   try {
     assert.match(await module(), /"\.\/data\/yields\.csv":"year,n\\n2024,1\\n"/)
-    writeFileSync(resolve(dir, 'data/yields.csv'), 'year,n\n2024,2\n')
-    const deadline = Date.now() + 5000
-    while (!(await module()).includes('2024,2') && Date.now() < deadline) await delay(25)
+    // The watcher takes up the file a moment after the deck names it, and a
+    // change before then goes unseen: write it again until one is seen.
+    const deadline = Date.now() + 10000
+    for (let n = 0; !(await module()).includes('2024,2') && Date.now() < deadline; n++) {
+      if (n % 20 === 0) writeFileSync(resolve(dir, 'data/yields.csv'), `year,n\n2024,2\n${'\n'.repeat(n / 20)}`)
+      await delay(25)
+    }
     assert.match(await module(), /2024,2/, 'a changed file shows its new data')
   } finally {
     await server.close()

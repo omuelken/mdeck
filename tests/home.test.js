@@ -1,7 +1,7 @@
 import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
 import { createServer, request } from 'node:http'
-import { mkdtempSync, copyFileSync, cpSync, writeFileSync, mkdirSync, existsSync, readFileSync, readdirSync } from 'node:fs'
+import { mkdtempSync, copyFileSync, cpSync, writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { homeMiddleware, outputsFor, liveStatus } from '../src/build/homePlugin.js'
@@ -181,7 +181,7 @@ test('kept answers can be dropped one question at a time, or all', async () => {
   assert.equal((await (await get('/info')).json()).results, null)
 })
 
-test('drawings show slide by slide and can be dropped, with a backup', async () => {
+test('drawings show slide by slide and can be dropped', async () => {
   const { parseSlides } = await import('../src/core/parseSlides.js')
   const [first] = parseSlides(readFileSync(deck, 'utf8')).slides
   const stroke = id => ({ id, tool: 'pen', color: '#e11d48', size: 6, points: [[1, 1, 0.5], [9, 9, 0.5]] })
@@ -190,7 +190,6 @@ test('drawings show slide by slide and can be dropped, with a backup', async () 
   assert.deepEqual(drawings.map(({ slide, strokes }) => ({ slide, strokes })), [{ slide: 1, strokes: 2 }, { slide: null, strokes: 1 }], 'slides of the deck first, then ones it no longer has')
   assert.equal((await act({ action: 'drop-drawings', slide: 'gone' })).status, 200)
   assert.deepEqual((await (await get('/info')).json()).drawings.map(entry => entry.id), [first.id])
-  assert.ok(readdirSync(resolve(dir, '.mdeck-backups')).some(name => name.startsWith('talk.drawings-')), 'the file as it was is kept')
   assert.equal((await act({ action: 'drop-drawings' })).status, 200)
   assert.equal((await (await get('/info')).json()).drawings, null)
 })

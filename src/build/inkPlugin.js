@@ -61,8 +61,8 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
     return ink
   }
 
-  function backupOnce(again = false) {
-    if ((backedUp && !again) || !existsSync(inkPath)) { backedUp = true; return }
+  function backupOnce() {
+    if (backedUp || !existsSync(inkPath)) { backedUp = true; return }
     const dir = resolve(dirname(abs), BACKUP_DIR)
     mkdirSync(dir, { recursive: true })
     const name = basename(inkPath, '.json')
@@ -160,15 +160,13 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
       onChange({ renamed })
       return { status: 200, deckHash: hash, renamed }
     },
-    // Drops one slide's drawings, or all of them, from the launch page. The
-    // file as it was goes to the backups first; the open windows fetch the
-    // ink again.
+    // Drops one slide's drawings, or all of them, from the launch page; the
+    // open windows fetch the ink again.
     drop(slideId = null) {
       let deck
       try { deck = readDeck().deck } catch { deck = { deckConfig: {} } }
       current(deck)
       if (slideId === null ? !Object.keys(ink.slides).length : !ink.slides[slideId]) return
-      backupOnce(true)
       if (slideId === null) ink = emptyInk(size(deck))
       else ink = applyOp(ink, { type: 'remove', slideId, ids: (ink.slides[slideId] ?? []).map(stroke => stroke.id) })
       flush()

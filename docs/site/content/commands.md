@@ -26,7 +26,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck server` | Run the server for polls and for presenting from an iPad on any network ([details](audience.html#use-it-in-a-real-session)) |
 | `mdeck list`, `mdeck starter` | Look up layouts, themes and palettes |
 | `mdeck docs` | Open this documentation |
-| `mdeck --help` | Show a short list of commands |
+| `mdeck --help` | Show a short list of commands; `mdeck <command> --help` shows a command's options |
 | `mdeck --version` | Show which version of mdeck you have |
 
 ## The launch page
@@ -175,11 +175,3 @@ mdeck skill --print
 ```
 
 Installs the slide-writing skill for the assistants you use, or prints it for any other tool. See [Work with an AI assistant](claude-skill.html).
-
-## Why do some examples use Node directly?
-
-`mdeck` is the normal command. After the one-time `npm link` setup, you can use it from any folder.
-
-`node bin/mdeck.js` runs the same program directly from its project folder. It is useful when working on mdeck itself, but it is not a replacement you need to learn for everyday use.
-
-From the project folder, `npm start -- my-talk.md` runs `mdeck run`, and `npm run build -- my-talk.md` builds. These use the same program.

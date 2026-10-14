@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`, and the guides say `npm install -g mdeck` where they did.
+- The launch page drops answers and drawings at once, without asking and without a backup.
 - Fixed: after a restart of `mdeck run`, a presenter view opened or reloaded took the audience window on the projector back to the first slide, while it showed the slide the talk was on itself. A window that just opened no longer moves another, and the windows still open say where they are when they connect again, so a presenter view opened then takes up the projector's slide.
 - Fixed: after the laptop moved to another network while `mdeck run --network` ran, the code that pairs an iPad, and the join link for phones, still led to the address it had when it started, which no one reached. The addresses are now read each time a code is shown; the pairing panel says which address a code leads to, and when the laptop is in no network another device can reach (only a link-local or an IPv6-only network's address), it says so instead of showing a code.
 - After a restart of `mdeck run` the presenter view offers to go on where the talk was: "Last time: slide 12, …" with **Go on there**, at the slide's start, while it is still on the first slide. Nothing moves on its own. The slide is kept beside the deck in `<deck>.position.json` and found again by its id; a slide the deck no longer has is not offered. The launch page shows it too and can forget it.
