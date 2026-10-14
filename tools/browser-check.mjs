@@ -323,12 +323,6 @@ try {
   await tabletPresenter.evaluate(`${tabletFrame}.querySelector('.ink-btn[title="Fold the toolbar"]').click()`)
   await until(tabletPresenter, `!${tabletFrame}.querySelector('deck-stage').style.bottom`)
   await tabletPresenter.evaluate(`${tabletFrame}.querySelector('.ink-expand').click()`)
-  // The first touch takes the iPad to full screen.
-  const [tapX, tapY] = await tabletPresenter.evaluate("(() => { const b = document.querySelector('.presenter-pill').getBoundingClientRect(); return [b.left + 30, b.top + b.height / 2] })()")
-  await tabletPresenter.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: tapX, y: tapY }] })
-  await tabletPresenter.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-  await until(tabletPresenter, '!!document.fullscreenElement')
-  await tabletPresenter.evaluate('document.exitFullscreen()')
   await tabletPresenter.evaluate("document.querySelector('.presenter-notes').click()")
   await until(tabletPresenter, "getComputedStyle(document.querySelector('.presenter-aside')).display === 'flex'")
 

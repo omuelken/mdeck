@@ -425,32 +425,6 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     window.visualViewport?.addEventListener('resize', back)
     return () => { window.removeEventListener('scroll', back); window.visualViewport?.removeEventListener('resize', back) }
   }, [slideLayout])
-  // The iPad goes full screen at the first touch, on the bar or the slide
-  // (a page may only ask for it then), once: left, it stays left.
-  useEffect(() => {
-    if (!slideLayout || !canFullscreen || !matchMedia('(pointer: coarse)').matches) return
-    let frameDoc = null
-    const types = ['touchend', 'click']
-    const stop = () => {
-      for (const type of types) { document.removeEventListener(type, go, true); frameDoc?.removeEventListener(type, go, true) }
-      iframeRef.current?.removeEventListener('load', watchFrame)
-    }
-    // Only a real touch may ask; a click sent by a script would use the try up.
-    const go = event => {
-      const activation = (event.view ?? window).navigator?.userActivation
-      if (activation && !activation.isActive) return
-      stop()
-      if (!fullscreen.element()) Promise.resolve(fullscreen.toggle()).catch(() => {})
-    }
-    const watchFrame = () => {
-      try { frameDoc = iframeRef.current?.contentDocument } catch { frameDoc = null }
-      for (const type of types) frameDoc?.addEventListener(type, go, true)
-    }
-    for (const type of types) document.addEventListener(type, go, true)
-    iframeRef.current?.addEventListener('load', watchFrame)
-    watchFrame()
-    return stop
-  }, [slideLayout])
   const fullscreenLabel = isFullscreen ? 'Exit full screen (F)' : 'Full screen (F)'
   const fullscreenIcon = isFullscreen ? 'fullscreen-exit' : 'fullscreen'
 
