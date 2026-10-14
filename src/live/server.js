@@ -4,6 +4,7 @@ import { createServer } from 'node:http'
 import { liveHandler, createRooms, keyMatches } from './rooms.js'
 import { isAllowedRequest } from '../build/editorPlugin.js'
 import { createTunnels } from './tunnel.js'
+import { currentUrls } from '../build/networkUrls.js'
 import http from 'node:http'
 import https from 'node:https'
 
@@ -18,7 +19,7 @@ export function livePlugin({ pairing = null, upstream = null, key = null, sessio
       const handler = liveHandler({
         rooms,
         canReset: (request, room) => isAllowedRequest(request) || (!!pairing?.allows(request) && (room == null || room === session() || room.startsWith(`${session()}.`))),
-        info: () => ({ network: server.resolvedUrls?.network?.[0] ?? null }),
+        info: () => ({ network: currentUrls(server)?.network?.[0] ?? null }),
       })
       // With polls on a standalone server, the phones join there: its count
       // joins the local stage room's, so the presenter sees them.

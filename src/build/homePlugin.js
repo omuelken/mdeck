@@ -24,6 +24,7 @@ import { languageOfFile } from '../core/languages.js'
 import { deckLanguages } from './slidesPlugin.js'
 import { createResultsFile } from './resultsPlugin.js'
 import { createInkFile } from './inkPlugin.js'
+import { currentUrls } from './networkUrls.js'
 
 // Each output is one ordinary CLI run beside the deck, so the launch page
 // builds exactly what the command line would.
@@ -120,7 +121,7 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
       live: await live(config, deck.source ?? source, { local, network }),
       presence: presenceUrl(config),
       // Presenting from an iPad needs an address it can reach (`--host`).
-      pairing: pairing ? { available: !!relay || !!network[0], devices: pairing.devices } : null,
+      pairing: pairing ? { available: !!relay || !!network[0], offline: !relay && !network[0] && !!urls()?.exposed, devices: pairing.devices } : null,
       relay: relay ? { url: relay.url, state: relay.state, reason: relay.reason } : null,
       chrome: !!findChrome(),
       results: answers()?.map(({ answers: _, ...question }) => question) ?? null,
@@ -220,6 +221,8 @@ export function homeMiddleware(slidesPath, { urls = () => ({ local: [], network:
   // `layout: 'remote'` opens it as the phone clicker instead.
   function pairUrl(layout = 'slide') {
     const network = relay?.url ?? urls()?.network?.[0]
+    // With --network but no network now, such as after the laptop left the Wi-Fi.
+    if (pairing && !network && urls()?.exposed) throw Object.assign(new Error('This computer is in no network an iPad can reach right now. Connect it to the iPad’s Wi-Fi, then show the code again.'), { status: 409 })
     if (!pairing || !network) throw Object.assign(new Error('Start mdeck run with --network or --server so an iPad can reach it'), { status: 409 })
     const url = new URL(network)
     url.searchParams.set('view', 'presenter')
@@ -282,7 +285,7 @@ export function homePlugin(slidesPath, { services, pairing, relay = null, server
         response.writeHead(302, { Location: `${base}home.html` })
         response.end()
       })
-      server.middlewares.use('/__mdeck/home', homeMiddleware(slidesPath, { urls: () => server.resolvedUrls, services, pairing, relay, server: serverAddress, resultsFile, inkFile }))
+      server.middlewares.use('/__mdeck/home', homeMiddleware(slidesPath, { urls: () => currentUrls(server), services, pairing, relay, server: serverAddress, resultsFile, inkFile }))
     },
   }
 }
