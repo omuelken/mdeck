@@ -83,6 +83,11 @@ export function roomTransport({ receive = false, view = null, onPresence = null 
       if (onPresence) source.addEventListener('presence', event => onPresence(JSON.parse(event.data)))
       source.addEventListener('ink', event => { for (const message of JSON.parse(event.data).messages) handler(message) })
       for (const listener of stateListeners) source.addEventListener('snapshot', event => listener(JSON.parse(event.data).state))
+      // Connected again to an empty room: mdeck run restarted. The screens
+      // still open say where they are, so that a presenter view opened now
+      // takes up the slide on the projector.
+      let snapshots = 0
+      source.addEventListener('snapshot', event => { if (++snapshots > 1 && !JSON.parse(event.data).state) for (const again of reannounce) again() })
       for (const listener of stateListeners) source.addEventListener('state', event => listener(JSON.parse(event.data).state))
     },
     close() { source?.close() },
@@ -91,6 +96,8 @@ export function roomTransport({ receive = false, view = null, onPresence = null 
 
 // Position followers, attached before the transport listens.
 const stateListeners = new Set()
+// Windows that announce their position, to say it again to a new room.
+const reannounce = new Set()
 
 /**
  * Follow navigation from another device in either kind of main slide window.
@@ -100,6 +107,10 @@ const stateListeners = new Set()
 export function followStageRoom(stage, { onLanguage } = {}) {
   stateListeners.add(state => {
     if (!state || state.screen === stageRoom().screen || !Number.isInteger(state.index)) return
+    // A window that just opened (`at: 0`) moves no other: after a restart of
+    // mdeck run the room is empty, and a presenter view opened or reloaded
+    // then would take the projector back to the first slide.
+    if (!state.at) return
     const position = { index: state.index, step: state.step ?? -1, slideId: state.slideId, ...(typeof state.blank === 'boolean' ? { blank: state.blank } : {}), ...(typeof state.join === 'boolean' ? { join: state.join } : {}) }
     if (state.lang && onLanguage?.(state.lang, position)) return
     const current = stage.state
@@ -141,6 +152,7 @@ export function announceStagePosition(stage, { language = () => null } = {}) {
     fetch(`${room.url}/state`, { method: 'POST', headers: room.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state: { index, step, slideId, lang, blank, join, at, screen: room.screen } }) }).catch(() => {})
   }
   stage.addEventListener('statechange', post)
+  reannounce.add(() => { last = null; post({ detail: { reason: 'reconnect' } }) })
   post()
   return () => post({ detail: { reason: 'language' } })
 }
