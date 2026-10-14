@@ -9,7 +9,9 @@ import './toolbar.css'
 // deleting a selection, undo/redo, clear slide, hide saved ink, drawing with a
 // finger, and the drawings file. Swipes and the deck's own controls and keys
 // turn the slides. It folds into one button in the bottom right corner,
-// showing the current tool, and drawing goes on while it is folded. It drives
+// showing the current tool, and drawing goes on while it is folded. On a
+// touch screen it folds again once a tool, colour or size is chosen, as a menu
+// closes; choosing "select" leaves it open for deleting the selection. It drives
 // a <deck-stage> (inkTool, inkFinger, data-ink-hidden), an ink controller and
 // the selection.
 
@@ -75,6 +77,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   const [style, setStyle] = useState(() => ({ pen: { color: INK_COLORS[0], sizeIndex: 1 }, highlighter: { color: HIGHLIGHTER_COLORS[0], sizeIndex: 1 }, ...stage._inkStyle }))
   const [selected, setSelected] = useState(0)
   const [collapsed, setCollapsed] = useState(!!stage._inkCollapsed)
+  const [touch] = useState(() => matchMedia('(pointer: coarse)').matches)
   const [hidden, setHidden] = useState(stage.hasAttribute('data-ink-hidden'))
   const [finger, setFinger] = useState(!!stage.inkFinger)
   const [clearing, setClearing] = useState(null) // the slide id awaiting confirmation
@@ -90,7 +93,9 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
     stage.setAttribute('data-ink-tool', tool)
     if (tool !== 'select') selection?.clear()
   }, [tool, style])
-  const setOwn = change => setStyle(all => ({ ...all, [tool]: { ...all[tool], ...change } }))
+  const fold = () => { if (touch) setCollapsed(true) }
+  const choose = id => { setTool(id); if (id !== 'select') fold() }
+  const setOwn = change => { setStyle(all => ({ ...all, [tool]: { ...all[tool], ...change } })); fold() }
   useEffect(() => { stage._inkCollapsed = collapsed }, [collapsed])
   useEffect(() => { stage.toggleAttribute('data-ink-hidden', hidden) }, [hidden])
   useEffect(() => { stage.inkFinger = finger }, [finger])
@@ -108,7 +113,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   }
   return <div class="ink-toolbar" role="toolbar" aria-label="Ink" data-ink-ui>
     <div class="ink-group">
-      {TOOLS.map(([id, label]) => button(label, id, () => setTool(id), { active: tool === id }))}
+      {TOOLS.map(([id, label]) => button(label, id, () => choose(id), { active: tool === id }))}
     </div>
     {writing && <div class="ink-group">
       {COLORS[tool].map(value => <button type="button" key={value} class={`ink-color${value === style[tool].color ? ' is-active' : ''}`} style={{ '--swatch': inkPaint(value) }} title={COLOR_NAMES[value] ?? value} aria-label={`Colour ${COLOR_NAMES[value] ?? value}`} aria-pressed={value === style[tool].color} onClick={() => setOwn({ color: value })} />)}

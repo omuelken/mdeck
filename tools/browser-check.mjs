@@ -290,10 +290,18 @@ try {
   await until(inkAudience, `document.querySelector('deck-stage').zoom.scale === 1`)
 
   // The toolbar folds into one button in the corner; the pen keeps drawing.
-  await tablet.evaluate("document.querySelector('.ink-btn[title=\"Fold the toolbar\"]').click()")
-  await until(tablet, "document.querySelectorAll('.ink-toolbar button').length === 1 && document.querySelector('.ink-toolbar.is-collapsed')")
+  // On a touch screen choosing the laser above folded it, as a menu closes.
+  const folded = "document.querySelectorAll('.ink-toolbar button').length === 1 && !!document.querySelector('.ink-toolbar.is-collapsed')"
+  await until(tablet, folded)
   await tablet.evaluate("document.querySelector('.ink-expand').click()")
-  await until(tablet, "!!document.querySelector('.ink-btn[title=\"Fold the toolbar\"]')")
+  await tablet.evaluate("document.querySelector('.ink-btn[title=\"Fold the toolbar\"]').click()")
+  await until(tablet, folded)
+  await tablet.evaluate("document.querySelector('.ink-expand').click()")
+  await tablet.evaluate("document.querySelector('.ink-color:not(.is-active)')?.click() ?? document.querySelector('.ink-btn[title=Pen]').click()")
+  await until(tablet, folded)
+  await tablet.evaluate("document.querySelector('.ink-expand').click()")
+  await tablet.evaluate("document.querySelector('.ink-btn[title=\"Select and move\"]').click()")
+  await until(tablet, `${tabletStage}.inkTool.tool === 'select' && !!document.querySelector('.ink-btn[title="Fold the toolbar"]')`)
   const tabletPresenter = await open('about:blank')
   await tabletPresenter.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   await tabletPresenter.send('Page.navigate', { url: new URL('ink.html?view=presenter', await tablet.evaluate('location.href')).href })

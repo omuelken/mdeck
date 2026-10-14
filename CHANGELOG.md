@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- On a touch screen the drawing toolbar folds again once a tool, a colour or a size is chosen, as a menu closes; the folded button shows the tool and opens it again. **Select and move** leaves it open, for deleting the selection. On a laptop it stays open as before.
 - `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`, and the guides say `npm install -g mdeck` where they did.
 - The launch page drops answers and drawings at once, without asking and without a backup.
 - Fixed: after a restart of `mdeck run`, a presenter view opened or reloaded took the audience window on the projector back to the first slide, while it showed the slide the talk was on itself. A window that just opened no longer moves another, and the windows still open say where they are when they connect again, so a presenter view opened then takes up the projector's slide.
