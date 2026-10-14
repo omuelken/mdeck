@@ -1,6 +1,6 @@
 // The keys that do something right now, for the help that ? shows over the
 // presenter view and the deck window. Each window has its own keys
-// (main.jsx for the presenter view, deck-stage.js and ink/attach.js for the
+// (presenter/PresenterView.jsx for the presenter view, deck-stage.js and ink/attach.js for the
 // deck window); what is listed depends on the moment: the number keys only
 // while the slide shown has hotspots (without them they do nothing), the
 // drawing keys while drawing, L only with several

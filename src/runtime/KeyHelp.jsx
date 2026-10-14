@@ -6,6 +6,7 @@
 import { h, render } from 'preact'
 import { useState, useEffect, useRef } from 'preact/hooks'
 import { keyHelp, isHelpKey } from './helpKeys.js'
+import { fullscreenAvailable } from './stage/fullscreen.js'
 
 const typing = target => target?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"]')
 export const isMac = () => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '')
@@ -101,7 +102,7 @@ function DeckKeyHelp({ stage, canDraw }) {
     hotspots: stage.hotspotMode !== 'off',
     inking: stage.inking,
     canDraw,
-    fullscreen: window.top === window && !!window.mdeckFullscreen?.available(),
+    fullscreen: window.top === window && fullscreenAvailable(),
   }
   return <KeyHelp context={context} onClose={() => setOpen(false)} />
 }

@@ -1,16 +1,16 @@
-// The presenter view's controls, shared by its three layouts (main.jsx): the
+// The presenter view's controls, shared by its three layouts (PresenterView.jsx): the
 // speaker layout on a computer, the slide alone on an iPad, and the phone
 // clicker. What is used during the talk is an icon button, its key in the
 // tooltip; what is set once lives in two popovers: who is connected (with
 // the codes that pair an iPad or a phone) and the settings.
 import { h } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { S } from './chrome.jsx'
-import { Icon } from '../components/Icon.jsx'
-import QrCode from '../components/QrCode.jsx'
-import { ConnectedViews } from '../components/ConnectedViews.jsx'
-import { devicesText, phonesText } from '../live/presence.js'
-import { devPath } from '../core/devPath.js'
+import { S } from '../chrome.jsx'
+import { Icon } from '../../components/Icon.jsx'
+import QrCode from '../../components/QrCode.jsx'
+import { ConnectedViews } from '../../components/ConnectedViews.jsx'
+import { devicesText, phonesText } from '../../live/presence.js'
+import { devPath } from '../../core/devPath.js'
 
 export const tool = { ...S.btn, minWidth: '40px', height: '40px', padding: '0 10px', borderRadius: '10px', fontSize: '15px' }
 export const toolOn = { background: '#f0f0f0', borderColor: '#f0f0f0', color: '#111' }

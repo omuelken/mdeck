@@ -63,2115 +63,719 @@
  * automatically tagged with:
  *   - data-screen-label="NN Label"   (1-indexed, for comment flow)
  *   - data-om-validate="no_overflowing_text,no_overlapping_text,slide_sized_text"
+ *
+ * The stage's features live in ./stage/, one mixin each: taps and swipes,
+ * ink, the laser, zoom, hotspots and the overview. This file keeps the
+ * slides, their steps, the position every window follows and the controls.
  */
 
-import { iconSvg } from '../core/icons.js'
-import { inkPaint, snapAngle } from '../core/ink.js'
-import { findHotspots, hotspotMode, zoomToCamera, cameraToZoom } from './hotspots.js'
-import { slideSteps } from './steps.js'
-import { flight, durationFor, ease } from './zoom/camera.js'
+import { iconSvg } from '../core/icons.js';
+import { slideSteps } from './steps.js';
+import { stylesheet } from './stage/styles.js';
+import { fullscreenAvailable, toggleFullscreen, onFullscreenChange } from './stage/fullscreen.js';
+import { Taps } from './stage/taps.js';
+import { Ink } from './stage/ink.js';
+import { Laser } from './stage/laser.js';
+import { Zoom } from './stage/zoom.js';
+import { Hotspots } from './stage/hotspots.js';
+import { Overview } from './stage/overview.js';
 
-(() => {
-  const DESIGN_W_DEFAULT = 1920;
-  const DESIGN_H_DEFAULT = 1080;
-  const OVERLAY_HIDE_MS = 1800;
-  // Taps: short and still; controls on the slide keep theirs.
-  const TAP_MS = 350;
-  const TAP_SLOP = 12;
-  // Swipes: mostly sideways, this far, this fast.
-  const SWIPE_MIN = 60;
-  const SWIPE_MS = 700;
-  const TAP_IGNORE = 'a, button, input, select, textarea, label, summary, iframe, video, audio, canvas, [contenteditable], [role="button"], [data-ink-ui], [data-no-tap], .overlay';
-  const CLICK_AFTER_INK_MS = 400;
-  // Holding the pen still this long turns the stroke into a straight line.
-  const STRAIGHTEN_MS = 500;
-  const STRAIGHTEN_SLOP = 6;  // CSS px the pen may tremble while held
-  // Laser: a red glow with a white core. The trail stays while the pen is
-  // down; lifted, it retracts from its tail within LASER_MS.
-  const LASER_GLOW = '#ff2a2a';
-  const LASER_CORE = '#ffffff';
-  const LASER_MS = 1200;
-  // A trail whose end never arrives (the other window closed) goes after this.
-  const LASER_HELD_MS = 30000;
-  const LASER_STEP = 4;  // design px between the points of a held trail
-  // Zoom: up to this many times the fitted size.
-  const ZOOM_MAX = 6;
-  const VALIDATE_ATTR = 'no_overflowing_text,no_overlapping_text,slide_sized_text';
-  // An embedded deck (the presenter view's frames, a preview) hides its
-  // controls, unless the page embedding it asks for them with ?controls=1, as
-  // the docs' example deck does.
-  const isEmbedded = new URLSearchParams(location.search).has('embedded');
-  const hideControls = isEmbedded && !new URLSearchParams(location.search).has('controls');
+const DESIGN_W_DEFAULT = 1920;
+const DESIGN_H_DEFAULT = 1080;
+const OVERLAY_HIDE_MS = 1800;
+const VALIDATE_ATTR = 'no_overflowing_text,no_overlapping_text,slide_sized_text';
+// An embedded deck (the presenter view's frames, a preview) hides its
+// controls, unless the page embedding it asks for them with ?controls=1, as
+// the docs' example deck does.
+const isEmbedded = new URLSearchParams(location.search).has('embedded');
+const hideControls = isEmbedded && !new URLSearchParams(location.search).has('controls');
 
-  const pad2 = (n) => String(n).padStart(2, '0');
+const pad2 = (n) => String(n).padStart(2, '0');
 
-  const stylesheet = `
-    :host {
-      position: fixed;
-      inset: 0;
-      display: block;
-      background: #000;
-      color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
-      overflow: hidden;
-    }
+const features = [Taps, Ink, Laser, Zoom, Hotspots, Overview];
 
-    .stage {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+class DeckStage extends features.reduce((base, feature) => feature(base), HTMLElement) {
+  static get observedAttributes() { return ['width', 'height', 'noscale']; }
 
-    .canvas {
-      position: relative;
-      transform-origin: center center;
-      flex-shrink: 0;
-      background: #fff;
-      will-change: transform;
-    }
+  constructor() {
+    super();
+    this._root = this.attachShadow({ mode: 'open' });
+    this._index = 0;
+    this._slides = [];
+    this._notes = [];
+    this._hideTimer = null;
+    this._mouseIdleTimer = null;
+    this._stepMap = new Map();
 
-    /* Slides live in light DOM (via <slot>) so authored CSS still applies.
-       We absolutely position each slotted child to stack them. */
-    ::slotted(*) {
-      position: absolute !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      box-sizing: border-box !important;
-      overflow: hidden;
-      opacity: 0;
-      pointer-events: none;
-      visibility: hidden;
-    }
-    ::slotted([data-deck-active]) {
-      opacity: 1;
-      pointer-events: auto;
-      visibility: visible;
-    }
-
-    /* Ink: the pen and the mouse are taken on the window (see "Ink input"),
-       so fingers keep reaching the slides. Only when fingers draw too, a
-       layer above the slides takes all touches. The stroke in progress is
-       drawn on .ink-live, which sits in the scaled canvas and so uses design
-       pixels; the laser on .ink-laser, in screen pixels. */
-    .ink-input {
-      position: fixed;
-      inset: 0;
-      z-index: 2147482100;
-      display: none;
-      touch-action: none;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-touch-callout: none;
-      -webkit-tap-highlight-color: transparent;
-      cursor: crosshair;
-    }
-    :host([data-inking][data-ink-finger]) .ink-input { display: block; }
-    :host([data-inking]) { cursor: crosshair; }
-    /* The stage's own zoom replaces the browser's: no page zoom or panning
-       on the slide (fingers zoom and move the slide itself). */
-    :host([data-zoomable]) { touch-action: none; }
-    .zoom-reset {
-      position: fixed;
-      top: max(12px, env(safe-area-inset-top));
-      left: max(12px, env(safe-area-inset-left));
-      z-index: 2147483000;
-      display: none;
-      align-items: center;
-      gap: 6px;
-      height: 40px;
-      padding: 0 14px;
-      border: 1px solid #3a3a3a;
-      border-radius: 20px;
-      background: rgba(22, 22, 22, 0.9);
-      color: #e6e6e6;
-      font: 13px/1 system-ui, -apple-system, sans-serif;
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .zoom-reset svg { width: 16px; height: 16px; }
-    :host([data-zoomed]) .zoom-reset { display: inline-flex; }
-    :host([data-follower]) .zoom-reset { display: none; }
-    /* Deleting a selection, beside it; placed in screen pixels by
-       _placeSelectionDelete so it keeps its size when the slide zooms. */
-    .ink-selection-delete {
-      position: fixed;
-      z-index: 2147483000;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      width: 44px;
-      height: 44px;
-      margin: -22px 0 0 -22px;
-      padding: 0;
-      border: 1px solid #3a3a3a;
-      border-radius: 50%;
-      background: rgba(22, 22, 22, 0.94);
-      color: #e6e6e6;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .ink-selection-delete[data-shown] { display: inline-flex; }
-    .ink-selection-delete svg { width: 20px; height: 20px; }
-    :host([data-overview]) .ink-selection-delete, :host(:not([data-inking])) .ink-selection-delete { display: none; }
-    /* Overview (O): every slide in a grid, local to this window. The slides
-       keep their place in the canvas, which grows to hold the grid; a
-       sizer gives the stage the grid's height to scroll. */
-    .ov-cells, .ov-sizer { display: none; }
-    :host([data-overview]) { touch-action: pan-y; }
-    :host([data-overview]) .stage { display: block; overflow-x: hidden; overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
-    :host([data-overview]) .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: none; }
-    :host([data-overview]) .ov-sizer { display: block; }
-    :host([data-overview]) ::slotted(*) {
-      inset: auto !important;
-      left: var(--ov-x, 0) !important;
-      top: var(--ov-y, 0) !important;
-      width: var(--deck-design-w) !important;
-      height: var(--deck-design-h) !important;
-      opacity: 1;
-      visibility: visible;
-      pointer-events: none;
-    }
-    :host([data-overview]) .ink-live, :host([data-overview]) .hotspots, :host([data-overview]) .zoom-reset, :host([data-overview]) .overlay { display: none; }
-    :host([data-overview]) .ov-cells { display: block; position: absolute; inset: 0; z-index: 3; }
-    .ov-cell {
-      position: absolute;
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      border: 0;
-      border-radius: 4px;
-      outline: calc(3px * var(--ov-k, 1)) solid rgba(255, 255, 255, 0.18);
-      background: transparent;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .ov-cell:hover { outline-color: rgba(255, 255, 255, 0.6); }
-    .ov-cell[data-current] { outline-color: #e11d48; }
-    .ov-cell[data-cursor] { outline: calc(5px * var(--ov-k, 1)) solid #4da3ff; outline-offset: calc(3px * var(--ov-k, 1)); }
-    .ov-cell span {
-      position: absolute;
-      left: 0;
-      top: 100%;
-      transform: scale(var(--ov-k, 1));
-      transform-origin: 0 0;
-      margin-top: calc(6px * var(--ov-k, 1));
-      max-width: calc(100% / var(--ov-k, 1));
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      color: #bbb;
-      font: 13px/1.3 system-ui, -apple-system, sans-serif;
-      text-align: left;
-    }
-    .ov-cell[data-current] span { color: #fff; }
-
-    /* Black screen (B): the screens the audience sees go black; the
-       presenter's own slide stays visible under a veil, to say so. */
-    .blank {
-      position: fixed;
-      inset: 0;
-      z-index: 2147482900;
-      background: #000;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.3s ease, visibility 0s linear 0.3s;
-    }
-    :host([data-blank]) .blank { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity 0.3s ease; }
-    :host([data-presenter]) .blank { background: rgba(0, 0, 0, 0.6); pointer-events: none; }
-    :host([data-deck-static]) .blank { display: none; }
-    /* Hotspots: a numbered key at the corner of each part of the slide the
-       presenter can zoom to (in design pixels, inside the canvas; the badge
-       keeps its size on screen). Only the presenter's own slide shows them. */
-    .hotspots { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: none; }
-    :host([data-hotspot-badges]) .hotspots { display: block; }
-    :host([data-zoomed]) .hotspots, :host([data-zoom-flying]) .hotspots, :host([data-deck-static]) .hotspots { display: none; }
-    .hotspot {
-      position: absolute;
-      z-index: 1;
-      min-width: 24px;
-      height: 24px;
-      padding: 0 6px;
-      box-sizing: border-box;
-      transform: scale(var(--hotspot-k, 1)) translate(-35%, -35%);
-      transform-origin: 0 0;
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      border-radius: 7px;
-      background: rgba(17, 17, 17, 0.82);
-      color: #fff;
-      font: 600 13px/22px ui-monospace, SFMono-Regular, Menlo, monospace;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-      cursor: zoom-in;
-      pointer-events: auto;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .hotspot:hover { background: #e11d48; border-color: #e11d48; }
-    .hotspot-area {
-      position: absolute;
-      border-radius: 6px;
-      outline: calc(2px * var(--hotspot-k, 1)) dashed #e11d48;
-      outline-offset: calc(4px * var(--hotspot-k, 1));
-      opacity: 0;
-      transition: opacity 0.15s;
-      pointer-events: none;
-    }
-    .hotspot:hover + .hotspot-area { opacity: 1; }
-    :host([data-inking][data-ink-tool="eraser"]) { cursor: cell; }
-    .ink-laser {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 2147482200;
-      pointer-events: none;
-    }
-    .ink-live .ink-selection { fill: rgba(77, 163, 255, 0.08); stroke: #4da3ff; stroke-width: 1.5; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; }
-    .ink-live .ink-lasso { fill: none; }
-    .ink-live .ink-handle { fill: #fff; stroke: #4da3ff; stroke-width: 3; vector-effect: non-scaling-stroke; }
-    .ink-live {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      overflow: visible;
-      z-index: 1;
-    }
-    .ink-live .fading { transition: opacity 0.8s ease 2.2s; opacity: 0; }
-    /* The ink toolbar replaces the overlay while drawing. */
-    :host([data-inking]) .overlay { display: none; }
-    .btn.draw, .btn.fullscreen, .btn.overview { display: none; }
-    /* The overview is for a stage that is the page (data-zoomable). */
-    :host([data-zoomable]) .btn.overview { display: inline-flex; }
-    :host([data-ink-enabled]) .btn.draw { display: inline-flex; }
-    :host([data-fullscreen-available]) .btn.fullscreen { display: inline-flex; }
-    @media (pointer: coarse) { .overlay .btn { height: 40px; min-width: 40px; } }
-
-    .overlay {
-      position: fixed;
-      left: 50%;
-      bottom: 22px;
-      transform: translate(-50%, 6px) scale(0.92);
-      filter: blur(6px);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px;
-      background: #000;
-      color: #fff;
-      border-radius: 999px;
-      font-size: 12px;
-      font-feature-settings: "tnum" 1;
-      letter-spacing: 0.01em;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 260ms ease, transform 260ms cubic-bezier(.2,.8,.2,1), filter 260ms ease;
-      transform-origin: center bottom;
-      z-index: 2147483000;
-      user-select: none;
-    }
-    .overlay[data-visible] {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translate(-50%, 0) scale(1);
-      filter: blur(0);
-    }
-
-    .btn {
-      appearance: none;
-      -webkit-appearance: none;
-      background: transparent;
-      border: 0;
-      margin: 0;
-      padding: 0;
-      color: inherit;
-      font: inherit;
-      cursor: default;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: 28px;
-      min-width: 28px;
-      border-radius: 999px;
-      color: rgba(255,255,255,0.72);
-      transition: background 140ms ease, color 140ms ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
-    .btn:active { background: rgba(255,255,255,0.18); }
-    .btn:focus { outline: none; }
-    .btn:focus-visible { outline: none; }
-    .btn::-moz-focus-inner { border: 0; }
-    .btn svg { width: 16px; height: 16px; display: block; }
-    .btn.reset {
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.02em;
-      padding: 0 10px 0 12px;
-      gap: 6px;
-      color: rgba(255,255,255,0.72);
-    }
-    .btn.reset .kbd {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 16px;
-      height: 16px;
-      padding: 0 4px;
-      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-      font-size: 10px;
-      line-height: 1;
-      color: rgba(255,255,255,0.88);
-      background: rgba(255,255,255,0.12);
-      border-radius: 4px;
-    }
-
-    .count {
-      font-variant-numeric: tabular-nums;
-      color: #fff;
-      font-weight: 500;
-      padding: 0 8px;
-      min-width: 42px;
-      text-align: center;
-      font-size: 12px;
-    }
-    .count .sep { color: rgba(255,255,255,0.45); margin: 0 3px; font-weight: 400; }
-    .count .total { color: rgba(255,255,255,0.55); }
-    .step-progress { color: rgba(255,255,255,0.55); font-size: 11px; margin: 0 2px; }
-
-    .divider {
-      width: 1px;
-      height: 14px;
-      background: rgba(255,255,255,0.18);
-      margin: 0 2px;
-    }
-
-    /* ── Print: one page per slide, no chrome ────────────────────────────
-       The screen layout stacks every slide at inset:0 inside a scaled
-       canvas; for print we want them in document flow at the authored
-       design size so the browser paginates one slide per sheet. The
-       @page size is set from the width/height attributes via the inline
-       <style id="deck-stage-print-page"> that connectedCallback injects
-       into <head> (the @page at-rule has no effect inside shadow DOM). */
-    @media print {
-      :host {
-        position: static;
-        inset: auto;
-        background: none;
-        overflow: visible;
-        color: inherit;
-      }
-      .stage { position: static; display: block; }
-      .canvas {
-        transform: none !important;
-        width: auto !important;
-        height: auto !important;
-        background: none;
-        will-change: auto;
-      }
-      ::slotted(*) {
-        position: relative !important;
-        inset: auto !important;
-        width: var(--deck-design-w) !important;
-        height: var(--deck-design-h) !important;
-        box-sizing: border-box !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        pointer-events: auto;
-        break-after: page;
-        page-break-after: always;
-        break-inside: avoid;
-        overflow: hidden;
-      }
-      ::slotted(*:last-child) {
-        break-after: auto;
-        page-break-after: auto;
-      }
-      .overlay, .ink-input, .ink-live, .ink-laser, .zoom-reset, .hotspots, .blank, .ov-cells, .ov-sizer { display: none !important; }
-    }
-  `;
-
-  // Full screen, with Safari's prefixed names (iPad); unavailable on an iPhone.
-  function fullscreenAvailable() {
-    return !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+    this._onKey = this._onKey.bind(this);
+    this._onResize = this._onResize.bind(this);
+    this._onSlotChange = this._onSlotChange.bind(this);
+    this._onMouseMove = this._onMouseMove.bind(this);
+    // Black screen (B), part of the position every screen follows.
+    this._blank = false;
+    // The join code over the slide (J), the same: shown on every screen.
+    this._join = false;
+    this._onBeforePrint = () => { this.printing = true; };
+    this._onAfterPrint = () => { this.printing = false; };
   }
-  // Older Safari (iPad) names the element and the exit differently; a miss
-  // here made the button enter full screen again instead of leaving it, and
-  // an iPad has no Escape key to get out.
-  function fullscreenElement() {
-    return document.fullscreenElement || document.webkitFullscreenElement || document.webkitCurrentFullScreenElement || null;
+
+  get designWidth() {
+    return parseInt(this.getAttribute('width'), 10) || DESIGN_W_DEFAULT;
   }
-  function toggleFullscreen(element = document.documentElement) {
-    if (fullscreenElement()) {
-      const exit = document.exitFullscreen || document.webkitExitFullscreen || document.webkitCancelFullScreen;
-      return exit?.call(document);
-    }
-    const request = element.requestFullscreen || element.webkitRequestFullscreen;
-    return request?.call(element);
+  get designHeight() {
+    return parseInt(this.getAttribute('height'), 10) || DESIGN_H_DEFAULT;
   }
-  /** Calls back with true or false whenever the page enters or leaves full screen; returns a function that stops it. */
-  function onFullscreenChange(listener) {
-    const handler = () => listener(!!fullscreenElement());
-    for (const name of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(name, handler);
-    return () => { for (const name of ['fullscreenchange', 'webkitfullscreenchange']) document.removeEventListener(name, handler); };
+
+  connectedCallback() {
+    // Zooming is for the stage that is the page (the deck, the audience
+    // window, the presenter's slide frame), not one inside the reader.
+    if (this.parentElement === document.body) this.setAttribute('data-zoomable', '');
+    this._render();
+    this._loadNotes();
+    this._syncPrintPageRule();
+    window.addEventListener('keydown', this._onKey);
+    if (typeof ResizeObserver !== 'undefined') { this._resizeObserver = new ResizeObserver(() => { this._fit(); this._queueHotspots(); }); this._resizeObserver.observe(this); }
+    // Pictures and fonts that arrive late move the hotspots.
+    this.addEventListener('load', this._queueHotspots, true);
+    document.fonts?.ready?.then(this._queueHotspots);
+    window.addEventListener('resize', this._onResize);
+    window.addEventListener('mousemove', this._onMouseMove, { passive: true });
+    window.addEventListener('beforeprint', this._onBeforePrint);
+    window.addEventListener('afterprint', this._onAfterPrint);
+    // Taps and ink are read on the window, before slide content sees them.
+    for (const [type, handler] of this._windowInput()) window.addEventListener(type, handler, { capture: true, passive: false });
+    // Initial collection + layout happens via slotchange, which fires on mount.
   }
-  window.mdeckFullscreen = { available: fullscreenAvailable, element: fullscreenElement, toggle: toggleFullscreen, onChange: onFullscreenChange };
 
-  class DeckStage extends HTMLElement {
-    static get observedAttributes() { return ['width', 'height', 'noscale']; }
+  disconnectedCallback() {
+    window.removeEventListener('keydown', this._onKey);
+    this._resizeObserver?.disconnect();
+    window.removeEventListener('resize', this._onResize);
+    window.removeEventListener('mousemove', this._onMouseMove);
+    window.removeEventListener('beforeprint', this._onBeforePrint);
+    window.removeEventListener('afterprint', this._onAfterPrint);
+    for (const [type, handler] of this._windowInput()) window.removeEventListener(type, handler, { capture: true });
+    cancelAnimationFrame(this._laserRaf);
+    this._laserRaf = 0;
+    this.removeEventListener('load', this._queueHotspots, true);
+    cancelAnimationFrame(this._hotspotRaf);
+    this._hotspotRaf = 0;
+    this._stopZoomFlight();
+    if (this._hideTimer) clearTimeout(this._hideTimer);
+    if (this._mouseIdleTimer) clearTimeout(this._mouseIdleTimer);
+  }
 
-    constructor() {
-      super();
-      this._root = this.attachShadow({ mode: 'open' });
-      this._index = 0;
-      this._slides = [];
-      this._notes = [];
-      this._hideTimer = null;
-      this._mouseIdleTimer = null;
-      this._stepMap = new Map();
-
-      this._onKey = this._onKey.bind(this);
-      this._onResize = this._onResize.bind(this);
-      this._onSlotChange = this._onSlotChange.bind(this);
-      this._onMouseMove = this._onMouseMove.bind(this);
-      this._onPointerDown = this._onPointerDown.bind(this);
-      this._onPointerMove = this._onPointerMove.bind(this);
-      this._onPointerUp = this._onPointerUp.bind(this);
-      this._onPointerOut = this._onPointerOut.bind(this);
-      this._onTouch = this._onTouch.bind(this);
-      this._onClickCapture = this._onClickCapture.bind(this);
-      this._laserFrame = this._laserFrame.bind(this);
-      // Drawing starts with the laser pointer: pointing is the common case.
-      this.inkTool = { tool: 'laser', color: '#e11d48', size: 6 };
-      this.inkRenderer = null;
-      this._lasers = new Map();
-      this._inkUpAt = 0;
-      this._zoom = null;
-      this._zoomRaf = 0;
-      // Hotspots of the slide shown, the one zoomed to (1-based) and the
-      // presenter's switch (true, false, or null for the deck's setting).
-      this._hotspots = [];
-      this._hotspot = null;
-      this._hotspotsForced = null;
-      this._hotspotRaf = 0;
-      // Black screen (B), part of the position every screen follows.
-      this._blank = false;
-      // The join code over the slide (J), the same: shown on every screen.
-      this._join = false;
-      // Overview (O): open or not, and the slide its cursor is on.
-      this._overview = false;
-      this._ovCursor = 0;
-      this._queueHotspots = this._queueHotspots.bind(this);
-      this._touches = new Map();
-      this._onWheel = this._onWheel.bind(this);
-      this._onGesture = this._onGesture.bind(this);
-      this._onBeforePrint = () => { this.printing = true; };
-      this._onAfterPrint = () => { this.printing = false; };
-    }
-
-    get designWidth() {
-      return parseInt(this.getAttribute('width'), 10) || DESIGN_W_DEFAULT;
-    }
-    get designHeight() {
-      return parseInt(this.getAttribute('height'), 10) || DESIGN_H_DEFAULT;
-    }
-
-    connectedCallback() {
-      // Zooming is for the stage that is the page (the deck, the audience
-      // window, the presenter's slide frame), not one inside the reader.
-      if (this.parentElement === document.body) this.setAttribute('data-zoomable', '');
-      this._render();
-      this._loadNotes();
+  attributeChangedCallback() {
+    if (this._canvas) {
+      this._canvas.style.width = this.designWidth + 'px';
+      this._canvas.style.height = this.designHeight + 'px';
+      this._canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
+      this._canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
+      this._inkLive?.setAttribute('viewBox', `0 0 ${this.designWidth} ${this.designHeight}`);
+      this._fit();
       this._syncPrintPageRule();
-      window.addEventListener('keydown', this._onKey);
-      if (typeof ResizeObserver !== 'undefined') { this._resizeObserver = new ResizeObserver(() => { this._fit(); this._queueHotspots(); }); this._resizeObserver.observe(this); }
-      // Pictures and fonts that arrive late move the hotspots.
-      this.addEventListener('load', this._queueHotspots, true);
-      document.fonts?.ready?.then(this._queueHotspots);
-      window.addEventListener('resize', this._onResize);
-      window.addEventListener('mousemove', this._onMouseMove, { passive: true });
-      window.addEventListener('beforeprint', this._onBeforePrint);
-      window.addEventListener('afterprint', this._onAfterPrint);
-      // Taps and ink are read on the window, before slide content sees them.
-      for (const [type, handler] of this._windowInput()) window.addEventListener(type, handler, { capture: true, passive: false });
-      // Initial collection + layout happens via slotchange, which fires on mount.
     }
+  }
 
-    disconnectedCallback() {
-      window.removeEventListener('keydown', this._onKey);
-      this._resizeObserver?.disconnect();
-      window.removeEventListener('resize', this._onResize);
-      window.removeEventListener('mousemove', this._onMouseMove);
-      window.removeEventListener('beforeprint', this._onBeforePrint);
-      window.removeEventListener('afterprint', this._onAfterPrint);
-      for (const [type, handler] of this._windowInput()) window.removeEventListener(type, handler, { capture: true });
-      cancelAnimationFrame(this._laserRaf);
-      this._laserRaf = 0;
-      this.removeEventListener('load', this._queueHotspots, true);
-      cancelAnimationFrame(this._hotspotRaf);
-      this._hotspotRaf = 0;
+  _render() {
+    const style = document.createElement('style');
+    style.textContent = stylesheet;
+
+    const stage = document.createElement('div');
+    stage.className = 'stage';
+
+    const canvas = document.createElement('div');
+    canvas.className = 'canvas';
+    canvas.style.width = this.designWidth + 'px';
+    canvas.style.height = this.designHeight + 'px';
+    canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
+    canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
+
+    const slot = document.createElement('slot');
+    slot.addEventListener('slotchange', this._onSlotChange);
+    canvas.appendChild(slot);
+    const inkLive = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    inkLive.setAttribute('class', 'ink-live');
+    inkLive.setAttribute('viewBox', `0 0 ${this.designWidth} ${this.designHeight}`);
+    inkLive.setAttribute('preserveAspectRatio', 'none');
+    canvas.appendChild(inkLive);
+    const hotspots = document.createElement('div');
+    hotspots.className = 'hotspots export-hidden';
+    hotspots.addEventListener('click', e => {
+      const badge = e.target.closest?.('.hotspot');
+      if (!badge) return;
+      e.stopPropagation();
+      this.zoomToHotspot(Number(badge.dataset.n));
+    });
+    canvas.appendChild(hotspots);
+    this._hotspotLayer = hotspots;
+    const ovCells = document.createElement('div');
+    ovCells.className = 'ov-cells export-hidden';
+    ovCells.setAttribute('data-ink-ui', '');
+    ovCells.addEventListener('click', e => {
+      const cell = e.target.closest?.('.ov-cell');
+      if (!cell) return;
+      e.stopPropagation();
+      this._overviewGo(Number(cell.dataset.i), 'click');
+    });
+    canvas.appendChild(ovCells);
+    this._ovCells = ovCells;
+    stage.appendChild(canvas);
+    const ovSizer = document.createElement('div');
+    ovSizer.className = 'ov-sizer';
+    stage.appendChild(ovSizer);
+    this._ovSizer = ovSizer;
+    this._stageEl = stage;
+
+    // Only shown when fingers draw: keeps their touches from scrolling or
+    // zooming. The input itself is read on the window.
+    const inkInput = document.createElement('div');
+    inkInput.className = 'ink-input export-hidden';
+    inkInput.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+    this._inkLive = inkLive;
+    const inkLaser = document.createElement('canvas');
+    inkLaser.className = 'ink-laser export-hidden';
+    inkLaser.setAttribute('aria-hidden', 'true');
+    this._inkLaser = inkLaser;
+    const zoomReset = document.createElement('button');
+    zoomReset.type = 'button';
+    zoomReset.className = 'zoom-reset export-hidden';
+    zoomReset.setAttribute('data-ink-ui', '');
+    zoomReset.setAttribute('aria-label', 'Show the whole slide');
+    zoomReset.title = 'Show the whole slide';
+    zoomReset.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg>1:1';
+    zoomReset.addEventListener('click', () => this.wholeSlide());
+
+    // Overlay: compact, solid black, with clickable controls.
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay export-hidden';
+    overlay.setAttribute('role', 'toolbar');
+    overlay.setAttribute('aria-label', 'Deck controls');
+    overlay.setAttribute('data-noncommentable', '');
+    overlay.innerHTML = `
+      <button class="btn prev" type="button" aria-label="Previous slide" title="Previous (←)">
+        ${iconSvg('prev')}
+      </button>
+      <span class="count" aria-live="polite"><span class="current">1</span><span class="step-progress" hidden> · <span class="step-cur">0</span>/<span class="step-total">1</span></span><span class="sep">/</span><span class="total">1</span></span>
+      <button class="btn next" type="button" aria-label="Next slide" title="Next (→)">
+        ${iconSvg('next')}
+      </button>
+      <span class="divider"></span>
+      <button class="btn reset" type="button" aria-label="Reset to first slide" title="Reset (R)">Reset<span class="kbd">R</span></button>
+      <button class="btn overview" type="button" aria-label="All slides" title="All slides (O)">
+        ${iconSvg('overview')}
+      </button>
+      <button class="btn draw" type="button" aria-label="Draw on the slide" title="Draw (D)">
+        ${iconSvg('pen')}
+      </button>
+      <button class="btn fullscreen" type="button" aria-label="Full screen" title="Full screen (F)">
+        ${iconSvg('fullscreen')}
+      </button>
+    `;
+
+    overlay.querySelector('.prev').addEventListener('click', () => this.prev('click'));
+    overlay.querySelector('.next').addEventListener('click', () => this.next('click'));
+    overlay.querySelector('.reset').addEventListener('click', () => this.reset());
+    overlay.querySelector('.overview').addEventListener('click', () => { this.overview = true; });
+    overlay.querySelector('.draw').addEventListener('click', () => { this.inking = !this.inking; });
+    const fullscreenButton = overlay.querySelector('.fullscreen');
+    fullscreenButton.addEventListener('click', () => toggleFullscreen());
+    // The same button leaves full screen, and says so.
+    onFullscreenChange(on => {
+      fullscreenButton.innerHTML = iconSvg(on ? 'fullscreen-exit' : 'fullscreen');
+      fullscreenButton.title = on ? 'Exit full screen (F)' : 'Full screen (F)';
+      fullscreenButton.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+    });
+    // Only a top-level window can go full screen (an iPhone cannot at all).
+    if (window.top === window && fullscreenAvailable()) this.setAttribute('data-fullscreen-available', '');
+
+    // Black screen: a click on it shows the slide again, except on a phone
+    // that only watches the talk (data-watching, the follow view).
+    const blank = document.createElement('div');
+    blank.className = 'blank export-hidden';
+    blank.setAttribute('data-ink-ui', '');
+    blank.addEventListener('click', () => { if (!this.hasAttribute('data-watching')) this.setBlank(false, 'click'); });
+
+    const selectionDelete = document.createElement('button');
+    selectionDelete.type = 'button';
+    selectionDelete.className = 'ink-selection-delete export-hidden';
+    selectionDelete.setAttribute('data-ink-ui', '');
+    selectionDelete.setAttribute('aria-label', 'Delete the selection');
+    selectionDelete.title = 'Delete the selection';
+    selectionDelete.innerHTML = iconSvg('trash', 20);
+    selectionDelete.addEventListener('click', e => { e.stopPropagation(); this.inkSelectionRemove?.(); });
+    this._selectionDelete = selectionDelete;
+
+    this._root.append(style, stage, inkInput, inkLaser, zoomReset, selectionDelete, blank, overlay);
+    this._canvas = canvas;
+    this._slot = slot;
+    this._overlay = overlay;
+    this._countEl        = overlay.querySelector('.current');
+    this._totalEl        = overlay.querySelector('.total');
+    this._stepProgressEl = overlay.querySelector('.step-progress');
+    this._stepCurEl      = overlay.querySelector('.step-cur');
+    this._stepTotalEl    = overlay.querySelector('.step-total');
+    this._overlay        = overlay;
+    if (this._labels) this.setLabels(this._labels);
+  }
+
+  /** @page must live in the document stylesheet — it's a no-op inside
+   *  shadow DOM. Inject/update a single <head> style tag so the print
+   *  sheet matches the design size and Save-as-PDF yields one slide per
+   *  page with no margins. */
+  _syncPrintPageRule() {
+    const id = 'deck-stage-print-page';
+    let tag = document.getElementById(id);
+    if (!tag) {
+      tag = document.createElement('style');
+      tag.id = id;
+      document.head.appendChild(tag);
+    }
+    tag.textContent =
+      '@page { size: ' + this.designWidth + 'px ' + this.designHeight + 'px; margin: 0; } ' +
+      '@media print { html, body { margin: 0 !important; padding: 0 !important; background: none !important; overflow: visible !important; height: auto !important; } ' +
+      '* { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }';
+  }
+
+  _onSlotChange() {
+    this._collectSlides();
+    this._restoreIndex();
+    if (this._overview) this._buildOverview();
+    this._applyIndex({ showOverlay: false, broadcast: true, reason: 'init' });
+    this._fit();
+  }
+
+  _collectSlides() {
+    const assigned = this._slot.assignedElements({ flatten: true });
+    this._slides = assigned.filter((el) => {
+      // Skip template/style/script nodes even if someone slots them.
+      const tag = el.tagName;
+      return tag !== 'TEMPLATE' && tag !== 'SCRIPT' && tag !== 'STYLE';
+    });
+
+    this._slides.forEach((slide, i) => {
+      const n = i + 1;
+      // Determine a label for comment flow: prefer explicit data-label,
+      // then an existing data-screen-label, then first heading, else "Slide".
+      let label = slide.getAttribute('data-label');
+      if (!label) {
+        const existing = slide.getAttribute('data-screen-label');
+        if (existing) {
+          // Strip any leading number the author may have included.
+          label = existing.replace(/^\s*\d+\s*/, '').trim() || existing;
+        }
+      }
+      if (!label) {
+        const h = slide.querySelector('h1, h2, h3, [data-title]');
+        if (h) label = (h.textContent || '').trim().slice(0, 40);
+      }
+      if (!label) label = 'Slide';
+      slide.setAttribute('data-screen-label', `${pad2(n)} ${label}`);
+
+      // Validation attribute for comment flow / auto-checks.
+      if (!slide.hasAttribute('data-om-validate')) {
+        slide.setAttribute('data-om-validate', VALIDATE_ATTR);
+      }
+
+      slide.setAttribute('data-deck-slide', String(i));
+    });
+
+    if (this._totalEl) this._totalEl.textContent = String(this._slides.length || 1);
+    if (this._index >= this._slides.length) this._index = Math.max(0, this._slides.length - 1);
+  }
+
+  _loadNotes() {
+    const tag = document.getElementById('speaker-notes');
+    if (!tag) { this._notes = []; return; }
+    try {
+      const parsed = JSON.parse(tag.textContent || '[]');
+      if (Array.isArray(parsed)) this._notes = parsed;
+    } catch (e) {
+      console.warn('[deck-stage] Failed to parse #speaker-notes JSON:', e);
+      this._notes = [];
+    }
+  }
+
+  _restoreIndex() {
+    const named = this._slides.findIndex(s => '#' + encodeURIComponent(s.dataset.slideId) === location.hash);
+    if (named >= 0) { this._index = named; return; }
+    // The host's ?slide= param is delivered as a #<int> hash (1-indexed) on
+    // the iframe src. No hash → slide 1; the deck itself keeps no position
+    // state across loads.
+    const h = (location.hash || '').match(/^#(\d+)$/);
+    if (h) {
+      const n = parseInt(h[1], 10) - 1;
+      if (n >= 0 && n < this._slides.length) this._index = n;
+    }
+  }
+
+  _applyIndex({ showOverlay = true, broadcast = true, reason = 'init', step = -1 } = {}) {
+    if (!this._slides.length) return;
+    const prev = this._prevIndex == null ? -1 : this._prevIndex;
+    const curr = this._index;
+    // Keep the iframe's own hash in sync so an in-iframe location.reload()
+    // (reload banner path in viewer-handle.ts) lands on the current slide,
+    // not the stale deep-link hash from initial load.
+    try { history.replaceState(null, '', '#' + (this._slides[curr].dataset.slideId || (curr + 1))); } catch (e) {}
+    this._slides.forEach((s, i) => {
+      if (i === curr) s.setAttribute('data-deck-active', '');
+      else s.removeAttribute('data-deck-active');
+    });
+    this._stepMap.delete(curr);
+    if (step >= 0) this._stepMap.set(curr, step);
+    this._applySteps(curr);
+    // Every slide starts whole; each window does this itself.
+    if (curr !== prev) {
       this._stopZoomFlight();
-      if (this._hideTimer) clearTimeout(this._hideTimer);
-      if (this._mouseIdleTimer) clearTimeout(this._mouseIdleTimer);
+      this._hotspot = null;
+      if (this._zoom) this.setZoom(null, 'slide', { announce: false });
+    }
+    this._queueHotspots();
+    // The live layer sits above every slide: nothing drawn on another
+    // slide may stay on it.
+    if (curr !== prev) this._clearLive();
+    if (this._countEl) this._countEl.textContent = String(curr + 1);
+    // The overview marks the slide shown, wherever the change came from.
+    if (this._overview) {
+      const cells = this._ovCells?.children ?? [];
+      for (let i = 0; i < cells.length; i++) cells[i].toggleAttribute('data-current', i === curr);
     }
 
-    attributeChangedCallback() {
-      if (this._canvas) {
-        this._canvas.style.width = this.designWidth + 'px';
-        this._canvas.style.height = this.designHeight + 'px';
-        this._canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
-        this._canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
-        this._inkLive?.setAttribute('viewBox', `0 0 ${this.designWidth} ${this.designHeight}`);
-        this._fit();
-        this._syncPrintPageRule();
-      }
-    }
-
-    _render() {
-      const style = document.createElement('style');
-      style.textContent = stylesheet;
-
-      const stage = document.createElement('div');
-      stage.className = 'stage';
-
-      const canvas = document.createElement('div');
-      canvas.className = 'canvas';
-      canvas.style.width = this.designWidth + 'px';
-      canvas.style.height = this.designHeight + 'px';
-      canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
-      canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
-
-      const slot = document.createElement('slot');
-      slot.addEventListener('slotchange', this._onSlotChange);
-      canvas.appendChild(slot);
-      const inkLive = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      inkLive.setAttribute('class', 'ink-live');
-      inkLive.setAttribute('viewBox', `0 0 ${this.designWidth} ${this.designHeight}`);
-      inkLive.setAttribute('preserveAspectRatio', 'none');
-      canvas.appendChild(inkLive);
-      const hotspots = document.createElement('div');
-      hotspots.className = 'hotspots export-hidden';
-      hotspots.addEventListener('click', e => {
-        const badge = e.target.closest?.('.hotspot');
-        if (!badge) return;
-        e.stopPropagation();
-        this.zoomToHotspot(Number(badge.dataset.n));
-      });
-      canvas.appendChild(hotspots);
-      this._hotspotLayer = hotspots;
-      const ovCells = document.createElement('div');
-      ovCells.className = 'ov-cells export-hidden';
-      ovCells.setAttribute('data-ink-ui', '');
-      ovCells.addEventListener('click', e => {
-        const cell = e.target.closest?.('.ov-cell');
-        if (!cell) return;
-        e.stopPropagation();
-        this._overviewGo(Number(cell.dataset.i), 'click');
-      });
-      canvas.appendChild(ovCells);
-      this._ovCells = ovCells;
-      stage.appendChild(canvas);
-      const ovSizer = document.createElement('div');
-      ovSizer.className = 'ov-sizer';
-      stage.appendChild(ovSizer);
-      this._ovSizer = ovSizer;
-      this._stageEl = stage;
-
-      // Only shown when fingers draw: keeps their touches from scrolling or
-      // zooming. The input itself is read on the window.
-      const inkInput = document.createElement('div');
-      inkInput.className = 'ink-input export-hidden';
-      inkInput.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
-      this._inkLive = inkLive;
-      const inkLaser = document.createElement('canvas');
-      inkLaser.className = 'ink-laser export-hidden';
-      inkLaser.setAttribute('aria-hidden', 'true');
-      this._inkLaser = inkLaser;
-      const zoomReset = document.createElement('button');
-      zoomReset.type = 'button';
-      zoomReset.className = 'zoom-reset export-hidden';
-      zoomReset.setAttribute('data-ink-ui', '');
-      zoomReset.setAttribute('aria-label', 'Show the whole slide');
-      zoomReset.title = 'Show the whole slide';
-      zoomReset.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M8 11h6M20 20l-4-4"/></svg>1:1';
-      zoomReset.addEventListener('click', () => this.wholeSlide());
-
-      // Overlay: compact, solid black, with clickable controls.
-      const overlay = document.createElement('div');
-      overlay.className = 'overlay export-hidden';
-      overlay.setAttribute('role', 'toolbar');
-      overlay.setAttribute('aria-label', 'Deck controls');
-      overlay.setAttribute('data-noncommentable', '');
-      overlay.innerHTML = `
-        <button class="btn prev" type="button" aria-label="Previous slide" title="Previous (←)">
-          ${iconSvg('prev')}
-        </button>
-        <span class="count" aria-live="polite"><span class="current">1</span><span class="step-progress" hidden> · <span class="step-cur">0</span>/<span class="step-total">1</span></span><span class="sep">/</span><span class="total">1</span></span>
-        <button class="btn next" type="button" aria-label="Next slide" title="Next (→)">
-          ${iconSvg('next')}
-        </button>
-        <span class="divider"></span>
-        <button class="btn reset" type="button" aria-label="Reset to first slide" title="Reset (R)">Reset<span class="kbd">R</span></button>
-        <button class="btn overview" type="button" aria-label="All slides" title="All slides (O)">
-          ${iconSvg('overview')}
-        </button>
-        <button class="btn draw" type="button" aria-label="Draw on the slide" title="Draw (D)">
-          ${iconSvg('pen')}
-        </button>
-        <button class="btn fullscreen" type="button" aria-label="Full screen" title="Full screen (F)">
-          ${iconSvg('fullscreen')}
-        </button>
-      `;
-
-      overlay.querySelector('.prev').addEventListener('click', () => this.prev('click'));
-      overlay.querySelector('.next').addEventListener('click', () => this.next('click'));
-      overlay.querySelector('.reset').addEventListener('click', () => this.reset());
-      overlay.querySelector('.overview').addEventListener('click', () => { this.overview = true; });
-      overlay.querySelector('.draw').addEventListener('click', () => { this.inking = !this.inking; });
-      const fullscreenButton = overlay.querySelector('.fullscreen');
-      fullscreenButton.addEventListener('click', () => toggleFullscreen());
-      // The same button leaves full screen, and says so.
-      onFullscreenChange(on => {
-        fullscreenButton.innerHTML = iconSvg(on ? 'fullscreen-exit' : 'fullscreen');
-        fullscreenButton.title = on ? 'Exit full screen (F)' : 'Full screen (F)';
-        fullscreenButton.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
-      });
-      // Only a top-level window can go full screen (an iPhone cannot at all).
-      if (window.top === window && fullscreenAvailable()) this.setAttribute('data-fullscreen-available', '');
-
-      // Black screen: a click on it shows the slide again, except on a phone
-      // that only watches the talk (data-watching, the follow view).
-      const blank = document.createElement('div');
-      blank.className = 'blank export-hidden';
-      blank.setAttribute('data-ink-ui', '');
-      blank.addEventListener('click', () => { if (!this.hasAttribute('data-watching')) this.setBlank(false, 'click'); });
-
-      const selectionDelete = document.createElement('button');
-      selectionDelete.type = 'button';
-      selectionDelete.className = 'ink-selection-delete export-hidden';
-      selectionDelete.setAttribute('data-ink-ui', '');
-      selectionDelete.setAttribute('aria-label', 'Delete the selection');
-      selectionDelete.title = 'Delete the selection';
-      selectionDelete.innerHTML = iconSvg('trash', 20);
-      selectionDelete.addEventListener('click', e => { e.stopPropagation(); this.inkSelectionRemove?.(); });
-      this._selectionDelete = selectionDelete;
-
-      this._root.append(style, stage, inkInput, inkLaser, zoomReset, selectionDelete, blank, overlay);
-      this._canvas = canvas;
-      this._slot = slot;
-      this._overlay = overlay;
-      this._countEl        = overlay.querySelector('.current');
-      this._totalEl        = overlay.querySelector('.total');
-      this._stepProgressEl = overlay.querySelector('.step-progress');
-      this._stepCurEl      = overlay.querySelector('.step-cur');
-      this._stepTotalEl    = overlay.querySelector('.step-total');
-      this._overlay        = overlay;
-      if (this._labels) this.setLabels(this._labels);
-    }
-
-    /** @page must live in the document stylesheet — it's a no-op inside
-     *  shadow DOM. Inject/update a single <head> style tag so the print
-     *  sheet matches the design size and Save-as-PDF yields one slide per
-     *  page with no margins. */
-    _syncPrintPageRule() {
-      const id = 'deck-stage-print-page';
-      let tag = document.getElementById(id);
-      if (!tag) {
-        tag = document.createElement('style');
-        tag.id = id;
-        document.head.appendChild(tag);
-      }
-      tag.textContent =
-        '@page { size: ' + this.designWidth + 'px ' + this.designHeight + 'px; margin: 0; } ' +
-        '@media print { html, body { margin: 0 !important; padding: 0 !important; background: none !important; overflow: visible !important; height: auto !important; } ' +
-        '* { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }';
-    }
-
-    _onSlotChange() {
-      this._collectSlides();
-      this._restoreIndex();
-      if (this._overview) this._buildOverview();
-      this._applyIndex({ showOverlay: false, broadcast: true, reason: 'init' });
-      this._fit();
-    }
-
-    _collectSlides() {
-      const assigned = this._slot.assignedElements({ flatten: true });
-      this._slides = assigned.filter((el) => {
-        // Skip template/style/script nodes even if someone slots them.
-        const tag = el.tagName;
-        return tag !== 'TEMPLATE' && tag !== 'SCRIPT' && tag !== 'STYLE';
-      });
-
-      this._slides.forEach((slide, i) => {
-        const n = i + 1;
-        // Determine a label for comment flow: prefer explicit data-label,
-        // then an existing data-screen-label, then first heading, else "Slide".
-        let label = slide.getAttribute('data-label');
-        if (!label) {
-          const existing = slide.getAttribute('data-screen-label');
-          if (existing) {
-            // Strip any leading number the author may have included.
-            label = existing.replace(/^\s*\d+\s*/, '').trim() || existing;
-          }
-        }
-        if (!label) {
-          const h = slide.querySelector('h1, h2, h3, [data-title]');
-          if (h) label = (h.textContent || '').trim().slice(0, 40);
-        }
-        if (!label) label = 'Slide';
-        slide.setAttribute('data-screen-label', `${pad2(n)} ${label}`);
-
-        // Validation attribute for comment flow / auto-checks.
-        if (!slide.hasAttribute('data-om-validate')) {
-          slide.setAttribute('data-om-validate', VALIDATE_ATTR);
-        }
-
-        slide.setAttribute('data-deck-slide', String(i));
-      });
-
-      if (this._totalEl) this._totalEl.textContent = String(this._slides.length || 1);
-      if (this._index >= this._slides.length) this._index = Math.max(0, this._slides.length - 1);
-    }
-
-    _loadNotes() {
-      const tag = document.getElementById('speaker-notes');
-      if (!tag) { this._notes = []; return; }
+    if (broadcast) {
+      // (1) Legacy: postMessage bridge for presenter/speaker-note renderers.
+      const note = this._notes[curr] ?? null;
+      try { window.postMessage({ slideIndexChanged: curr, note, reason }, '*'); } catch (e) {}
       try {
-        const parsed = JSON.parse(tag.textContent || '[]');
-        if (Array.isArray(parsed)) this._notes = parsed;
-      } catch (e) {
-        console.warn('[deck-stage] Failed to parse #speaker-notes JSON:', e);
-        this._notes = [];
-      }
-    }
-
-    _restoreIndex() {
-      const named = this._slides.findIndex(s => '#' + encodeURIComponent(s.dataset.slideId) === location.hash);
-      if (named >= 0) { this._index = named; return; }
-      // The host's ?slide= param is delivered as a #<int> hash (1-indexed) on
-      // the iframe src. No hash → slide 1; the deck itself keeps no position
-      // state across loads.
-      const h = (location.hash || '').match(/^#(\d+)$/);
-      if (h) {
-        const n = parseInt(h[1], 10) - 1;
-        if (n >= 0 && n < this._slides.length) this._index = n;
-      }
-    }
-
-    _applyIndex({ showOverlay = true, broadcast = true, reason = 'init', step = -1 } = {}) {
-      if (!this._slides.length) return;
-      const prev = this._prevIndex == null ? -1 : this._prevIndex;
-      const curr = this._index;
-      // Keep the iframe's own hash in sync so an in-iframe location.reload()
-      // (reload banner path in viewer-handle.ts) lands on the current slide,
-      // not the stale deep-link hash from initial load.
-      try { history.replaceState(null, '', '#' + (this._slides[curr].dataset.slideId || (curr + 1))); } catch (e) {}
-      this._slides.forEach((s, i) => {
-        if (i === curr) s.setAttribute('data-deck-active', '');
-        else s.removeAttribute('data-deck-active');
-      });
-      this._stepMap.delete(curr);
-      if (step >= 0) this._stepMap.set(curr, step);
-      this._applySteps(curr);
-      // Every slide starts whole; each window does this itself.
-      if (curr !== prev) {
-        this._stopZoomFlight();
-        this._hotspot = null;
-        if (this._zoom) this.setZoom(null, 'slide', { announce: false });
-      }
-      this._queueHotspots();
-      // The live layer sits above every slide: nothing drawn on another
-      // slide may stay on it.
-      if (curr !== prev) this._clearLive();
-      if (this._countEl) this._countEl.textContent = String(curr + 1);
-      // The overview marks the slide shown, wherever the change came from.
-      if (this._overview) {
-        const cells = this._ovCells?.children ?? [];
-        for (let i = 0; i < cells.length; i++) cells[i].toggleAttribute('data-current', i === curr);
-      }
-
-      if (broadcast) {
-        // (1) Legacy: postMessage bridge for presenter/speaker-note renderers.
-        const note = this._notes[curr] ?? null;
-        try { window.postMessage({ slideIndexChanged: curr, note, reason }, '*'); } catch (e) {}
-        try {
-          if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ slideIndexChanged: curr, note, reason }, '*');
-          }
-        } catch (e) {}
-
-        // (2) In-page CustomEvent on the <deck-stage> element itself.
-        //     Bubbles and composes out of shadow DOM so slide code can listen:
-        //       document.querySelector('deck-stage').addEventListener('slidechange', e => {
-        //         e.detail.index, e.detail.previousIndex, e.detail.total, e.detail.slide, e.detail.reason
-        //       });
-        const detail = {
-          index: curr,
-          previousIndex: prev,
-          total: this._slides.length,
-          slide: this._slides[curr] || null,
-          previousSlide: prev >= 0 ? (this._slides[prev] || null) : null,
-          reason: reason, // 'init' | 'keyboard' | 'click' | 'tap' | 'api' | 'reset' | 'sync'
-        };
-        this.dispatchEvent(new CustomEvent('slidechange', {
-          detail,
-          bubbles: true,
-          composed: true,
-        }));
-      }
-
-      this._prevIndex = curr;
-      if (broadcast) this._broadcastState(reason);
-      if (showOverlay) this._flashOverlay();
-    }
-
-    get state() {
-      return { index: this._index, slideId: this._slides[this._index]?.dataset.slideId,
-        step: this._stepMap.get(this._index) ?? -1, blank: this._blank, join: this._join };
-    }
-
-    /** Whether the screen is black (B). Setting it tells the other screens. */
-    get blank() { return this._blank; }
-    set blank(on) { this.setBlank(on); }
-    /** Make the screen black or show the slide again; `reason` as in statechange. */
-    setBlank(on, reason = 'api') {
-      on = !!on;
-      if (on === this._blank) return;
-      this._applyBlank(on);
-      this._broadcastState(reason);
-    }
-    _applyBlank(on) {
-      this._blank = on;
-      this.toggleAttribute('data-blank', on);
-      if (on && this._join) this._applyJoin(false);
-    }
-
-    /** Whether the join code shows over the slide (J). Setting it tells the other screens; main.jsx draws it. */
-    get join() { return this._join; }
-    setJoin(on, reason = 'api') {
-      on = !!on;
-      if (on === this._join) return;
-      this._applyJoin(on);
-      this._broadcastState(reason);
-    }
-    _applyJoin(on) {
-      this._join = on;
-      this.toggleAttribute('data-join', on);
-      if (on && this._blank) this._applyBlank(false);
-      this.dispatchEvent(new CustomEvent('joinchange', { detail: { join: on } }));
-    }
-
-    _broadcastState(reason) {
-      // atEnd: nothing comes after this, which ends a rehearsal (main.jsx).
-      const state = this.state;
-      const atEnd = state.index === this._slides.length - 1 && state.step >= this._getSteps(this._slides[state.index]).length - 1;
-      const message = { deckStateChanged: state, atEnd, reason };
-      window.postMessage(message, '*');
-      if (window.parent !== window) window.parent.postMessage(message, '*');
-      this.dispatchEvent(new CustomEvent('statechange', { detail: { ...this.state, reason } }));
-    }
-
-    setState(state) {
-      if (!state || !Number.isInteger(state.index) || !Number.isInteger(state.step)) return;
-      const byId = state.slideId ? this._slides.findIndex(s => s.dataset.slideId === state.slideId) : -1;
-      const index = byId >= 0 ? byId : state.index;
-      if (index < 0 || index >= this._slides.length) return;
-      const max = this._getSteps(this._slides[index]).length - 1;
-      const step = Math.max(-1, Math.min(max, state.step));
-      // A position without `blank` (a follower paging on its own) leaves it.
-      const blankChanged = typeof state.blank === 'boolean' && state.blank !== this._blank;
-      if (blankChanged) this._applyBlank(state.blank);
-      const joinChanged = typeof state.join === 'boolean' && state.join !== this._join;
-      if (joinChanged) this._applyJoin(state.join);
-      if (index === this._index) {
-        if (step === this.state.step) { if (blankChanged || joinChanged) this._broadcastState('sync'); return; }
-        if (this._hotspot) this.wholeSlide();
-        this._stepMap.set(index, step);
-        this._applySteps(index);
-        this._broadcastState('sync');
-      } else {
-        this._index = index;
-        this._applyIndex({ reason: 'sync', step });
-      }
-    }
-
-    _flashOverlay() {
-      if (!this._overlay || hideControls) return;
-      this._overlay.setAttribute('data-visible', '');
-      if (this._hideTimer) clearTimeout(this._hideTimer);
-      this._hideTimer = setTimeout(() => {
-        this._overlay.removeAttribute('data-visible');
-      }, OVERLAY_HIDE_MS);
-    }
-
-    _fit() {
-      if (!this._canvas) return;
-      // PPTX export sets noscale so the DOM capture sees authored-size
-      // geometry — the scaled canvas is in shadow DOM, so the exporter's
-      // resetTransformSelector can't reach .canvas.style.transform directly.
-      if (this.hasAttribute('noscale')) {
-        this._canvas.style.transform = 'none';
-        return;
-      }
-      // Fit the host element, which is the viewport when the stage is
-      // full-screen and a panel when it is embedded in another layout.
-      const rect = this.getBoundingClientRect();
-      const vw = rect.width || window.innerWidth;
-      const vh = rect.height || window.innerHeight;
-      if (this._overview) { this._fitOverview(vw, vh); return; }
-      const s = Math.min(vw / this.designWidth, vh / this.designHeight);
-      this._fitScale = s;
-      this._hotspotLayer?.style.setProperty('--hotspot-k', String(1 / s));
-      const zoom = this._zoom;
-      if (!zoom) { this._canvas.style.transform = `scale(${s})`; this._placeSelectionDelete(); return; }
-      const tx = (this.designWidth / 2 - zoom.x) * s * zoom.scale;
-      const ty = (this.designHeight / 2 - zoom.y) * s * zoom.scale;
-      this._canvas.style.transform = `translate(${tx}px, ${ty}px) scale(${s * zoom.scale})`;
-      this._kickLaser();
-      this._placeSelectionDelete();
-    }
-
-    _onResize() { this._fit(); this._queueHotspots(); }
-
-    _onMouseMove() {
-      // Keep overlay visible while mouse moves; hide after idle.
-      this._flashOverlay();
-    }
-
-    // Fingers (and a pen while not drawing): a swipe to the left goes
-    // forward, to the right back; on a zoomed slide a finger moves the view
-    // instead. While not drawing, a tap on the left or right third of the
-    // screen goes back or forward, as the tap zones did. A tap while drawing selects the stroke under it
-    // (`inktap`, { slideId, point }); the selection then takes the pen.
-    // Read from pointer events, so it works whatever pointer the device
-    // reports, and controls on the slide (buttons, links, polls, embedded
-    // frames) keep their own taps.
-    _tapStart(e) {
-      if (this._overview) { this._tap = null; return; }
-      const finger = e.pointerType === 'touch' && !(this.inking && this.inkFinger);
-      const pen = e.pointerType === 'pen' && !this.inking;
-      this._tap = (finger || pen) && e.isPrimary ? { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() } : null;
-    }
-
-    _tapEnd(e) {
-      const tap = this._tap;
-      this._tap = null;
-      if (!tap || tap.id !== e.pointerId || e.type !== 'pointerup') return;
-      const dx = e.clientX - tap.x, dy = e.clientY - tap.y, ms = performance.now() - tap.t;
-      if (e.composedPath().some(el => el.nodeType === 1 && el.matches(TAP_IGNORE))) return;
-      if (Math.abs(dx) >= SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.5 && ms <= SWIPE_MS) {
-        if (dx < 0) this.next('swipe');
-        else this.prev('swipe');
-        return;
-      }
-      if (ms > TAP_MS || Math.hypot(dx, dy) > TAP_SLOP) return;
-      // In a hotspot: a tap anywhere on the slide shows the whole slide again.
-      if (this._hotspot) { this.wholeSlide(); return; }
-      if (!this.inking) {
-        // Not drawing: a tap on the left third goes back, on the right third forward.
-        if (this._zoom) return;
-        const x = e.clientX / window.innerWidth;
-        if (x < 1 / 3) this.prev('tap');
-        else if (x > 2 / 3) this.next('tap');
-        return;
-      }
-      const slideId = this._inkSlideId();
-      if (slideId) this.dispatchEvent(new CustomEvent('inktap', { detail: { slideId, point: this._inkPoint(e), radius: 22 }, bubbles: true, composed: true }));
-    }
-
-    _onKey(e) {
-      // Ignore when the user is typing.
-      const t = e.target;
-      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-
-      const key = e.key;
-      let handled = true;
-
-      if (this._overview && this.overviewKey(key)) {
-        // Arrows, Enter, Escape and O belong to the overview while it is open.
-      } else if ((key === 'o' || key === 'O') && this._isPage()) {
-        this.overview = true;
-      } else if (key === 'ArrowRight' || key === 'PageDown' || key === ' ' || key === 'Spacebar') {
-        this.next('keyboard');
-      } else if (key === 'ArrowLeft' || key === 'PageUp') {
-        this.prev('keyboard');
-      } else if (key === 'Home') {
-        this._go(0, 'keyboard');
-      } else if (key === 'End') {
-        this._go(this._slides.length - 1, 'keyboard');
-      } else if (key === 'i' || key === 'I') {
-        // Show or hide the saved ink.
-        e.preventDefault();
-        this.toggleAttribute('data-ink-hidden');
-      } else if ((key === 'f' || key === 'F') && window.top === window && fullscreenAvailable()) {
-        toggleFullscreen();
-      } else if (key === 'r' || key === 'R') {
-        this.reset();
-      } else if ((key === 'j' || key === 'J') && this._isPage() && !this.hasAttribute('data-watching') && this.hasAttribute('data-joinable')) {
-        // J: the join code over the slide, in a deck phones join (main.jsx sets data-joinable).
-        this.setJoin(!this._join, 'keyboard');
-      } else if ((key === 'b' || key === 'B' || key === '.') && this._isPage() && !this.hasAttribute('data-watching')) {
-        // B, or the "blank" button of a presenter's clicker, which sends a full stop.
-        this.setBlank(!this._blank, 'keyboard');
-      } else if (/^[0-9]$/.test(key) || key === 'Escape') {
-        handled = this.hotspotKey(key);
-      } else {
-        handled = false;
-      }
-
-      if (handled) {
-        e.preventDefault();
-        this._flashOverlay();
-      }
-    }
-
-    // A stage that is the page (a deck window, the audience window, the
-    // presenter's slide); the reader's stage sits in its page and has an
-    // outline of its own.
-    _isPage() { return this.parentElement === document.body; }
-
-    _go(i, reason = 'api') {
-      if (!this._slides.length) return;
-      const clamped = Math.max(0, Math.min(this._slides.length - 1, i));
-      if (clamped === this._index) {
-        this._flashOverlay();
-        return;
-      }
-      this._index = clamped;
-      this._applyIndex({ showOverlay: true, broadcast: true, reason });
-    }
-
-    // Step reveal helpers ---------------------------------------------------
-
-    _getSteps(slide) {
-      // Each step is a list of elements that appear together.
-      return slideSteps(slide);
-    }
-
-    _applySteps(slideIndex) {
-      const slide = this._slides[slideIndex];
-      if (!slide) return;
-      const steps = this._getSteps(slide);
-      const curr  = this._printing ? steps.length - 1 : (this._stepMap.get(slideIndex) ?? -1);
-      steps.forEach((elements, i) => elements.forEach(el =>
-        i <= curr ? el.setAttribute('data-step-visible', '') : el.removeAttribute('data-step-visible')
-      ));
-      this._updateStepCount(slideIndex);
-      if (slideIndex === this._index) this._queueHotspots();
-    }
-
-    _updateStepCount(slideIndex) {
-      if (!this._stepProgressEl) return;
-      const steps = this._getSteps(this._slides[slideIndex]);
-      if (steps.length === 0) {
-        this._stepProgressEl.hidden = true;
-        return;
-      }
-      const curr = this._stepMap.get(slideIndex) ?? -1;
-      this._stepCurEl.textContent  = String(curr + 1);
-      this._stepTotalEl.textContent = String(steps.length);
-      this._stepProgressEl.hidden  = false;
-    }
-
-    // Public API ------------------------------------------------------------
-
-    /** Current slide index (0-based). */
-    get index() { return this._index; }
-    /** Total slide count. */
-    get length() { return this._slides.length; }
-    /** Words on the control bar, in the deck's language:
-     *  { controls, previous, next, reset, resetHint }. */
-    setLabels(labels = {}) {
-      this._labels = labels;
-      const overlay = this._overlay;
-      if (!overlay) return;
-      if (labels.controls) overlay.setAttribute('aria-label', labels.controls);
-      if (labels.previous) overlay.querySelector('.prev').setAttribute('aria-label', labels.previous);
-      if (labels.next) overlay.querySelector('.next').setAttribute('aria-label', labels.next);
-      const reset = overlay.querySelector('.reset');
-      if (labels.resetHint) reset.setAttribute('aria-label', labels.resetHint);
-      if (labels.reset) reset.firstChild.textContent = labels.reset;
-      if (labels.resetHint) reset.title = `${labels.resetHint} (R)`;
-    }
-    // Ink input ---------------------------------------------------------------
-    //
-    // While `inking` is on, the pen and the mouse draw on the current slide;
-    // fingers keep operating the deck (taps move the slides, slide content
-    // stays usable) and draw only when `inkFinger` is set. Finished strokes
-    // are announced as `inkstroke` events ({ slideId, tool, color, size,
-    // points }), in design pixels with pressure; the eraser sends `inkerase`
-    // ({ slideId, point, radius }) while it moves, all with the same
-    // `gesture` number for one stroke of the eraser. The laser is never kept:
-    // its trail retracts within a second (`inklaser` when it ends) and its dot
-    // follows a hovering pen (`inklaserdot`, { slideId, point | null }). The
-    // select tool sends `inkselect` ({ phase: 'down' | 'move' | 'up', slideId,
-    // point }) and shows what it is given with `showSelection`. `inkTool` is
-    // { tool: 'pen' | 'highlighter' | 'laser' | 'select' | 'eraser', color,
-    // size }. `inkRenderer(stroke)` may return an SVG path for the stroke in
-    // progress. While a stroke or a laser trail is drawn, `inkprogress`
-    // repeats it as it grows; `key` ties it to its end event.
-
-    get inking() { return this.hasAttribute('data-inking'); }
-    set inking(on) {
-      this.toggleAttribute('data-inking', !!on);
-      if (!on) { this._endInk(null); this.laserRelease('local'); this.laserDot('local', null, null); this.showSelection(null); }
-      this.dispatchEvent(new CustomEvent('inkmode', { detail: { inking: !!on }, bubbles: true, composed: true }));
-    }
-
-    get inkFinger() { return this.hasAttribute('data-ink-finger'); }
-    set inkFinger(on) { this.toggleAttribute('data-ink-finger', !!on); }
-
-    _inkSlideId() { return this._slides[this._index]?.dataset.slideId ?? null; }
-
-    _inkPoint(e) {
-      const rect = this._canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) * this.designWidth / rect.width;
-      const y = (e.clientY - rect.top) * this.designHeight / rect.height;
-      const pressure = e.pointerType === 'pen' && e.pressure > 0 ? e.pressure : 0.5;
-      return [Math.round(x * 10) / 10, Math.round(y * 10) / 10, Math.round(pressure * 100) / 100];
-    }
-
-    _windowInput() {
-      return [['pointerdown', this._onPointerDown], ['pointermove', this._onPointerMove], ['pointerup', this._onPointerUp],
-        ['pointercancel', this._onPointerUp], ['pointerout', this._onPointerOut],
-        ['touchstart', this._onTouch], ['touchmove', this._onTouch], ['touchend', this._onTouch], ['click', this._onClickCapture],
-        ['wheel', this._onWheel], ['gesturestart', this._onGesture], ['gesturechange', this._onGesture]];
-    }
-
-    // The ink toolbar and the deck's controls keep their input.
-    _inInkUi(e) {
-      return e.composedPath().some(el => el.nodeType === 1 && (el.hasAttribute('data-ink-ui') || el.classList.contains('overlay')));
-    }
-
-    // While drawing: the pen, the mouse's main button, and fingers only when they draw.
-    _inkTakes(e) {
-      if (!this.inking || this._printing) return false;
-      if (e.pointerType === 'touch' && !this.inkFinger) return false;
-      if (e.pointerType === 'mouse' && e.button !== 0) return false;
-      return !this._inInkUi(e);
-    }
-
-    _onPointerDown(e) {
-      this._tapStart(e);
-      if (this._zoomDown(e)) return;
-      if (this._inkDrawing || !this._inkTakes(e)) return;
-      e.preventDefault();
-      e.stopPropagation();
-      let tool = { ...this.inkTool };
-      const point = this._inkPoint(e);
-      // A selection (picked with a finger, or the select tool) takes the pen
-      // that lands on it: on an end point's handle or inside its box. Landing
-      // elsewhere puts the selection away and draws as usual.
-      if (tool.tool !== 'select' && this.inkSelectionHit) {
-        if (this.inkSelectionHit(point)) tool = { ...tool, tool: 'select' };
-        else this.inkSelectionClear?.();
-      }
-      this._inkGesture = (this._inkGesture || 0) + 1;
-      const drawing = this._inkDrawing = { pointerId: e.pointerId, touch: e.pointerType === 'touch', tool, points: [point], slideId: this._inkSlideId(), gesture: this._inkGesture, key: `${this._inkGesture}` };
-      if (tool.tool === 'eraser') { this._erase(point); return; }
-      if (tool.tool === 'select') { this._inkSelect('down', point); return; }
-      if (tool.tool === 'laser') { this.laserTrail('local', drawing.slideId, [point], { start: true }); this._inkProgress(drawing); return; }
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      this._styleLive(path, tool);
-      this._appendLive(path);
-      drawing.path = path;
-      this._drawLive(path, drawing.points, tool);
-      this._inkProgress(drawing);
-      this._holdStill(drawing, e);
-    }
-
-    // Pen and highlighter: holding still at the end of a stroke straightens
-    // it, from its first point to the pen. Moving on afterwards (without
-    // lifting) moves the line's end; lifting keeps the straight line.
-    _holdStill(drawing, e) {
-      const hold = drawing.hold;
-      if (hold && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) <= STRAIGHTEN_SLOP) return;
-      clearTimeout(hold?.timer);
-      drawing.hold = { x: e.clientX, y: e.clientY, timer: setTimeout(() => this._straighten(drawing), STRAIGHTEN_MS) };
-    }
-
-    _straighten(drawing) {
-      if (this._inkDrawing !== drawing || drawing.straight || drawing.points.length < 3) return;
-      const pressures = drawing.points.map(p => p[2]);
-      drawing.straight = Math.round(pressures.reduce((a, b) => a + b, 0) / pressures.length * 100) / 100;
-      this._drawStraight(drawing, drawing.points[drawing.points.length - 1]);
-    }
-
-    // The line's end snaps to steps of 15° (horizontal, vertical, 45° …)
-    // when it is close to one, see snapAngle in core/ink.js.
-    _drawStraight(drawing, end) {
-      const [x0, y0] = drawing.points[0];
-      const [x, y] = snapAngle([x0, y0], end);
-      drawing.points = [[x0, y0, drawing.straight], [x, y, drawing.straight]];
-      drawing.restart = true;
-      this._drawLive(drawing.path, drawing.points, drawing.tool);
-      this._inkProgress(drawing);
-    }
-
-    _onPointerMove(e) {
-      if (this._zoomMove(e)) return;
-      const drawing = this._inkDrawing;
-      if (!drawing) { this._laserHover(e); return; }
-      if (e.pointerId !== drawing.pointerId) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const events = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
-      const added = (events.length ? events : [e]).map(ev => this._inkPoint(ev));
-      const tool = drawing.tool.tool;
-      if (drawing.straight) { this._drawStraight(drawing, added[added.length - 1]); return; }
-      drawing.points.push(...added);
-      const last = drawing.points[drawing.points.length - 1];
-      if (tool === 'pen' || tool === 'highlighter') this._holdStill(drawing, e);
-      if (tool === 'eraser') this._erase(last);
-      else if (tool === 'select') this._inkSelect('move', last);
-      else if (tool === 'laser') { this.laserTrail('local', drawing.slideId, added); this._inkProgress(drawing); }
-      else { this._drawLive(drawing.path, drawing.points, drawing.tool); this._inkProgress(drawing); }
-    }
-
-    _onPointerUp(e) {
-      this._zoomUp(e);
-      this._tapEnd(e);
-      const drawing = this._inkDrawing;
-      if (!drawing || e.pointerId !== drawing.pointerId) return;
-      e.stopPropagation();
-      this._inkUpAt = performance.now();
-      // The stroke ends where the pen left the screen, which the last move
-      // event does not always reach.
-      const tool = drawing.tool.tool;
-      if (e.type === 'pointerup' && (tool === 'pen' || tool === 'highlighter')) {
-        const point = this._inkPoint(e);
-        const last = drawing.points[drawing.points.length - 1];
-        if (drawing.straight) this._drawStraight(drawing, point);
-        else if (Math.hypot(point[0] - last[0], point[1] - last[1]) > 0.5) drawing.points.push([point[0], point[1], last[2]]);
-      }
-      this._endInk(drawing);
-    }
-
-    // The laser's dot follows a pen hovering over the screen (newer iPads).
-    _laserHover(e) {
-      if (!this.inking || this.inkTool.tool !== 'laser' || e.pointerType === 'touch' || (e.pointerType === 'mouse' && e.buttons)) return;
-      const point = this._inInkUi(e) ? null : this._inkPoint(e);
-      this.laserDot('local', this._inkSlideId(), point);
-      this.dispatchEvent(new CustomEvent('inklaserdot', { detail: { slideId: this._inkSlideId(), point }, bubbles: true, composed: true }));
-    }
-
-    _onPointerOut(e) {
-      if (e.relatedTarget || !this._lasers.get('local')?.dot) return;
-      this.laserDot('local', null, null);
-      this.dispatchEvent(new CustomEvent('inklaserdot', { detail: { slideId: this._inkSlideId(), point: null }, bubbles: true, composed: true }));
-    }
-
-    // iPad Safari: a pen touch while drawing neither scrolls, zooms, selects
-    // text nor becomes a click.
-    _onTouch(e) {
-      if (this.hasAttribute('data-zoomable') && e.touches.length > 1 && e.cancelable && !this._inInkUi(e)) e.preventDefault();
-      if (!this.inking || this._inInkUi(e)) return;
-      if (![...e.changedTouches].some(t => t.touchType === 'stylus')) return;
-      if (e.cancelable) e.preventDefault();
-      e.stopPropagation();
-    }
-
-    // The click that ends a stroke is not a click on the slide.
-    _onClickCapture(e) {
-      if (!this.inking || performance.now() - this._inkUpAt > CLICK_AFTER_INK_MS || this._inInkUi(e)) return;
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    _drawLive(path, points, tool) {
-      const stroke = { tool: tool.tool === 'highlighter' ? 'highlighter' : 'pen', size: tool.size, points };
-      // In progress: not yet `last`, so the outline does not close early.
-      const d = this.inkRenderer ? this.inkRenderer(stroke, { last: false })
-        : 'M' + points.map(p => p[0] + ' ' + p[1]).join(' L');
-      path.setAttribute('d', d);
-    }
-
-    _styleLive(path, { tool, color, size }) {
-      const renderer = !!this.inkRenderer;
-      // Pen colours follow the palette and appearance (inkPaint in core/ink.js).
-      path.style[renderer ? 'fill' : 'stroke'] = inkPaint(color);
-      if (!renderer) { path.setAttribute('fill', 'none'); path.setAttribute('stroke-width', size); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round'); }
-      path.setAttribute(renderer ? 'fill-opacity' : 'stroke-opacity', tool === 'highlighter' ? '0.35' : '1');
-      // The highlighter goes under the pen, as on paper.
-      if (tool === 'highlighter') path.setAttribute('data-under', '');
-    }
-
-    // Highlighter strokes go below the pen's, the selection stays on top.
-    _appendLive(path) {
-      const above = path.hasAttribute('data-under')
-        ? [...this._inkLive.children].find(el => !el.hasAttribute('data-under'))
-        : this._inkLive.querySelector('.ink-selection-group');
-      this._inkLive.insertBefore(path, above ?? null);
-    }
-
-    // Announces the stroke in progress (`inkprogress`, the same points array
-    // as it grows), so other windows can show it while it is drawn.
-    _inkProgress(drawing) {
-      const { tool, color, size } = drawing.tool;
-      // `restart`: the points were replaced (a straightened stroke), not extended.
-      const restart = !!drawing.restart;
-      drawing.restart = false;
-      this.dispatchEvent(new CustomEvent('inkprogress', { detail: { key: drawing.key, slideId: drawing.slideId, tool, color, size, points: drawing.points, restart }, bubbles: true, composed: true }));
-    }
-
-    _endInk(drawing) {
-      this._inkDrawing = null;
-      clearTimeout(drawing?.hold?.timer);
-      if (!drawing || drawing.tool.tool === 'eraser' || !drawing.slideId) { drawing?.path?.remove(); return; }
-      const { tool, color, size } = drawing.tool;
-      if (tool === 'select') { this._inkSelect('up', drawing.points[drawing.points.length - 1], drawing); return; }
-      const detail = { key: drawing.key, slideId: drawing.slideId, tool, color, size, points: drawing.points };
-      if (tool === 'laser') {
-        // Never saved: lifted, the trail retracts on its own.
-        this.laserRelease('local');
-        this.laserDot('local', drawing.slideId, null);
-        this.dispatchEvent(new CustomEvent('inklaser', { detail, bubbles: true, composed: true }));
-        return;
-      }
-      this.dispatchEvent(new CustomEvent('inkstroke', { detail, bubbles: true, composed: true }));
-      // The saved layer draws the stroke from now on; keep this one a moment
-      // longer so nothing flickers.
-      const path = drawing.path;
-      this._removeLive(path);
-    }
-
-    // The saved layer draws a finished stroke from the next frame on; keep the
-    // live one until then so nothing flickers. A window that is hidden gets
-    // no frames, so a timer removes it in any case.
-    _removeLive(path) {
-      const remove = () => path.remove();
-      requestAnimationFrame(() => requestAnimationFrame(remove));
-      setTimeout(remove, 250);
-    }
-
-    _clearLive() {
-      if (!this._inkLive) return;
-      const own = this._inkDrawing?.path;
-      for (const path of [...this._inkLive.querySelectorAll(':scope > path')]) if (path !== own) path.remove();
-      for (const [key, value] of this._remoteInk ?? []) if (typeof value !== 'number') this._remoteInk.delete(key);
-    }
-
-    _erase(point) {
-      const slideId = this._inkDrawing?.slideId ?? this._inkSlideId();
-      if (!slideId) return;
-      this.dispatchEvent(new CustomEvent('inkerase', { detail: { slideId, point, radius: 14, gesture: this._inkDrawing?.gesture ?? 0 }, bubbles: true, composed: true }));
-    }
-
-    _inkSelect(phase, point, drawing = this._inkDrawing) {
-      const slideId = drawing?.slideId ?? this._inkSlideId();
-      if (!slideId) return;
-      this.dispatchEvent(new CustomEvent('inkselect', { detail: { phase, slideId, point, points: drawing?.points ?? [point] }, bubbles: true, composed: true }));
-    }
-
-    /**
-     * Shows a selection on the current slide, in design pixels: `box` is
-     * [x0, y0, x1, y1], `lasso` a list of points, `handles` the end points
-     * of a selected straight line; null clears it. `remove` places a button
-     * that deletes the selection (it calls `inkSelectionRemove`): `at`, a
-     * point in design pixels, and `toward`, the direction in which the button
-     * sits off it.
-     */
-    showSelection(selection) {
-      const { box = null, lasso = null, handles = [], remove = null } = selection ?? {};
-      this._selectionDeleteAt = remove;
-      this._placeSelectionDelete();
-      if (!this._inkLive) return;
-      this._inkLive.querySelector('.ink-selection-group')?.remove();
-      if (!box && !lasso?.length && !handles.length) return;
-      const ns = 'http://www.w3.org/2000/svg';
-      const group = document.createElementNS(ns, 'g');
-      group.setAttribute('class', 'ink-selection-group');
-      if (box) {
-        const rect = document.createElementNS(ns, 'rect');
-        rect.setAttribute('class', 'ink-selection');
-        rect.setAttribute('x', box[0]); rect.setAttribute('y', box[1]);
-        rect.setAttribute('width', Math.max(0, box[2] - box[0])); rect.setAttribute('height', Math.max(0, box[3] - box[1]));
-        group.appendChild(rect);
-      }
-      for (const [x, y] of handles) {
-        const handle = document.createElementNS(ns, 'circle');
-        handle.setAttribute('class', 'ink-handle');
-        handle.setAttribute('cx', x); handle.setAttribute('cy', y); handle.setAttribute('r', 16);
-        group.appendChild(handle);
-      }
-      if (lasso?.length > 1) {
-        const polygon = document.createElementNS(ns, 'polygon');
-        polygon.setAttribute('class', 'ink-selection ink-lasso');
-        polygon.setAttribute('points', lasso.map(p => `${p[0]},${p[1]}`).join(' '));
-        group.appendChild(polygon);
-      }
-      this._inkLive.appendChild(group);
-    }
-
-    _placeSelectionDelete() {
-      const button = this._selectionDelete;
-      if (!button) return;
-      const place = this._selectionDeleteAt;
-      const canvas = place && this._canvas.getBoundingClientRect();
-      if (!canvas?.width) { button.removeAttribute('data-shown'); return; }
-      const [dx, dy] = place.toward ?? [0, -1];
-      const length = Math.hypot(dx, dy) || 1;
-      const OFF = 34, EDGE = 26; // screen pixels: the button's centre off the point, and off the window's edge
-      const x = canvas.left + place.at[0] * canvas.width / this.designWidth + dx / length * OFF;
-      const y = canvas.top + place.at[1] * canvas.height / this.designHeight + dy / length * OFF;
-      const clamp = (value, max) => Math.min(max - EDGE, Math.max(EDGE, value));
-      button.style.left = `${clamp(x, window.innerWidth)}px`;
-      button.style.top = `${clamp(y, window.innerHeight)}px`;
-      button.setAttribute('data-shown', '');
-    }
-
-    // Zoom --------------------------------------------------------------------
-    //
-    // Two fingers zoom into the slide and move around it; one finger moves a
-    // zoomed slide; Ctrl + scroll (a trackpad pinch) zooms at the pointer.
-    // Only the slide's canvas scales: the stage's controls, the ink toolbar
-    // and the presenter's bars keep their size, and ink and laser points stay
-    // exact. `zoom` is { scale, x, y }: the magnification over the fitted
-    // slide and the design point at the centre of the view. Every slide
-    // starts whole. `zoomchange` ({ slideId, scale, x, y, reason }) lets
-    // other windows show the same part (setZoom with reason 'remote', which
-    // is not announced again).
-
-    get zoom() {
-      return this._zoom ? { ...this._zoom } : { scale: 1, x: this.designWidth / 2, y: this.designHeight / 2 };
-    }
-
-    setZoom(zoom, reason = 'api', { announce = true, flying = false } = {}) {
-      // A pinch, a pan or another window's zoom takes over from a flight,
-      // and the view is no longer a hotspot's.
-      if (!flying) { this._stopZoomFlight(); this._hotspot = null; }
-      const next = this._clampZoom(zoom);
-      const same = JSON.stringify(next) === JSON.stringify(this._zoom);
-      this._zoom = next;
-      this.toggleAttribute('data-zoomed', !!next);
-      this._fit();
-      if (same || !announce) return;
-      const { scale, x, y } = this.zoom;
-      this.dispatchEvent(new CustomEvent('zoomchange', { detail: { slideId: this._inkSlideId(), scale, x, y, reason }, bubbles: true, composed: true }));
-    }
-
-    // Keeps the view on the slide; null when it shows the whole slide.
-    _clampZoom(zoom) {
-      if (!zoom) return null;
-      const scale = Math.min(ZOOM_MAX, Math.max(1, Number(zoom.scale) || 1));
-      if (scale <= 1.01) return null;
-      const rect = this.getBoundingClientRect();
-      // Half the view, in design pixels; a view wider than the slide stays centred.
-      const half = length => length / 2 / ((this._fitScale || 1) * scale);
-      const clamp = (value, h, size) => h >= size / 2 ? size / 2 : Math.min(size - h, Math.max(h, value));
-      const x = clamp(Number(zoom.x), half(rect.width || window.innerWidth), this.designWidth);
-      const y = clamp(Number(zoom.y), half(rect.height || window.innerHeight), this.designHeight);
-      return { scale: Math.round(scale * 1000) / 1000, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
-    }
-
-    // The design point under a screen point, for a given zoom.
-    _designAt(clientX, clientY, zoom = this.zoom) {
-      const rect = this.getBoundingClientRect();
-      const k = (this._fitScale || 1) * zoom.scale;
-      return [zoom.x + (clientX - rect.left - rect.width / 2) / k, zoom.y + (clientY - rect.top - rect.height / 2) / k];
-    }
-
-    // The zoom that keeps design point `point` under screen point `client`.
-    _zoomKeeping(point, [clientX, clientY], scale) {
-      const rect = this.getBoundingClientRect();
-      const k = (this._fitScale || 1) * scale;
-      return { scale, x: point[0] - (clientX - rect.left - rect.width / 2) / k, y: point[1] - (clientY - rect.top - rect.height / 2) / k };
-    }
-
-    _zoomDown(e) {
-      if (this._overview || e.pointerType !== 'touch' || !this.hasAttribute('data-zoomable') || this._inInkUi(e)) return false;
-      this._touches.set(e.pointerId, [e.clientX, e.clientY]);
-      if (this._touches.size === 2) {
-        // A second finger: a pinch, not a tap or a finger's stroke.
-        this._tap = null;
-        if (this._inkDrawing?.touch) { this._inkDrawing.path?.remove(); this._inkDrawing = null; }
-        const [a, b] = [...this._touches.values()];
-        const middle = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-        const start = this.zoom;
-        this._pinch = { distance: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, point: this._designAt(...middle, start), scale: start.scale };
-        this._pan = null;
-        return true;
-      }
-      if (this._touches.size === 1 && this._zoom && !(this.inking && this.inkFinger)) {
-        this._pan = { id: e.pointerId, from: [e.clientX, e.clientY], point: this._designAt(e.clientX, e.clientY), moving: false };
-      }
-      return false;
-    }
-
-    _zoomMove(e) {
-      if (!this._touches.has(e.pointerId)) return false;
-      this._touches.set(e.pointerId, [e.clientX, e.clientY]);
-      if (this._pinch && this._touches.size >= 2) {
-        e.preventDefault();
-        const [a, b] = [...this._touches.values()];
-        const scale = this._pinch.scale * Math.hypot(a[0] - b[0], a[1] - b[1]) / this._pinch.distance;
-        this.setZoom(this._zoomKeeping(this._pinch.point, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], Math.min(ZOOM_MAX, Math.max(1, scale))), 'pinch');
-        return true;
-      }
-      const pan = this._pan;
-      if (pan?.id === e.pointerId && this._zoom) {
-        if (!pan.moving && Math.hypot(e.clientX - pan.from[0], e.clientY - pan.from[1]) <= TAP_SLOP) return false;
-        pan.moving = true;
-        this._tap = null;
-        e.preventDefault();
-        this.setZoom(this._zoomKeeping(pan.point, [e.clientX, e.clientY], this._zoom.scale), 'pan');
-        return true;
-      }
-      return false;
-    }
-
-    _zoomUp(e) {
-      if (!this._touches.delete(e.pointerId)) return;
-      if (this._touches.size < 2) this._pinch = null;
-      if (this._pan?.id === e.pointerId || !this._touches.size) this._pan = null;
-    }
-
-    // Ctrl + scroll is how a trackpad pinch arrives; plain scrolling moves a zoomed slide.
-    _onWheel(e) {
-      if (this._overview || !this.hasAttribute('data-zoomable') || this._inInkUi(e)) return;
-      if (e.ctrlKey) {
-        e.preventDefault();
-        const zoom = this.zoom;
-        const scale = Math.min(ZOOM_MAX, Math.max(1, zoom.scale * Math.exp(-e.deltaY / 100)));
-        this.setZoom(this._zoomKeeping(this._designAt(e.clientX, e.clientY, zoom), [e.clientX, e.clientY], scale), 'wheel');
-      } else if (this._zoom) {
-        e.preventDefault();
-        const k = (this._fitScale || 1) * this._zoom.scale;
-        this.setZoom({ ...this._zoom, x: this._zoom.x + e.deltaX / k, y: this._zoom.y + e.deltaY / k }, 'wheel');
-      }
-    }
-
-    // iPad Safari's own pinch zoom, which would enlarge every bar on the page.
-    _onGesture(e) {
-      if (this.hasAttribute('data-zoomable') && !this._inInkUi(e)) e.preventDefault();
-    }
-
-    // Overview -----------------------------------------------------------------
-    //
-    // O shows every slide in a grid, in this window only: the presenter
-    // view opens it in its own slide frame, so the audience never sees it.
-    // Arrows move the cursor, Enter or a click goes to that slide, O or
-    // Escape go back to the slide shown. The slides show every step.
-    // `overviewchange` ({ open }) says when it opens or closes.
-
-    get overview() { return this._overview; }
-    set overview(on) {
-      on = !!on && this._slides.length > 0;
-      if (on === this._overview) return;
-      if (on) {
-        if (this.inking) this.inking = false;
-        this._stopZoomFlight();
-        this._hotspot = null;
-        if (this._zoom) this.setZoom(null, 'overview', { announce: false });
-        this._ovCursor = this._index;
-      }
-      this._overview = on;
-      this.toggleAttribute('data-overview', on);
-      if (on) this._buildOverview();
-      else {
-        this._ovCells?.replaceChildren();
-        if (this._canvas) { this._canvas.style.width = this.designWidth + 'px'; this._canvas.style.height = this.designHeight + 'px'; }
-      }
-      this._fit();
-      if (on) this._showCursor();
-      else if (this._stageEl) this._stageEl.scrollTop = 0;
-      this.dispatchEvent(new CustomEvent('overviewchange', { detail: { open: on }, bubbles: true, composed: true }));
-    }
-
-    /** Columns and scale of the grid for `count` slides in a `vw`×`vh` window. */
-    overviewLayout(count, vw, vh) {
-      const W = this.designWidth, H = this.designHeight;
-      const gap = Math.round(W * 0.06);
-      // Room under each slide for its number and title, in design pixels.
-      const label = Math.round(H * 0.12);
-      const pad = Math.max(16, Math.min(48, vw * 0.03));
-      const room = (cols) => {
-        const rows = Math.ceil(count / cols);
-        const k = Math.min((vw - 2 * pad) / (cols * W + (cols - 1) * gap), (vh - 2 * pad) / (rows * (H + label) + (rows - 1) * gap));
-        return { cols, rows, k };
-      };
-      // All slides at once, as large as they can be…
-      let best = room(1);
-      for (let cols = 2; cols <= count; cols++) { const next = room(cols); if (next.k > best.k) best = next; }
-      // …unless they get too small to read: then fewer columns, and scrolling.
-      const minWidth = 160;
-      if (best.k * W < minWidth) {
-        const cols = Math.max(1, Math.min(count, Math.floor((vw - 2 * pad + gap * minWidth / W) / (minWidth + gap * minWidth / W))));
-        const rows = Math.ceil(count / cols);
-        best = { cols, rows, k: (vw - 2 * pad) / (cols * W + (cols - 1) * gap) };
-      }
-      return { ...best, gap, label, pad };
-    }
-
-    _buildOverview() {
-      const cells = this._slides.map((slide, i) => {
-        const cell = document.createElement('button');
-        cell.type = 'button';
-        cell.className = 'ov-cell';
-        cell.dataset.i = String(i);
-        // The slide's heading; the label names only its layout.
-        const heading = slide.querySelector('h1, h2, h3');
-        const title = (heading?.textContent || '').replace(/\s+/g, ' ').trim();
-        cell.setAttribute('aria-label', `${i + 1}${title ? ` ${title}` : ''}`);
-        const caption = document.createElement('span');
-        caption.textContent = `${i + 1}  ${title}`;
-        cell.appendChild(caption);
-        if (i === this._index) cell.setAttribute('data-current', '');
-        return cell;
-      });
-      this._ovCells?.replaceChildren(...cells);
-    }
-
-    _fitOverview(vw, vh) {
-      const { cols, rows, k, gap, label, pad } = this.overviewLayout(this._slides.length, vw, vh);
-      const W = this.designWidth, H = this.designHeight;
-      const width = cols * W + (cols - 1) * gap;
-      const height = rows * (H + label) + (rows - 1) * gap;
-      this._fitScale = k;
-      // Centred across, and down too when it all fits.
-      const left = Math.max(pad, (vw - width * k) / 2);
-      const top = Math.max(pad, (vh - height * k) / 2);
-      this._canvas.style.width = width + 'px';
-      this._canvas.style.height = height + 'px';
-      this._canvas.style.transform = `translate(${left}px, ${top}px) scale(${k})`;
-      this._canvas.style.setProperty('--ov-k', String(1 / k));
-      if (this._ovSizer) { this._ovSizer.style.width = '1px'; this._ovSizer.style.height = `${Math.ceil(top * 2 + height * k)}px`; }
-      const cells = this._ovCells?.children ?? [];
-      this._slides.forEach((slide, i) => {
-        const x = (i % cols) * (W + gap), y = Math.floor(i / cols) * (H + label + gap);
-        slide.style.setProperty('--ov-x', x + 'px');
-        slide.style.setProperty('--ov-y', y + 'px');
-        const cell = cells[i];
-        if (cell) Object.assign(cell.style, { left: x + 'px', top: y + 'px', width: W + 'px', height: H + 'px' });
-      });
-      this._ovLayout = { cols };
-    }
-
-    _showCursor() {
-      const cells = this._ovCells?.children ?? [];
-      for (let i = 0; i < cells.length; i++) cells[i].toggleAttribute('data-cursor', i === this._ovCursor);
-      cells[this._ovCursor]?.scrollIntoView?.({ block: 'nearest' });
-    }
-
-    _overviewGo(i, reason = 'keyboard') {
-      this.overview = false;
-      if (i !== this._index) this._go(i, reason);
-    }
-
-    /** A key typed while the overview is open; says whether it did something. */
-    overviewKey(key) {
-      if (!this._overview) return false;
-      const count = this._slides.length;
-      const cols = this._ovLayout?.cols ?? 1;
-      const move = to => { this._ovCursor = Math.max(0, Math.min(count - 1, to)); this._showCursor(); };
-      if (key === 'ArrowRight' || key === 'PageDown') move(this._ovCursor + 1);
-      else if (key === 'ArrowLeft' || key === 'PageUp') move(this._ovCursor - 1);
-      else if (key === 'ArrowDown') move(this._ovCursor + cols);
-      else if (key === 'ArrowUp') move(this._ovCursor - cols);
-      else if (key === 'Home') move(0);
-      else if (key === 'End') move(count - 1);
-      else if (key === 'Enter' || key === ' ' || key === 'Spacebar') this._overviewGo(this._ovCursor);
-      else if (key === 'Escape' || key === 'o' || key === 'O') this.overview = false;
-      else return false;
-      return true;
-    }
-
-    // Hotspots ----------------------------------------------------------------
-    //
-    // The parts of the slide shown that 1–9 zoom to (hotspots.js finds them).
-    // Hotspots are off unless the deck (`data-hotspots` on the stage) or the
-    // slide (`data-hotspots` on its section) turns them on with 'auto' or
-    // 'marked', or the presenter's switch (`hotspotsForced`) does. The same
-    // number again, 0, Escape, a tap on the slide or any step or slide
-    // change shows the whole slide again. Zooms to and from a hotspot fly
-    // (zoom/camera.js), and other windows fly the same way: their
-    // `zoomchange` carries `fly: true` and the view it lands on.
-
-    get hotspotsForced() { return this._hotspotsForced; }
-    set hotspotsForced(value) {
-      this._hotspotsForced = value === true || value === false ? value : null;
-      if (this.hotspotMode === 'off' && this._hotspot) this.wholeSlide();
-      this._refreshHotspots();
-    }
-
-    /** 'off', 'auto' or 'marked', for the slide shown. */
-    get hotspotMode() {
-      return hotspotMode({ slide: this._slides[this._index]?.getAttribute?.('data-hotspots'), deck: this.getAttribute('data-hotspots'), forced: this._hotspotsForced });
-    }
-
-    /** The current slide's hotspots: [{ rect, zoom }], in design pixels. */
-    get hotspots() { return this._hotspots.map(({ rect, zoom }) => ({ rect: { ...rect }, zoom: { ...zoom } })); }
-
-    /** The hotspot zoomed to (1-based), or null. */
-    get hotspot() { return this._hotspot; }
-
-    /** A digit or Escape, as typed in this window or the presenter view's; says whether it was used. */
-    hotspotKey(key) {
-      if (this._overview) return false;
-      if (key === 'Escape') {
-        if (!this._zoom || this.inking) return false;
-        this.wholeSlide();
-        return true;
-      }
-      if (!/^[0-9]$/.test(key)) return false;
-      // Number keys are for hotspots only: without them they do nothing.
-      if (this.hotspotMode === 'off') return false;
-      if (key === '0') this.wholeSlide();
-      else this.zoomToHotspot(Number(key));
-      return true;
-    }
-
-    /** Fly to hotspot `n` (1-based); the same one again flies back out. */
-    zoomToHotspot(n) {
-      if (n === this._hotspot) { this.wholeSlide(); return true; }
-      if (!this._hotspot) this._refreshHotspots();
-      const spot = this._hotspots[n - 1];
-      if (!spot) return false;
-      this.flyZoom(spot.zoom, 'hotspot');
-      this._hotspot = n;
-      return true;
-    }
-
-    /** Fly back to the whole slide. */
-    wholeSlide() {
-      this._hotspot = null;
-      if (!this._zoom && !this._zoomRaf) return;
-      this.flyZoom(null, 'hotspot-reset');
-      this._hotspot = null;
-    }
-
-    _queueHotspots() {
-      if (this._hotspotRaf) return;
-      // A hidden page gets no frames: its keys still need the hotspots.
-      if (typeof requestAnimationFrame !== 'function' || document.hidden) { this._refreshHotspots(); return; }
-      // A page in the background gets its frames late or not at all: a timer
-      // stands in, whichever comes first.
-      const run = () => {
-        if (!this._hotspotRaf) return;
-        cancelAnimationFrame(this._hotspotRaf); clearTimeout(this._hotspotTimer);
-        this._hotspotRaf = 0;
-        this._refreshHotspots();
-      };
-      this._hotspotRaf = requestAnimationFrame(run);
-      this._hotspotTimer = setTimeout(run, 120);
-    }
-
-    // An element's box in design pixels, whatever the canvas's transform.
-    _designRect(element) {
-      const canvas = this._canvas.getBoundingClientRect();
-      const box = element.getBoundingClientRect();
-      if (!canvas.width || !canvas.height) return null;
-      const kx = this.designWidth / canvas.width, ky = this.designHeight / canvas.height;
-      return { x: (box.left - canvas.left) * kx, y: (box.top - canvas.top) * ky, w: box.width * kx, h: box.height * ky };
-    }
-
-    _refreshHotspots() {
-      if (!this._canvas || this._printing) return;
-      const slide = this._slides[this._index];
-      const design = { width: this.designWidth, height: this.designHeight };
-      this._hotspots = findHotspots(slide, { mode: this.hotspotMode, design, max: ZOOM_MAX, rectOf: element => this._designRect(element) });
-      this.toggleAttribute('data-has-hotspots', this._hotspots.length > 0);
-      // The presenter's toolbar and the phone clicker list them (slideControls.js).
-      this.dispatchEvent(new CustomEvent('hotspotschange', { detail: { count: this._hotspots.length } }));
-      const layer = this._hotspotLayer;
-      if (!layer) return;
-      layer.replaceChildren(...this._hotspots.flatMap(({ rect }, i) => {
-        const badge = document.createElement('button');
-        badge.type = 'button';
-        badge.className = 'hotspot';
-        badge.dataset.n = String(i + 1);
-        badge.setAttribute('data-ink-ui', '');
-        badge.textContent = String(i + 1);
-        badge.title = `Zoom in (${i + 1})`;
-        badge.setAttribute('aria-label', `Zoom in on part ${i + 1}`);
-        badge.style.left = `${rect.x}px`;
-        badge.style.top = `${rect.y}px`;
-        const area = document.createElement('div');
-        area.className = 'hotspot-area';
-        Object.assign(area.style, { left: `${rect.x}px`, top: `${rect.y}px`, width: `${rect.w}px`, height: `${rect.h}px` });
-        return [badge, area];
-      }));
-    }
-
-    /**
-     * Fly to `zoom` ({ scale, x, y }, or null for the whole slide) along a
-     * smooth zoom path. Announced once, at the start, with `fly: true` and
-     * where it lands, so other windows fly along.
-     */
-    flyZoom(zoom, reason = 'api', { announce = true } = {}) {
-      this._stopZoomFlight();
-      const design = { width: this.designWidth, height: this.designHeight };
-      const whole = { scale: 1, x: design.width / 2, y: design.height / 2 };
-      const to = this._clampZoom(zoom);
-      // Others get the view asked for and keep it on the slide themselves:
-      // their screens may have another shape.
-      if (announce) {
-        const { scale, x, y } = to ? zoom : whole;
-        this.dispatchEvent(new CustomEvent('zoomchange', { detail: { slideId: this._inkSlideId(), scale, x, y, reason, fly: true }, bubbles: true, composed: true }));
-      }
-      const land = () => {
-        this._zoomRaf = 0;
-        this.removeAttribute('data-zoom-flying');
-        this.setZoom(to, reason, { announce: false, flying: true });
-      };
-      const from = zoomToCamera(this.zoom, design), end = zoomToCamera(to ?? whole, design);
-      const path = flight(from, end);
-      // A hidden window gets no animation frames: it lands at once.
-      if (document.hidden || this.hasAttribute('noscale') || typeof requestAnimationFrame !== 'function' || path.length < 1e-3) { land(); return; }
-      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-        land();
-        this._canvas.animate?.([{ opacity: 0.4 }, { opacity: 1 }], { duration: 250, easing: 'ease-out' });
-        return;
-      }
-      const start = performance.now();
-      const duration = durationFor(path.length);
-      this.setAttribute('data-zoom-flying', '');
-      const frame = now => {
-        const t = (now - start) / duration;
-        if (t >= 1) { land(); return; }
-        this.setZoom(cameraToZoom(path.at(ease(Math.max(0, t))), design), reason, { announce: false, flying: true });
-        this._zoomRaf = requestAnimationFrame(frame);
-      };
-      this._zoomRaf = requestAnimationFrame(frame);
-    }
-
-    _stopZoomFlight() {
-      if (!this._zoomRaf) return;
-      cancelAnimationFrame(this._zoomRaf);
-      this._zoomRaf = 0;
-      this.removeAttribute('data-zoom-flying');
-    }
-
-    // Laser -------------------------------------------------------------------
-    //
-    // Trails and dots by key ('local' for this window, others from the ink
-    // bus), in design pixels. While the pen is down a trail's points stay
-    // (time Infinity); lifted, they are stamped so that they expire one after
-    // the other within LASER_MS, and the trail retracts from its tail. Frames
-    // run only while some trail is shown or retracting.
-
-    _laserEntry(key, slideId) {
-      let entry = this._lasers.get(key);
-      if (!entry) this._lasers.set(key, entry = { slideId, points: [], dot: null });
-      if (slideId) entry.slideId = slideId;
-      return entry;
-    }
-
-    /** Adds points to a laser trail, held until laserRelease; its dot moves to the last one. */
-    laserTrail(key, slideId, points, { start = false } = {}) {
-      if (!points?.length) return;
-      const entry = this._laserEntry(key, slideId);
-      points.forEach(([x, y], i) => {
-        // A held trail grows as long as the pen is down: skip points that
-        // add nothing visible, so a long trail stays cheap to draw.
-        const last = entry.points[entry.points.length - 1];
-        const begins = start && i === 0;
-        if (!begins && last && last[2] === Infinity && Math.hypot(x - last[0], y - last[1]) < LASER_STEP) return;
-        entry.points.push([x, y, Infinity, begins]);
-      });
-      if (key !== 'local') { clearTimeout(entry.heldTimer); entry.heldTimer = setTimeout(() => this.laserRelease(key), LASER_HELD_MS); }
-      entry.dot = points[points.length - 1];
-      this._kickLaser();
-    }
-
-    /** The pen is lifted: the held trail retracts from its tail. */
-    laserRelease(key) {
-      const entry = this._lasers.get(key);
-      if (!entry) return;
-      const held = entry.points.filter(p => p[2] === Infinity);
-      const now = performance.now();
-      held.forEach((p, i) => { p[2] = now - LASER_MS + LASER_MS * (i + 1) / held.length; });
-      clearTimeout(entry.heldTimer);
-      this._kickLaser();
-    }
-
-    /** Moves (or with null, hides) a laser dot. */
-    laserDot(key, slideId, point) {
-      const entry = this._lasers.get(key);
-      if (!point && !entry) return;
-      this._laserEntry(key, slideId).dot = point ? [point[0], point[1]] : null;
-      this._kickLaser();
-    }
-
-    _kickLaser() {
-      if (!this._laserRaf) this._laserRaf = requestAnimationFrame(this._laserFrame);
-    }
-
-    _laserFrame() {
-      this._laserRaf = 0;
-      const canvas = this._inkLaser;
-      if (!canvas) return;
-      const dpr = window.devicePixelRatio || 1;
-      const width = canvas.clientWidth, height = canvas.clientHeight;
-      if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
-        canvas.width = Math.round(width * dpr);
-        canvas.height = Math.round(height * dpr);
-      }
-      const ctx = canvas.getContext('2d');
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, width, height);
-      const rect = this._canvas.getBoundingClientRect();
-      const sx = rect.width / this.designWidth, sy = rect.height / this.designHeight;
-      const at = ([x, y]) => [rect.left + x * sx, rect.top + y * sy];
-      const now = performance.now();
-      const slideId = this._inkSlideId();
-      let running = false;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.shadowColor = LASER_GLOW;
-      for (const [key, entry] of this._lasers) {
-        // A lifted trail retracts from its start, so the first point of a
-        // newer trail can go while an older one still shows: its mark that a
-        // trail begins there passes to the next point, or the two would join.
-        let begins = false;
-        entry.points = entry.points.filter(p => {
-          if (now - p[2] >= LASER_MS) { begins ||= !!p[3]; return false; }
-          if (begins) { p[3] = true; begins = false; }
-          return true;
-        });
-        if (!entry.points.length && !entry.dot) { this._lasers.delete(key); continue; }
-        // A held trail needs frames too: a zoom, a new size or another slide
-        // must move it while the pen stays still.
-        if (entry.points.length) running = true;
-        if (entry.slideId && slideId && entry.slideId !== slideId) continue;
-        // A red glow with a white core, the core drawn second.
-        for (const [color, lineWidth, blur] of [[LASER_GLOW, 8, 14], [LASER_CORE, 3, 0]]) {
-          ctx.strokeStyle = color;
-          ctx.lineWidth = lineWidth;
-          ctx.shadowBlur = blur;
-          ctx.beginPath();
-          entry.points.forEach((p, i) => {
-            const [x, y] = at(p);
-            if (i === 0 || p[3]) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          });
-          ctx.stroke();
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ slideIndexChanged: curr, note, reason }, '*');
         }
-        if (entry.dot) {
-          const [x, y] = at(entry.dot);
-          for (const [color, radius, blur] of [[LASER_GLOW, 8, 20], [LASER_CORE, 4, 0]]) {
-            ctx.fillStyle = color;
-            ctx.shadowBlur = blur;
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      }
-      ctx.shadowBlur = 0;
-      if (running) this._laserRaf = requestAnimationFrame(this._laserFrame);
-    }
+      } catch (e) {}
 
-    /**
-     * Strokes being drawn in another window: `liveStroke(key, stroke)` shows
-     * or updates one ({ slideId, tool, color, size, points }), only while
-     * this window shows that slide; `endLiveStroke(key, { fade })` removes it,
-     * fading, or once the saved layer draws it. A laser's points go to its
-     * trail instead.
-     */
-    liveStroke(key, { slideId, tool = 'pen', color = '#e11d48', size = 6, points }) {
-      if (!this._inkLive || !points?.length) return;
-      this._remoteInk ??= new Map();
-      if (tool === 'laser') {
-        const seen = this._remoteInk.get(key) ?? 0;
-        if (points.length > seen) this.laserTrail(key, slideId, points.slice(seen), { start: seen === 0 });
-        this._remoteInk.set(key, points.length);
-        return;
-      }
-      let path = this._remoteInk.get(key);
-      if (slideId && slideId !== this._inkSlideId()) { path?.remove?.(); this._remoteInk.delete(key); return; }
-      if (!path) {
-        path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        this._styleLive(path, { tool, color, size });
-        this._appendLive(path);
-        this._remoteInk.set(key, path);
-      }
-      this._drawLive(path, points, { tool, size });
-    }
-
-    endLiveStroke(key, { fade = false } = {}) {
-      const path = this._remoteInk?.get(key);
-      if (path == null) return;
-      this._remoteInk.delete(key);
-      if (typeof path === 'number') { this.laserRelease(key); this.laserDot(key, null, null); return; }
-      if (fade) { requestAnimationFrame(() => path.classList.add('fading')); setTimeout(() => path.remove(), 3200); }
-      else this._removeLive(path);
-    }
-
-    /** True while the deck is laid out for print or PDF. */
-    get printing() { return !!this._printing; }
-    /** Enter or leave print mode: reveal every step and tell slide code to show its final state. */
-    set printing(on) {
-      on = !!on;
-      if (on === this.printing) return;
-      this._printing = on;
-      this.toggleAttribute('data-deck-static', on);
-      this._slides.forEach((_, i) => this._applySteps(i));
-      this.dispatchEvent(new CustomEvent('printchange', {
-        detail: { printing: on },
+      // (2) In-page CustomEvent on the <deck-stage> element itself.
+      //     Bubbles and composes out of shadow DOM so slide code can listen:
+      //       document.querySelector('deck-stage').addEventListener('slidechange', e => {
+      //         e.detail.index, e.detail.previousIndex, e.detail.total, e.detail.slide, e.detail.reason
+      //       });
+      const detail = {
+        index: curr,
+        previousIndex: prev,
+        total: this._slides.length,
+        slide: this._slides[curr] || null,
+        previousSlide: prev >= 0 ? (this._slides[prev] || null) : null,
+        reason: reason, // 'init' | 'keyboard' | 'click' | 'tap' | 'api' | 'reset' | 'sync'
+      };
+      this.dispatchEvent(new CustomEvent('slidechange', {
+        detail,
         bubbles: true,
         composed: true,
       }));
     }
-    /** Programmatically navigate to a specific slide (no step checks). */
-    goTo(i) { this._go(i, 'api'); }
-    /** Advance: reveals next step if the current slide has unrevealed steps, else goes to next slide. */
-    next(reason = 'api') {
-      // On a black screen, the next press shows the slide again first; so with the join code.
-      if (this._blank) { this.setBlank(false, reason); return; }
-      if (this._join) { this.setJoin(false, reason); return; }
-      const steps = this._getSteps(this._slides[this._index]);
-      const curr  = this._stepMap.get(this._index) ?? -1;
-      if (steps.length > 0 && curr < steps.length - 1) {
-        // The step may appear outside the hotspot: show the whole slide.
-        if (this._hotspot) this.wholeSlide();
-        this._stepMap.set(this._index, curr + 1);
-        this._applySteps(this._index);
-        this._broadcastState(reason);
-        this._flashOverlay();
-        return;
-      }
-      this._go(this._index + 1, reason);
-    }
-    /** Go back: hides last revealed step if any, else goes to previous slide. */
-    prev(reason = 'api') {
-      if (this._blank) { this.setBlank(false, reason); return; }
-      if (this._join) { this.setJoin(false, reason); return; }
-      const steps = this._getSteps(this._slides[this._index]);
-      const curr  = this._stepMap.get(this._index) ?? -1;
-      if (steps.length > 0 && curr >= 0) {
-        if (this._hotspot) this.wholeSlide();
-        this._stepMap.set(this._index, curr - 1);
-        this._applySteps(this._index);
-        this._broadcastState(reason);
-        this._flashOverlay();
-        return;
-      }
-      this._go(this._index - 1, reason);
-    }
-    /** Reset to first slide and clear all step state. */
-    reset() {
-      this._stepMap.clear();
-      // Moving to the first slide reports the new position itself; report it
-      // once more only when the deck was already there, for the cleared steps.
-      // Two reports for one reset arrived in other windows one after the
-      // other, and the late one could undo a change made in between.
-      if (this._index !== 0) { this._go(0, 'reset'); return; }
-      this._applySteps(0);
-      this._broadcastState('reset');
+
+    this._prevIndex = curr;
+    if (broadcast) this._broadcastState(reason);
+    if (showOverlay) this._flashOverlay();
+  }
+
+  get state() {
+    return { index: this._index, slideId: this._slides[this._index]?.dataset.slideId,
+      step: this._stepMap.get(this._index) ?? -1, blank: this._blank, join: this._join };
+  }
+
+  /** Whether the screen is black (B). Setting it tells the other screens. */
+  get blank() { return this._blank; }
+  set blank(on) { this.setBlank(on); }
+  /** Make the screen black or show the slide again; `reason` as in statechange. */
+  setBlank(on, reason = 'api') {
+    on = !!on;
+    if (on === this._blank) return;
+    this._applyBlank(on);
+    this._broadcastState(reason);
+  }
+  _applyBlank(on) {
+    this._blank = on;
+    this.toggleAttribute('data-blank', on);
+    if (on && this._join) this._applyJoin(false);
+  }
+
+  /** Whether the join code shows over the slide (J). Setting it tells the other screens; JoinOverlay.jsx draws it. */
+  get join() { return this._join; }
+  setJoin(on, reason = 'api') {
+    on = !!on;
+    if (on === this._join) return;
+    this._applyJoin(on);
+    this._broadcastState(reason);
+  }
+  _applyJoin(on) {
+    this._join = on;
+    this.toggleAttribute('data-join', on);
+    if (on && this._blank) this._applyBlank(false);
+    this.dispatchEvent(new CustomEvent('joinchange', { detail: { join: on } }));
+  }
+
+  _broadcastState(reason) {
+    // atEnd: nothing comes after this, which ends a rehearsal (presenter/PresenterView.jsx).
+    const state = this.state;
+    const atEnd = state.index === this._slides.length - 1 && state.step >= this._getSteps(this._slides[state.index]).length - 1;
+    const message = { deckStateChanged: state, atEnd, reason };
+    window.postMessage(message, '*');
+    if (window.parent !== window) window.parent.postMessage(message, '*');
+    this.dispatchEvent(new CustomEvent('statechange', { detail: { ...this.state, reason } }));
+  }
+
+  setState(state) {
+    if (!state || !Number.isInteger(state.index) || !Number.isInteger(state.step)) return;
+    const byId = state.slideId ? this._slides.findIndex(s => s.dataset.slideId === state.slideId) : -1;
+    const index = byId >= 0 ? byId : state.index;
+    if (index < 0 || index >= this._slides.length) return;
+    const max = this._getSteps(this._slides[index]).length - 1;
+    const step = Math.max(-1, Math.min(max, state.step));
+    // A position without `blank` (a follower paging on its own) leaves it.
+    const blankChanged = typeof state.blank === 'boolean' && state.blank !== this._blank;
+    if (blankChanged) this._applyBlank(state.blank);
+    const joinChanged = typeof state.join === 'boolean' && state.join !== this._join;
+    if (joinChanged) this._applyJoin(state.join);
+    if (index === this._index) {
+      if (step === this.state.step) { if (blankChanged || joinChanged) this._broadcastState('sync'); return; }
+      if (this._hotspot) this.wholeSlide();
+      this._stepMap.set(index, step);
+      this._applySteps(index);
+      this._broadcastState('sync');
+    } else {
+      this._index = index;
+      this._applyIndex({ reason: 'sync', step });
     }
   }
 
-  if (!customElements.get('deck-stage')) {
-    customElements.define('deck-stage', DeckStage);
+  _flashOverlay() {
+    if (!this._overlay || hideControls) return;
+    this._overlay.setAttribute('data-visible', '');
+    if (this._hideTimer) clearTimeout(this._hideTimer);
+    this._hideTimer = setTimeout(() => {
+      this._overlay.removeAttribute('data-visible');
+    }, OVERLAY_HIDE_MS);
   }
-})();
+
+  _fit() {
+    if (!this._canvas) return;
+    // PPTX export sets noscale so the DOM capture sees authored-size
+    // geometry — the scaled canvas is in shadow DOM, so the exporter's
+    // resetTransformSelector can't reach .canvas.style.transform directly.
+    if (this.hasAttribute('noscale')) {
+      this._canvas.style.transform = 'none';
+      return;
+    }
+    // Fit the host element, which is the viewport when the stage is
+    // full-screen and a panel when it is embedded in another layout.
+    const rect = this.getBoundingClientRect();
+    const vw = rect.width || window.innerWidth;
+    const vh = rect.height || window.innerHeight;
+    if (this._overview) { this._fitOverview(vw, vh); return; }
+    const s = Math.min(vw / this.designWidth, vh / this.designHeight);
+    this._fitScale = s;
+    this._hotspotLayer?.style.setProperty('--hotspot-k', String(1 / s));
+    const zoom = this._zoom;
+    if (!zoom) { this._canvas.style.transform = `scale(${s})`; this._placeSelectionDelete(); return; }
+    const tx = (this.designWidth / 2 - zoom.x) * s * zoom.scale;
+    const ty = (this.designHeight / 2 - zoom.y) * s * zoom.scale;
+    this._canvas.style.transform = `translate(${tx}px, ${ty}px) scale(${s * zoom.scale})`;
+    this._kickLaser();
+    this._placeSelectionDelete();
+  }
+
+  _onResize() { this._fit(); this._queueHotspots(); }
+
+  _onMouseMove() {
+    // Keep overlay visible while mouse moves; hide after idle.
+    this._flashOverlay();
+  }
+
+  _onKey(e) {
+    // Ignore when the user is typing.
+    const t = e.target;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    const key = e.key;
+    let handled = true;
+
+    if (this._overview && this.overviewKey(key)) {
+      // Arrows, Enter, Escape and O belong to the overview while it is open.
+    } else if ((key === 'o' || key === 'O') && this._isPage()) {
+      this.overview = true;
+    } else if (key === 'ArrowRight' || key === 'PageDown' || key === ' ' || key === 'Spacebar') {
+      this.next('keyboard');
+    } else if (key === 'ArrowLeft' || key === 'PageUp') {
+      this.prev('keyboard');
+    } else if (key === 'Home') {
+      this._go(0, 'keyboard');
+    } else if (key === 'End') {
+      this._go(this._slides.length - 1, 'keyboard');
+    } else if (key === 'i' || key === 'I') {
+      // Show or hide the saved ink.
+      e.preventDefault();
+      this.toggleAttribute('data-ink-hidden');
+    } else if ((key === 'f' || key === 'F') && window.top === window && fullscreenAvailable()) {
+      toggleFullscreen();
+    } else if (key === 'r' || key === 'R') {
+      this.reset();
+    } else if ((key === 'j' || key === 'J') && this._isPage() && !this.hasAttribute('data-watching') && this.hasAttribute('data-joinable')) {
+      // J: the join code over the slide, in a deck phones join (deckWindow.jsx sets data-joinable).
+      this.setJoin(!this._join, 'keyboard');
+    } else if ((key === 'b' || key === 'B' || key === '.') && this._isPage() && !this.hasAttribute('data-watching')) {
+      // B, or the "blank" button of a presenter's clicker, which sends a full stop.
+      this.setBlank(!this._blank, 'keyboard');
+    } else if (/^[0-9]$/.test(key) || key === 'Escape') {
+      handled = this.hotspotKey(key);
+    } else {
+      handled = false;
+    }
+
+    if (handled) {
+      e.preventDefault();
+      this._flashOverlay();
+    }
+  }
+
+  // A stage that is the page (a deck window, the audience window, the
+  // presenter's slide); the reader's stage sits in its page and has an
+  // outline of its own.
+  _isPage() { return this.parentElement === document.body; }
+
+  _go(i, reason = 'api') {
+    if (!this._slides.length) return;
+    const clamped = Math.max(0, Math.min(this._slides.length - 1, i));
+    if (clamped === this._index) {
+      this._flashOverlay();
+      return;
+    }
+    this._index = clamped;
+    this._applyIndex({ showOverlay: true, broadcast: true, reason });
+  }
+
+  // Step reveal helpers ---------------------------------------------------
+
+  _getSteps(slide) {
+    // Each step is a list of elements that appear together.
+    return slideSteps(slide);
+  }
+
+  _applySteps(slideIndex) {
+    const slide = this._slides[slideIndex];
+    if (!slide) return;
+    const steps = this._getSteps(slide);
+    const curr  = this._printing ? steps.length - 1 : (this._stepMap.get(slideIndex) ?? -1);
+    steps.forEach((elements, i) => elements.forEach(el =>
+      i <= curr ? el.setAttribute('data-step-visible', '') : el.removeAttribute('data-step-visible')
+    ));
+    this._updateStepCount(slideIndex);
+    if (slideIndex === this._index) this._queueHotspots();
+  }
+
+  _updateStepCount(slideIndex) {
+    if (!this._stepProgressEl) return;
+    const steps = this._getSteps(this._slides[slideIndex]);
+    if (steps.length === 0) {
+      this._stepProgressEl.hidden = true;
+      return;
+    }
+    const curr = this._stepMap.get(slideIndex) ?? -1;
+    this._stepCurEl.textContent  = String(curr + 1);
+    this._stepTotalEl.textContent = String(steps.length);
+    this._stepProgressEl.hidden  = false;
+  }
+
+  // Public API ------------------------------------------------------------
+
+  /** Current slide index (0-based). */
+  get index() { return this._index; }
+  /** Total slide count. */
+  get length() { return this._slides.length; }
+  /** Words on the control bar, in the deck's language:
+   *  { controls, previous, next, reset, resetHint }. */
+  setLabels(labels = {}) {
+    this._labels = labels;
+    const overlay = this._overlay;
+    if (!overlay) return;
+    if (labels.controls) overlay.setAttribute('aria-label', labels.controls);
+    if (labels.previous) overlay.querySelector('.prev').setAttribute('aria-label', labels.previous);
+    if (labels.next) overlay.querySelector('.next').setAttribute('aria-label', labels.next);
+    const reset = overlay.querySelector('.reset');
+    if (labels.resetHint) reset.setAttribute('aria-label', labels.resetHint);
+    if (labels.reset) reset.firstChild.textContent = labels.reset;
+    if (labels.resetHint) reset.title = `${labels.resetHint} (R)`;
+  }
+
+  _windowInput() {
+    return [['pointerdown', this._onPointerDown], ['pointermove', this._onPointerMove], ['pointerup', this._onPointerUp],
+      ['pointercancel', this._onPointerUp], ['pointerout', this._onPointerOut],
+      ['touchstart', this._onTouch], ['touchmove', this._onTouch], ['touchend', this._onTouch], ['click', this._onClickCapture],
+      ['wheel', this._onWheel], ['gesturestart', this._onGesture], ['gesturechange', this._onGesture]];
+  }
+
+  /** True while the deck is laid out for print or PDF. */
+  get printing() { return !!this._printing; }
+  /** Enter or leave print mode: reveal every step and tell slide code to show its final state. */
+  set printing(on) {
+    on = !!on;
+    if (on === this.printing) return;
+    this._printing = on;
+    this.toggleAttribute('data-deck-static', on);
+    this._slides.forEach((_, i) => this._applySteps(i));
+    this.dispatchEvent(new CustomEvent('printchange', {
+      detail: { printing: on },
+      bubbles: true,
+      composed: true,
+    }));
+  }
+  /** Programmatically navigate to a specific slide (no step checks). */
+  goTo(i) { this._go(i, 'api'); }
+  /** Advance: reveals next step if the current slide has unrevealed steps, else goes to next slide. */
+  next(reason = 'api') {
+    // On a black screen, the next press shows the slide again first; so with the join code.
+    if (this._blank) { this.setBlank(false, reason); return; }
+    if (this._join) { this.setJoin(false, reason); return; }
+    const steps = this._getSteps(this._slides[this._index]);
+    const curr  = this._stepMap.get(this._index) ?? -1;
+    if (steps.length > 0 && curr < steps.length - 1) {
+      // The step may appear outside the hotspot: show the whole slide.
+      if (this._hotspot) this.wholeSlide();
+      this._stepMap.set(this._index, curr + 1);
+      this._applySteps(this._index);
+      this._broadcastState(reason);
+      this._flashOverlay();
+      return;
+    }
+    this._go(this._index + 1, reason);
+  }
+  /** Go back: hides last revealed step if any, else goes to previous slide. */
+  prev(reason = 'api') {
+    if (this._blank) { this.setBlank(false, reason); return; }
+    if (this._join) { this.setJoin(false, reason); return; }
+    const steps = this._getSteps(this._slides[this._index]);
+    const curr  = this._stepMap.get(this._index) ?? -1;
+    if (steps.length > 0 && curr >= 0) {
+      if (this._hotspot) this.wholeSlide();
+      this._stepMap.set(this._index, curr - 1);
+      this._applySteps(this._index);
+      this._broadcastState(reason);
+      this._flashOverlay();
+      return;
+    }
+    this._go(this._index - 1, reason);
+  }
+  /** Reset to first slide and clear all step state. */
+  reset() {
+    this._stepMap.clear();
+    // Moving to the first slide reports the new position itself; report it
+    // once more only when the deck was already there, for the cleared steps.
+    // Two reports for one reset arrived in other windows one after the
+    // other, and the late one could undo a change made in between.
+    if (this._index !== 0) { this._go(0, 'reset'); return; }
+    this._applySteps(0);
+    this._broadcastState('reset');
+  }
+}
+
+if (!customElements.get('deck-stage')) {
+  customElements.define('deck-stage', DeckStage);
+}

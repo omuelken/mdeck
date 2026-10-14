@@ -2,17 +2,21 @@
 
 ## Unreleased
 
+- A paired iPad stays paired when `mdeck run` or the laptop restarts: reload its presenter view. The laptop keeps the pairing in `~/.mdeck/paired/` (one file per deck, readable only by you) and forgets an iPad unused for 30 days; **Unpair** still ends every pairing.
+
+## 3.14.0 — 2026-10-14
+
+- On an iPad without full screen, the presenter view fits the part of the window Safari shows: its bar no longer slips under Safari's, and no white strip shows below the drawing toolbar.
 - Fixed: two language switches in quick succession (L, L) could leave a slide with a component on it, such as a code block, in the language before, and the windows showing it stopped updating their slides. The components on a slide are now mounted as it is drawn.
 - An iPad that is no longer paired, after a restart of `mdeck run` or **Unpair**, says so over the slide and in its connections panel. Before, it went on showing what the laptop did while its own slide changes, drawings and polls stayed on it, without a word.
 - Fixed: after a restart of `mdeck run`, a presenter view opened or reloaded took the audience window on the projector back to the first slide, while it showed the slide the talk was on itself. A window that just opened no longer moves another, and the windows still open say where they are when they connect again, so a presenter view opened then takes up the projector's slide.
 - Fixed (since 3.13.0): opening the presenter view on an iPad, or reloading it, took the laptop back to the first slide when nobody had changed slides for 15 s. A screen that went quiet holds the phones no longer, but the stage room hears of a slide once and not again, so there a presenter who stays on a slide kept it from no one; it keeps it now.
 - Fixed: after the laptop moved to another network while `mdeck run --network` ran, the code that pairs an iPad, and the join link for phones, still led to the address it had when it started, which no one reached. The addresses are now read each time a code is shown; the pairing panel says which address a code leads to, and when the laptop is in no network another device can reach (only a link-local or an IPv6-only network's address), it says so instead of showing a code.
-- On an iPad, the presenter view's bar and the open drawing toolbar no longer cover the slide: it sits below the bar and above the toolbar, as large as fits, and takes the toolbar's strip back while the toolbar is folded. Both bars, and the timer in the bar, are a little smaller there. The audience window and the laptop's presenter view still show the whole slide as before.
 - A bin beside a selection of strokes deletes it: off the top right corner of its box, or beside the middle of a straight line, away from its handles. It keeps its size when the slide is zoomed, stays inside the window, and only shows on the screen that draws. On an iPad the folded toolbar no longer has to be opened to delete a stroke tapped with a finger.
 - On an iPad the presenter view starts with the drawing toolbar open, in its strip below the slide.
+- On an iPad, the presenter view's bar and the open drawing toolbar no longer cover the slide: it sits below the bar and above the toolbar, as large as fits, and takes the toolbar's strip back while the toolbar is folded. Both bars, and the timer in the bar, are a little smaller there. The audience window and the laptop's presenter view still show the whole slide as before.
 - `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`, and the guides say `npm install -g mdeck` where they did.
 - The launch page drops answers and drawings at once, without asking and without a backup.
-- A paired iPad stays paired when `mdeck run` or the laptop restarts: reload its presenter view. The laptop keeps the pairing in `~/.mdeck/paired/` (one file per deck, readable only by you) and forgets an iPad unused for 30 days; **Unpair** still ends every pairing.
 - Fixed: the join code shown with **J** on a paired iPad did not show in the audience window on the laptop, nor on phones following the talk. Screens in another browser hear of the presenter's position through the server's stage room, which carried the black screen but not the join code; it now carries both.
 - Fixed: two things circled with the laser one after the other were joined by a line, on the screen they were drawn on, from what was left of the first trail to the second, until the first had gone. A lifted trail retracts from its start; when the second's first points went while the first still showed, the second no longer said where it began. Other screens were not affected.
 

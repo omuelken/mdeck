@@ -1,6 +1,6 @@
 // Timing a talk: how long each slide may take (`time: 2m` in its settings,
 // `time: 45m` for the whole deck), and where the talk stands against that
-// plan while it is given. A rehearsal (runtime/RehearsalSummary.jsx) writes
+// plan while it is given. A rehearsal (runtime/presenter/RehearsalSummary.jsx) writes
 // the times it measured back with formatTime.
 //
 // Times are written 90s, 2m, 1m30s or 1.5m; a bare number is minutes.
