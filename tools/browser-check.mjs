@@ -852,6 +852,13 @@ try {
   await until(langPresenter, "!document.querySelector('iframe[title=\"Next slide preview\"]')")
   await langPresenter.evaluate(`${langFrame}.prev()`)
   await until(langPresenter, "document.querySelector('iframe[title=\"Next slide preview\"]')?.contentDocument?.querySelector('deck-stage')?.textContent.includes('rate = 2') && document.querySelector('iframe[title=\"Next slide preview\"]').contentDocument.documentElement.lang === 'fa'")
+  // Two switches one right after the other, the second before the first's
+  // slides were done (the code block not yet mounted): the second one shows.
+  const langQuick = await open(new URL('?embedded=1&lang=de#3', langBase).href)
+  await until(langQuick, "document.querySelector('deck-stage')?.length === 3 && document.querySelector('deck-stage').textContent.includes('Früh messen')")
+  await langQuick.evaluate("for (const value of ['fa', 'en']) window.postMessage({ deckControl: { command: 'setLanguage', value } }, location.origin)")
+  await until(langQuick, "document.documentElement.lang === 'en' && document.querySelector('deck-stage').textContent.includes('Measure early') && !document.querySelector('deck-stage').textContent.includes('rate = 2')")
+  await langQuick.close()
   // An iPad the computer no longer knows (mdeck run restarted) says so; paired again, it does not.
   const pairKey = "'mdeck-pair:' + location.origin + '/'"
   await langIpad.evaluate(`localStorage.setItem(${pairKey}, 'from-before-the-restart')`)
