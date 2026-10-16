@@ -32,6 +32,12 @@ test('B makes the screen black, and says how to show the slide again', () => {
   assert.ok(listed({ view: 'presenter', blank: true }).includes('B/.: Show the slide again'))
 })
 
+test('Z freezes the audience’s slide, only in the presenter view', () => {
+  assert.ok(listed({ view: 'presenter' }).includes('Z: Freeze the slide the audience sees'))
+  assert.ok(listed({ view: 'presenter', frozen: true }).includes('Z: Let the audience follow again'))
+  assert.ok(!listed({ view: 'deck' }).some(line => line.startsWith('Z:')))
+})
+
 test('O lists the overview, and its own keys while it is open', () => {
   assert.ok(listed({ view: 'presenter' }).includes('O: All slides, to pick one'))
   assert.ok(titles({ view: 'deck', overview: true }).includes('All slides'))

@@ -1,7 +1,9 @@
 // The follow view (?view=follow): a phone or laptop in the room shows the
 // presenter's slide and ink, read from the stage room, and sends nothing.
 // A follower may page back on their own and return with "Back to live";
-// slides and steps the presenter has not shown yet stay hidden.
+// slides and steps the presenter has not shown yet stay hidden. While the
+// presenter freezes the audience's screens (Z), the follower keeps the frozen
+// slide too, and nothing after it opens.
 
 /** Where a follower may be: no further than the furthest the presenter has shown. */
 export function clampToShown({ index, step }, furthest) {
@@ -28,6 +30,8 @@ export function createFollower() {
   return {
     state,
     presenter(position) {
+      // Frozen: the presenter's slide is the one the audience's screens keep.
+      if (position?.freeze) position = { index: position.freeze.index, step: position.freeze.step }
       state.presenter = position
       state.furthest = further(state.furthest, position)
       return state.live ? position : null

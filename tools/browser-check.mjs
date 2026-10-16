@@ -511,6 +511,24 @@ try {
   await press('ArrowRight')
   await until(audience, `${audienceStage}.blank === false`)
   assert.equal(await audience.evaluate(`${audienceStage}.state.index`), 0, 'showing the slide again does not move on')
+  // Z: the audience window keeps its slide while the presenter goes on, and
+  // follows again when it is pressed once more.
+  await press('z')
+  await until(audience, `${audienceStage}.freeze?.index === 0`)
+  await until(presenter, "!!document.querySelector('.presenter-freeze-note')")
+  await presenter.evaluate(`${stage}.goTo(1)`)
+  await until(presenter, "document.querySelector('.presenter-freeze-note')?.textContent.includes('slide 1')")
+  await delay(300)
+  assert.equal(await audience.evaluate(`${audienceStage}.state.index`), 0, 'the frozen audience window keeps its slide')
+  // An audience window opened now opens at the frozen slide, never the one
+  // the presenter is on (it may be the solution).
+  const opened = await presenter.evaluate("(() => { const open = window.open; let url = null; window.open = u => { url = u; return null }; document.querySelector('.presenter-audience').click(); window.open = open; return url })()")
+  assert.equal(new URL(opened).hash, '#1', 'the audience window opens at the frozen slide')
+  await press('z')
+  await until(audience, `${audienceStage}.freeze === null && ${audienceStage}.state.index === 1`)
+  assert.equal(await presenter.evaluate("!!document.querySelector('.presenter-freeze-note')"), false)
+  await presenter.evaluate(`${stage}.reset()`)
+  await until(audience, `${audienceStage}.state.index === 0`)
   // O: every slide in a grid in the presenter's frame only; Enter goes to
   // the slide under the cursor, and the audience follows there.
   await press('o')
@@ -590,6 +608,17 @@ try {
   await until(projector2, "document.querySelector('deck-stage').join === true")
   await ipad.evaluate(`${ipadFrame}.querySelector('deck-stage').setJoin(false, 'keyboard')`)
   await until(projector2, "document.querySelector('deck-stage').join === false")
+  // Frozen on the iPad (Z), the projector keeps its slide through the stage room.
+  await ipad.evaluate("document.querySelector('.presenter-freeze').click()")
+  await until(projector2, "document.querySelector('deck-stage').freeze?.index === 1")
+  await ipad.evaluate(`${ipadFrame}.querySelector('deck-stage').prev()`)
+  await until(ipad, `${ipadFrame}.querySelector('deck-stage').index === 0`)
+  await delay(500)
+  assert.equal(await projector2.evaluate("document.querySelector('deck-stage').index"), 1, 'the frozen projector keeps its slide')
+  await ipad.evaluate("document.querySelector('.presenter-freeze').click()")
+  await until(projector2, "document.querySelector('deck-stage').freeze === null && document.querySelector('deck-stage').index === 0")
+  await ipad.evaluate(`${ipadFrame}.querySelector('deck-stage').next()`)
+  await until(projector2, "document.querySelector('deck-stage').index === 1")
   await ipad.evaluate("document.querySelector('.presenter-draw').click()")
   await until(ipad, "document.querySelector('.presenter-draw').getAttribute('aria-pressed') === 'true'")
   await choosePen(ipad, ipadFrame)
@@ -968,7 +997,7 @@ try {
   assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
   await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, data from a CSV file as a chart that builds up and a table, slide times and a rehearsal, the phone clicker with the slide\'s controls and the join code over the slide, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down, never joined to the next trail), zoom, saving ink in dev, following on another device, a second device through the stage room (also the join code), video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
+  console.log('Browser checks passed: custom layout rendering, data from a CSV file as a chart that builds up and a table, slide times and a rehearsal, the phone clicker with the slide\'s controls and the join code over the slide, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen, a frozen audience window and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, results kept beside the deck and shown in a build, saved ink, drawing, drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down, never joined to the next trail), zoom, saving ink in dev, following on another device, a second device through the stage room (also the join code and freezing the projector), video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()

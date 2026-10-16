@@ -89,6 +89,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [blank, setBlank] = useState(false)
   // The join code over the slide (J), on every screen.
   const [join, setJoin] = useState(false)
+  // A frozen projector (Z): the position the audience's screens keep, or null.
+  const [freeze, setFreeze] = useState(null)
   // The phone clicker: the slide's controls, as its frame reports them (slideControls.js).
   const [slideControls, setSlideControls] = useState({ items: [], hotspots: 0, hotspot: null })
   // The overview (O) in this view's slide frame: keys go to it while it is open.
@@ -187,10 +189,12 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   // Phones see the look of the slide this view shows, read from its frame.
   useEffect(() => { setLookSource(() => iframeRef.current?.contentDocument) }, [])
   const announcedOnce = useRef(false)
+  // While the projector is frozen, the phones stay on its slide too.
+  const audienceIndex = freeze ? freeze.index : index
   useEffect(() => {
-    announceSlide({ slides, deckConfig }, index, { initial: !announcedOnce.current })
+    announceSlide({ slides, deckConfig }, audienceIndex, { initial: !announcedOnce.current })
     announcedOnce.current = true
-  }, [index, lang])
+  }, [audienceIndex, lang])
 
   const themeMeta = THEME_METAS[theme]
   // The palettes this theme offers, and what the deck shows right now.
@@ -263,6 +267,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       setIndex(i)
       setBlank(!!state.blank)
       setJoin(!!state.join)
+      setFreeze(state.freeze ?? null)
       if (data.reason !== 'sync') {
         bcRef.current?.postMessage({ deckControl: { command: 'setState', value: state, order: orderRef.current.stamp() } })
       }
@@ -300,6 +305,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleHotspots(); return }
       // B, or a clicker's blank button (a full stop).
       if (e.key === 'b' || e.key === 'B' || e.key === '.') { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'blank', 'toggle'); return }
+      if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'freeze', 'toggle'); return }
       if ((e.key === 'j' || e.key === 'J') && (hasActivities() || reactionsOf(firstConfig))) { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'join', 'toggle'); return }
       // Digits zoom to hotspots; Escape zooms out.
       if (/^[0-9]$/.test(e.key) || e.key === 'Escape') { if (e.key !== 'Escape') e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'hotspotKey', e.key); return }
@@ -353,8 +359,10 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   }
 
   function openAudienceWindow() {
+    // While frozen (Z), it opens at the frozen slide: the one shown here may
+    // be the one the audience must not see yet, such as the solution.
     const aw = window.open(
-      buildAudienceUrl(theme, palette, appearance, indexRef.current),
+      buildAudienceUrl(theme, palette, appearance, freeze?.index ?? indexRef.current),
       'deck-audience-view'
     )
     if (!aw) return
@@ -422,6 +430,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   </>
   const drawButton = <ToolButton class="presenter-draw" icon="pen" label="Draw on the slide (D)" pressed={inking} style={inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : undefined} onClick={() => sendTo(frame(), 'ink', 'toggle')} />
   const blankButton = <ToolButton class="presenter-blank" icon="blank" label={blankLabel} pressed={blank} onClick={toggleBlank} />
+  const freezeButton = <ToolButton class="presenter-freeze" icon="freeze" label={freeze ? 'Let the audience follow again (Z)' : 'Freeze the slide the audience sees (Z)'} pressed={!!freeze} onClick={() => sendTo(frame(), 'freeze', 'toggle')} />
   // Only where phones join: decks with activities or reactions.
   const joinButton = (hasActivities() || reacting) && <ToolButton class="presenter-join" icon="join" label={join ? 'Hide the join code (J)' : 'Show the join code on the slide (J)'} pressed={join} onClick={() => sendTo(frame(), 'join', 'toggle')} />
   const overviewButton = <ToolButton class="presenter-overview" icon="overview" label="All slides (O)" pressed={overviewOpen} onClick={toggleOverview} />
@@ -442,8 +451,13 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     <span>● Rehearsing{timer.running ? '' : ' (paused)'}: this slide {formatClock(Math.floor(timer.slideElapsed))}</span>
     <button style={{ ...S.btn, padding: '2px 10px' }} onClick={finishRehearsal}>Finish</button>
   </div>
-  const blankNote = blank && <div class="presenter-blank-note" role="status" style={{ position: 'fixed', left: layout === 'speaker' ? 'calc(100% / 3)' : '50%', bottom: remoteLayout ? '110px' : '76px', transform: 'translateX(-50%)', zIndex: 18, display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '999px', background: 'rgba(17,17,17,0.92)', border: '1px solid #3a3a3a', color: '#f0f0f0', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px', pointerEvents: 'none' }}>
+  const noteStyle = { position: 'fixed', left: layout === 'speaker' ? 'calc(100% / 3)' : '50%', bottom: remoteLayout ? '110px' : '76px', transform: 'translateX(-50%)', zIndex: 18, display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '999px', background: 'rgba(17,17,17,0.92)', border: '1px solid #3a3a3a', color: '#f0f0f0', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px', pointerEvents: 'none' }
+  const blankNote = blank && <div class="presenter-blank-note" role="status" style={noteStyle}>
     <PresenterIcon name="blank" size={16} />The audience sees a black screen
+  </div>
+  // Frozen: says which slide the audience still sees (the black screen says more).
+  const freezeNote = !blank && freeze && <div class="presenter-freeze-note" role="status" style={noteStyle}>
+    <PresenterIcon name="freeze" size={16} />{freeze.index === index ? 'Frozen: the audience keeps this slide' : `Frozen: the audience sees slide ${freeze.index + 1}`}
   </div>
   const unpairedNote = unpaired && <div class="presenter-unpaired" role="alert" style={{ position: 'fixed', left: layout === 'speaker' ? 'calc(100% / 3)' : '50%', top: slideLayout && pillBottom ? `${pillBottom + 8}px` : '12px', transform: 'translateX(-50%)', zIndex: 18, maxWidth: 'calc(100vw - 32px)', boxSizing: 'border-box', padding: '8px 14px', borderRadius: '12px', background: 'rgba(17,17,17,0.94)', border: '1px solid #5c2b28', color: '#f28b82', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px', pointerEvents: 'none' }}>
     {UNPAIRED}
@@ -452,9 +466,10 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const extras = <>
     {unpairedNote}
     {blankNote}
+    {freezeNote}
     {reacting && <Reactions style={remoteLayout ? { left: '16px', bottom: '100px' } : undefined} />}
     {helpOpen && <KeyHelp
-      context={{ view: 'presenter', blank, join: hasActivities() || reacting, joinShown: join, overview: overviewOpen, hotspots: slideHotspots, hotspotSwitch: hotspotsOn, inking, fullscreen: canFullscreen, drawer: slideLayout, languages: LANGUAGES.length > 0 }}
+      context={{ view: 'presenter', blank, frozen: !!freeze, join: hasActivities() || reacting, joinShown: join, overview: overviewOpen, hotspots: slideHotspots, hotspotSwitch: hotspotsOn, inking, fullscreen: canFullscreen, drawer: slideLayout, languages: LANGUAGES.length > 0 }}
       onClose={() => setHelpOpen(false)}
     />}
     {summaryPanel}
@@ -470,7 +485,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <div class="presenter-remote-bar" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ color: '#888', whiteSpace: 'nowrap' }} />
           <span style={{ flex: 1 }} />
-          {finishButton}{timerChip}{joinButton}{blankButton}{connections}{settings}
+          {finishButton}{timerChip}{joinButton}{blankButton}{freezeButton}{connections}{settings}
         </div>
         <div style={{ position: 'relative', flexShrink: 0, width: '100%', maxHeight: '32dvh', aspectRatio: '16/9', margin: '0 auto', borderRadius: '8px', overflow: 'hidden', border: '1px solid #2a2a2a', background: '#000' }}>
           <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ width: '100%', height: '100%', border: '0', display: 'block' }} />
@@ -527,7 +542,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ padding: '0 4px', color: '#888' }} />
         {finishButton}{timerChip}
         {separator}{nav}
-        {separator}{drawButton}{blankButton}{joinButton}{overviewButton}{hotspotsButton}
+        {separator}{drawButton}{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}
         {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}{slideBar(false)}</>}
         {separator}
         <ToolButton class="presenter-notes" icon="file-text" label="Notes and the next slide (N)" pressed={drawerOpen} onClick={() => setDrawerOpen(open => !open)} />
@@ -545,7 +560,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ flex: 1, minHeight: 0, width: '100%', border: '0', display: 'block' }} />
         <div class="presenter-toolbar" role="toolbar" aria-label="Presenter" style={{ ...font, display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', padding: '8px 12px', borderTop: '1px solid #2a2a2a', background: '#111' }}>
           {nav}
-          {separator}{drawButton}{blankButton}{joinButton}{overviewButton}{hotspotsButton}{fullscreenButton}
+          {separator}{drawButton}{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}{fullscreenButton}
           {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}<span style={{ ...S.label, marginBottom: 0, marginInlineEnd: '4px' }}>This slide</span>{slideBar(false)}</>}
           <span style={{ flex: 1 }} />
           <ToolButton class="presenter-help" icon="guides" label="All keys (?)" onClick={() => setHelpOpen(open => !open)} />
