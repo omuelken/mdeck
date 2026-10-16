@@ -12,7 +12,7 @@
 // on; `canDraw` whether D works in this window; `fullscreen` whether F does;
 // `drawer` whether N does (the presenter view's slide-only layout);
 // `languages` whether L does; `blank` whether the screen is black (B);
-// `frozen` whether the audience's screens keep their slide (P);
+// `frozen` whether the audience's screens keep their slide (Z);
 // `overview` whether the grid of all slides (O) is open; `join` whether J
 // works (a deck phones join) and `joinShown` whether
 // the join code is over the slide;
@@ -39,7 +39,7 @@ export function keyHelp({ view = 'deck', blank = false, frozen = false, join = f
     ...(presenter ? [entry(['T'], 'Start or pause the timer')] : []),
     entry(['O'], overview ? 'Close the overview' : 'All slides, to pick one'),
     entry(['B', '.'], blank ? 'Show the slide again' : 'Black screen for the audience'),
-    ...(presenter ? [entry(['P'], frozen ? 'Let the audience follow again' : 'Freeze the slide the audience sees')] : []),
+    ...(presenter ? [entry(['Z'], frozen ? 'Let the audience follow again' : 'Freeze the slide the audience sees')] : []),
     ...(join ? [entry(['J'], joinShown ? 'Hide the join code' : 'Show the join code over the slide')] : []),
     ...(presenter && drawer ? [entry(['N'], 'Show or hide the notes')] : []),
     ...(presenter ? [entry(['H'], hotspotSwitch ? 'Turn hotspots off' : 'Turn hotspots on')] : []),

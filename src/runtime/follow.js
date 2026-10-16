@@ -2,7 +2,7 @@
 // presenter's slide and ink, read from the stage room, and sends nothing.
 // A follower may page back on their own and return with "Back to live";
 // slides and steps the presenter has not shown yet stay hidden. While the
-// presenter freezes the audience's screens (P), the follower keeps the frozen
+// presenter freezes the audience's screens (Z), the follower keeps the frozen
 // slide too, and nothing after it opens.
 
 /** Where a follower may be: no further than the furthest the presenter has shown. */

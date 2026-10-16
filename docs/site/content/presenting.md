@@ -62,6 +62,7 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | R | Start again and clear the reveals |
 | B or . | Make the audience's screen black, and show the slide again (see below) |
 | J | Show the join code over the slide, on every screen, and hide it again, in the presenter view of a deck with polls ([Ask your audience](audience.html)) |
+| Z | Freeze the slide the audience sees while you go on, in the presenter view; again to let it follow (see below) |
 | O | Show all slides in a grid, to pick one (see below) |
 | D | Start or stop drawing on the slide ([Draw on your slides](drawing.html)) |
 | I | Hide or show the drawings |
@@ -84,7 +85,7 @@ The clicker is one of the presenter view's layouts: the settings switch any pres
 
 Press **B** when the room should look at you, not at the slide: the audience window goes black, and so do a paired iPad's audience window and phones following the talk. Your presenter view keeps the slide under a dark veil and says that the audience sees a black screen. **B** again, the next key (→, Space) or a click on the black screen shows the slide again, without moving on. Many presentation clickers have a button for this; it sends a full stop, which works like **B**. The presenter view also has a button for it.
 
-Press **P** to freeze the slide the audience sees, for example to look something up on another slide or to prepare the next one: the audience window keeps its slide, and so do phones following the talk and the phones of a poll, while you go on in the presenter view or on a paired iPad. The presenter view says which slide the audience still sees. While it is frozen, the audience window does not page on its own. **P** again, or the snowflake button, lets the audience follow again: it goes to the slide you are on.
+Press **Z** to freeze the slide the audience sees, for example to look something up on another slide or to prepare the next one: the audience window keeps its slide, and so do phones following the talk and the phones of a poll, while you go on in the presenter view or on a paired iPad. The presenter view says which slide the audience still sees. While it is frozen, the audience window does not page on its own. **Z** again, or the snowflake button, lets the audience follow again: it goes to the slide you are on.
 
 ## Find a slide
 
