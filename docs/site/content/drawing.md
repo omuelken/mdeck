@@ -73,4 +73,5 @@ With a server of your own (the `server` setting, see [Ask your audience](audienc
 
 - **Full screen**: the full-screen button (four corners) or **F**, where the browser allows it. Safari on an iPhone does not. Alternatively, use Share → **Add to Home Screen**: the deck then opens without Safari's bars. Such a Home Screen app keeps its own browser data, apart from Safari's.
 - **Fingers and the pencil**: the pencil draws, fingers operate the slides, also while drawing. Swipe left to go forward, right to go back; tap a stroke to select it. To draw with a finger (on a device without a pencil), switch on the hand button on the toolbar; fingers then draw instead.
+- **Scribble**: switch it off (Settings → Apple Pencil → Scribble; in German *Kritzeln*). Scribble watches the pencil for handwriting and keeps some touches to itself: when you lift the pencil and set it down again quickly, the next stroke often does not appear.
 - **Networks**: many large Wi-Fi networks do not let devices reach each other. If the iPad cannot open the pairing code, connect both to a phone hotspot.
