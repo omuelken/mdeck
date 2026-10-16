@@ -456,6 +456,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const overviewButton = <ToolButton class="presenter-overview" icon="overview" label="All slides (O)" pressed={overviewOpen} onClick={toggleOverview} />
   const hotspotsButton = <ToolButton class="presenter-hotspots" icon="hotspots" label={hotspotsOn ? 'Hotspots on: 1–9 zoom in (H)' : 'Hotspots off (H)'} pressed={hotspotsOn} onClick={toggleHotspots} />
   const fullscreenButton = canFullscreen && <ToolButton class="presenter-fullscreen" icon={fullscreenIcon} label={fullscreenLabel} pressed={isFullscreen} onClick={() => fullscreen.toggle()} />
+  const helpButton = <ToolButton class="presenter-help" icon="guides" label="All keys (?)" onClick={() => setHelpOpen(open => !open)} />
   const separator = <span aria-hidden="true" style={{ width: '1px', alignSelf: 'stretch', margin: '6px 4px', background: '#2a2a2a' }} />
   const settings = <Settings layout={layout} onLayout={chooseLayout} duringTalk={remoteLayout && <>{overviewButton}{hotspotsButton}{fullscreenButton}</>}
     theme={theme} themeMeta={themeMeta} onThemes={() => setThemeModalOpen(true)} offered={offered} shown={shown} setPalette={setPalette} setAppearance={setAppearance}
@@ -566,7 +567,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}{slideBar(false)}</>}
         {separator}
         <ToolButton class="presenter-notes" icon="file-text" label="Notes and the next slide (N)" pressed={drawerOpen} onClick={() => setDrawerOpen(open => !open)} />
-        {fullscreenButton}{audienceButton}{connections}{settings}
+        {fullscreenButton}{audienceButton}{helpButton}{connections}{settings}
       </div>
       {aside}
       {extras}
@@ -583,7 +584,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
           {separator}{drawButton}{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}{fullscreenButton}
           {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}<span style={{ ...S.label, marginBottom: 0, marginInlineEnd: '4px' }}>This slide</span>{slideBar(false)}</>}
           <span style={{ flex: 1 }} />
-          <ToolButton class="presenter-help" icon="guides" label="All keys (?)" onClick={() => setHelpOpen(open => !open)} />
+          {helpButton}
         </div>
       </div>
       {aside}

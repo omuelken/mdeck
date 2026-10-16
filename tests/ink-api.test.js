@@ -85,6 +85,16 @@ test('the ink file is backed up once per session, before the first write', () =>
   assert.deepEqual(JSON.parse(readFileSync(resolve(dir, '.mdeck-backups', backups[0]), 'utf8')).slides.s.map(s => s.id), ['old:1'])
 })
 
+test('dropping drawings from the launch page keeps the session\'s backup first', () => {
+  const { dir, deck, file } = deckWith('---\ntheme: neue\n---\n\n---\nid: s\n---\n# S\n')
+  writeFileSync(inkFileFor(deck), JSON.stringify({ version: 1, width: 1920, height: 1080, slides: { s: [stroke('old:1')] } }))
+  file.drop()
+  assert.deepEqual(file.read().ink.slides, {})
+  const backups = readdirSync(resolve(dir, '.mdeck-backups'))
+  assert.equal(backups.length, 1)
+  assert.deepEqual(JSON.parse(readFileSync(resolve(dir, '.mdeck-backups', backups[0]), 'utf8')).slides.s.map(s => s.id), ['old:1'])
+})
+
 test('changes that are not well formed, or too many, are refused before anything is read', () => {
   const { file } = deckWith(SOURCE)
   const { deckHash } = file.read()
