@@ -484,7 +484,17 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
 
   get state() {
     return { index: this._index, slideId: this._slides[this._index]?.dataset.slideId,
-      step: this._stepMap.get(this._index) ?? -1, blank: this._blank, join: this._join, freeze: this._freeze };
+      step: this._stepMap.get(this._index) ?? -1, blank: this._blank, join: this._join, freeze: this._freeze,
+      inkHidden: this.hasAttribute('data-ink-hidden') };
+  }
+
+  /** Whether the saved drawings are hidden (I). Setting it tells the other screens. */
+  get inkHidden() { return this.hasAttribute('data-ink-hidden'); }
+  setInkHidden(on, reason = 'api') {
+    on = !!on;
+    if (on === this.inkHidden) return;
+    this.toggleAttribute('data-ink-hidden', on);
+    this._broadcastState(reason);
   }
 
   /** The position the audience's screens keep (Z), or null. */
@@ -577,12 +587,14 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     if (blankChanged) this._applyBlank(state.blank);
     const joinChanged = typeof state.join === 'boolean' && state.join !== this._join;
     if (joinChanged) this._applyJoin(state.join);
+    const inkChanged = typeof state.inkHidden === 'boolean' && state.inkHidden !== this.inkHidden;
+    if (inkChanged) this.toggleAttribute('data-ink-hidden', state.inkHidden);
     if (index === this._index) {
       if (step === this.state.step) {
         // The same position again, after the slide's content was swapped in
         // place (another language): its new elements get the reveals too.
         this._applySteps(index);
-        if (blankChanged || joinChanged || freezeChanged) this._broadcastState('sync');
+        if (blankChanged || joinChanged || freezeChanged || inkChanged) this._broadcastState('sync');
         return;
       }
       if (this._hotspot) this.wholeSlide();
@@ -660,9 +672,9 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     } else if (key === 'End') {
       this._go(this._slides.length - 1, 'keyboard');
     } else if (key === 'i' || key === 'I') {
-      // Show or hide the saved ink.
+      // Show or hide the saved ink, on every screen.
       e.preventDefault();
-      this.toggleAttribute('data-ink-hidden');
+      this.setInkHidden(!this.inkHidden, 'keyboard');
     } else if ((key === 'f' || key === 'F') && window.top === window && fullscreenAvailable()) {
       toggleFullscreen();
     } else if (key === 'r' || key === 'R') {

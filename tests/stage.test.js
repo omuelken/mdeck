@@ -26,7 +26,7 @@ function stageFixture(globals = {}) {
     HTMLElement: class {
       attachShadow() { return {} }
       dispatchEvent(event) { events.push(event) }
-      toggleAttribute(name, on) { this[name] = on }
+      toggleAttribute(name, on) { on = on ?? !this[name]; this[name] = on; if (on) this.setAttribute(name, ''); else this.removeAttribute(name) }
       getAttribute(name) { return this.attributes?.[name] ?? null }
       setAttribute(name, value) { (this.attributes ??= {})[name] = String(value) }
       hasAttribute(name) { return this.attributes?.[name] != null }
@@ -330,4 +330,17 @@ test('the control bar’s tooltips name the buttons in the deck’s language, wi
   assert.equal(buttons['.reset'].firstChild.textContent, 'Neustart')
   assert.equal(buttons['.overview'].title, 'Übersicht (O)')
   assert.equal(buttons['.draw'].title, undefined, 'a button without a word keeps its own')
+})
+
+test('I hides the drawings on every screen: the state carries it, and the toolbar sets it the same way', () => {
+  const { stage: presenter, messages } = stageFixture()
+  const { stage: audience } = stageFixture()
+  presenter.setInkHidden(true, 'keyboard')
+  assert.equal(presenter['data-ink-hidden'], true)
+  const state = messages.at(-1).deckStateChanged
+  assert.equal(state.inkHidden, true)
+  audience.setState(state)
+  assert.equal(audience.inkHidden, true, 'the audience window hides them too')
+  audience.setState({ ...state, inkHidden: false })
+  assert.equal(audience.inkHidden, false)
 })

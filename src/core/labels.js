@@ -32,6 +32,9 @@ export const LABELS = {
     'deck.next': 'Next slide',
     'deck.reset': 'Reset',
     'deck.resetHint': 'Reset to first slide',
+    'deck.draw': 'Draw',
+    'deck.fullscreen': 'Full screen',
+    'deck.exitFullscreen': 'Leave full screen',
     'poll.scan': 'Scan to vote',
     'video.sound': 'Click for sound',
     'poll.answer': '1 answer',
@@ -108,6 +111,9 @@ export const LABELS = {
     'deck.next': 'Nächste Folie',
     'deck.reset': 'Neustart',
     'deck.resetHint': 'Zurück zur ersten Folie',
+    'deck.draw': 'Zeichnen',
+    'deck.fullscreen': 'Vollbild',
+    'deck.exitFullscreen': 'Vollbild verlassen',
     'poll.scan': 'Scannen und abstimmen',
     'video.sound': 'Klicken für Ton',
     'poll.answer': '1 Antwort',
@@ -184,6 +190,9 @@ export const LABELS = {
     'deck.next': 'الشريحة التالية',
     'deck.reset': 'من البداية',
     'deck.resetHint': 'العودة إلى الشريحة الأولى',
+    'deck.draw': 'رسم',
+    'deck.fullscreen': 'ملء الشاشة',
+    'deck.exitFullscreen': 'الخروج من ملء الشاشة',
     'poll.scan': 'امسح الرمز للتصويت',
     'video.sound': 'انقر لتشغيل الصوت',
     'poll.answer': 'إجابة واحدة',
@@ -266,7 +275,7 @@ export function setDeckLanguage({ lang, labels } = {}) {
 
 /** Words for the <deck-stage> control bar. */
 export function stageLabels() {
-  return { controls: t('deck.controls'), previous: t('deck.previous'), next: t('deck.next'), reset: t('deck.reset'), resetHint: t('deck.resetHint') }
+  return { controls: t('deck.controls'), previous: t('deck.previous'), next: t('deck.next'), reset: t('deck.reset'), resetHint: t('deck.resetHint'), overview: t('deck.overview'), draw: t('deck.draw'), fullscreen: t('deck.fullscreen'), exitFullscreen: t('deck.exitFullscreen') }
 }
 
 /** The deck's `lang`, for the page's language attribute. */

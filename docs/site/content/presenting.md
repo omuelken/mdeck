@@ -115,7 +115,7 @@ time: 2m
 # The results
 ```
 
-Write times as `90s`, `2m`, `1m30s` or `1.5m`. Slides without a time share what the deck's time leaves over; without a deck time, they get none.
+Write times as `90s`, `2m`, `1m30s`, `1.5m` or `1h30`. Slides without a time share what the deck's time leaves over; without a deck time, they get none.
 
 Once the deck has times, the presenter view shows under the timer how much time is left on the slide (amber in its last 15 seconds, red once it is over), the length of the talk, and whether you are ahead of or behind your plan. In the slide-only layout the time left on the slide sits beside the timer.
 

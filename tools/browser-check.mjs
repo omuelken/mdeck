@@ -29,13 +29,15 @@ try {
   async function until(page, expression, { attempts = 150 } = {}) {
     if (!await page.waitFor(expression, { attempts, interval: 50 })) throw new Error(`Condition did not become true: ${expression}`)
   }
-  // Drawing starts with the laser; strokes need the pen. `doc` is the
-  // document with the stage (the presenter view's frame).
+  // Drawing starts with the laser on a touch screen and with the pen on a
+  // computer; strokes need the pen. `doc` is the document with the stage
+  // (the presenter view's frame).
   async function choosePen(page, doc = 'document') {
     // A touch screen starts with the toolbar folded.
     await page.evaluate(`${doc}.querySelector('.ink-expand')?.click()`)
     await until(page, `!!${doc}.querySelector('.ink-btn[title=Pen]')`)
-    assert.equal(await page.evaluate(`${doc}.querySelector('deck-stage').inkTool.tool`), 'laser', 'drawing starts with the laser')
+    const touch = await page.evaluate('matchMedia("(pointer: coarse)").matches')
+    assert.equal(await page.evaluate(`${doc}.querySelector('deck-stage').inkTool.tool`), touch ? 'laser' : 'pen', 'drawing starts with the laser on a touch screen, the pen on a computer')
     await page.evaluate(`${doc}.querySelector('.ink-btn[title=Pen]').click()`)
     await until(page, `${doc}.querySelector('deck-stage').inkTool.tool === 'pen'`)
   }

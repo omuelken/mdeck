@@ -215,7 +215,7 @@ export const Ink = (Base) => class extends Base {
     if (!renderer) { path.setAttribute('fill', 'none'); path.setAttribute('stroke-width', size); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round'); }
     path.setAttribute(renderer ? 'fill-opacity' : 'stroke-opacity', tool === 'highlighter' ? '0.35' : '1');
     // The highlighter goes under the pen, as on paper.
-    if (tool === 'highlighter') path.setAttribute('data-under', '');
+    if (tool === 'highlighter') { path.setAttribute('data-under', ''); path.setAttribute('data-tool', 'highlighter'); }
   }
 
   // Highlighter strokes go below the pen's, the selection stays on top.

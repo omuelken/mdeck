@@ -92,7 +92,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   }, [tool, style])
   const setOwn = change => setStyle(all => ({ ...all, [tool]: { ...all[tool], ...change } }))
   useEffect(() => { stage._inkCollapsed = collapsed }, [collapsed])
-  useEffect(() => { stage.toggleAttribute('data-ink-hidden', hidden) }, [hidden])
+  useEffect(() => { stage.setInkHidden(hidden, 'toolbar') }, [hidden])
   useEffect(() => { stage.inkFinger = finger }, [finger])
 
   const slideId = () => stage._inkSlideId?.()

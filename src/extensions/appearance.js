@@ -23,6 +23,8 @@ export const DARK_TOKENS = {
   '--pen-red':        '#fb7185',
   '--pen-blue':       '#60a5fa',
   '--pen-green':      '#4ade80',
+  // The highlighter brightens the text under it: screen on dark slides.
+  '--highlighter-blend': 'screen',
 }
 
 // The same on light slides: the code colours of code-block.css and the logo
@@ -30,6 +32,7 @@ export const DARK_TOKENS = {
 // --inverse-token-* and --inverse-logo-filter.
 export const LIGHT_TOKENS = {
   '--logo-filter':    'none',
+  '--highlighter-blend': 'multiply',
   '--token-default':  '#0a0a0a',
   '--token-comment':  '#708090',
   '--token-string':   '#669900',

@@ -33,6 +33,9 @@ deck-stage { background: #000; }
 /* ── Ink: saved annotations, above the slide's content ─────────────────── */
 .slide-ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; overflow: visible; }
 deck-stage[data-ink-hidden] .slide-ink { display: none; }
+/* The highlighter multiplies on a light ground and screens on a dark one
+   (appearance.js), so it brightens the text under it instead of muddying it. */
+.slide-ink path[data-tool="highlighter"] { mix-blend-mode: var(--highlighter-blend, multiply); }
 
 /* ── Header / footer rails ───────────────────────────────────────────────── */
 /* Flex skeleton only — typography (font-weight, letter-spacing, etc.) is theme-specific */

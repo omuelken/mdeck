@@ -2,6 +2,52 @@
 
 ## Unreleased
 
+- Fixed: closing the editor tab right after typing could lose the last change; the final save now outlives the page.
+- Fixed: a change saved in a second editor tab, or with **Use in my deck** on the design page, was not shown in the first tab, and **Keep my edits** there could overwrite it.
+- Fixed: when a save failed, the editor retried every 400 ms with the message flickering; it waits longer each time, keeps the message on show and has **Try again**.
+- Fixed: moving or deleting the slide file reloaded the editor into "Could not load the deck"; it keeps your text and saves again once the file is back, and the error page has **Try again**.
+- Deck width and height, and a slide's chapter number, are written when you finish typing them, not after each digit; the design page no longer reloads its preview while the theme or palette you are editing is saved.
+- The design page uses the editor's status wording; Escape closes its New theme/palette dialog; a theme or palette that does not validate is answered with 400, not 500.
+- Fixed: in a lecture hall behind one network address, most answers after the first thirty in ten seconds were refused; phones are limited one by one now.
+- Fixed: **Reset** on a poll did not reach the phones, which kept showing their old choice; a phone also forgets its choice after twelve hours, so the same talk given later starts fresh.
+- Fixed: a poll server that restarted while a poll was on screen took that poll's answers out of `my-talk.results.json`, and a closed poll could take new answers after the restart.
+- Fixed: `mdeck run --server` gave up for good when the web server in front of the room server answered 502 while it restarted; it tries again now, and notices a connection that died while the laptop slept.
+- Fixed: a bad answer from the presenter's computer could stop `mdeck server`; a full room server answers a new stream with a proper error and frees rooms nobody has spoken in.
+- Phones' random ids no longer appear on the slides' answer stream; "12 of 31 answered" counts the phones that can answer, not laptops following the slides.
+- The phones' answer page reads right to left for a deck in Arabic, Farsi or Hebrew, and keeps text typed into a question or word cloud while the poll is locked or the slide changes.
+- Fixed: switching the language (L) in the middle of a slide hid the points already shown.
+- The presenter view's keys (T, H, L, N, F, Escape) work after a click on the slide too; Home goes to the first slide and End to the last.
+- Fixed: the time left on a slide without its own time could read a second more than the time it had.
+- Fixed: after a reload of the presenter view, the audience window ignored its slide changes or went back to the first slide.
+- Fixed: the hotspot numbers sat in the wrong place after the window was resized with the overview open.
+- A key or a click in a frozen audience window lets it follow again, where the presenter went on to, should the presenter view have closed.
+- **I** (hide drawings) reaches every screen, as B does; drawing starts with the pen on a computer, and with the laser pointer on a touch screen only; the highlighter brightens the text under it on dark slides instead of muddying it.
+- The deck window's control-bar tooltips use the deck's language.
+- Fixed: undoing the first drawing on a slide, the one that gave it its `id:`, was not saved; the stroke came back after a reload and in PDFs, and redo failed.
+- Fixed: a drawing the server could not save disappeared without a word; a short notice over the slide says so now, and with `mdeck run` a batch refused part-way no longer leaves the earlier strokes unwritten.
+- A deck in several languages shows its drawings in every language, and strokes drawn in another language are saved with the slide at the same place; the drawings file stays with the file `mdeck run` was started with.
+- Fixed: Ctrl+C right after a stroke or an answer could lose it; `mdeck run` writes drawings and answers before it stops, also with `--server`.
+- Fixed: on an iPad that lost its Wi-Fi, saving drawings retried without pause; it waits longer after each failed attempt now. `mdeck run` refuses malformed or oversized drawing changes with 400 instead of failing.
+- Fixed: `mdeck check --render` reported a chart's labels as cut off at the edge on every bar chart.
+- Fixed: a deck file starting with a byte order mark lost its settings, which became the first slide's text.
+- Fixed: citation locators written out (`page 12`, `chapter 3`, `sections 2-3`) were read as `p. age 12`.
+- Pictures in `poster`, `srcset` and `url(…)` in a `style`, and links to files beside the deck, are checked, copied by builds and embedded by `--single-file`; `mdeck check` warns when an included file's picture lies outside the deck's folder, names the line where a missing picture is written, and warns of `:::notes` inside another block.
+- `mdeck build -o dist/` writes `dist/index.html`; `mdeck check <folder>`, a missing deck named to `list` or `starter`, an unknown command and an unknown layout say what is wrong (the last lists the layouts); `--port` on a busy port says so instead of a stack trace.
+- `mdeck new` no longer sets a logo that does not exist, and Ctrl+D ends it cleanly; `mdeck --help` lists `migrate`; `mdeck results` refuses `--summary --json` and a `.csv` file with `--json`.
+- A deck's `time:` may be `1h`, `1h30` or `1h30m`; the presenter view tells a poll server apart by its patch version too.
+- Fixed: on a right-to-left slide, chart labels anchored at an axis landed on the wrong side.
+- Fixed: on a phone, the reader's top bar ran off the screen; the buttons show their icons alone.
+- A line chart with dates across puts its ticks on years, quarters, months or days, as a scatter chart does; a row without a number or date across is left out and the line joins.
+- Fixed: a column with no values could become the row labels; it is left out, and `mdeck check` names it.
+- A bar chart's `max` ends the axis exactly there; a taller bar is cut off at the top, and `mdeck check` warns; a chart with many bars labels every second or third, and `mdeck check` warns past 20 bars.
+- Fixed: `mdeck check` reported `<data>` problems at the wrong line in a deck that also used HTML's `<data value>`.
+- `live` on a code block that is not JavaScript or Python shows no Run button; `<videoplayer url>` takes YouTube Shorts, embed and live links.
+- Fixed: a full-bleed-image slide without a picture had a white title on white in dark mode; its text is light on a dark ground in every theme.
+- Fixed: in the plain theme, a list item with bold words in its middle was set as a title with a description; only an item that begins in bold is.
+- Fixed: on a neue focus slide, code colours, the third accent and the logo did not follow the inverted colours.
+- Fixed: a paragraph of drawings (inline SVG) did not shrink to its room and ran over what followed.
+- Fixed: the reader did not fit code blocks to their place, the glass theme's light kept drifting in Read mode, and polls showed their live dot and controls there.
+- `stat` writes its figures as the deck's language does; the image-text layout's placeholder is in the deck's language.
 - Bars always start at 0: a bar chart's `min` above 0 is ignored, and `mdeck check` warns of it (to start an axis higher, use `show="line"`).
 - A line chart's `min` and `max` start and end its axis exactly there; lines beyond are cut off at the edge.
 - Line and scatter charts with dates across put their ticks on years, quarters, months or days, labelled in the deck's language.

@@ -239,6 +239,7 @@ export const stylesheet = `
     z-index: 1;
   }
   .ink-live .fading { transition: opacity 0.8s ease 2.2s; opacity: 0; }
+  .ink-live path[data-tool="highlighter"] { mix-blend-mode: var(--highlighter-blend, multiply); }
   /* The ink toolbar replaces the overlay while drawing. */
   :host([data-inking]) .overlay { display: none; }
   .btn.draw, .btn.fullscreen, .btn.overview { display: none; }

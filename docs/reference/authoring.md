@@ -202,7 +202,7 @@ description: A short description shown under the title.
 | `section` | Section label shown in the slide header (auto-propagated — see below) |
 | `title` | Name in the outline and reader navigation, for slides without a heading (not shown on the slide) |
 | `hotspots` | This slide's own hotspots: `auto`, `marked`, `off` or `false` (see the deck field) |
-| `time` | How long to spend on the slide: `90s`, `2m`, `1m30s` or `1.5m`. The presenter view counts it down; `mdeck rehearse` measures and saves it |
+| `time` | How long to spend on the slide: `90s`, `2m`, `1m30s`, `1.5m` or `1h30`. The presenter view counts it down; `mdeck rehearse` measures and saves it |
 
 ### Section labels
 
