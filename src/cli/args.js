@@ -91,5 +91,8 @@ export function parseArgs(command, argv) {
   if (command === 'list' && positionals.length === 2 && !['layouts', 'themes', 'palettes', 'dataviews'].includes(positionals[0])) throw new Error('Use mdeck list [layouts|themes|palettes|dataviews] [slides.md]')
   if (command === 'snapshot' && options['--dark'] && options['--light']) throw new Error('Choose --dark or --light')
   if (command === 'skill' && options['--print'] && options['--install']) throw new Error('Choose --print or --install')
+  if (command === 'results' && options['--summary'] && options['--json']) throw new Error('Choose --summary (CSV) or --json')
+  if (command === 'results' && options['--json'] && /\.csv$/i.test(options['--output'] ?? '')) throw new Error('--json writes JSON: name the file .json, or leave --json out for CSV')
+  if (command === 'results' && options['--summary'] && /\.json$/i.test(options['--output'] ?? '')) throw new Error('--summary writes CSV: name the file .csv, or use --json')
   return { options, positionals }
 }

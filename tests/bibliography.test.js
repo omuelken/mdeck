@@ -34,6 +34,11 @@ test('a narrative citation takes a locator in brackets, and keys end before punc
   assert.deepEqual(cluster.items, [{ id: 'smith2020', label: 'page', locator: '4' }])
   assert.equal(scanCitations('Thanks, @jones2019.', { isKey })[0].items[0].id, 'jones2019')
   assert.deepEqual(parseLocator(', emphasis added'), { suffix: ', emphasis added' })
+  // The whole word counts: `page 12` is not `p.` and `age 12`.
+  assert.deepEqual(parseLocator(', page 12'), { label: 'page', locator: '12' })
+  assert.deepEqual(parseLocator(', chapter 3'), { label: 'chapter', locator: '3' })
+  assert.deepEqual(parseLocator(', sections 2-3'), { label: 'section', locator: '2-3' })
+  assert.deepEqual(parseLocator(', nothing here'), { suffix: ', nothing here' })
 })
 
 test('BibTeX, CSL-JSON and Hayagriva load to the same references', async () => {

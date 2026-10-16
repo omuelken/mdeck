@@ -100,7 +100,7 @@ test('an included file’s settings are not the deck’s problem', () => {
   const dir = folder({ 'course.md': COURSE, 'lectures/02-graphs.md': LECTURE.replace('# Trees', ':::meta\nlayout: nope\n:::\n# Trees') })
   const { diagnostics: found } = checkDeck(resolve(dir, 'course.md'), loadRegistry(resolve(dir, 'course.md')))
   // Its own problems name it, with their lines in it: here a layout and a picture it lacks.
-  assert.deepEqual(found.map(d => [d.code, d.line, d.file?.endsWith('02-graphs.md')]), [['unknown-layout', 20, true], ['missing-asset', 1, true], ['missing-asset', 1, true]])
+  assert.deepEqual(found.map(d => [d.code, d.line, d.file?.endsWith('02-graphs.md')]), [['unknown-layout', 20, true], ['missing-asset', 8, true], ['missing-asset', 16, true]])
   assert.ok(!found.some(d => d.code === 'unknown-theme'), 'duet need not be installed for the course')
 })
 
@@ -169,4 +169,13 @@ test('an included deck’s reference list shows the works it cites, as it does a
   })
   const tags = expandDeck(resolve(dir, 'course.md')).source.match(/<bibliography[^>]*>/g)
   assert.deepEqual(tags, ['<bibliography keys="euler1736 dijkstra1959" />', '<bibliography />', '<bibliography />'], 'the course’s own list and the code example stay as written')
+})
+
+test('a picture outside the deck’s folder is reported where the included file names it', () => {
+  const dir = folder({ 'talks/course.md': COURSE.replace('./lectures/02-graphs.md', '../lectures/02-graphs.md'), 'lectures/02-graphs.md': LECTURE, 'lectures/img/g.svg': '<svg xmlns="http://www.w3.org/2000/svg"/>' })
+  const { diagnostics } = expandDeck(resolve(dir, 'talks/course.md'))
+  assert.deepEqual(diagnostics.map(d => [d.code, d.severity, d.line, d.file?.endsWith('02-graphs.md')]), [['asset-outside-deck', 'warning', 8, true], ['asset-outside-deck', 'warning', 16, true]])
+  assert.match(diagnostics[0].message, /^\.\/img\/g\.svg is outside .*\(\.\.\/lectures\/img\/g\.svg\)/)
+  // From the deck itself, the same file is used as written.
+  assert.deepEqual(expandDeck(resolve(dir, 'talks/course.md')).diagnostics.length, 2)
 })

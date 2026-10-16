@@ -32,6 +32,7 @@ ${cmd('starter', '<layout>', 'Starter Markdown for a layout')}
 ${cmd('docs', '[guide]', 'Open the guides')}
 ${cmd('skill', '', 'The slide-writing skill for AI assistants')}
 ${cmd('server', '', 'The server for polls and for presenting from an iPad')}
+${cmd('migrate', '[slides.md]', 'Update a deck from before 2.0')}
 
   ${c.bold}slides.md${c.reset} defaults to the deck in this folder.
   ${c.green}mdeck <command> --help${c.reset} shows a command's options; ${c.green}mdeck --version${c.reset} which mdeck this is.
@@ -72,7 +73,7 @@ export const COMMAND_HELP = {
     ${c.green}mdeck palettes${c.reset} search [words] | install <palette> | remove <palette> | update [palette] | list
       Like themes.`,
   build: `
-    ${c.green}mdeck build${c.reset} [slides.md] [-o dir/index.html]
+    ${c.green}mdeck build${c.reset} [slides.md] [-o dir/]
       --reader               the reader view: notes removed unless --notes, polls kept as a record
                              unless --no-polls
       --single-file          everything in one HTML file

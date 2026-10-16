@@ -24,6 +24,9 @@ function parseSelection(input, max) {
 
 export default async function newDeck({ registryFor }) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+  // Ctrl+D closes the questions: nothing is written.
+  let closing = false
+  rl.once('close', () => { if (!closing) { console.log(); tip('Stopped; no deck was made.'); process.exit(1) } })
   try {
     console.log()
     console.log(`  ${c.bold}Create a new deck${c.reset}`)
@@ -89,7 +92,7 @@ export default async function newDeck({ registryFor }) {
       `  author: "${author.replace(/"/g, '\\"')}"`,
       `  organization: "${org.replace(/"/g, '\\"')}"`,
       `  date: "${new Date().toISOString().slice(0, 10)}"`,
-      '  logo: ./img/logo.png',
+      '  # logo: ./img/logo.png',
       `width: ${width}`,
       `height: ${height}`,
       '---',
@@ -110,9 +113,10 @@ export default async function newDeck({ registryFor }) {
 
     console.log()
     ok(`Created ${c.cyan}${outPath}${c.reset}`)
-    tip(`Added assets folder: ${assetDir}`)
+    tip(`Added assets folder: ${assetDir}; put a logo there and take the # off the logo line`)
     tip(`Next: mdeck run ${basename(outPath)}\n`)
   } finally {
+    closing = true
     rl.close()
   }
 }

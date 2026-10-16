@@ -54,3 +54,17 @@ test('existing examples parse without errors', () => {
     assert.ok(deck.slides.length > 3, name)
   }
 })
+
+test('a byte order mark at the start of the file leaves the settings the settings', () => {
+  const deck = parseSlides('﻿---\ntheme: neue\n---\n# Hello\n')
+  assert.equal(deck.deckConfig.theme, 'neue')
+  assert.equal(deck.slides.length, 1)
+  assert.equal(deck.slides[0].content, '# Hello')
+  assert.equal(deck.source.slice(deck.configSource.start, deck.configSource.end).trim(), 'theme: neue', 'offsets still count the mark')
+})
+
+test(':::notes inside another block is not read as notes, and says so', () => {
+  const deck = parseSlides('# A\n\n:::steps\n- one\n:::notes\nhi\n:::\n:::\n')
+  assert.equal(deck.slides[0].meta.notes, undefined)
+  assert.deepEqual(deck.diagnostics.map(d => [d.code, d.severity, d.line]), [['nested-notes', 'warning', 5]])
+})
