@@ -7,12 +7,24 @@
 // with the larger id wins on both sides, so they end up on the same slide.
 const randomId = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, '0')).join('')
 
-export function createOrder(id = randomId()) {
+//
+// With `storageKey`, the clock is kept in sessionStorage and carries on after
+// a reload of the window: started afresh at 0, it would be behind every other
+// window's, and its changes ignored until it had caught up.
+export function createOrder(id = randomId(), { storageKey = null, storage = null } = {}) {
+  const store = () => storage ?? (typeof sessionStorage === 'undefined' ? null : sessionStorage)
   let latest = { seq: 0, from: id }
+  if (storageKey) {
+    try {
+      const kept = JSON.parse(store()?.getItem(storageKey))
+      if (Number.isInteger(kept?.seq) && typeof kept.from === 'string') latest = kept
+    } catch {}
+  }
+  const keep = () => { if (storageKey) try { store()?.setItem(storageKey, JSON.stringify(latest)) } catch {} }
   return {
     id,
     /** The stamp for a change made in this window. */
-    stamp() { latest = { seq: latest.seq + 1, from: id }; return { ...latest } },
+    stamp() { latest = { seq: latest.seq + 1, from: id }; keep(); return { ...latest } },
     /** This window's position as it is, for a window that just opened: taken unless it moved on. */
     current() { return { ...latest, initial: true } },
     /** Whether a position from another window is newer than this one's; it is then this window's too. */
@@ -26,6 +38,7 @@ export function createOrder(id = randomId()) {
       const opening = latest.seq === 0 && stamp.initial
       if (stamp.seq === latest.seq && !opening && !(String(stamp.from) > latest.from)) return false
       latest = { seq: stamp.seq, from: String(stamp.from) }
+      keep()
       return true
     },
   }

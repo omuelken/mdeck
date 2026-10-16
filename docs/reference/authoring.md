@@ -202,7 +202,7 @@ description: A short description shown under the title.
 | `section` | Section label shown in the slide header (auto-propagated — see below) |
 | `title` | Name in the outline and reader navigation, for slides without a heading (not shown on the slide) |
 | `hotspots` | This slide's own hotspots: `auto`, `marked`, `off` or `false` (see the deck field) |
-| `time` | How long to spend on the slide: `90s`, `2m`, `1m30s` or `1.5m`. The presenter view counts it down; `mdeck rehearse` measures and saves it |
+| `time` | How long to spend on the slide: `90s`, `2m`, `1m30s`, `1.5m` or `1h30`. The presenter view counts it down; `mdeck rehearse` measures and saves it |
 
 ### Section labels
 
@@ -563,10 +563,10 @@ lists them):
 | Dataview | Shows | Options |
 |---|---|---|
 | `table` | The data as the theme draws tables; numbers right, the unit in their headers, highlighted rows marked | `max-rows` (12; the rest are counted), `numbers` (`as-written` or `formatted`) |
-| `bar` | Columns from a baseline at 0, bars when the labels are long; several series side by side or `stacked` | `orientation` (`auto`, `vertical`, `horizontal`), `stacked`, `values` (`auto`, `all`, `highlight`, `none`), `max`, `min` (0 or below: bars start at 0, and `mdeck check` warns of a `min` above it) |
+| `bar` | Columns from a baseline at 0, bars when the labels are long; several series side by side or `stacked` | `orientation` (`auto`, `vertical`, `horizontal`), `stacked`, `values` (`auto`, `all`, `highlight`, `none`), `max` (the axis ends exactly there; bars beyond are cut off, and `mdeck check` warns), `min` (0 or below: bars start at 0, and `mdeck check` warns of a `min` above it) |
 | `line` | One line per series, the last value at its end; numbers or dates in `x` are spaced by their value | `points` (`auto`, `all`, `none`), `fill` (one series), `zero`, `min`, `max` (the axis starts and ends exactly there; lines beyond are cut off) |
 | `scatter` | Points: `x` across (a column of numbers or dates), each value column up | `labels` (a column naming the points), `zero` |
-| `stat` | One to four figures, large, as the data writes them, each with its row's label | `change` (a column with each figure's change) |
+| `stat` | One to four figures, large, as the deck's language writes them, each with its row's label | `change` (a column with each figure's change) |
 | `heatmap` | A grid coloured by value; values either side of 0 in two colours | `values`, `scale` (`auto`, `sequential`, `diverging`), `min`, `max` |
 | `dumbbell` | Two values per row joined by a line | `values`, `zero` |
 

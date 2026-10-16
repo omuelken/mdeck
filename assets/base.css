@@ -33,6 +33,9 @@ deck-stage { background: #000; }
 /* ── Ink: saved annotations, above the slide's content ─────────────────── */
 .slide-ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; overflow: visible; }
 deck-stage[data-ink-hidden] .slide-ink { display: none; }
+/* The highlighter multiplies on a light ground and screens on a dark one
+   (appearance.js), so it brightens the text under it instead of muddying it. */
+.slide-ink path[data-tool="highlighter"] { mix-blend-mode: var(--highlighter-blend, multiply); }
 
 /* ── Header / footer rails ───────────────────────────────────────────────── */
 /* Flex skeleton only — typography (font-weight, letter-spacing, etc.) is theme-specific */
@@ -138,7 +141,8 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 .slide--full-bleed-image .slide-bg {
   position: absolute;
   inset: 0;
-  background: var(--ink);      /* dark fallback before image loads */
+  /* Dark before the picture loads, and without one: the ink on a light deck, the ground on a dark one. */
+  background: light-dark(var(--ink), var(--bg));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -149,7 +153,11 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
   z-index: 1;
   padding: var(--pad-y) var(--pad-x);
   justify-content: flex-end;
+  color: light-dark(var(--bg), var(--ink));
 }
+/* The text over the picture and its overlay is light; themes set paragraphs
+   in --ink-soft, which is dark on a light deck. */
+.slide--full-bleed-image .slide-body :is(p, li, blockquote) { color: light-dark(var(--bg), var(--ink)); }
 
 /* ── Footnotes ───────────────────────────────────────────────────────────── */
 /* FHNW and editorial override padding-top and add font-weight/style in their templates.css */
@@ -182,6 +190,9 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 
 /* ── Code blocks ─────────────────────────────────────────────────────────── */
 .code-block { white-space: pre-wrap; overflow-x: hidden; }
+/* Code in a sentence: the theme's monospace on a light field, where the
+   theme sets nothing of its own (:where keeps this weaker than any theme rule). */
+:where(.slide-body) :not(pre) > code { font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace); font-size: 0.88em; padding: 0.05em 0.3em; border-radius: 3px; background: var(--surface, var(--rule)); }
 /* Code and maths read from left to right, also on a right-to-left slide. */
 .slide[dir="rtl"] :is(pre, code, kbd, samp, .katex, .code-block-wrapper, .themed-picture) { direction: ltr; unicode-bidi: isolate; }
 /* A citation and a reference read in their own direction: Latin names stay in
@@ -211,6 +222,11 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
   max-height: 100%;
   object-fit: contain;
 }
+/* A drawing (an inline SVG) among them: its box would keep the drawing's
+   own height and let it run over what follows, so the drawing itself takes
+   the box's place and shrinks as a photo does. */
+.slide-body p.pictures > .themed-picture--inline { display: contents; }
+.slide-body p.pictures > .themed-picture--inline > svg { flex: 0 1 auto; min-width: 0; min-height: 0; width: auto; height: auto; max-width: 100%; max-height: 100%; }
 
 /* ── Tables ──────────────────────────────────────────────────────────────── */
 .slide-body table {

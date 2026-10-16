@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { createServer } from 'vite'
 import preact from '@preact/preset-vite'
 import { createServer as createHttpServer } from 'node:http'
-import { mkdtempSync, copyFileSync, readFileSync, writeFileSync, cpSync, existsSync, readdirSync } from 'node:fs'
+import { mkdtempSync, copyFileSync, readFileSync, writeFileSync, cpSync, existsSync, readdirSync, renameSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { slidesPlugin } from '../src/build/slidesPlugin.js'
@@ -80,16 +80,42 @@ test('a broken deck is still saved and still loads in editor mode', async () => 
   await post({ source: original, base: hashSource(broken) })
 })
 
-test('the deck file tracks its own writes so only external changes are reported', () => {
+test('the deck file refuses stale writes with the current file and says when the file is gone', () => {
   const file = createDeckFile(deck)
-  assert.equal(file.isExternalChange(original), true)
   const result = file.write(original + '\n', hashSource(original))
   assert.equal(result.ok, true)
-  assert.equal(file.isExternalChange(original + '\n'), false)
   writeFileSync(deck, original)
-  assert.equal(file.isExternalChange(original), true)
   assert.deepEqual(file.write('x', 'stale'), { ok: false, conflict: true, source: original, hash: hashSource(original) })
-  assert.equal(createDeckFile(resolve(dir, 'missing.md')).write('x', 'y').conflict, true)
+  assert.deepEqual(createDeckFile(resolve(dir, 'missing.md')).write('x', 'y'), { ok: false, missing: true })
+})
+
+test('a deck that was moved away answers 404 and does not reload the pages', async () => {
+  const moved = resolve(dir, 'moved.md')
+  renameSync(deck, moved)
+  try {
+    const response = await post({ source: 'x', base: hashSource(original) })
+    assert.equal(response.status, 404)
+    assert.match((await response.json()).error, /no longer/)
+  } finally { renameSync(moved, deck) }
+  const plugin = editorPlugin(deck)
+  assert.deepEqual(plugin.hotUpdate({ type: 'delete', file: deck }), [], 'no modules to update, so no full reload')
+  assert.equal(plugin.hotUpdate({ type: 'delete', file: resolve(dir, 'other.md') }), undefined)
+  assert.equal(plugin.hotUpdate({ type: 'update', file: deck }), undefined)
+})
+
+test('every change of the deck on disk is announced with its hash, the editor\'s own saves too', async () => {
+  const sent = []
+  const send = vite.ws.send
+  vite.ws.send = (...args) => { sent.push(args); return send.apply(vite.ws, args) }
+  try {
+    const edited = original + '\n<!-- announced -->\n'
+    assert.equal((await post({ source: edited, base: hashSource(original) })).status, 200)
+    const deadline = Date.now() + 3000
+    while (!sent.some(([name]) => name === 'mdeck:deck-changed') && Date.now() < deadline) await new Promise(r => setTimeout(r, 50))
+    const announced = sent.filter(([name]) => name === 'mdeck:deck-changed')
+    assert.deepEqual(announced.at(-1), ['mdeck:deck-changed', { hash: hashSource(edited) }])
+    await post({ source: original, base: hashSource(edited) })
+  } finally { vite.ws.send = send }
 })
 
 test('the first write of a session backs up the file and old copies are pruned', () => {
@@ -145,7 +171,7 @@ test('deck-local extensions can be read, written and removed; built-ins are read
   assert.equal(readFileSync(resolve(dir, 'extensions/ocean/extension.toml'), 'utf8'), toml)
 
   const invalid = await api('/extension/palette/ocean', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': toml.replace('"--bg"', '"bg"') } }) })
-  assert.equal(invalid.status, 500)
+  assert.equal(invalid.status, 400, 'a manifest that does not validate is the user\'s mistake')
   assert.match((await invalid.json()).error, /light.bg/)
   assert.equal(readFileSync(resolve(dir, 'extensions/ocean/extension.toml'), 'utf8'), toml, 'invalid manifests are not written')
 
@@ -159,7 +185,7 @@ test('deck-local extensions can be read, written and removed; built-ins are read
 
   const tomlTemplate = 'schema = 1\nkind = "layout"\nid = "box"\ntitle = "Box"\n[regions.body]\n'
   const noLayout = await api('/extension/layout/box', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': tomlTemplate } }) })
-  assert.equal(noLayout.status, 500)
+  assert.equal(noLayout.status, 400)
   assert.match((await noLayout.json()).error, /layout.jsx is missing/)
   const withLayout = await api('/extension/layout/box', { method: 'PUT', body: JSON.stringify({ files: { 'extension.toml': tomlTemplate, 'layout.jsx': 'export default () => null\n', 'starter.md': '# Box\n' } }) })
   assert.equal(withLayout.status, 200)

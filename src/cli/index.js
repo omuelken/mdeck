@@ -50,6 +50,13 @@ for (const [name, was, now] of RENAMED_OPTIONS) {
 }
 
 if (argv.includes('--help') || argv.includes('-h')) { console.log(COMMAND_HELP[command] ? `${COMMAND_HELP[command]}\n` : HELP); process.exit(0) }
+
+if (!Object.hasOwn(COMMANDS, command)) {
+  err(`Unknown command: "${command}"`)
+  if (Object.hasOwn(RENAMED_COMMANDS, command)) tip(`mdeck ${command} is now ${RENAMED_COMMANDS[command]}.`)
+  tip('Run mdeck --help for usage.\n')
+  process.exit(1)
+}
 let parsed
 try {
   parsed = parseArgs(command, argv)
@@ -60,11 +67,5 @@ try {
   process.exit(1)
 }
 
-if (!Object.hasOwn(COMMANDS, command)) {
-  err(`Unknown command: "${command}"`)
-  if (Object.hasOwn(RENAMED_COMMANDS, command)) tip(`mdeck ${command} is now ${RENAMED_COMMANDS[command]}.`)
-  tip('Run mdeck --help for usage.\n')
-  process.exit(1)
-}
 const { default: start } = await import(`./commands/${COMMANDS[command]}.js`)
 await start(commandContext(command, parsed))

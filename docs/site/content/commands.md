@@ -36,11 +36,13 @@ For how the commands, the views and the servers fit together, see [Views, comman
 - **Preview:** a small live copy of the deck to flip through; click it to open the audience window at that slide.
 - **Present:** the presenter view, audience window and reader view, each in a new tab. The presenter view has notes, drawing controls, a timer and next-slide preview; **Rehearse** opens it timing each slide; switch to its slide-only layout for a single screen. The audience window shows slides without notes. Fullscreen is a control inside either view, not a separate view.
 - **Write and learn:** the visual editor, the theme editor (themes and palettes on a sample deck, see [Install, remove or share a theme](theme-repository.html)) and these guides. Each starts the first time you click it.
-- **Send:** buttons that make the `dist` folder, one file to send, or a PDF, next to your slide file, and show them in your file manager.
-- **Polls:** for a deck with polls: the server (built in, or the `server` setting and whether it answers), the join link and session code for phones, and for a server of your own the key that lets your browser move the phones along and reset polls (see below).
+- **Share:** buttons that make the `dist` folder, one file to send, or a PDF, next to your slide file, and show them in your file manager.
+- **Answers from the talk** and **Drawings:** what was kept during the talk, to save or drop.
 - **Check:** the same problems `mdeck check` reports, such as missing pictures.
 
-The key is the one the server was started with. Start `mdeck run` with the same key, for example `MDECK_SERVER_KEY=choose-a-secret mdeck run my-talk.md`, and the launch page shows it, and its presenter and audience buttons open those views with it, so they move the phones along. Local views control this deck through the laptop; paired devices receive only a revocable token. Pairing codes never contain the master key. A hosted presenter can unlock the server separately with `?serverkey=…`; that key is removed from the address as soon as the page has it. It never goes into the slide file, because that file reaches everyone who opens the slides.
+For a deck with polls, the presenter view's connections panel (the connection icons in its bar) shows the server (built in, or the `server` setting and whether it answers), the join link and session code for phones, and for a server of your own whether it accepts the key that lets your browser move the phones along and reset polls (see below).
+
+The key is the one the server was started with. Start `mdeck run` with the same key, for example `MDECK_SERVER_KEY=choose-a-secret mdeck run my-talk.md`, and the launch page's presenter and audience buttons open those views with it, so they move the phones along. Local views control this deck through the laptop; paired devices receive only a revocable token. Pairing codes never contain the master key. A hosted presenter can unlock the server separately with `?serverkey=…`; that key is removed from the address as soon as the page has it. It never goes into the slide file, because that file reaches everyone who opens the slides.
 
 Two options make the slides reachable from other devices:
 
@@ -154,7 +156,7 @@ This saves each slide, with all steps revealed, as a 1280×720 PNG file in `.mde
 
 ```sh
 mdeck list layouts my-talk.md
-mdeck starter comparison my-talk.md
+mdeck starter split my-talk.md
 ```
 
 The first lists the layouts available to your talk. The second prints starting text for one layout. `mdeck list layouts --json` prints the layout descriptions in a structured form intended for other tools.

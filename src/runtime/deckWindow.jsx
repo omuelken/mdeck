@@ -11,6 +11,7 @@ import { createEditorBridge } from './editorBridge.js'
 import { ReaderView } from './ReaderView.jsx'
 import { createOrder } from './syncOrder.js'
 import { attachInk, watchInk } from './ink/attach.js'
+import { aliasSlide, resolveSlideId } from './ink/store.js'
 import { roomTransport, followStageRoom, announceStagePosition, onStagePosition } from './ink/room.js'
 import { startFollowing } from './follow.js'
 import { inkFileName } from 'virtual:deck-ink'
@@ -130,12 +131,15 @@ function serveAsPresenterFrame(stage, { remoteFrame }) {
 }
 
 // ? typed in the presenter's slide frame goes to the presenter view, which
-// shows the keys.
-function forwardHelpKey() {
+// shows the keys; so do the keys the frame has no use for but the presenter
+// view has (T, H, L, N, F, and Escape, which closes the help), once the
+// stage has let them pass. A click on the slide gives the frame the keyboard.
+function forwardPresenterKeys() {
   window.addEventListener('keydown', event => {
-    if (!isHelpKey(event) || event.target?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"]')) return
-    event.preventDefault()
-    toParent({ keyHelp: 'toggle' })
+    if (event.target?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"]')) return
+    if (isHelpKey(event)) { event.preventDefault(); toParent({ keyHelp: 'toggle' }); return }
+    if (event.metaKey || event.ctrlKey || event.altKey || event.defaultPrevented) return
+    if (/^[thlnf]$/i.test(event.key) || event.key === 'Escape') toParent({ presenterKey: event.key })
   })
 }
 
@@ -197,12 +201,15 @@ export async function startDeck({ url, parsed, deckConfig, editorMode, audienceM
   function switchLanguage(lang, { state = document.querySelector('deck-stage')?.state, announce = true } = {}) {
     if (lang === deckLang || !chooseLanguage(lang)) return false
     const stage = document.querySelector('deck-stage')
+    const before = parsed.slides.map(slide => slide.id)
     parsed = parseSlides(slidesContent)
     const config = withConfigOverrides(withFileLanguage(parsed.deckConfig))
     setCalloutLabels(config)
     setDeckLanguage(config)
     document.documentElement.lang = deckLanguage()
-    // Explicit slide ids may differ between the files; the place does not.
+    // Explicit slide ids may differ between the files; the place does not,
+    // and the drawings are kept under the ids of the file `mdeck run` started.
+    parsed.slides.forEach((slide, i) => { if (before[i]) aliasSlide(slide.id, resolveSlideId(before[i])) })
     mountDeck({ deck: parsed, deckConfig: config })
     if (state) setTimeout(() => document.querySelector('deck-stage')?.setState({ ...state, slideId: undefined }), 0)
     if (!embedded && !followMode && stage) announceSlide(parsed, stage.index)
@@ -249,7 +256,7 @@ export async function startDeck({ url, parsed, deckConfig, editorMode, audienceM
   // ? lists the keys that work now: in a deck window over the slide; in the
   // presenter's slide frame it goes to the presenter view, which shows them.
   if (inkStage && !embedded && !audienceMode && !followMode) attachKeyHelp(inkStage, { canDraw: drawHere })
-  else if (embedded && drawHere) forwardHelpKey()
+  else if (embedded && drawHere) forwardPresenterKeys()
   // The presenter view shows the slide's own controls in its toolbar, the
   // clicker as big buttons (slideControls.js).
   if (inkStage && embedded && drawHere) watchSlideControls(inkStage, controls => toParent({ slideControls: controls }))
@@ -264,7 +271,8 @@ export async function startDeck({ url, parsed, deckConfig, editorMode, audienceM
     })
     startDrawingWhenWanted(inkStage, { embedded })
   } else if (inkStage && followMode) {
-    // The presenter's slide and ink, read from the stage room; counted as a phone.
+    // The presenter's slide and ink, read from the stage room; counted as a
+    // follower, a phone that cannot answer.
     inkStage.setAttribute('data-follower', '')
     inkStage.setAttribute('data-watching', '')
     onStagePosition(position => {
@@ -273,7 +281,7 @@ export async function startDeck({ url, parsed, deckConfig, editorMode, audienceM
       if (typeof position.join === 'boolean') inkStage.setJoin(position.join, 'sync')
     })
     startFollowing(inkStage, { onStagePosition, words: { live: t('follow.live'), back: t('follow.back'), waiting: t('follow.waiting') } })
-    watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true, view: 'phone' })] })
+    watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true, view: 'follow' })] })
   } else if (inkStage && audienceMode) {
     // The audience window shows the presenter's zoom and a poll's answer, without their controls.
     inkStage.setAttribute('data-follower', '')

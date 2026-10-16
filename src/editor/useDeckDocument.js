@@ -6,12 +6,17 @@ import { reduce, initialState } from './state.js'
 import { loadDeck, saveSource, onServerEvent } from './api.js'
 import { createSaveQueue } from './saveQueue.js'
 
-export function useDeckDocument() {
+// `isLive(file)` says whether a changed extension file is already shown by
+// the page without a reload (the design page's open theme or palette).
+export function useDeckDocument({ isLive = () => false } = {}) {
   const [state, dispatch] = useReducer(reduce, initialState)
   const stateRef = useRef(state)
   stateRef.current = state
   const [loadError, setLoadError] = useState(null)
   const [previewKey, setPreviewKey] = useState(0)
+  const [extensionsKey, setExtensionsKey] = useState(0)
+  const isLiveRef = useRef(isLive)
+  isLiveRef.current = isLive
 
   const queue = useMemo(() => createSaveQueue({
     save: saveSource,
@@ -41,12 +46,15 @@ export function useDeckDocument() {
       } catch {}
     })
     // Extension files changed on disk (by an editor page or another program):
-    // refresh the registry and reload the preview frame, never the page.
-    const offExtensions = onServerEvent('mdeck:extensions-changed', async () => {
+    // refresh the registry and reload the preview frame, never the page. A
+    // file the page already shows live needs no reload.
+    const offExtensions = onServerEvent('mdeck:extensions-changed', async ({ file } = {}) => {
       try { const payload = await loadDeck(); dispatch({ type: 'setRegistry', registry: payload.registry }) } catch {}
-      setPreviewKey(key => key + 1)
+      setExtensionsKey(key => key + 1)
+      if (!isLiveRef.current(file)) setPreviewKey(key => key + 1)
     })
-    const flush = () => { if (queue.pending()) queue.flush() }
+    // On leaving the page the request must outlive it.
+    const flush = () => { if (queue.pending()) queue.flush({ keepalive: true }) }
     const hidden = () => { if (document.visibilityState === 'hidden') flush() }
     window.addEventListener('beforeunload', flush)
     document.addEventListener('visibilitychange', hidden)
@@ -63,5 +71,6 @@ export function useDeckDocument() {
     else queue.reload(conflict.hash)
   }
   const reloadPreview = () => setPreviewKey(key => key + 1)
-  return { state, stateRef, dispatch, edit, resolve, loadError, previewKey, reloadPreview }
+  const retry = () => queue.retry()
+  return { state, stateRef, dispatch, edit, resolve, loadError, reload: load, retry, previewKey, extensionsKey, reloadPreview }
 }

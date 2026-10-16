@@ -38,8 +38,9 @@ export function backupDeck(abs, source, now = new Date()) {
   return file
 }
 
+// A write to a file that is gone (moved or deleted) is `missing`, so the
+// editor keeps its text and tries again, rather than a conflict.
 export function createDeckFile(abs, { backup = true } = {}) {
-  let lastWritten = null
   let backupFile = null
   const read = () => {
     const source = readFileSync(abs, 'utf8')
@@ -49,15 +50,13 @@ export function createDeckFile(abs, { backup = true } = {}) {
     path: abs,
     read,
     write(source, base) {
-      if (!existsSync(abs)) return { ok: false, conflict: true, source: null, hash: null }
+      if (!existsSync(abs)) return { ok: false, missing: true }
       const current = read()
       if (base !== current.hash) return { ok: false, conflict: true, ...current }
       if (backup && !backupFile && source !== current.source) backupFile = backupDeck(abs, current.source)
       writeFileSync(abs, source, 'utf8')
-      lastWritten = source
       return { ok: true, hash: hashSource(source) }
     },
-    isExternalChange(content) { return content !== lastWritten },
     get backupFile() { return backupFile },
   }
 }
@@ -238,13 +237,14 @@ export function editorMiddleware(deckFile, { registryFor, extensions = createExt
         if (typeof body?.source !== 'string' || typeof body?.base !== 'string') return send(response, 400, { error: 'Expected { source: string, base: string }' })
         const result = deckFile.write(body.source, body.base)
         if (result.ok) return send(response, 200, { hash: result.hash })
+        if (result.missing) return send(response, 404, { error: 'The slide file is no longer where it was' })
         return send(response, 409, { error: 'conflict', source: result.source, hash: result.hash })
       }
       if (['/deck', '/source'].includes(pathname)) { response.setHeader('Allow', pathname === '/deck' ? 'GET' : 'POST'); return send(response, 405, { error: 'Method not allowed' }) }
       return next()
     } catch (error) {
       if (error instanceof PackageError) return send(response, 400, { error: error.message })
-      if (error instanceof ManifestError) return send(response, 500, { error: error.message })
+      if (error instanceof ManifestError) return send(response, 400, { error: error.message })
       return send(response, error.status ?? 500, { error: error.message })
     }
   }
@@ -254,7 +254,7 @@ export function editorMiddleware(deckFile, { registryFor, extensions = createExt
 // when `mdeck design` starts it without a deck. `abs` places it in the folder
 // whose extensions are edited.
 export function createSampleDeck(abs, source) {
-  return { path: abs, designOnly: true, read: () => ({ source, hash: hashSource(source) }), write: () => ({ ok: false, conflict: true, source, hash: hashSource(source) }), isExternalChange: () => false, backupFile: null }
+  return { path: abs, designOnly: true, read: () => ({ source, hash: hashSource(source) }), write: () => ({ ok: false, conflict: true, source, hash: hashSource(source) }), backupFile: null }
 }
 
 // `source` is given for `mdeck design` without a deck: the editing API then
@@ -269,17 +269,26 @@ export function editorPlugin(slidesPath, { source = null } = {}) {
       if (source !== null) return
       server.watcher.add(abs)
       let timer
+      // Every change is announced, the editor's own saves too: each page
+      // knows the hash it last saved and ignores that one, so a save from
+      // another page (a second editor tab, the design page) reaches it.
       const changed = file => {
         if (resolve(file) !== abs) return
         clearTimeout(timer)
         timer = setTimeout(() => {
           let content
           try { content = readFileSync(abs, 'utf8') } catch { return }
-          if (deckFile.isExternalChange(content)) server.ws.send('mdeck:deck-changed', { hash: hashSource(content) })
+          server.ws.send('mdeck:deck-changed', { hash: hashSource(content) })
         }, 75)
       }
       server.watcher.on('change', changed)
       server.watcher.on('add', changed)
+    },
+    // The deck sits in Vite's public folder, so deleting or moving it would
+    // reload every page; the editor keeps its text and saves again once the
+    // file is back.
+    hotUpdate({ type, file }) {
+      if (source === null && type === 'delete' && resolve(file) === abs) return []
     },
   }
 }

@@ -59,7 +59,7 @@ test('a request that came through the tunnel is never taken for this computer', 
 })
 
 // A server, a fake dev server and the tunnel between them.
-async function setup(t, { base: pathBase, key = KEY, tokens = [] } = {}) {
+async function setup(t, { base: pathBase, key = KEY, tokens = [], pingMs } = {}) {
   const live = await startLiveServer({ port: 0, key })
   const id = newTunnelId()
   const seen = []
@@ -78,7 +78,7 @@ async function setup(t, { base: pathBase, key = KEY, tokens = [] } = {}) {
   await new Promise(done => local.listen(0, '127.0.0.1', done))
   const target = `http://127.0.0.1:${local.address().port}${base(id)}`
   const states = []
-  const tunnel = startTunnel({ server: live.url, key, id, target, base: pathBase ?? base(id), resources: new Set(['main.jsx', 'big.png'].map(path => base(id) + path)), session: () => '123456', tokens: () => tokens, onState: (state, reason) => states.push([state, reason]) })
+  const tunnel = startTunnel({ server: live.url, key, id, target, base: pathBase ?? base(id), resources: new Set(['main.jsx', 'big.png'].map(path => base(id) + path)), session: () => '123456', tokens: () => tokens, onState: (state, reason) => states.push([state, reason]), pingMs })
   t.after(async () => { tunnel.stop(); sockets.close(); local.closeAllConnections(); local.close(); await live.close() })
   const upTo = async () => { for (let i = 0; i < 100 && !states.some(([state]) => state === 'up' || state === 'refused'); i++) await delay(20) }
   await upTo()
@@ -140,6 +140,58 @@ test('the server refuses a wrong key', async t => {
   t.after(() => tunnel.stop())
   for (let i = 0; i < 100 && !states.some(([state]) => state === 'refused'); i++) await delay(20)
   assert.deepEqual(states.at(-1), ['refused', 'The server did not accept the key'])
+})
+
+test('a server that answers 502, as a web server does while it restarts, is tried again', async t => {
+  let attempts = 0
+  const proxy = http.createServer((_request, response) => { response.writeHead(502); response.end() })
+  proxy.on('upgrade', (_request, socket) => { attempts++; socket.end('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\nContent-Length: 0\r\n\r\n') })
+  await new Promise(done => proxy.listen(0, '127.0.0.1', done))
+  t.after(() => { proxy.closeAllConnections(); proxy.close() })
+  const states = []
+  const tunnel = startTunnel({ server: `http://127.0.0.1:${proxy.address().port}`, key: KEY, id: newTunnelId(), target: 'http://127.0.0.1:1/', base: '/t/x/', onState: (state, reason) => states.push([state, reason]) })
+  t.after(() => tunnel.stop())
+  for (let i = 0; i < 150 && attempts < 2; i++) await delay(20)
+  assert.ok(attempts >= 2, 'tried again')
+  assert.ok(states.some(([state]) => state === 'down'))
+  assert.ok(!states.some(([state]) => state === 'refused'))
+})
+
+test('the tunnel pings the server and stays up while it answers', async t => {
+  const { tunnel, states } = await setup(t, { pingMs: 30 })
+  await delay(150)
+  assert.equal(tunnel.state(), 'up')
+  assert.equal(states.filter(([state]) => state === 'up').length, 1, 'never dropped')
+})
+
+test('a bad status or header from the computer gets a 502, and the server stays up', async t => {
+  const live = await startLiveServer({ port: 0, key: KEY })
+  t.after(() => live.close())
+  const id = newTunnelId()
+  // A laptop of our own, answering by hand.
+  const laptop = new WebSocket(`${live.url.replace('http', 'ws')}/tunnel/${id}`, { headers: { Authorization: `Bearer ${KEY}` } })
+  await new Promise((done, fail) => { laptop.once('open', done); laptop.once('error', fail) })
+  t.after(() => laptop.terminate())
+  const answers = [
+    { status: 'nope', headers: { 'x-ok': 'yes' } },
+    { status: 200, headers: { 'x-bad': 'a\r\nb' } },
+    { status: 200, headers: { 'bad name': 'x' } },
+    { status: 200, headers: 'nonsense' },
+  ]
+  laptop.on('message', raw => {
+    const message = JSON.parse(raw.toString())
+    if (message.t !== 'req') return
+    const answer = answers.shift()
+    laptop.send(JSON.stringify({ t: 'head', id: message.id, ...answer }))
+    laptop.send(JSON.stringify({ t: 'data', id: message.id, b: Buffer.from('hi').toString('base64') }))
+    laptop.send(JSON.stringify({ t: 'end', id: message.id }))
+  })
+  assert.equal((await fetch(`${live.url}/t/${id}/a`)).status, 502, 'a status that is not one')
+  assert.equal((await fetch(`${live.url}/t/${id}/b`)).status, 502, 'a header value with a line break')
+  assert.equal((await fetch(`${live.url}/t/${id}/c`)).status, 502, 'a header name that is not one')
+  const last = await fetch(`${live.url}/t/${id}/d`)
+  assert.equal(last.status, 200, 'headers that are not an object are left out')
+  assert.equal(await last.text(), 'hi')
 })
 
 test('without a key the server offers no tunnels', async t => {

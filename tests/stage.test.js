@@ -11,8 +11,12 @@ const [{ output: [{ code: stageScript }] }] = await build({
   build: { write: false, minify: false, lib: { entry: fileURLToPath(new URL('../src/runtime/deck-stage.js', import.meta.url)), formats: ['iife'], name: 'deckStage' } },
 })
 
+// A slide element that reveals on its own step.
+const step = () => ({ dataset: { step: '0' }, getAttribute: () => '0', closest: () => null, setAttribute() { this.visible = true }, removeAttribute() { this.visible = false } })
+
 // Exercise the real stage state machine without a browser layout engine.
-function stageFixture() {
+// `globals` adds to the window the stage runs in (matchMedia, say).
+function stageFixture(globals = {}) {
   let Stage
   const messages = []
   const events = []
@@ -22,7 +26,7 @@ function stageFixture() {
     HTMLElement: class {
       attachShadow() { return {} }
       dispatchEvent(event) { events.push(event) }
-      toggleAttribute(name, on) { this[name] = on }
+      toggleAttribute(name, on) { on = on ?? !this[name]; this[name] = on; if (on) this.setAttribute(name, ''); else this.removeAttribute(name) }
       getAttribute(name) { return this.attributes?.[name] ?? null }
       setAttribute(name, value) { (this.attributes ??= {})[name] = String(value) }
       hasAttribute(name) { return this.attributes?.[name] != null }
@@ -31,12 +35,12 @@ function stageFixture() {
     customElements: { get() {}, define(name, value) { Stage = value } },
     location: { search: '', hash: '' }, history: { replaceState() {} },
     URLSearchParams, window, CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail } },
+    ...globals,
   })
   const stage = new Stage()
-  const step = () => ({ dataset: { step: '0' }, getAttribute: () => '0', closest: () => null, setAttribute() { this.visible = true }, removeAttribute() { this.visible = false } })
   stage._slides = ['first', 'second'].map(id => {
     const steps = [step(), step()]
-    return { dataset: { slideId: id }, steps, querySelectorAll: () => steps, setAttribute() {}, removeAttribute() {} }
+    return { dataset: { slideId: id }, steps, querySelectorAll: () => steps, querySelector: () => null, setAttribute() {}, removeAttribute() {}, style: { setProperty() {} } }
   })
   return { stage, messages, events }
 }
@@ -137,9 +141,6 @@ test('a frozen projector keeps its slide while the presenter goes on, and follow
   assert.equal(presenter.index, 1, 'the presenter goes on')
   audience.setState(messages.at(-1).deckStateChanged)
   assert.equal(audience.index, 0, 'the audience window keeps the frozen slide')
-  assert.equal(audience.state.step, 0)
-  audience.next()
-  assert.equal(audience.index, 0, 'nor does it page on its own while frozen')
   assert.equal(audience.state.step, 0)
   presenter.setFreeze(false, 'keyboard')
   audience.setState(messages.at(-1).deckStateChanged)
@@ -253,4 +254,93 @@ test('the overview fits every slide it can, and its keys move a cursor and go th
   assert.equal(stage.index, 1)
   assert.equal(messages.at(-1).deckStateChanged.index, 1, 'going to a slide is an ordinary change')
   assert.equal(stage.overviewKey('ArrowRight'), false, 'closed, the keys are the slides’ again')
+})
+
+test('a press in a frozen audience window lets it follow again, where the presenter went', () => {
+  const { stage: presenter, messages } = stageFixture()
+  const { stage: audience, messages: heard } = stageFixture()
+  audience.setAttribute('data-freezable', '')
+  presenter.setFreeze(true, 'keyboard')
+  audience.setState(messages.at(-1).deckStateChanged)
+  // Both steps of the first slide, then the second slide.
+  presenter.next(); presenter.next(); presenter.next()
+  assert.equal(presenter.index, 1)
+  audience.setState(messages.at(-1).deckStateChanged)
+  assert.equal(audience.index, 0, 'frozen, it keeps its slide')
+  // The presenter's tab is gone: a press in the audience window is the way out.
+  audience.next('keyboard')
+  assert.equal(audience.freeze, null)
+  assert.equal(audience.index, 1, 'it goes where the presenter went')
+  const told = heard.at(-1)
+  assert.equal(told.reason, 'keyboard', 'told as a change of its own, so a presenter still there follows')
+  assert.equal(told.deckStateChanged.freeze, null)
+  audience.next('keyboard')
+  assert.equal(audience.state.step, 0, 'and it pages as before')
+  // Nothing heard while frozen: it stays on its slide, unfrozen.
+  const { stage: still } = stageFixture()
+  still.setAttribute('data-freezable', '')
+  still.setState({ index: 0, step: -1, freeze: { index: 0, step: -1, slideId: 'first' } })
+  still.prev('keyboard')
+  assert.equal(still.freeze, null)
+  assert.equal(still.index, 0)
+})
+
+test('the same position again shows the reveals on a slide whose content was swapped in place', () => {
+  const { stage } = stageFixture()
+  stage.next()
+  // Another language: the section stays, its elements are new (no slotchange).
+  const slide = stage._slides[0]
+  slide.steps.splice(0, slide.steps.length, step(), step())
+  assert.equal(slide.steps[0].visible, undefined)
+  stage.setState({ index: 0, step: 0 })
+  assert.equal(slide.steps[0].visible, true)
+  assert.equal(slide.steps[1].visible, false)
+  assert.equal(stage.state.step, 0)
+})
+
+test('closing the overview places the hotspot badges again, for a window resized meanwhile', () => {
+  const element = () => ({ dataset: {}, style: {}, setAttribute() {}, appendChild() {} })
+  const { stage } = stageFixture({ document: { createElement: element } })
+  stage._fit = () => {}
+  let queued = 0
+  stage._queueHotspots = () => { queued++ }
+  stage.overview = true
+  const before = queued
+  stage.overview = false
+  assert.equal(queued, before + 1)
+})
+
+test('drawing starts with the pen on a computer and with the laser on a touch screen', () => {
+  assert.equal(stageFixture().stage.inkTool.tool, 'pen')
+  assert.equal(stageFixture({ matchMedia: query => ({ matches: query === '(pointer: coarse)' }) }).stage.inkTool.tool, 'laser')
+  assert.equal(stageFixture({ matchMedia: () => ({ matches: false }) }).stage.inkTool.tool, 'pen')
+})
+
+test('the control bar’s tooltips name the buttons in the deck’s language, with their keys', () => {
+  const { stage } = stageFixture()
+  const buttons = Object.fromEntries(['.prev', '.next', '.reset', '.overview', '.draw', '.fullscreen'].map(selector => [selector, {
+    attributes: {}, setAttribute(name, value) { this.attributes[name] = value }, firstChild: {},
+  }]))
+  stage._overlay = { setAttribute() {}, querySelector: selector => buttons[selector] }
+  stage.setLabels({ previous: 'Vorherige Folie', next: 'Nächste Folie', reset: 'Neustart', resetHint: 'Zurück zur ersten Folie', overview: 'Übersicht' })
+  assert.equal(buttons['.prev'].title, 'Vorherige Folie (←)')
+  assert.equal(buttons['.prev'].attributes['aria-label'], 'Vorherige Folie')
+  assert.equal(buttons['.next'].title, 'Nächste Folie (→)')
+  assert.equal(buttons['.reset'].title, 'Zurück zur ersten Folie (R)')
+  assert.equal(buttons['.reset'].firstChild.textContent, 'Neustart')
+  assert.equal(buttons['.overview'].title, 'Übersicht (O)')
+  assert.equal(buttons['.draw'].title, undefined, 'a button without a word keeps its own')
+})
+
+test('I hides the drawings on every screen: the state carries it, and the toolbar sets it the same way', () => {
+  const { stage: presenter, messages } = stageFixture()
+  const { stage: audience } = stageFixture()
+  presenter.setInkHidden(true, 'keyboard')
+  assert.equal(presenter['data-ink-hidden'], true)
+  const state = messages.at(-1).deckStateChanged
+  assert.equal(state.inkHidden, true)
+  audience.setState(state)
+  assert.equal(audience.inkHidden, true, 'the audience window hides them too')
+  audience.setState({ ...state, inkHidden: false })
+  assert.equal(audience.inkHidden, false)
 })

@@ -94,7 +94,7 @@ code[class*="language-"] { color: var(--token-default); }
   padding: 28px 48px;
   background: var(--surface, var(--rule));
   color: var(--ink);
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
   font-size: var(--code-size, 30px);
   line-height: 1.55;
   white-space: pre;

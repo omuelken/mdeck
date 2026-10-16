@@ -24,8 +24,13 @@ const SAMPLE = sampleDeck(sampleDataUrl())
 // Layouts are code, written by hand or by an assistant, not here. Choosing the deck's look happens in the editor's Deck
 // settings; here a finished theme or palette can be put to use in one step.
 export function DesignApp() {
-  const { state, dispatch, edit, resolve, loadError, previewKey } = useDeckDocument()
   const [current, setCurrent] = useState(null) // { kind, id, source, files, dirty: {} }
+  const currentRef = useRef(current)
+  currentRef.current = current
+  // The open theme or palette reaches the preview as an override, so its
+  // files changing on disk (its own autosave, mostly) need no reload.
+  const inOpen = file => { const dir = currentRef.current?.dir; return Boolean(dir && file?.startsWith(dir) && /[\\/]/.test(file[dir.length])) }
+  const { state, dispatch, edit, resolve, loadError, reload, previewKey, extensionsKey } = useDeckDocument({ isLive: inOpen })
   const [status, setStatus] = useState('saved')
   const [error, setError] = useState(null)
   const [dialog, setDialog] = useState(null)
@@ -38,8 +43,6 @@ export function DesignApp() {
   const resize = width => { setInspectorWidth(width); storeInspectorWidth(width) }
   const [home] = useState(launchPageUrl)
   const timer = useRef(null)
-  const currentRef = useRef(current)
-  currentRef.current = current
   const { manifests } = state
   const deckConfig = state.deck?.deckConfig ?? {}
   const offers = (theme, paletteId) => !paletteId || !theme || palettesFor(theme, manifests.palettes).some(p => p.id === paletteId)
@@ -158,13 +161,13 @@ export function DesignApp() {
   // edits are still waiting to be saved.
   useEffect(() => {
     const target = currentRef.current
-    if (!previewKey || !target || Object.keys(target.dirty).length) return
+    if (!extensionsKey || !target || Object.keys(target.dirty).length) return
     loadExtension(target.kind, target.id).then(fresh => setCurrent(prev => prev && prev.id === target.id && !Object.keys(prev.dirty).length ? { ...prev, ...fresh, dirty: {} } : prev)).catch(() => {})
-  }, [previewKey])
+  }, [extensionsKey])
   useEffect(() => { const handler = () => flush(); window.addEventListener('beforeunload', handler); return () => window.removeEventListener('beforeunload', handler) }, [])
   useEffect(() => { document.title = state.name ? `Design · ${state.name}` : 'mdeck design' }, [state.name])
 
-  if (loadError) return <div class="loading">Could not load the deck: {loadError}</div>
+  if (loadError) return <div class="loading">Could not load the deck: {loadError} <button class="btn is-small" onClick={reload}>Try again</button></div>
   if (!state.loaded || !view) return <div class="loading">Loading…</div>
 
   // The preview: unsaved themes and palettes reach it as runtime overrides.

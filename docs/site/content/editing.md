@@ -20,7 +20,9 @@ It is not a drag-and-drop editor like PowerPoint or Keynote. You do not place bo
 
 There is no save button. Every change is written into your slide file within a moment; the status next to the file name says *Saved* when it is done. Undo and redo (⌘Z and ⇧⌘Z, or Ctrl on Windows and Linux) work across everything you change, and the file follows along.
 
-Because the file is the only copy, you can keep your text editor or your AI assistant working at the same time. When either changes the file, the visual editor shows the change. If both change the same file at the same moment, the editor asks which version to keep.
+Because the file is the only copy, you can keep your text editor or your AI assistant working at the same time. When either changes the file, the visual editor shows the change. If both change the same file at the same moment, the editor asks which version to keep. The same goes for a second editor tab or the design page: a change saved in one shows up in the other.
+
+If a change cannot be saved, for example because the file was moved away, the status says *Could not save* and why; the editor keeps your text and tries again every few seconds, or at once with **Try again**.
 
 The editor only ever rewrites the parts of the file you change. Your blank lines, comments and the order of everything else stay as they are.
 

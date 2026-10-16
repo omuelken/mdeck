@@ -27,6 +27,12 @@ export function changeInk(op) {
   return next
 }
 
+/** The slide `from` (its id in another language) shows and takes the ink of `to`. */
+export function aliasSlide(from, to) {
+  if (!from || !to || from === to) return
+  aliases.set(from, to)
+}
+
 /** A slide got a new id: its ink and the rendered slide follow. */
 export function renameSlide(from, to) {
   if (!from || !to || from === to) return

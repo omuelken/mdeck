@@ -3,11 +3,12 @@
 // plan while it is given. A rehearsal (runtime/presenter/RehearsalSummary.jsx) writes
 // the times it measured back with formatTime.
 //
-// Times are written 90s, 2m, 1m30s or 1.5m; a bare number is minutes.
+// Times are written 90s, 2m, 1m30s or 1.5m; a bare number is minutes. A
+// whole talk may be 1h, 1h30 or 1h30m.
 
 export const TIME_STEP = 15
 
-const TIME_RE = /^(?:(\d+(?:\.\d+)?)\s*m(?:in)?)?\s*(?:(\d+(?:\.\d+)?)\s*s(?:ec)?)?$/i
+const TIME_RE = /^(?:(\d+(?:\.\d+)?)\s*h(?:ours?)?)?\s*(?:(\d+(?:\.\d+)?)\s*m(?:in)?)?\s*(?:(\d+(?:\.\d+)?)\s*s(?:ec)?)?$/i
 
 // Seconds, or null for something that is not a time.
 export function parseTime(value) {
@@ -15,9 +16,12 @@ export function parseTime(value) {
   if (typeof value !== 'string') return null
   const text = value.trim()
   if (/^\d+(\.\d+)?$/.test(text)) return parseTime(Number(text))
+  // 1h30: the minutes after the hour, as on a clock.
+  const clock = text.match(/^(\d+)\s*h\s*(\d{1,2})$/i)
+  if (clock) return parseTime(`${clock[1]}h${clock[2]}m`)
   const match = text.match(TIME_RE)
-  if (!text || !match || (match[1] == null && match[2] == null)) return null
-  const seconds = Math.round(Number(match[1] ?? 0) * 60 + Number(match[2] ?? 0))
+  if (!text || !match || (match[1] == null && match[2] == null && match[3] == null)) return null
+  const seconds = Math.round(Number(match[1] ?? 0) * 3600 + Number(match[2] ?? 0) * 60 + Number(match[3] ?? 0))
   return seconds > 0 ? seconds : null
 }
 
@@ -51,7 +55,8 @@ export function planFor(slides, deckConfig = {}, times = {}) {
   const budget = parseTime(deckConfig?.time)
   const set = own.reduce((sum, t) => sum + (t ?? 0), 0)
   const untimed = own.filter(t => t == null).length
-  const share = budget && untimed ? Math.max(0, budget - set) / untimed : 0
+  // Whole seconds, as the slides' own times are: the clock counts them down.
+  const share = budget && untimed ? Math.round(Math.max(0, budget - set) / untimed) : 0
   const perSlide = own.map(t => t ?? share)
   const start = []
   let total = 0

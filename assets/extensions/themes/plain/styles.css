@@ -168,16 +168,17 @@ strong { font-weight: 600; color: var(--ink); }
   top: 0;
   color: var(--muted);
 }
-/* An item that starts in bold: the bold part is a title on its own line,
-   the rest a smaller description under it, and no marker. */
-.slide-body ul > li:has(> strong:first-child) {
+/* An item that starts in bold (li.lead, marked by the Markdown renderer):
+   the bold part is a title on its own line, the rest a smaller description
+   under it, and no marker. */
+.slide-body ul > li.lead {
   padding-inline-start: 0;
   font-size: calc(var(--fs-body) * 0.86);
   line-height: 1.45;
   color: var(--ink-soft);
 }
-.slide-body ul > li:has(> strong:first-child)::before { content: none; }
-.slide-body li > strong:first-child {
+.slide-body ul > li.lead::before { content: none; }
+.slide-body li.lead > strong:first-child {
   display: block;
   font-size: calc(var(--fs-body) / 0.86);
   font-weight: 600;
@@ -193,7 +194,7 @@ strong { font-weight: 600; color: var(--ink); }
   font-variant-numeric: tabular-nums;
   color: var(--accent);
 }
-.slide-body ol > li > strong:first-child { font-size: inherit; }
+.slide-body ol > li.lead > strong:first-child { font-size: inherit; }
 .slide-body li :is(ul, ol) { font-size: calc(var(--fs-body) * 0.9); }
 
 /* ─────────────────────────────────────────────

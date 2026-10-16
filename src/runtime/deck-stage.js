@@ -286,9 +286,11 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     fullscreenButton.addEventListener('click', () => toggleFullscreen());
     // The same button leaves full screen, and says so.
     onFullscreenChange(on => {
+      this._fullscreenOn = on;
       fullscreenButton.innerHTML = iconSvg(on ? 'fullscreen-exit' : 'fullscreen');
-      fullscreenButton.title = on ? 'Exit full screen (F)' : 'Full screen (F)';
-      fullscreenButton.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
+      const label = (on ? this._labels?.exitFullscreen : this._labels?.fullscreen) || (on ? 'Exit full screen' : 'Full screen');
+      fullscreenButton.title = `${label} (F)`;
+      fullscreenButton.setAttribute('aria-label', label);
     });
     // Only a top-level window can go full screen (an iPhone cannot at all).
     if (window.top === window && fullscreenAvailable()) this.setAttribute('data-fullscreen-available', '');
@@ -482,7 +484,17 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
 
   get state() {
     return { index: this._index, slideId: this._slides[this._index]?.dataset.slideId,
-      step: this._stepMap.get(this._index) ?? -1, blank: this._blank, join: this._join, freeze: this._freeze };
+      step: this._stepMap.get(this._index) ?? -1, blank: this._blank, join: this._join, freeze: this._freeze,
+      inkHidden: this.hasAttribute('data-ink-hidden') };
+  }
+
+  /** Whether the saved drawings are hidden (I). Setting it tells the other screens. */
+  get inkHidden() { return this.hasAttribute('data-ink-hidden'); }
+  setInkHidden(on, reason = 'api') {
+    on = !!on;
+    if (on === this.inkHidden) return;
+    this.toggleAttribute('data-ink-hidden', on);
+    this._broadcastState(reason);
   }
 
   /** The position the audience's screens keep (Z), or null. */
@@ -496,10 +508,21 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   }
   _applyFreeze(position) {
     this._freeze = position;
+    if (!position) this._followed = null;
     this.toggleAttribute('data-frozen', !!position);
   }
   // Whether this screen keeps the frozen position instead of following.
   _frozenHere() { return !!this._freeze && this.hasAttribute('data-freezable'); }
+  // A press in a frozen audience window lets it follow again, where the
+  // presenter went on to: a presenter tab that closed while it was frozen
+  // would otherwise leave it stuck, with only a reload as the way out. The
+  // presenter view hears of it like any change made in this window.
+  _thaw(reason) {
+    const position = this._followed;
+    this._applyFreeze(null);
+    if (position) this.setState({ ...position, freeze: null });
+    this._broadcastState(reason);
+  }
 
   /** Whether the screen is black (B). Setting it tells the other screens. */
   get blank() { return this._blank; }
@@ -550,7 +573,9 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
         ? { index: state.freeze.index, step: state.freeze.step, slideId: state.freeze.slideId } : null;
     const freezeChanged = JSON.stringify(freeze) !== JSON.stringify(this._freeze);
     if (freezeChanged) this._applyFreeze(freeze);
-    // The audience window stays at the frozen position.
+    // The audience window stays at the frozen position, and remembers where
+    // the presenter went, for when a press in it lets it follow again.
+    if (this._frozenHere()) this._followed = { index: state.index, step: state.step, slideId: state.slideId };
     const target = this._frozenHere() ? this._freeze : state;
     const byId = target.slideId ? this._slides.findIndex(s => s.dataset.slideId === target.slideId) : -1;
     const index = byId >= 0 ? byId : target.index;
@@ -562,8 +587,16 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     if (blankChanged) this._applyBlank(state.blank);
     const joinChanged = typeof state.join === 'boolean' && state.join !== this._join;
     if (joinChanged) this._applyJoin(state.join);
+    const inkChanged = typeof state.inkHidden === 'boolean' && state.inkHidden !== this.inkHidden;
+    if (inkChanged) this.toggleAttribute('data-ink-hidden', state.inkHidden);
     if (index === this._index) {
-      if (step === this.state.step) { if (blankChanged || joinChanged || freezeChanged) this._broadcastState('sync'); return; }
+      if (step === this.state.step) {
+        // The same position again, after the slide's content was swapped in
+        // place (another language): its new elements get the reveals too.
+        this._applySteps(index);
+        if (blankChanged || joinChanged || freezeChanged || inkChanged) this._broadcastState('sync');
+        return;
+      }
       if (this._hotspot) this.wholeSlide();
       this._stepMap.set(index, step);
       this._applySteps(index);
@@ -639,9 +672,9 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     } else if (key === 'End') {
       this._go(this._slides.length - 1, 'keyboard');
     } else if (key === 'i' || key === 'I') {
-      // Show or hide the saved ink.
+      // Show or hide the saved ink, on every screen.
       e.preventDefault();
-      this.toggleAttribute('data-ink-hidden');
+      this.setInkHidden(!this.inkHidden, 'keyboard');
     } else if ((key === 'f' || key === 'F') && window.top === window && fullscreenAvailable()) {
       toggleFullscreen();
     } else if (key === 'r' || key === 'R') {
@@ -674,7 +707,8 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   _isPage() { return this.parentElement === document.body; }
 
   _go(i, reason = 'api') {
-    if (!this._slides.length || this._frozenHere()) return;
+    if (!this._slides.length) return;
+    if (this._frozenHere()) { this._thaw(reason); return; }
     const clamped = Math.max(0, Math.min(this._slides.length - 1, i));
     if (clamped === this._index) {
       this._flashOverlay();
@@ -723,18 +757,27 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   /** Total slide count. */
   get length() { return this._slides.length; }
   /** Words on the control bar, in the deck's language:
-   *  { controls, previous, next, reset, resetHint }. */
+   *  { controls, previous, next, reset, resetHint }, and if given
+   *  { overview, draw, fullscreen, exitFullscreen }. Each button's tooltip
+   *  is its word and its key. */
   setLabels(labels = {}) {
     this._labels = labels;
     const overlay = this._overlay;
     if (!overlay) return;
+    const name = (selector, label, key) => {
+      if (!label) return;
+      const button = overlay.querySelector(selector);
+      button.setAttribute('aria-label', label);
+      button.title = `${label} (${key})`;
+    };
     if (labels.controls) overlay.setAttribute('aria-label', labels.controls);
-    if (labels.previous) overlay.querySelector('.prev').setAttribute('aria-label', labels.previous);
-    if (labels.next) overlay.querySelector('.next').setAttribute('aria-label', labels.next);
-    const reset = overlay.querySelector('.reset');
-    if (labels.resetHint) reset.setAttribute('aria-label', labels.resetHint);
-    if (labels.reset) reset.firstChild.textContent = labels.reset;
-    if (labels.resetHint) reset.title = `${labels.resetHint} (R)`;
+    name('.prev', labels.previous, '←');
+    name('.next', labels.next, '→');
+    name('.reset', labels.resetHint, 'R');
+    if (labels.reset) overlay.querySelector('.reset').firstChild.textContent = labels.reset;
+    name('.overview', labels.overview, 'O');
+    name('.draw', labels.draw, 'D');
+    name('.fullscreen', this._fullscreenOn ? labels.exitFullscreen : labels.fullscreen, 'F');
   }
 
   _windowInput() {
@@ -763,8 +806,8 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   goTo(i) { this._go(i, 'api'); }
   /** Advance: reveals next step if the current slide has unrevealed steps, else goes to next slide. */
   next(reason = 'api') {
-    // A frozen audience window stays where it is (P in the presenter view).
-    if (this._frozenHere()) return;
+    // A frozen audience window (Z in the presenter view) follows again on a press.
+    if (this._frozenHere()) { this._thaw(reason); return; }
     // On a black screen, the next press shows the slide again first; so with the join code.
     if (this._blank) { this.setBlank(false, reason); return; }
     if (this._join) { this.setJoin(false, reason); return; }
@@ -783,7 +826,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   }
   /** Go back: hides last revealed step if any, else goes to previous slide. */
   prev(reason = 'api') {
-    if (this._frozenHere()) return;
+    if (this._frozenHere()) { this._thaw(reason); return; }
     if (this._blank) { this.setBlank(false, reason); return; }
     if (this._join) { this.setJoin(false, reason); return; }
     const steps = this._getSteps(this._slides[this._index]);
@@ -800,7 +843,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   }
   /** Reset to first slide and clear all step state. */
   reset() {
-    if (this._frozenHere()) return;
+    if (this._frozenHere()) { this._thaw('reset'); return; }
     this._stepMap.clear();
     // Moving to the first slide reports the new position itself; report it
     // once more only when the deck was already there, for the cleared steps.

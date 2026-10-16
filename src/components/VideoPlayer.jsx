@@ -5,7 +5,8 @@ import './video-player.css'
 
 function getEmbedUrl(rawUrl, autoplay = false) {
   const ap = autoplay
-  const yt = rawUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/)
+  // watch?v=, youtu.be/, shorts/, embed/, live/ and v/ links all name the video the same way.
+  const yt = rawUrl.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|(?:shorts|embed|live|v)\/)|youtu\.be\/)([\w-]+)/)
   if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0${ap ? '&autoplay=1&mute=1' : ''}`
   const vi = rawUrl.match(/vimeo\.com\/(\d+)/)
   if (vi) return `https://player.vimeo.com/video/${vi[1]}${ap ? '?autoplay=1&muted=1' : ''}`

@@ -26,7 +26,7 @@
   let current = null
   let connected = false
   let status = ''
-  // What is typed into a number field, kept while the page redraws.
+  // What is typed into a field, kept while the page redraws.
   let draft = ''
 
   const me = (() => {
@@ -37,9 +37,19 @@
       return id
     } catch { return String(Math.random()).slice(2) }
   })()
+  // What this phone answered, so it shows after a reload and can be changed.
+  // The server forgets a room after twelve hours, and so does the phone: the
+  // same talk given next week does not start with last week's choice.
+  const REMEMBER_MS = 12 * 60 * 60 * 1000
   const chosenKey = room => `mdeck-answer:${code}.${room}`
-  const remembered = room => { try { return localStorage.getItem(chosenKey(room)) } catch { return null } }
-  const remember = (room, value) => { try { localStorage.setItem(chosenKey(room), value) } catch {} }
+  const remembered = room => {
+    try {
+      const kept = JSON.parse(localStorage.getItem(chosenKey(room)))
+      return typeof kept?.value === 'string' && Date.now() - kept.at < REMEMBER_MS ? kept.value : null
+    } catch { return null }
+  }
+  const remember = (room, value) => { try { localStorage.setItem(chosenKey(room), JSON.stringify({ value, at: Date.now() })) } catch {} }
+  const forget = room => { try { localStorage.removeItem(chosenKey(room)) } catch {} }
   const fill = (text, vars) => text.replace(/\{(\w+)\}/g, (all, name) => vars[name] ?? all)
   const el = (tag, props = {}, ...children) => {
     const node = document.createElement(tag)
@@ -51,9 +61,15 @@
     return node
   }
 
-  // The deck's colours and fonts, as the presenter's screen shows them.
+  // Languages written from right to left, as src/core/languages.js knows them.
+  const RIGHT_TO_LEFT = new Set(['ar', 'arc', 'ckb', 'dv', 'fa', 'he', 'iw', 'ks', 'ku', 'nqo', 'ps', 'sd', 'syr', 'ug', 'ur', 'yi'])
+  // The deck's colours and fonts, as the presenter's screen shows them, and
+  // its language, which sets the direction of the page.
   function applyLook(look, lang) {
-    if (lang) document.documentElement.lang = lang
+    if (typeof lang === 'string' && lang.trim()) {
+      document.documentElement.lang = lang
+      document.documentElement.dir = RIGHT_TO_LEFT.has(lang.trim().toLowerCase().split('-')[0]) ? 'rtl' : 'ltr'
+    }
     // No look: keep the one the page has, fonts included.
     if (!look?.tokens) return
     const style = document.documentElement.style
@@ -126,6 +142,8 @@
     }
     controlSource.addEventListener('snapshot', take)
     controlSource.addEventListener('state', take)
+    // Reset on the slide: this phone's answer went with the others.
+    controlSource.addEventListener('reset', () => { forget(room); status = ''; render() })
   }
   // Once the right answer shows: whether this phone's was right, or what it is.
   const verdict = (answered, right, solution) => el('p', { class: `answer-verdict${answered ? (right ? ' is-right' : ' is-wrong') : ''}`, role: 'status' },
@@ -199,12 +217,15 @@
     text(activity, room) {
       const sent = activity.once ? remembered(room) : null
       const input = el('textarea', { rows: activity.once ? 1 : 3, maxlength: activity.maxLength ?? 200, placeholder: activity.placeholder ?? '', disabled: !!controls.closed })
+      input.value = draft
+      input.addEventListener('input', () => { draft = input.value })
       const form = el('form', { class: 'answer-text', onsubmit: async event => {
         event.preventDefault()
         const value = input.value.trim()
         if (!value) return
         try {
           await answer(room, value)
+          draft = ''
           if (activity.once) { remember(room, value); status = '' } else status = words.sent
         } catch (error) { status = error.message }
         render()

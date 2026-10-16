@@ -1,4 +1,5 @@
 // mdeck list: the layouts, themes, palettes and dataviews a deck can use.
+import { existsSync } from 'fs'
 import { manifestsOf, serializeRegistry } from '../../extensions/discover.js'
 import { KINDS } from '../../extensions/manifest.js'
 import { paramKind } from '../../extensions/params.js'
@@ -9,7 +10,9 @@ export default async function list({ positionals, hasFlag, registryFor }) {
   const [first, ...others] = positionals()
   const word = Object.hasOwn(KIND_WORDS, first) ? first : null
   if (first && !word && !/\.md$/i.test(first)) { err(`Unknown kind: ${first}`); tip('Use layouts, themes, palettes or dataviews.'); process.exit(1) }
-  const file = (word ? others[0] : first) ?? 'slides.md'
+  const named = word ? others[0] : first
+  if (named && !existsSync(named)) { err(`File not found: ${named}`); process.exit(1) }
+  const file = named ?? 'slides.md'
   const registry = registryFor(file)
   if (hasFlag('--json')) {
     console.log(JSON.stringify(word ? manifestsOf(registry, KIND_WORDS[word]) : serializeRegistry(registry, { relativeTo: process.cwd() }), null, 2))

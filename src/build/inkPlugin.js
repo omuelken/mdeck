@@ -17,13 +17,31 @@ import { parseSlides } from '../core/parseSlides.js'
 import { setSlideMeta } from '../core/editDeck.js'
 import { slideTitle } from '../core/outline.js'
 import { slug } from '../live/code.js'
-import { inkFileFor, normalizeInk, emptyInk, applyOp, serializeInk } from '../core/ink.js'
+import { inkFileFor, normalizeInk, emptyInk, applyOp, serializeInk, isSlideId } from '../core/ink.js'
 import { hashSource, isAllowedRequest, send, readJson, BACKUP_DIR } from './editorPlugin.js'
 import { markOwnWrite } from './ownWrites.js'
 import { expandDeck } from './include.js'
 
 const ID_RE = /^[a-zA-Z][a-zA-Z0-9_-]*$/
 const BACKUPS_KEPT = 10
+// What one request may carry; a stroke has a few hundred points at most.
+const MAX_OPS = 1000
+const MAX_POINTS = 10000
+const MAX_IDS = 10000
+const OP_TYPES = ['add', 'remove', 'clear']
+
+// Why a request's changes cannot be taken, or null when they are well formed.
+function badOps(ops) {
+  if (!Array.isArray(ops)) return 'ops must be a list'
+  if (ops.length > MAX_OPS) return `At most ${MAX_OPS} changes per request`
+  for (const op of ops) {
+    if (!op || typeof op !== 'object' || !OP_TYPES.includes(op.type)) return 'Unknown change'
+    if (!isSlideId(op.slideId)) return 'Not a slide id'
+    if (op.type === 'add' && (!op.stroke || typeof op.stroke !== 'object' || !Array.isArray(op.stroke.points) || op.stroke.points.length > MAX_POINTS)) return `A stroke has at most ${MAX_POINTS} points`
+    if (op.type !== 'add' && (!Array.isArray(op.ids) || op.ids.length > MAX_IDS)) return `At most ${MAX_IDS} strokes per change`
+  }
+  return null
+}
 
 function writeAtomic(path, text) {
   const temp = `${path}.${process.pid}.tmp`
@@ -72,6 +90,10 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
     backedUp = true
   }
 
+  // Writes what waits for the debounce, and nothing when nothing does: a
+  // deck that was only shown gets no drawings file (nor a backup) on Ctrl+C.
+  function flushPending() { if (timer) flush() }
+
   function flush() {
     clearTimeout(timer)
     timer = null
@@ -115,9 +137,18 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
       return { ink: current(deck), deckHash: hash }
     },
     apply(ops, deckHash) {
+      const problem = badOps(ops)
+      if (problem) return { status: 400, error: problem }
       let { source, deck, hash } = readDeck()
       current(deck)
       const renamed = []
+      // The changes before a refused one stay applied and get written.
+      let applied = false
+      const schedule = () => { clearTimeout(timer); timer = setTimeout(flush, debounceMs) }
+      const refuse = error => {
+        if (applied) { knownIds = deck.slides.map(slide => slide.id); schedule(); onChange({ renamed }) }
+        return { status: 409, error, deckHash: hash }
+      }
       const seen = deckHash
       const alias = new Map(renames.filter(r => r.before === seen).map(r => [r.from, r.to]))
       // The slides of files the deck includes (include.js) are not in its
@@ -129,15 +160,15 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
         }
         return fromIncludes.has(id)
       }
-      for (const raw of Array.isArray(ops) ? ops : []) {
-        const op = { ...raw, slideId: alias.get(raw?.slideId) ?? raw?.slideId }
+      for (const raw of ops) {
+        const op = { ...raw, slideId: alias.get(raw.slideId) ?? raw.slideId }
         if (op.type === 'add') {
           const index = deck.slides.findIndex(slide => slide.id === op.slideId)
-          if (index < 0 && !included(op.slideId)) return { status: 409, error: `No slide "${op.slideId}" in the deck any more`, deckHash: hash }
+          if (index < 0 && !included(op.slideId)) return refuse(`No slide "${op.slideId}" in the deck any more`)
           const slide = deck.slides[index]
           if (slide && slide.meta.id == null) {
             // An id by position: only trusted for the deck the device saw.
-            if (deckHash !== hash) return { status: 409, error: 'The deck changed; reload', deckHash: hash }
+            if (deckHash !== hash) return refuse('The deck changed; reload')
             const id = newSlideId(deck, slide, index)
             renames.push({ from: op.slideId, to: id, before: hash })
             source = setSlideMeta(deck, op.slideId, { id })
@@ -153,10 +184,10 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
           }
         }
         ink = applyOp(ink, op)
+        applied = true
       }
       knownIds = deck.slides.map(slide => slide.id)
-      clearTimeout(timer)
-      timer = setTimeout(flush, debounceMs)
+      schedule()
       onChange({ renamed })
       return { status: 200, deckHash: hash, renamed }
     },
@@ -173,6 +204,7 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
       onChange({ renamed: [] })
     },
     flush,
+    flushPending,
   }
 }
 

@@ -7,7 +7,7 @@ import { parseSlides } from '../core/parseSlides.js'
 import { validateDeck } from '../core/validateDeck.js'
 import { manifestsOf } from '../extensions/discover.js'
 import { paletteProblems } from '../extensions/contrast.js'
-import { collectLocalAssetRefs } from './slidesPlugin.js'
+import { collectLocalAssetRefs, lineNaming } from './slidesPlugin.js'
 import { componentFolders, isFolder } from './components.js'
 import { inkFileFor, validateInk, normalizeInk, orphanIds } from '../core/ink.js'
 import { resolveBibliography } from './bibliography.js'
@@ -22,10 +22,9 @@ export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath
   const diagnostics = validateDeck(deck, { layouts: manifestsOf(registry, 'layout'), themes: manifestsOf(registry, 'theme'), palettes: manifestsOf(registry, 'palette') })
   for (const ref of collectLocalAssetRefs(source)) {
     const file = resolve(dirname(resolve(slidesPath)), ref)
-    if (!existsSync(file)) { diagnostics.push({ severity: 'error', code: 'missing-asset', message: `Missing local asset: ${ref}`, line: 1, column: 1 }); continue }
+    const line = lineNaming(source, ref)
+    if (!existsSync(file)) { diagnostics.push({ severity: 'error', code: 'missing-asset', message: `Missing local asset: ${ref}`, line, column: 1 }); continue }
     if (!/\.svg$/i.test(ref)) continue
-    const at = source.indexOf(ref)
-    const line = at < 0 ? 1 : source.slice(0, at).split('\n').length
     for (const problem of svgProblems(readFileSync(file, 'utf8'))) diagnostics.push({ severity: 'warning', code: problem.code, message: `${ref} ${problem.message}`, line, column: 1 })
   }
   diagnostics.push(...dataDiagnostics(slidesPath, registry, source))

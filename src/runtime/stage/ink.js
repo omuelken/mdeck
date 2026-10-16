@@ -31,8 +31,10 @@ export const Ink = (Base) => class extends Base {
     this._onPointerOut = this._onPointerOut.bind(this);
     this._onTouch = this._onTouch.bind(this);
     this._onClickCapture = this._onClickCapture.bind(this);
-    // Drawing starts with the laser pointer: pointing is the common case.
-    this.inkTool = { tool: 'laser', color: '#e11d48', size: 6 };
+    // Drawing starts with the laser pointer on a touch screen (an iPad),
+    // where pointing is the common case, and with the pen on a computer.
+    const touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+    this.inkTool = { tool: touch ? 'laser' : 'pen', color: '#e11d48', size: 6 };
     this.inkRenderer = null;
     this._inkUpAt = 0;
   }
@@ -213,7 +215,7 @@ export const Ink = (Base) => class extends Base {
     if (!renderer) { path.setAttribute('fill', 'none'); path.setAttribute('stroke-width', size); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round'); }
     path.setAttribute(renderer ? 'fill-opacity' : 'stroke-opacity', tool === 'highlighter' ? '0.35' : '1');
     // The highlighter goes under the pen, as on paper.
-    if (tool === 'highlighter') path.setAttribute('data-under', '');
+    if (tool === 'highlighter') { path.setAttribute('data-under', ''); path.setAttribute('data-tool', 'highlighter'); }
   }
 
   // Highlighter strokes go below the pen's, the selection stays on top.

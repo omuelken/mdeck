@@ -534,7 +534,8 @@ strong { font-weight: 650; color: var(--ink); }
   from { --dx: -24px; --dy: 10px; }
   to { --dx: 28px; --dy: -14px; }
 }
-deck-stage[data-deck-static] .slide { animation: none; }
+/* Also the reader's Read mode, which puts the attribute on its own box. */
+[data-deck-static] .slide { animation: none; }
 
 /* ─────────────────────────────────────────────
    LAYOUT: IMAGE + TEXT — a picture in a bezel, the words beside it

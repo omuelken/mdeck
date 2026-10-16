@@ -152,6 +152,10 @@ export function keepAnswers(room, messages, { closed = false } = {}) {
   }, 800))
 }
 
+// The phones that can answer: followers (?view=follow) count as phones in
+// the presence, but watch the slides instead of the answer page.
+const answering = presence => presence.phones - (presence.followers ?? 0)
+
 /**
  * Follow a room's answers on a slide.
  *   messages  every answer so far: { n, at, from, data: { value } }
@@ -160,8 +164,9 @@ export function keepAnswers(room, messages, { closed = false } = {}) {
  *   canReset / reset()  presenter only
  *   state     the room's state, which only the presenter sets (setState):
  *             an activity's controls, such as closed or revealed
- *   present   how many phones (and followers) are connected to the deck,
+ *   present   how many phones that can answer are connected to the deck,
  *             or null before the server said
+ *   resets    how often the room was reset since this slide opened
  *   connected false until the live stream is open
  *   offline   no room server answered: a PDF, a file sent to readers or a
  *             build hosted without one. Activities then show their question
@@ -175,6 +180,7 @@ export function useRoom(room) {
   const [connected, setConnected] = useState(false)
   const [state, setRoomState] = useState(null)
   const [present, setPresent] = useState(null)
+  const [resets, setResets] = useState(0)
   const [info, setInfo] = useState({})
 
   useEffect(() => { serverInfo().then(setInfo) }, [])
@@ -188,12 +194,12 @@ export function useRoom(room) {
       const snapshot = JSON.parse(event.data)
       setMessages(snapshot.messages)
       setRoomState(snapshot.state ?? null)
-      if (snapshot.presence) setPresent(snapshot.presence.phones)
+      if (snapshot.presence) setPresent(answering(snapshot.presence))
     })
     source.addEventListener('state', event => setRoomState(JSON.parse(event.data).state ?? null))
-    source.addEventListener('presence', event => setPresent(JSON.parse(event.data).phones))
+    source.addEventListener('presence', event => setPresent(answering(JSON.parse(event.data))))
     source.addEventListener('message', event => { const message = JSON.parse(event.data); setMessages(list => list.some(m => m.n === message.n) ? list : [...list, message]) })
-    source.addEventListener('reset', () => setMessages([]))
+    source.addEventListener('reset', () => { setMessages([]); setResets(n => n + 1) })
     return () => { source.close(); setConnected(false) }
   }, [room, live])
 
@@ -209,7 +215,7 @@ export function useRoom(room) {
   }, [room])
 
   const kept = info.reachable === false ? savedRooms[room] : null
-  return { messages: kept ? answersAsMessages(kept.answers) : messages, reset, state, setState, present, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
+  return { messages: kept ? answersAsMessages(kept.answers) : messages, reset, state, setState, present, resets, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
 }
 
 /**

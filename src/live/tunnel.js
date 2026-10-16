@@ -38,6 +38,13 @@ function text(response, status, message) {
   response.end(message)
 }
 
+// What the computer says about its answer is not trusted as it is: a status
+// or header Node refuses would throw here and take the server down.
+const statusOf = value => Number.isInteger(value) && value >= 200 && value <= 599 ? value : 502
+function head(response, status, headers) {
+  try { response.writeHead(status, headers); return true } catch { text(response, 502, 'The presenter\'s computer sent a bad answer'); return false }
+}
+
 export function createTunnels({ key = null, bodyLimit = 2 * MB, maxTunnels = 50, maxPending = 128, requestTimeoutMs = 60000, pingMs = 25000 } = {}) {
   const tunnels = new Map()
   const sockets = new WebSocketServer({ noServer: true, maxPayload: 16 * MB, handleProtocols: protocols => [...protocols][0] ?? false })
@@ -61,7 +68,7 @@ export function createTunnels({ key = null, bodyLimit = 2 * MB, maxTunnels = 50,
       const pending = tunnel.pending.get(message.id)
       switch (message.t) {
         case 'head':
-          if (pending && !pending.headersSent) pending.writeHead(Number(message.status) || 502, { ...forward(message.headers ?? {}, NOT_RESPONSE), 'referrer-policy': 'no-referrer' })
+          if (pending && !pending.headersSent && !head(pending, statusOf(message.status), { ...forward(typeof message.headers === 'object' && message.headers ? message.headers : {}, NOT_RESPONSE), 'referrer-policy': 'no-referrer' })) tunnel.pending.delete(message.id)
           break
         case 'data':
           if (pending && typeof message.b === 'string') pending.write(Buffer.from(message.b, 'base64'))
@@ -70,7 +77,7 @@ export function createTunnels({ key = null, bodyLimit = 2 * MB, maxTunnels = 50,
           if (pending) { pending.end(); tunnel.pending.delete(message.id) }
           break
         case 'err':
-          if (pending) { text(pending, Number(message.status) || 502, String(message.message ?? 'The presenter\'s computer could not answer')); tunnel.pending.delete(message.id) }
+          if (pending) { text(pending, statusOf(message.status), String(message.message ?? 'The presenter\'s computer could not answer').slice(0, 500)); tunnel.pending.delete(message.id) }
           break
         case 'tokens':
           tunnel.session = /^\d{4,8}$/.test(message.session ?? '') ? String(message.session) : null

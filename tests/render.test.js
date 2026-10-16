@@ -110,3 +110,10 @@ test('a code block in one region leaves the next region prose, and stays code it
   assert.doesNotMatch(regions.right.content, /\[\^1\]/, 'the prose beside it gets its footnote')
   assert.match(footnotesHtml, /The source/)
 })
+
+test('a list item that begins in bold is marked as a lead item; bold later in it is not', () => {
+  const html = marked.parse('- **Title** and its text\n- some **bold** text\n\n1. **One**\n')
+  assert.match(html, /<li class="lead"><strong>Title<\/strong> and its text<\/li>/)
+  assert.match(html, /<li>some <strong>bold<\/strong> text<\/li>/)
+  assert.match(html, /<ol>\n<li class="lead"><strong>One<\/strong><\/li>/)
+})

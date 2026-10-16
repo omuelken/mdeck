@@ -66,9 +66,11 @@ export const MEASURE = `(() => {
     seen.add(element)
     const style = getComputedStyle(element)
     if (style.visibility === 'hidden' || Number(style.opacity) === 0 || element.closest('[data-step]:not([data-step-visible])')) continue
+    // A range over a text node measures nothing right inside an SVG (a
+    // chart's labels): there, the <text> element's own box is the text's.
     const range = document.createRange()
     range.selectNodeContents(text)
-    const box = range.getBoundingClientRect()
+    const box = element.closest('svg') ? element.getBoundingClientRect() : range.getBoundingClientRect()
     if (!box.width || !box.height) continue
     const words = text.textContent.trim().slice(0, 40)
     // Text in a box that scrolls (a component's long list) is meant to be out of view.

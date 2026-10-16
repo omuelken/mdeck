@@ -58,7 +58,7 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | Right arrow, Space, or Page Down | Show the next point, then the next slide |
 | Left arrow or Page Up | Hide the last revealed point, or return to the previous slide |
 | Home | Go to the first slide |
-| End | Go to the last slide when the slide view has focus |
+| End | Go to the last slide |
 | R | Start again and clear the reveals |
 | B or . | Make the audience's screen black, and show the slide again (see below) |
 | J | Show the join code over the slide, on every screen, and hide it again, in the presenter view of a deck with polls ([Ask your audience](audience.html)) |
@@ -75,6 +75,8 @@ To let people answer a question on their phones, put a poll on a slide. See [Ask
 | T | Start or pause the timer, in the presenter view |
 | ? | Show the keys that work at this moment, over the slide; **?** again or Escape closes the list |
 
+The keys work in the presenter view whether you last clicked the slide or the view around it.
+
 ## Use your phone as a clicker
 
 Start `mdeck run my-talk.md --network`, open the presenter view, click the connection icons at its top, choose **Phone clicker**, and scan the code with the phone's camera. The phone shows the slide small, the time and how you stand against the plan, your notes in large print, and big **Previous** and **Next** buttons where your thumb is. Under the slide it has the slide's own controls: close a poll, show its results or the right answer, play a video, zoom into a numbered part. The audience window on the laptop does what the phone does. Nothing on the phone draws. Where the browser allows it (`https://`, or a page on the laptop itself), the phone's screen stays on during the talk.
@@ -85,7 +87,7 @@ The clicker is one of the presenter view's layouts: the settings switch any pres
 
 Press **B** when the room should look at you, not at the slide: the audience window goes black, and so do a paired iPad's audience window and phones following the talk. Your presenter view keeps the slide under a dark veil and says that the audience sees a black screen. **B** again, the next key (→, Space) or a click on the black screen shows the slide again, without moving on. Many presentation clickers have a button for this; it sends a full stop, which works like **B**. The presenter view also has a button for it.
 
-Press **Z** to freeze the slide the audience sees, for example to look something up on another slide or to prepare the next one: the audience window keeps its slide, and so do phones following the talk and the phones of a poll, while you go on in the presenter view or on a paired iPad. The presenter view says which slide the audience still sees. While it is frozen, the audience window does not page on its own. **Z** again, or the snowflake button, lets the audience follow again: it goes to the slide you are on.
+Press **Z** to freeze the slide the audience sees, for example to look something up on another slide or to prepare the next one: the audience window keeps its slide, and so do phones following the talk and the phones of a poll, while you go on in the presenter view or on a paired iPad. The presenter view says which slide the audience still sees. **Z** again, or the snowflake button, lets the audience follow again: it goes to the slide you are on. So does a key or a click in the audience window itself, should the presenter view have closed while it was frozen.
 
 ## Find a slide
 
@@ -113,7 +115,7 @@ time: 2m
 # The results
 ```
 
-Write times as `90s`, `2m`, `1m30s` or `1.5m`. Slides without a time share what the deck's time leaves over; without a deck time, they get none.
+Write times as `90s`, `2m`, `1m30s`, `1.5m` or `1h30`. Slides without a time share what the deck's time leaves over; without a deck time, they get none.
 
 Once the deck has times, the presenter view shows under the timer how much time is left on the slide (amber in its last 15 seconds, red once it is over), the length of the talk, and whether you are ahead of or behind your plan. In the slide-only layout the time left on the slide sits beside the timer.
 

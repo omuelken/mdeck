@@ -69,6 +69,45 @@ function cleanAssetRef(ref) {
   return ref.slice(0, end)
 }
 
+// A link that names a file beside the deck (`./handout.pdf`), not a page of
+// the site, an address or an anchor.
+const isFileLink = ref => isLocalAssetRef(ref) && !/^[a-z][a-z0-9+.-]*:/i.test(ref) && !ref.startsWith('?') && /\.[a-z0-9]{1,5}$/i.test(cleanAssetRef(ref))
+
+// The attributes that name local files, and each one's refs changed by
+// `map(ref)`: `src` and `poster` are one ref, `srcset` lists them with
+// sizes, `style` holds them in url(…), `href` is a link, counted when it
+// names a file. Applies to pictures and media, `style` to any tag.
+const REF_ATTRS = ['src', 'poster', 'srcset', 'style', 'href']
+function mapAttributeRefs(tag, name, map) {
+  const value = tag.attrs[name]
+  if (value == null) return value
+  if (name === 'style') return value.replace(/url\(\s*(["']?)([^"')]+)\1\s*\)/g, (m, quote, ref) => `url(${quote}${map(ref.trim())}${quote})`)
+  if (name === 'href') return tag.name === 'a' && isFileLink(value) ? map(value) : value
+  if (!(PICTURE_TAGS.has(tag.name) || MEDIA_TAGS.has(tag.name))) return value
+  if (name === 'srcset') return value.split(',').map(part => part.replace(/^(\s*)(\S+)/, (m, space, ref) => space + map(ref))).join(',')
+  return map(value)
+}
+// The refs a tag's attributes name, as written.
+function attributeRefs(tag) {
+  const refs = []
+  for (const name of REF_ATTRS) mapAttributeRefs(tag, name, ref => { refs.push(ref); return ref })
+  return refs
+}
+// The tag with each ref in its attributes (`names`) changed by `map(ref)`,
+// or undefined when none changed.
+function withMappedRefs(tag, map, names = REF_ATTRS) {
+  let raw = tag.raw, changed = false
+  // From the last attribute to the first, so earlier spans stay where they are.
+  for (const name of names.filter(name => tag.attrs[name] != null).sort((a, b) => tag.spans[b][0] - tag.spans[a][0])) {
+    const next = mapAttributeRefs(tag, name, map)
+    if (next === tag.attrs[name]) continue
+    const [from, to] = tag.spans[name]
+    raw = raw.slice(0, from) + next + raw.slice(to)
+    changed = true
+  }
+  return changed ? raw : undefined
+}
+
 // An SVG picture that uses the theme's colour variables (var(--accent) …) is
 // drawn inline by the picture layouts, so it follows the theme and palette.
 // Inside an <img> it could not see them.
@@ -121,19 +160,22 @@ function inlineMarkdownImages(markdown, baseDir) {
   })
 }
 
-// The `src` of the named tags, as data: URLs where the file is local.
-function inlineTagSources(markdown, baseDir, names) {
+// The local files tags name (`src`, `poster`, `srcset`, url(…) in `style`),
+// as data: URLs; `media` says whether video and audio are embedded too.
+// Links to files stay links: a file cannot be sent inside a link.
+function inlineTagSources(markdown, baseDir, { media }) {
   return replaceTagsIn(markdown, tag => {
-    if (tag.closing || !names.has(tag.name) || !tag.attrs.src) return
-    const dataUrl = toDataUrl(tag.attrs.src, baseDir)
-    return dataUrl ? withAttribute(tag, 'src', dataUrl) : undefined
+    if (tag.closing) return
+    return withMappedRefs(tag, ref => {
+      const dataUrl = toDataUrl(ref, baseDir)
+      if (!dataUrl || (!media && /^data:(video|audio)/.test(dataUrl))) return ref
+      return dataUrl
+    }, REF_ATTRS.filter(name => name !== 'href'))
   })
 }
 
 const PICTURE_TAGS = new Set(['img'])
 const MEDIA_TAGS = new Set(['video', 'audio', 'source', 'videoplayer'])
-const inlineHtmlImgSources = (markdown, baseDir) => inlineTagSources(markdown, baseDir, PICTURE_TAGS)
-const inlineHtmlMediaSources = (markdown, baseDir) => inlineTagSources(markdown, baseDir, MEDIA_TAGS)
 
 function inlineYamlImageFields(markdown, baseDir) {
   return markdown.replace(/^(\s*)(image|logo):\s*(["']?)([^"'\n]+)\3\s*$/gm, (m, indent, key, quote, value) => {
@@ -142,6 +184,13 @@ function inlineYamlImageFields(markdown, baseDir) {
     const q = quote || '"'
     return `${indent}${key}: ${q}${dataUrl}${q}`
   })
+}
+
+// The line where `ref` is first written as a whole path (img/g.svg is not
+// the end of ./img/g.svg), or 1: for messages about the file.
+export function lineNaming(source, ref) {
+  const at = source.search(new RegExp(String.raw`(?<![\w./-])${ref.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`))
+  return at < 0 ? 1 : source.slice(0, at).split('\n').length
 }
 
 export function collectLocalAssetRefs(markdown) {
@@ -162,9 +211,10 @@ export function collectLocalAssetRefs(markdown) {
       if (typeof body !== 'string') continue
       marked.walkTokens(marked.lexer(body), token => {
         if (token.type === 'image') add(token.href)
+        if (token.type === 'link' && isFileLink(token.href)) add(token.href)
         if (token.type === 'html') {
           for (const tag of scanTags(token.text)) {
-            if (PICTURE_TAGS.has(tag.name) || MEDIA_TAGS.has(tag.name)) add(tag.attrs.src)
+            for (const ref of attributeRefs(tag)) add(ref)
             // Markdown pictures in a tag's attributes, such as a poll's options.
             for (const value of Object.values(tag.attrs)) for (const match of value.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)) add(match[1])
           }
@@ -198,17 +248,23 @@ function outsideCodeFences(markdown, fn) {
 
 // The local files a part of a deck names, each changed by `map(ref)` (the new
 // ref, or null to keep it): Markdown pictures (also those in a tag's
-// attributes, such as a poll's options), the `src` of pictures and media, and
-// `image:` and `logo:` settings. For an included file (include.js), whose
+// attributes, such as a poll's options) and links to files, the `src`,
+// `poster`, `srcset` and `style` of pictures and media, the `src` of <data>,
+// and `image:` and `logo:` settings. For an included file (include.js), whose
 // paths are written from its own folder. Paths from the root (/…) stay.
 export function rewriteAssetRefs(markdown, map) {
   const swap = ref => (isLocalAssetRef(ref) && !ref.startsWith('/') ? map(ref) ?? ref : ref)
   return outsideCodeFences(markdown, text => {
     let out = text.replace(/(!\[[^\]]*\]\()([^)\s]+)/g, (m, head, ref) => head + swap(ref))
+    out = out.replace(/(^|[^!])(\[[^\]]*\]\()([^)\s]+)/g, (m, before, head, ref) => before + head + (isFileLink(ref) ? swap(ref) : ref))
     out = replaceTagsIn(out, tag => {
-      if (tag.closing || !(PICTURE_TAGS.has(tag.name) || MEDIA_TAGS.has(tag.name) || tag.name === 'data') || !tag.attrs.src) return
-      const next = swap(tag.attrs.src)
-      return next === tag.attrs.src ? undefined : withAttribute(tag, 'src', next)
+      if (tag.closing) return
+      if (tag.name === 'data') {
+        if (!tag.attrs.src) return
+        const next = swap(tag.attrs.src)
+        return next === tag.attrs.src ? undefined : withAttribute(tag, 'src', next)
+      }
+      return withMappedRefs(tag, swap)
     })
     return out.replace(/^(\s*)(image|logo):\s*(["']?)([^"'\n]+)\3\s*$/gm, (m, indent, key, quote, value) => {
       const next = swap(value.trim())
@@ -223,9 +279,8 @@ export function maybeInlineAssets(markdown, abs, { inlineImages, inlineMedia }) 
   return outsideCodeFences(markdown, text => {
     let out = text
     if (inlineImages) out = inlineMarkdownImages(out, baseDir)
-    if (inlineImages) out = inlineHtmlImgSources(out, baseDir)
     if (inlineImages) out = inlineYamlImageFields(out, baseDir)
-    if (inlineMedia) out = inlineHtmlMediaSources(out, baseDir)
+    out = inlineTagSources(out, baseDir, { media: inlineMedia })
     return out
   })
 }

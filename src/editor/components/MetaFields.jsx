@@ -1,17 +1,19 @@
 import { h } from 'preact'
 import { setSlideMeta, setSlideNotes } from '../../core/editDeck.js'
-import { Field, TextArea } from './Field.jsx'
+import { Field, TextArea, NumberInput } from './Field.jsx'
 import { normalMode } from '../../runtime/hotspots.js'
 
 const MORE = [['section', 'Section label shown in the header'], ['number', 'Chapter number'], ['part', 'Part name for chapter slides'], ['label', 'Replaces the word "Chapter"'], ['description', 'Chapter description'], ['eyebrow', 'Small line above a heading'], ['attribution', 'Source of a quote']]
 
 export function MetaFields({ slide, slideEdit }) {
   const meta = slide.authoredMeta
-  const text = (key, numeric = false) => <input type={numeric ? 'number' : 'text'} value={meta[key] ?? ''} onInput={event => {
-    const raw = event.currentTarget.value
+  const set = (key, raw, numeric) => {
     const value = raw === '' ? undefined : numeric && Number.isFinite(Number(raw)) ? Number(raw) : raw
     slideEdit((deck, id) => setSlideMeta(deck, id, { [key]: value }), { group: `meta:${key}` })
-  }} />
+  }
+  const text = (key, numeric = false) => numeric
+    ? <NumberInput value={meta[key] ?? ''} onChange={raw => set(key, raw, true)} />
+    : <input type="text" value={meta[key] ?? ''} onInput={event => set(key, event.currentTarget.value, false)} />
   return <>
     <Field label="Slide id" hint="stable anchor and link target">{text('id')}</Field>
     <Field label="Hotspots" hint="number keys zoom in on this slide's parts while presenting; default: the deck's setting">
