@@ -15,6 +15,9 @@ export function derive(source, manifests) {
   return { deck, diagnostics }
 }
 
+// What the status line says, on the editor and the design page alike.
+export const STATUS = { saved: 'Saved', unsaved: 'Unsaved changes', saving: 'Saving…', conflict: 'Conflict', error: 'Could not save' }
+
 export const initialState = {
   loaded: false, designOnly: false, path: '', name: '', source: '', hash: null, savedSource: '',
   deck: null, diagnostics: [], registry: null, manifests: { layouts: {}, themes: {}, palettes: {} }, warnings: [],
@@ -63,7 +66,8 @@ export function reduce(state, action) {
     case 'select': return { ...state, selectedIndex: clamp(action.index, state.deck) }
     case 'setTab': return { ...state, tab: action.tab }
     case 'setInspectorMode': return { ...state, inspectorMode: action.mode }
-    case 'saving': return state.status === 'conflict' ? state : { ...state, status: 'saving', error: null }
+    // A retry after a failed save keeps the error on show until it succeeds.
+    case 'saving': return state.status === 'conflict' || state.status === 'error' ? state : { ...state, status: 'saving', error: null }
     case 'saved': return { ...state, hash: action.hash, savedSource: action.source, status: state.status === 'conflict' ? 'conflict' : action.source === state.source ? 'saved' : 'unsaved', error: null }
     case 'saveError': return { ...state, status: 'error', error: action.message }
     case 'conflict': return { ...state, status: 'conflict', conflict: { source: action.source, hash: action.hash } }

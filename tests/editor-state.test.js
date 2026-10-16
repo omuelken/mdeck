@@ -110,6 +110,45 @@ test('the save queue debounces, chains hashes and pauses on conflict', async () 
   queue.push('x'); await runTimers(); await new Promise(r => setImmediate(r))
   assert.equal(events.at(-1), 'error:offline')
   assert.equal(queue.pending(), true, 'failed saves are retried later')
+  assert.deepEqual(timers.map(t => t.ms), [800], 'the retry waits longer than a keystroke pause')
+  fail = new Error('offline'); await runTimers(); await new Promise(r => setImmediate(r))
+  assert.deepEqual(timers.map(t => t.ms), [1600], 'and longer each time')
+  await queue.retry(); await new Promise(r => setImmediate(r))
+  assert.deepEqual(events.at(-1), 'saved:h(x)')
+  assert.equal(queue.pending(), false)
+  queue.push('y'); fail = new Error('offline'); await runTimers(); await new Promise(r => setImmediate(r))
+  assert.deepEqual(timers.map(t => t.ms), [800], 'a success resets the pause')
+})
+
+test('flushing passes options to the save and sends text pushed during a save right after it', async () => {
+  const saves = []
+  let release
+  const queue = createSaveQueue({
+    delay: 400, setTimeout: () => 1, clearTimeout: () => {},
+    save: (source, base, options) => new Promise(resolve => { release = () => resolve({ hash: `h(${source})` }); saves.push({ source, base, options }) }),
+  })
+  queue.setBase('h0')
+  queue.push('a')
+  const first = queue.flush(); await new Promise(r => setImmediate(r))
+  assert.deepEqual(saves, [{ source: 'a', base: 'h0', options: undefined }])
+  queue.push('ab')
+  const second = queue.flush({ keepalive: true }); await new Promise(r => setImmediate(r))
+  assert.equal(saves.length, 1, 'one save at a time')
+  release(); await first; await new Promise(r => setImmediate(r))
+  assert.deepEqual(saves.at(-1), { source: 'ab', base: 'h(a)', options: { keepalive: true } }, 'the newer text follows at once, with the options')
+  release(); await second
+  assert.equal(queue.pending(), false)
+})
+
+test('a retried save keeps the error on show until it succeeds', () => {
+  let state = reduce(loaded, { type: 'edit', apply: () => source + '\n' })
+  state = reduce(state, { type: 'saving' })
+  assert.equal(state.status, 'saving')
+  state = reduce(state, { type: 'saveError', message: 'offline' })
+  state = reduce(state, { type: 'saving' })
+  assert.deepEqual([state.status, state.error], ['error', 'offline'])
+  state = reduce(state, { type: 'saved', hash: 'h2', source: state.source })
+  assert.deepEqual([state.status, state.error], ['saved', null])
 })
 
 test('schema and model helpers', () => {

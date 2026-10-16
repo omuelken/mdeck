@@ -2,6 +2,7 @@ import { h } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { useDeckDocument } from '../useDeckDocument.js'
 import { installShortcuts } from '../keyboard.js'
+import { STATUS } from '../state.js'
 import { insertSlide, removeSlide, moveSlide, slideSourceText } from '../../core/editDeck.js'
 import { Outline } from './Outline.jsx'
 import { Preview } from './Preview.jsx'
@@ -13,10 +14,8 @@ import { Resizer, readInspectorWidth, storeInspectorWidth } from './Resizer.jsx'
 import { designUrl, DESIGN_TAB, launchPageUrl } from '../designLink.js'
 import markUrl from '../../../assets/logo/mark.svg'
 
-const STATUS = { saved: 'Saved', unsaved: 'Unsaved changes', saving: 'Saving…', conflict: 'Conflict', error: 'Could not save' }
-
 export function App() {
-  const { state, stateRef, dispatch, edit, resolve, loadError, previewKey } = useDeckDocument()
+  const { state, stateRef, dispatch, edit, resolve, loadError, reload, retry, previewKey } = useDeckDocument()
   const [picker, setPicker] = useState(false)
   const [inspectorWidth, setInspectorWidth] = useState(readInspectorWidth)
   const resize = width => { setInspectorWidth(width); storeInspectorWidth(width) }
@@ -37,7 +36,7 @@ export function App() {
   }
   useEffect(() => installShortcuts(actions), [])
 
-  if (loadError) return <div class="loading">Could not load the deck: {loadError}</div>
+  if (loadError) return <div class="loading">Could not load the deck: {loadError} <button class="btn is-small" onClick={reload}>Try again</button></div>
   if (!state.loaded) return <div class="loading">Loading…</div>
   const { deck, selectedIndex, tab } = state
   const slide = deck.slides[selectedIndex]
@@ -48,6 +47,7 @@ export function App() {
       <img src={markUrl} alt="" width="22" height="22" style={{ borderRadius: '5px' }} />
       <h1 title={state.path}>{state.name}</h1>
       <span class={`editor-status is-${state.status}`}>{STATUS[state.status]}{state.error ? `: ${state.error}` : ''}</span>
+      {state.status === 'error' && <button class="btn is-small" onClick={retry}>Try again</button>}
       <span class="spacer" />
       <button class="btn is-small" onClick={actions.undo} disabled={!state.history.past.length} title="Undo (⌘Z)">Undo</button>
       <button class="btn is-small" onClick={actions.redo} disabled={!state.history.future.length} title="Redo (⇧⌘Z)">Redo</button>

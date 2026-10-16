@@ -4,7 +4,7 @@ import { setDeckConfig } from '../../core/editDeck.js'
 import { resolvePalette } from '../../extensions/appearance.js'
 import { palettesFor } from '../../extensions/tokens.js'
 import { deckDiagnostics } from '../model.js'
-import { Field } from './Field.jsx'
+import { Field, NumberInput } from './Field.jsx'
 import { Diagnostics } from './Diagnostics.jsx'
 import { PalettePicker } from './PalettePicker.jsx'
 import { LookThumbnail } from './LookThumbnail.jsx'
@@ -89,8 +89,8 @@ export function DeckSettings({ state, edit }) {
     <Field label="Length" hint="how long the talk takes, e.g. 20m; slides without a time of their own share what is left"><input type="text" value={config.time ?? ''} placeholder="20m" onInput={e => text('time', e.currentTarget.value.trim())} /></Field>
     <p class="section-title">Slide frame</p>
     <div class="grid-2">
-      <Field label="Width"><input type="number" value={config.width ?? 1920} onInput={e => patch({ width: Number(e.currentTarget.value) || undefined }, 'deck:width')} /></Field>
-      <Field label="Height"><input type="number" value={config.height ?? 1080} onInput={e => patch({ height: Number(e.currentTarget.value) || undefined }, 'deck:height')} /></Field>
+      <Field label="Width"><NumberInput value={config.width ?? 1920} onChange={raw => patch({ width: Number(raw) || undefined }, 'deck:width')} /></Field>
+      <Field label="Height"><NumberInput value={config.height ?? 1080} onChange={raw => patch({ height: Number(raw) || undefined }, 'deck:height')} /></Field>
       {Object.entries(SHOW).map(([key, [label, options]]) => <Field key={key} label={label}>
         <select value={config.show?.[key] ?? ''} onChange={e => show(key, e.currentTarget.value)}><option value="">default</option>{options.map(o => <option key={o} value={o}>{o}</option>)}</select>
       </Field>)}

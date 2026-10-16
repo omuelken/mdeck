@@ -103,13 +103,14 @@ under the deck's `extensions/` directory.
 | Route | Purpose |
 |---|---|
 | `GET /__mdeck/deck` | `{ path, name, source, hash, registry, warnings }` |
-| `POST /__mdeck/source` | `{ source, base }` writes when `base` equals the hash of the file on disk; otherwise `409 { source, hash }` |
+| `POST /__mdeck/source` | `{ source, base }` writes when `base` equals the hash of the file on disk; otherwise `409 { source, hash }`, or `404` when the file is gone |
 | `GET /__mdeck/extension/:kind/:id` | The extension's manifest and text files |
 | `PUT /__mdeck/extension/:kind/:id` | `{ files: { name: text \| null } }` writes into `extensions/<id>/` after validating the manifest against the files that will exist; built-ins are refused |
 | `DELETE /__mdeck/extension/:kind/:id` | Removes a deck-local extension folder |
 
 Two custom websocket events keep the editor in step with the disk:
-`mdeck:deck-changed { hash }` when another program saved the deck, and
+`mdeck:deck-changed { hash }` whenever the deck changed on disk (a page ignores
+the hash of its own last save), and
 `mdeck:extensions-changed { file }` when an extension file changed.
 
 The preview iframe runs the normal deck runtime with `?view=deck&editor=1`. The editor
