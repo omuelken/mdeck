@@ -73,7 +73,7 @@ try {
   // theme; the chart is a hotspot; a dataview that does not exist says so.
   const dataDeck = resolve(temp, 'data.md')
   writeFileSync(resolve(temp, 'yields.csv'), 'region;wheat;barley\nAargau;7,1;5,9\nBern;7,8;6,0\n')
-  writeFileSync(dataDeck, '---\ntheme: neue\nappearance: dark\nhotspots: auto\n---\n\n---\n# Bars\n\n:::columns\n<data show="bar" src="yields.csv" steps="series" title="Yield" />\n+++\nWheat yields more everywhere.\n:::\n\n---\n# Table\n\n<data highlight="Bern">\nregion, wheat\nAargau, 7.1\nBern, 7.8\n</data>\n\n---\n# Wrong\n\n<data show="pie">\na, b\nx, 1\n</data>\n')
+  writeFileSync(dataDeck, '---\ntheme: neue\nappearance: dark\nhotspots: auto\n---\n\n---\n# Bars\n\n:::columns\n<data show="bar" src="yields.csv" steps="series" title="Yield" />\n+++\nWheat yields more everywhere.\n:::\n\n---\n# Table\n\n<data highlight="Bern">\nregion, canton, wheat\nAargau, AG, 7.1\nBern, BE, 7.8\n</data>\n\n---\n# Wrong\n\n<data show="pie">\na, b\nx, 1\n</data>\n')
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', dataDeck, '-o', resolve(temp, 'data.html')], { cwd: root, stdio: 'pipe' })
   rmSync(resolve(temp, 'yields.csv'))
   const dataPage = await open('data.html?view=deck')
@@ -93,6 +93,7 @@ try {
   await dataPage.evaluate("document.querySelector('deck-stage').goTo(1)")
   await until(dataPage, "!!document.querySelector('[data-deck-active] .dataview-table tr.is-highlight')")
   assert.equal(await dataPage.evaluate("document.querySelector('[data-deck-active] .dataview-table tr.is-highlight th').textContent"), 'Bern')
+  assert.equal(await dataPage.evaluate("[...document.querySelectorAll('[data-deck-active] .dataview-table thead th')].map(th => th.textContent).join()"), 'region,canton,wheat', 'a table shows its text columns too')
   assert.match(await dataPage.evaluate("document.querySelectorAll('.dataview-problem')[0]?.textContent ?? ''"), /No dataview "pie".*Available: bar/)
   await dataPage.close()
 

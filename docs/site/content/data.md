@@ -23,7 +23,7 @@ year, students
 </data>
 ```
 
-This is CSV, the format spreadsheets save as. Separate the cells with commas, or with semicolons or tabs, as Excel often does. Numbers may be written `7.1` or, in a German deck (`lang: de`) and in a file separated by semicolons, `7,1`. A cell that contains a comma goes in double quotes: `"Smith, J."`.
+This is CSV, the format spreadsheets save as. Separate the cells with commas, or with semicolons or tabs, as Excel often does. Write numbers without thousands separators (`1234`, not `1,234`), with a point or a comma before the decimals: `7.1` or `7,1`. In a file separated by commas, a number with a comma goes in double quotes: `"7,1"`. The slides show numbers as your deck's language writes them. A cell that contains a comma goes in double quotes: `"Smith, J."`.
 
 Numbers you keep in a spreadsheet can stay there. Save it as CSV beside the slides and name the file:
 

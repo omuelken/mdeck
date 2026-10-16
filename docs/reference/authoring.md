@@ -530,10 +530,11 @@ year, wheat, barley
 
 The first row names the columns. Cells are separated by commas, semicolons or
 tabs (the first row decides); a cell with a separator, a quote or a line break
-is written in double quotes, a quote in it doubled. Numbers may use a decimal
-point, or a decimal comma in a deck whose `lang` writes one and in files
-separated by semicolons or tabs; thousands may be separated (`1,234`, `1.234`,
-`1'234`); `12 %` is a percentage, `2024-03` a date. A column is of numbers when
+is written in double quotes, a quote in it doubled. Numbers use a decimal
+point or a decimal comma (`7.1` or `7,1`; in a file separated by commas, a
+number with a comma is quoted: `"7,1"`) and no thousands separators: `1,234`
+is one point two three four. `12 %` is a percentage, `2024-03` a date. Numbers
+are shown as the deck's `lang` writes them. A column is of numbers when
 every filled cell is one; an empty cell is no value. The first column may go
 without a name, as the row names of a matrix often do. A file (`src`) is read
 from the deck's folder, bundled into builds, and redraws its slides under

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- A `<data>` table without `y` shows every column, text columns too; before, it left out those that were neither the row labels nor numbers.
+- In `<data>`, a comma in a number is always its decimal comma, and numbers have no thousands separators: `7,1` and `7.1` are the same in every file and deck, whatever its language or separator.
 - **Z** (freeze) in the presenter view, or its snowflake button, freezes the slide the audience sees: the audience window and the phones keep it while you go on.
 
 ## 3.14.0 — 2026-10-14

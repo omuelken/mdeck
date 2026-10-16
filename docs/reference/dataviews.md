@@ -77,6 +77,7 @@ It receives:
 | `data.columns` | Every column of the table: `{ name, type: 'number' \| 'date' \| 'text', percent, decimals }` |
 | `data.x` | The index of the column that names the rows |
 | `data.series` | The value columns, in order: `{ name, column, index }` |
+| `data.chosen` | Whether the tag's `y` named the value columns; without `y`, `series` holds every column of numbers but `x` |
 | `data.rows` | The rows shown, in order: `{ index, label, cells: [{ text, value }], values, highlight }`. `values` holds a number (or `null`) per series; `index` is the row's number in the file |
 | `data.title`, `data.unit`, `data.steps`, `data.lang` | From the tag and the deck |
 | `props` | Its properties, typed, with their defaults |
