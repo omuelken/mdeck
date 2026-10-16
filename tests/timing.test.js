@@ -11,10 +11,10 @@ import { createTimingFile } from '../src/build/timingPlugin.js'
 import { isOwnWrite } from '../src/build/ownWrites.js'
 
 test('times are written in seconds, minutes or both; a bare number is minutes', () => {
-  for (const [text, seconds] of [['90s', 90], ['2m', 120], ['1m30s', 90], ['1m 30s', 90], ['1.5m', 90], ['2min', 120], [2, 120], [0.5, 30], ['3', 180], [' 45s ', 45]]) {
+  for (const [text, seconds] of [['90s', 90], ['2m', 120], ['1m30s', 90], ['1m 30s', 90], ['1.5m', 90], ['2min', 120], [2, 120], [0.5, 30], ['3', 180], [' 45s ', 45], ['1h', 3600], ['1h30', 5400], ['1h30m', 5400], ['1.5h', 5400], ['2 hours', 7200]]) {
     assert.equal(parseTime(text), seconds, String(text))
   }
-  for (const bad of ['2 mins', 'm', '', 'soon', '0s', 0, -1, null, true, {}]) assert.equal(parseTime(bad), null, String(bad))
+  for (const bad of ['2 mins', 'm', '', 'soon', '0s', 0, -1, null, true, {}, 'h', '1h300']) assert.equal(parseTime(bad), null, String(bad))
 })
 
 test('mdeck writes times one way, and rounds rehearsed ones to 15 seconds', () => {
@@ -34,6 +34,8 @@ test('slides without a time share what the deck time leaves, or count as nothing
   assert.equal(plan.budget, 300)
   // More planned than the deck time: the rest get nothing.
   assert.deepEqual(planFor(slides('4m', null), { time: '3m' }).perSlide, [240, 0])
+  // A share is whole seconds, like the slides' own times: the clock shows "2:52 left of 2:52".
+  assert.deepEqual(planFor(slides(null, null, null), { time: '5m10s' }).perSlide, [103, 103, 103])
   // Times a rehearsal just saved count instead of the slides' own; undefined takes one out.
   assert.deepEqual(planFor(slides('1m', '1m'), {}, { s0: '2m', s1: undefined }).perSlide, [120, 0])
 })

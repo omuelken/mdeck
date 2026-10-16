@@ -68,8 +68,20 @@ function slideTitleOf(slide) {
   return ''
 }
 
+// The position this view was at, kept across a reload (sessionStorage, as
+// the timer's state is): its frame opens there, instead of sending the
+// audience window back to the first slide.
+const POSITION_KEY = `mdeck-position:${DECK_CHANNEL}`
+function keptPosition() {
+  try {
+    const kept = JSON.parse(sessionStorage.getItem(POSITION_KEY))
+    if (Number.isInteger(kept?.index) && Number.isInteger(kept?.step)) return kept
+  } catch {}
+  return { index: 0, step: -1 }
+}
+
 function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
-  const [index, setIndex] = useState(0)
+  const [index, setIndex] = useState(() => Math.min(keptPosition().index, firstSlides.length - 1))
   // The notes, slide count and phones follow the language shown.
   const [lang, setLang] = useState(deckLang)
   const { slides, deckConfig } = useMemo(() => {
@@ -178,14 +190,17 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const previewRef = useRef(null)
   const audienceRef = useRef(null)
   const bcRef = useRef(null)
-  // Positions sent to and taken from audience windows are ordered (syncOrder.js).
+  // Positions sent to and taken from audience windows are ordered (syncOrder.js);
+  // the clock carries on after a reload, like the position.
   const orderRef = useRef(null)
-  orderRef.current ??= createOrder()
-  const indexRef = useRef(0)
+  orderRef.current ??= createOrder(undefined, { storageKey: `mdeck-order:${DECK_CHANNEL}` })
+  const indexRef = useRef(index)
   const langRef = useRef(lang)
   langRef.current = lang
-  const stateRef = useRef({ index: 0, step: -1 })
+  const stateRef = useRef(keptPosition())
   indexRef.current = index
+  const countRef = useRef(slides.length)
+  countRef.current = slides.length
   // Phones see the look of the slide this view shows, read from its frame.
   useEffect(() => { setLookSource(() => iframeRef.current?.contentDocument) }, [])
   const announcedOnce = useRef(false)
@@ -243,6 +258,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       if (typeof data?.overview === 'boolean') { setOverviewOpen(data.overview); return }
       // ? typed while the slide's frame had the keyboard.
       if (data?.keyHelp === 'toggle') { setHelpOpen(open => !open); return }
+      // A key the frame had no use for (T, H, L …): as if typed here.
+      if (typeof data?.presenterKey === 'string') { window.dispatchEvent(new KeyboardEvent('keydown', { key: data.presenterKey })); return }
       // Another screen (a paired iPad) switched the language; the notes follow.
       if (LANGUAGES.includes(data?.deckLanguage)) { setLang(data.deckLanguage); return }
       if (!data?.deckStateChanged) return
@@ -263,6 +280,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         return
       }
       stateRef.current = state
+      try { sessionStorage.setItem(POSITION_KEY, JSON.stringify(state)) } catch {}
       atEndRef.current = !!data.atEnd
       setIndex(i)
       setBlank(!!state.blank)
@@ -294,10 +312,12 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       }
       if (e.key === 'o' || e.key === 'O') { e.preventDefault(); toggleOverviewRef.current(); return }
       if (e.key === 't' || e.key === 'T') { e.preventDefault(); timerRef.current.toggle(); return }
+      // Home and End go to the first and the last slide; R starts over, with every step hidden again.
+      if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'goTo', e.key === 'Home' ? 0 : countRef.current - 1); return }
       const cmd =
         (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') ? 'next' :
         (e.key === 'ArrowLeft'  || e.key === 'PageUp')                    ? 'prev' :
-        (e.key === 'Home' || e.key === 'r' || e.key === 'R')              ? 'reset' :
+        (e.key === 'r' || e.key === 'R')                                  ? 'reset' :
         (e.key === 'd' || e.key === 'D')                                  ? 'ink' : null
       if ((e.key === 'f' || e.key === 'F') && fullscreen.available) { e.preventDefault(); fullscreen.toggle(); return }
       if (e.key === 'n' || e.key === 'N') { e.preventDefault(); setDrawerOpen(open => !open); return }

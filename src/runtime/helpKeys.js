@@ -30,9 +30,9 @@ export function keyHelp({ view = 'deck', blank = false, frozen = false, join = f
   groups.push({ title: 'Slides', keys: [
     entry(['→', 'Space', 'PgDn'], 'Next step or slide'),
     entry(['←', 'PgUp'], 'Previous step or slide'),
-    ...(presenter
-      ? [entry(['Home', 'R'], 'Back to the first slide')]
-      : [entry(['Home'], 'First slide'), entry(['End'], 'Last slide'), entry(['R'], 'Back to the first slide, steps hidden again')]),
+    entry(['Home'], 'First slide'),
+    entry(['End'], 'Last slide'),
+    entry(['R'], 'Back to the first slide, steps hidden again'),
   ] })
 
   groups.push({ title: 'Presenting', keys: [

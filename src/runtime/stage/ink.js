@@ -31,8 +31,10 @@ export const Ink = (Base) => class extends Base {
     this._onPointerOut = this._onPointerOut.bind(this);
     this._onTouch = this._onTouch.bind(this);
     this._onClickCapture = this._onClickCapture.bind(this);
-    // Drawing starts with the laser pointer: pointing is the common case.
-    this.inkTool = { tool: 'laser', color: '#e11d48', size: 6 };
+    // Drawing starts with the laser pointer on a touch screen (an iPad),
+    // where pointing is the common case, and with the pen on a computer.
+    const touch = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+    this.inkTool = { tool: touch ? 'laser' : 'pen', color: '#e11d48', size: 6 };
     this.inkRenderer = null;
     this._inkUpAt = 0;
   }

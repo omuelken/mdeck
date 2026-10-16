@@ -51,3 +51,21 @@ test('forwarding the current position preserves its original sender', () => {
   assert.equal(other.accept(middle.current()), true, 'the forwarded winner still outranks a tied local change')
   assert.equal(middle.accept({ seq: 1, from: 'b', initial: true }), false, 'initial replies cannot bypass ordering after navigation')
 })
+
+test('a reloaded window carries its clock on, so its changes are not behind the audience window’s', () => {
+  const kept = new Map()
+  const storage = { getItem: key => kept.get(key) ?? null, setItem: (key, value) => kept.set(key, value) }
+  const audience = createOrder('a')
+  const presenter = createOrder('p', { storageKey: 'order', storage })
+  for (let i = 0; i < 3; i++) audience.accept(presenter.stamp())
+  audience.accept(audience.stamp())
+  assert.equal(presenter.accept({ seq: 4, from: 'a' }), true, 'what it took from others is kept too')
+  // The presenter view reloads: a new id, the same clock.
+  const reloaded = createOrder('q', { storageKey: 'order', storage })
+  assert.equal(audience.accept(reloaded.stamp()), true)
+  assert.deepEqual(reloaded.current(), { seq: 5, from: 'q', initial: true })
+  // Without a key, or with nothing kept, the clock starts at 0 as before.
+  assert.deepEqual(createOrder('x').current(), { seq: 0, from: 'x', initial: true })
+  assert.deepEqual(createOrder('x', { storageKey: 'other', storage }).current(), { seq: 0, from: 'x', initial: true })
+  assert.deepEqual(createOrder('x', { storageKey: 'order', storage: { getItem() { throw new Error('blocked') } } }).current(), { seq: 0, from: 'x', initial: true })
+})
