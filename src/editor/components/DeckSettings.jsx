@@ -14,7 +14,7 @@ import { paramValue, paramDefault } from '../../extensions/params.js'
 
 // What the `show` setting controls: the label for each choice and its values.
 const SHOW = { organization: ['Organization', ['title', 'all', 'none']], author: ['Author and date', ['title', 'all', 'none']], numbers: ['Slide numbers', ['slides', 'all', 'none']], sections: ['Section labels', ['all', 'none']] }
-const META = [['title', 'Title'], ['author', 'Author'], ['organization', 'Organization'], ['date', 'Date'], ['logo', 'Logo path']]
+const META = [['title', 'Title'], ['author', 'Author'], ['organization', 'Organization'], ['date', 'Date'], ['logo', 'Logo path'], ['logo-dark', 'Logo for dark slides']]
 const isColor = value => /^#[0-9a-f]{3,8}$/i.test(String(value ?? '').trim())
 
 export function DeckSettings({ state, edit }) {

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A deck can bring a second logo for dark slides: `logo-dark: ./img/logo-white.png` in `meta` is shown as it is on dark slides, instead of the inverted `logo`.
 - `mdeck migrate` is gone: it updated decks from before 2.0. A deck or extension that still uses the old names is told what to change.
 - `mdeck snapshot` takes `--no-drawings` and `--no-results`, as build, send and pdf do.
 - The **?** button that lists the keys is in the presenter view's iPad layout too.

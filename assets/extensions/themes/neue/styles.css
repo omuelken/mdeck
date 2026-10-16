@@ -260,6 +260,8 @@ strong { color: var(--ink); font-weight: 600; }
   --on-accent: var(--inverse-on-accent);
   /* Code and the logo follow the variant too (src/extensions/appearance.js). */
   --logo-filter: var(--inverse-logo-filter, none);
+  --logo-light-display: var(--inverse-logo-light-display, block);
+  --logo-dark-display: var(--inverse-logo-dark-display, none);
   --token-default: var(--inverse-token-default);
   --token-comment: var(--inverse-token-comment);
   --token-string: var(--inverse-token-string);

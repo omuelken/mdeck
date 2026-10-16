@@ -178,7 +178,7 @@ const PICTURE_TAGS = new Set(['img'])
 const MEDIA_TAGS = new Set(['video', 'audio', 'source', 'videoplayer'])
 
 function inlineYamlImageFields(markdown, baseDir) {
-  return markdown.replace(/^(\s*)(image|logo):\s*(["']?)([^"'\n]+)\3\s*$/gm, (m, indent, key, quote, value) => {
+  return markdown.replace(/^(\s*)(image|logo|logo-dark):\s*(["']?)([^"'\n]+)\3\s*$/gm, (m, indent, key, quote, value) => {
     const dataUrl = toDataUrl(value.trim(), baseDir)
     if (!dataUrl) return m
     const q = quote || '"'
@@ -202,6 +202,7 @@ export function collectLocalAssetRefs(markdown) {
 
   const deck = parseSlides(markdown)
   add(deck.deckConfig.meta?.logo)
+  add(deck.deckConfig.meta?.['logo-dark'])
   for (const slide of deck.slides) {
     add(slide.meta.image)
     add(slide.meta.logo)
@@ -250,7 +251,7 @@ function outsideCodeFences(markdown, fn) {
 // ref, or null to keep it): Markdown pictures (also those in a tag's
 // attributes, such as a poll's options) and links to files, the `src`,
 // `poster`, `srcset` and `style` of pictures and media, the `src` of <data>,
-// and `image:` and `logo:` settings. For an included file (include.js), whose
+// and `image:`, `logo:` and `logo-dark:` settings. For an included file (include.js), whose
 // paths are written from its own folder. Paths from the root (/…) stay.
 export function rewriteAssetRefs(markdown, map) {
   const swap = ref => (isLocalAssetRef(ref) && !ref.startsWith('/') ? map(ref) ?? ref : ref)
@@ -266,7 +267,7 @@ export function rewriteAssetRefs(markdown, map) {
       }
       return withMappedRefs(tag, swap)
     })
-    return out.replace(/^(\s*)(image|logo):\s*(["']?)([^"'\n]+)\3\s*$/gm, (m, indent, key, quote, value) => {
+    return out.replace(/^(\s*)(image|logo|logo-dark):\s*(["']?)([^"'\n]+)\3\s*$/gm, (m, indent, key, quote, value) => {
       const next = swap(value.trim())
       return next === value.trim() ? m : `${indent}${key}: ${quote || '"'}${next}${quote || '"'}`
     })

@@ -37,6 +37,12 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
    (appearance.js), so it brightens the text under it instead of muddying it. */
 .slide-ink path[data-tool="highlighter"] { mix-blend-mode: var(--highlighter-blend, multiply); }
 
+/* A deck may bring a second logo for dark slides (meta.logo-dark): both are
+   in the header, and the appearance's tokens (src/extensions/appearance.js)
+   show one. The one made for the dark is never inverted. */
+.slide .slide-logo--light { display: var(--logo-light-display, block); }
+.slide .slide-logo--dark { display: var(--logo-dark-display, none); --logo-filter: none; }
+
 /* ── Header / footer rails ───────────────────────────────────────────────── */
 /* Flex skeleton only — typography (font-weight, letter-spacing, etc.) is theme-specific */
 .slide-header {

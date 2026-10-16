@@ -88,7 +88,7 @@ description = "Sea blue and rust on chalk white."
 "--on-accent" = "#0d1a24"
 ```
 
-Colour names start with dashes, so quote them as TOML keys. A dark variant also gets dark code colours and an inverted logo; set `--logo-filter` or the `--token-*` code colours in `[dark]` to change that.
+Colour names start with dashes, so quote them as TOML keys. A dark variant also gets dark code colours and an inverted logo; set `--logo-filter` or the `--token-*` code colours in `[dark]` to change that (a deck with its own logo for dark slides, `meta.logo-dark`, shows that one instead).
 
 `theme = "my-theme"` makes a palette private: only that theme offers it, as a corporate design theme does with its own colours.
 
