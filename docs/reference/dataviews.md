@@ -47,7 +47,7 @@ description = "The value of a full bar"
 | `size` | `fixed`: the dataview gets a box of the tag's `height` (520 slide pixels by default) and its width, as charts need; `content`: it is as tall as what it draws, as a table is |
 | `steps` | The `steps` values it supports; `mdeck check` reports others |
 | `needs` | What data it can show; `mdeck check` and the slide say what is missing |
-| `properties` | Its own attributes, typed like a layout's properties (`type`, `enum`, `default`, `minimum`, `maximum`, `description`). Attribute values are text: `number` and `integer` read them as numbers, `boolean` takes `true`, `false`, or the attribute alone. The attributes every dataview shares (`src`, `show`, `title`, `x`, `y`, `rows`, `sort`, `highlight`, `steps`, `unit`, `height`, `caption`) cannot be properties |
+| `properties` | Its own attributes, typed like a layout's properties (`type`, `enum`, `default`, `minimum`, `maximum`, `description`). Attribute values are text: `number` and `integer` read them as numbers, `boolean` takes `true`, `false`, or the attribute alone. The attributes every dataview shares (`src`, `show`, `title`, `x`, `y`, `rows`, `sort`, `highlight`, `steps`, `unit`, `height`, `caption`, `class`, `style`, `id`), and `value`, which is HTML's own `<data value>`, cannot be properties |
 | `files` | `view` (default `view.jsx`) and `styles` (default `styles.css`, or a list) |
 
 A dataview's id must be unique: one beside the deck cannot take the name of a
@@ -98,6 +98,8 @@ so a dataview only draws the data.
 | `formatTick(data, value, step)` | An axis tick, with as many decimals as the step between ticks |
 | `stepOf(data, row, series)` | The attributes that make a part appear with its row or series under `steps` (none otherwise). In one SVG drawing, parts with the same number appear together |
 | `niceTicks(min, max, { count, zero })` | Round numbers for an axis: `{ min, max, ticks, step }` |
+| `axisTicks(low, high, { min, max, zero, count })` | `niceTicks`, but starting and ending exactly at the `min` and `max` properties when set |
+| `dateTicks(min, max, { count, lang })` | Ticks for dates (ms) on years, quarters, months or days: `{ min, max, ticks: [{ value, label }] }` |
 | `linear([d0, d1], [r0, r1])` | A linear scale |
 | `bands(count, [r0, r1], { padding })` | Slots for bars: `{ start(i), center(i), size, slot }` |
 | `barPath({ base, end, across, thickness, vertical, radius })` | A bar rounded at its data end, as an SVG path |

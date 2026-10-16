@@ -164,6 +164,8 @@ export function HtmlContent({ html, class: className, ...attributes }) {
     const mounted = []
     for (const [name, Component] of Object.entries(registry)) {
       for (const el of [...ref.current.querySelectorAll(name)]) {
+        // A component may leave an element to HTML, as <data> does a <data value="…">.
+        if (Component.leavesToHtml?.(el)) continue
         const props = Object.fromEntries([...el.attributes].map(a => [a.name, a.value]))
         const children = el.textContent
         const wrapper = document.createElement('div')

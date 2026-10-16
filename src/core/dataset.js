@@ -83,7 +83,8 @@ export function buildDataset(csv, attrs = {}, { lang = null } = {}) {
     if (columns[column].type === 'number') continue
     // Only the cells that are not numbers: the message names the first of them.
     const bad = notNumbers(parsed, column)
-    problem(`The column "${name}" should hold numbers, but row ${bad[0]?.row} has "${bad[0]?.text}"${bad.length > 1 ? ` (and ${bad.length - 1} more)` : ''}`)
+    if (!bad.length) problem(`The column "${name}" has no values; y names the columns of numbers to show`)
+    else problem(`The column "${name}" should hold numbers, but row ${bad[0].row} has "${bad[0].text}"${bad.length > 1 ? ` (and ${bad.length - 1} more)` : ''}`)
   }
 
   let rows = typed.map((cells, i) => ({

@@ -62,8 +62,8 @@ Each way of showing has a few settings of its own, written like the others; `mde
 | `show` | Settings |
 |---|---|
 | `table` | `max-rows="8"` (the rest are counted below), `numbers="formatted"` (your language's separators instead of the numbers as written) |
-| `bar` | `orientation="horizontal"` (or `vertical`), `stacked`, `values="all"` (or `highlight`, `none`), `min`, `max` |
-| `line` | `points="all"` (or `none`), `fill` (for one line), `zero` (the axis starts at 0), `min`, `max` |
+| `bar` | `orientation="horizontal"` (or `vertical`), `stacked`, `values="all"` (or `highlight`, `none`), `max`, `min` (0 or below: bars always start at 0) |
+| `line` | `points="all"` (or `none`), `fill` (for one line), `zero` (the axis starts at 0), `min`, `max` (the axis starts and ends there) |
 | `scatter` | `labels="site"` (a column that names the points), `zero` |
 | `stat` | `change="change"` (a column with each figure's change) |
 | `heatmap` | `values="false"` (no numbers in the cells), `scale="diverging"` (two colours either side of 0), `min`, `max` |

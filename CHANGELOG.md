@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Bars always start at 0: a bar chart's `min` above 0 is ignored, and `mdeck check` warns of it (to start an axis higher, use `show="line"`).
+- A line chart's `min` and `max` start and end its axis exactly there; lines beyond are cut off at the edge.
+- Line and scatter charts with dates across put their ticks on years, quarters, months or days, labelled in the deck's language.
+- A line or scatter row without a number or date in `x` is left out, and `mdeck check` names it; before, it was drawn at the edge.
+- HTML's own `<data value="…">` is left as HTML, not read as a dataview.
+- `<data src="…"></data>`, with nothing between the tags, shows the file; `show=""` shows the table.
+- A `<data>` tag's `class`, `style`, `id` and `data-hotspot` go to its figure.
+- A `y` column with no values says so, instead of naming an empty cell.
 - A `<data>` table without `y` shows every column, text columns too; before, it left out those that were neither the row labels nor numbers.
 - In `<data>`, a comma in a number is always its decimal comma, and numbers have no thousands separators: `7,1` and `7.1` are the same in every file and deck, whatever its language or separator.
 - **Z** (freeze) in the presenter view, or its snowflake button, freezes the slide the audience sees: the audience window and the phones keep it while you go on.

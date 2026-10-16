@@ -14,7 +14,7 @@ import { validateManifest, ManifestError } from '../src/extensions/manifest.js'
 import { builtInRegistry, loadRegistry } from '../src/extensions/discover.js'
 import { dataDiagnostics } from '../src/build/dataCheck.js'
 import { dataFiles, slidesPlugin, rewriteAssetRefs, generateExtensionsModule } from '../src/build/slidesPlugin.js'
-import { niceTicks, formatTick, barPath } from '../src/dataviews/api.js'
+import { niceTicks, formatTick, barPath, axisTicks, dateTicks } from '../src/dataviews/api.js'
 
 test('CSV as people export it: commas, semicolons, tabs, quotes, blank lines and an indent', () => {
   assert.deepEqual(parseCsv('a, b\n1, 2\n\n3, 4\n'), { header: ['a', 'b'], rows: [['1', '2'], ['3', '4']], separator: ',', problems: [] })
@@ -190,4 +190,39 @@ test('a column that is not all numbers names its first cell that is not one', ()
   const message = csv => buildDataset(csv, { y: 'value' }).problems.map(problem => problem.message).join('\n')
   assert.match(message('name, value\na, 1\nb, 2\nc, abc'), /row 3 has "abc"$/)
   assert.match(message('name, value\na, x\nb, 2\nc, y'), /row 1 has "x" \(and 1 more\)/)
+})
+
+test('a value column with no values says so', () => {
+  const messages = buildDataset('name, value\na,\nb,', { y: 'value' }).problems.map(problem => problem.message)
+  assert.match(messages[0], /"value" has no values/)
+})
+
+test('HTML\'s own <data value="…"> is left as HTML, and no dataview may take a value property', () => {
+  const html = 'The answer: <data value="42">forty-two</data>.'
+  assert.equal(expandDataTags(html), html)
+  assert.deepEqual(dataTagsIn(html), [])
+  assert.throws(() => validateManifest({ schema: 1, kind: 'dataview', id: 'v', title: 'V', properties: { value: { type: 'string' } } }, { dir: '/v', folderName: 'v', fileExists: () => true }), /left to HTML/)
+})
+
+test('axes the author starts or ends, and dates on calendar ticks', () => {
+  const line = axisTicks(52, 71, { zero: false, min: 50, max: 72 })
+  assert.equal(line.min, 50)
+  assert.equal(line.max, 72)
+  assert.ok(line.ticks.every(tick => tick >= 50 && tick <= 72))
+  const years = dateTicks(Date.UTC(2015, 0, 1), Date.UTC(2024, 0, 1), { lang: 'en' })
+  assert.deepEqual(years.ticks.map(tick => tick.label), ['2016', '2018', '2020', '2022', '2024'])
+  const months = dateTicks(Date.UTC(2024, 0, 1), Date.UTC(2024, 5, 1), { lang: 'en' })
+  assert.equal(months.ticks[0].value, Date.UTC(2024, 0, 1))
+  assert.match(months.ticks[0].label, /Jan/)
+})
+
+test('mdeck check: bars start at 0, and line rows without x are left out', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'mdeck-data-check-'))
+  const deck = resolve(dir, 'talk.md')
+  const source = '# One\n\n<data show="bar" min="40">\nname, a\nx, 50\ny, 60\n</data>\n\n<data show="line">\nyear, a\n2020, 1\n, 2\n2022, 3\n</data>\n\n<data show="">\nname, a\nx, 1\n</data>\n'
+  writeFileSync(deck, source)
+  const found = dataDiagnostics(deck, builtInRegistry(), source)
+  assert.deepEqual(found.map(d => [d.line, d.severity]), [[3, 'warning'], [9, 'warning']])
+  assert.match(found[0].message, /bars always start at 0, so min="40" is ignored/)
+  assert.match(found[1].message, /row 2 .*has no year and is left out/)
 })

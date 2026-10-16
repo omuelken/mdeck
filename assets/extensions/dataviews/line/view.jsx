@@ -1,5 +1,6 @@
 import { h } from 'preact'
-import { stepOf, format, formatTick, color, niceTicks, linear, extent, textWidth, Legend } from 'mdeck/dataview'
+import { useMemo } from 'preact/hooks'
+import { stepOf, format, formatTick, color, axisTicks, linear, extent, textWidth, Legend } from 'mdeck/dataview'
 
 // One 3px line per series in the palette's order, across the rows: at
 // their numbers or dates when the label column has them, else evenly. The
@@ -7,24 +8,30 @@ import { stepOf, format, formatTick, color, niceTicks, linear, extent, textWidth
 // there are several; highlighted rows get their values too. A missing value
 // leaves a gap. With steps="rows" the lines draw on one row at a time.
 
+let clips = 0
+
 export default function Line({ data, props, width, height, font }) {
   const small = font * 0.8
   const n = data.rows.length, k = data.series.length
   const xColumn = data.columns[data.x]
-  const positions = data.rows.map((row, i) => xColumn.type !== 'text' && typeof row.cells[data.x].value === 'number' ? row.cells[data.x].value : i)
+  // Numbers or dates across place a row by its value; a row without one is
+  // left out (mdeck check says so), never put at its row number among years.
+  const positions = data.rows.map((row, i) => xColumn.type === 'text' ? i : typeof row.cells[data.x].value === 'number' ? row.cells[data.x].value : null)
+  const placed = positions.filter(position => position != null)
+  const clip = useMemo(() => `dataview-line-${++clips}`, [])
   const [low, high] = extent(data, { props })
-  const scale = niceTicks(low, high, { zero: !!props.zero || Number.isFinite(props.min) })
+  const scale = axisTicks(low, high, { zero: !!props.zero, min: props.min, max: props.max })
   const compact = Math.max(Math.abs(scale.min), Math.abs(scale.max)) >= 100000
   const fmt = (value, series = 0) => format(data, value, series, { compact })
   const legend = k > 1 ? small * 1.9 : 0
   const svgHeight = Math.max(80, height - legend)
-  const lastOf = s => { for (let i = n - 1; i >= 0; i--) if (data.rows[i].values[s] != null) return i; return -1 }
+  const lastOf = s => { for (let i = n - 1; i >= 0; i--) if (data.rows[i].values[s] != null && positions[i] != null) return i; return -1 }
   const endText = s => { const i = lastOf(s); return i < 0 ? '' : `${k > 1 && k <= 4 ? data.series[s].name + ' ' : ''}${fmt(data.rows[i].values[s], s)}` }
   const endRoom = Math.max(0, ...data.series.map((_, s) => textWidth(endText(s), small)))
   const tickText = value => formatTick(data, value, scale.step, { compact })
   const tickWidth = Math.max(...scale.ticks.map(tick => textWidth(tickText(tick), small)))
   const plot = { x0: tickWidth + 14, x1: width - endRoom - 18, y0: small * 0.8, y1: svgHeight - small * 1.9 }
-  const [first, last] = [Math.min(...positions), Math.max(...positions)]
+  const [first, last] = [Math.min(...placed), Math.max(...placed)]
   const x = first === last ? () => (plot.x0 + plot.x1) / 2 : linear([first, last], [plot.x0, plot.x1])
   const y = linear([scale.min, scale.max], [plot.y1, plot.y0])
   const dots = props.points === 'all' || (props.points === 'auto' && n <= 16)
@@ -40,7 +47,7 @@ export default function Line({ data, props, width, height, font }) {
     if (ends[s] - lastY >= small * 1.15) { shownEnds.add(s); lastY = ends[s] }
   }
   const lines = data.series.map((series, s) => {
-    const points = data.rows.map((row, i) => row.values[s] == null ? null : [x(positions[i]), y(row.values[s]), i])
+    const points = data.rows.map((row, i) => row.values[s] == null || positions[i] == null ? null : [x(positions[i]), y(row.values[s]), i])
     const stroke = color(s)
     const parts = []
     if (data.steps === 'rows') {
@@ -75,8 +82,10 @@ export default function Line({ data, props, width, height, font }) {
         <line class={tick === 0 ? 'dataview-baseline' : 'dataview-gridline'} x1={plot.x0} x2={plot.x1} y1={y(tick)} y2={y(tick)} />
         <text x={plot.x0 - 10} y={y(tick)} text-anchor="end" dominant-baseline="middle">{tickText(tick)}</text>
       </g>)}</g>
-      <g class="dataview-labels">{data.rows.map((row, i) => i % every === 0 && <text key={row.index} x={x(positions[i])} y={plot.y1 + small * 1.35} text-anchor="middle" class={row.highlight ? 'dataview-value' : null}>{row.label}</text>)}</g>
-      {lines}
+      <g class="dataview-labels">{data.rows.map((row, i) => i % every === 0 && positions[i] != null && <text key={row.index} x={x(positions[i])} y={plot.y1 + small * 1.35} text-anchor="middle" class={row.highlight ? 'dataview-value' : null}>{row.label}</text>)}</g>
+      {/* An axis that starts or ends at min or max cuts what lies beyond it. */}
+      <defs><clipPath id={clip}><rect x={plot.x0 - 8} y={plot.y0 - 8} width={plot.x1 - plot.x0 + 16 + endRoom + 18} height={plot.y1 - plot.y0 + 16} /></clipPath></defs>
+      <g clip-path={`url(#${clip})`}>{lines}</g>
     </svg>
   </div>
 }

@@ -563,8 +563,8 @@ lists them):
 | Dataview | Shows | Options |
 |---|---|---|
 | `table` | The data as the theme draws tables; numbers right, the unit in their headers, highlighted rows marked | `max-rows` (12; the rest are counted), `numbers` (`as-written` or `formatted`) |
-| `bar` | Columns from a baseline at 0, bars when the labels are long; several series side by side or `stacked` | `orientation` (`auto`, `vertical`, `horizontal`), `stacked`, `values` (`auto`, `all`, `highlight`, `none`), `min`, `max` |
-| `line` | One line per series, the last value at its end; numbers or dates in `x` are spaced by their value | `points` (`auto`, `all`, `none`), `fill` (one series), `zero`, `min`, `max` |
+| `bar` | Columns from a baseline at 0, bars when the labels are long; several series side by side or `stacked` | `orientation` (`auto`, `vertical`, `horizontal`), `stacked`, `values` (`auto`, `all`, `highlight`, `none`), `max`, `min` (0 or below: bars start at 0, and `mdeck check` warns of a `min` above it) |
+| `line` | One line per series, the last value at its end; numbers or dates in `x` are spaced by their value | `points` (`auto`, `all`, `none`), `fill` (one series), `zero`, `min`, `max` (the axis starts and ends exactly there; lines beyond are cut off) |
 | `scatter` | Points: `x` across (a column of numbers or dates), each value column up | `labels` (a column naming the points), `zero` |
 | `stat` | One to four figures, large, as the data writes them, each with its row's label | `change` (a column with each figure's change) |
 | `heatmap` | A grid coloured by value; values either side of 0 in two colours | `values`, `scale` (`auto`, `sequential`, `diverging`), `min`, `max` |

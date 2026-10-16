@@ -28,7 +28,7 @@ description = "Values at the bars: auto shows them for one series of up to 12 ba
 
 [properties.min]
 type = "number"
-description = "The value axis starts here"
+description = "The value axis starts here, at 0 or below: bars always start at 0 (for an axis above 0, use a line)"
 
 [properties.max]
 type = "number"
