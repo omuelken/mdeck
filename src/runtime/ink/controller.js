@@ -3,7 +3,7 @@
 // change on to the other windows (bus.js). Every change goes to
 // `save(op)` when a server keeps the ink file; otherwise it is kept in this
 // browser (localStorage) and the file can be downloaded.
-import { currentInk, changeInk, slideStrokes } from './store.js'
+import { currentInk, changeInk, slideStrokes, resolveSlideId } from './store.js'
 import { simplify, hitTest, serializeInk } from '../../core/ink.js'
 import { inkFileName } from 'virtual:deck-ink'
 
@@ -35,7 +35,10 @@ export function createInkController({ storageKey, save = null, publish = () => {
   function send(ops) {
     // Another window of this deck may have added to the log meanwhile.
     if (!saving) log = readLog(storageKey)
-    for (const op of ops) {
+    for (const raw of ops) {
+      // The undo of a stroke that gave its slide an id names the old id; the
+      // server and the other windows only know the slide by its new one.
+      const op = raw.slideId ? { ...raw, slideId: resolveSlideId(raw.slideId) } : raw
       changeInk(op)
       publish(op)
       if (saving) saving(op)

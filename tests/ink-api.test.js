@@ -85,6 +85,30 @@ test('the ink file is backed up once per session, before the first write', () =>
   assert.deepEqual(JSON.parse(readFileSync(resolve(dir, '.mdeck-backups', backups[0]), 'utf8')).slides.s.map(s => s.id), ['old:1'])
 })
 
+test('changes that are not well formed, or too many, are refused before anything is read', () => {
+  const { file } = deckWith(SOURCE)
+  const { deckHash } = file.read()
+  const bad = ops => file.apply(ops, deckHash).status
+  assert.equal(bad('ops'), 400)
+  assert.equal(bad([{ type: 'remove', slideId: '__proto__', ids: ['x'] }]), 400)
+  assert.equal(bad([{ type: 'add', slideId: 'constructor', stroke: stroke('x:1') }]), 400)
+  assert.equal(bad([{ type: 'rename', from: 'slide-1', to: 'slide-2' }]), 400, 'devices do not rename')
+  assert.equal(bad([{ type: 'add', slideId: 'slide-1', stroke: { ...stroke('x:1'), points: Array(10001).fill([1, 1, 0.5]) } }]), 400)
+  assert.equal(bad([{ type: 'clear', slideId: 'slide-1', ids: Array(10001).fill('x') }]), 400)
+  assert.equal(bad(Array(1001).fill({ type: 'remove', slideId: 'slide-1', ids: [] })), 400)
+  assert.equal(bad([{ type: 'remove', slideId: 'slide-1', ids: [] }]), 200)
+})
+
+test('the changes before a refused one in a batch are kept and written', async () => {
+  const { deck, file } = deckWith('---\ntheme: neue\n---\n\n---\nid: s\n---\n# S\n')
+  const { deckHash } = file.read()
+  const result = file.apply([{ type: 'add', slideId: 's', stroke: stroke('ipad:1') }, { type: 'add', slideId: 'gone', stroke: stroke('ipad:2') }], deckHash)
+  assert.equal(result.status, 409)
+  assert.deepEqual(file.read().ink.slides.s.map(s => s.id), ['ipad:1'])
+  await new Promise(done => setTimeout(done, 20))
+  assert.deepEqual(JSON.parse(readFileSync(inkFileFor(deck), 'utf8')).slides.s.map(s => s.id), ['ipad:1'])
+})
+
 test('only this computer may change the ink', async () => {
   const { file } = deckWith(SOURCE)
   const handler = inkMiddleware(file)

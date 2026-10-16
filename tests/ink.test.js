@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { inkFileFor, emptyInk, normalizeInk, validateInk, orphanIds, applyOp, simplify, hitTest, strokePath, inkOrder, translateStroke, insidePolygon, strokesInLasso, strokesBox, inkPaint, snapAngle } from '../src/core/ink.js'
+import { inkFileFor, emptyInk, normalizeInk, validateInk, orphanIds, applyOp, isSlideId, simplify, hitTest, strokePath, inkOrder, translateStroke, insidePolygon, strokesInLasso, strokesBox, inkPaint, snapAngle } from '../src/core/ink.js'
 import { paletteTokens } from '../src/extensions/appearance.js'
 import { slidesPlugin } from '../src/build/slidesPlugin.js'
 import { checkDeck } from '../src/build/check.js'
@@ -93,6 +93,17 @@ test('a finished stroke reaches its last point', () => {
   const right = d => Math.max(...d.match(/-?\d+(\.\d+)?/g).map(Number).filter((_, i) => i % 2 === 0))
   assert.ok(right(strokePath({ tool: 'pen', size: 6, points })) >= 480, 'the outline runs to x = 480')
   assert.ok(right(strokePath({ tool: 'pen', size: 6, points }, { last: false })) < right(strokePath({ tool: 'pen', size: 6, points })))
+})
+
+test('a slide id that names a property of Object is no slide, in a change or a file', () => {
+  assert.deepEqual(['s', 'slide-3', '__proto__', 'constructor', '', 7, 'x'.repeat(201)].map(isSlideId), [true, true, false, false, false, false, false])
+  const stroke = { id: 'a:1', tool: 'pen', color: '#000', size: 4, points: [[1, 1, 0.5]] }
+  let ink = applyOp(emptyInk(), { type: 'add', slideId: 's', stroke })
+  assert.equal(applyOp(ink, { type: 'add', slideId: '__proto__', stroke }), ink)
+  assert.equal(applyOp(ink, { type: 'remove', slideId: '__proto__', ids: ['a:1'] }), ink)
+  assert.equal(applyOp(ink, { type: 'rename', from: 's', to: '__proto__' }), ink)
+  assert.equal(Object.getPrototypeOf(ink.slides), Object.prototype)
+  assert.deepEqual(Object.keys(normalizeInk({ version: 1, slides: { s: [stroke], __proto__: [stroke] } }).slides), ['s'])
 })
 
 test('renaming a slide twice, or onto ink it already has, does not double strokes', () => {

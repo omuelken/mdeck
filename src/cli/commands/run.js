@@ -43,7 +43,7 @@ function stripRelayBase(base) {
   }
 }
 
-export default async function run({ command, hasFlag, portOption, serverOption, requireInput }) {
+export default async function run({ command, hasFlag, portOption, serverOption, requireInput, onPort }) {
   const input = requireInput(command)
   const abs = resolve(input)
   try { assertDrawings(abs) } catch (error) { err(error.message); process.exit(1) }
@@ -111,7 +111,7 @@ export default async function run({ command, hasFlag, portOption, serverOption, 
       open: hasFlag('--no-open') ? false : command === 'rehearse' ? `${mountBase}?view=presenter&rehearse=1` : `${mountBase}home.html`,
     },
   })
-  await server.listen()
+  await onPort(port, () => server.listen())
   const local = server.resolvedUrls.local[0]
   let tunnel = null
   if (relay) {
@@ -135,10 +135,11 @@ export default async function run({ command, hasFlag, portOption, serverOption, 
     })
     pairing.onChange(() => tunnel.push())
     server.watcher.on('change', file => { if (resolve(file) === abs) tunnel.push() })
-    const stop = () => { tunnel.stop(); process.exit(0) }
-    process.once('SIGINT', stop)
-    process.once('SIGTERM', stop)
   }
+  // Ctrl+C: strokes and answers still waiting to be written go to their files first.
+  const stop = () => { tunnel?.stop(); ink.api.file.flush(); results.api.file.flush(); process.exit(0) }
+  process.once('SIGINT', stop)
+  process.once('SIGTERM', stop)
   console.log()
   ok(`Launch page: ${c.cyan}${new URL('home.html', local).href}${c.reset}`)
   tip(`Presenter:   ${new URL('?view=presenter', local).href}`)
