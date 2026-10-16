@@ -35,3 +35,11 @@ test('before the talk starts, only the first slide', () => {
   assert.deepEqual(f.moved({ index: 3, step: -1 }), { index: 0, step: -1 })
   assert.equal(f.state.live, true)
 })
+
+test('a frozen projector holds the follower at its slide, and nothing after it opens', () => {
+  const f = createFollower()
+  f.presenter({ index: 2, step: -1 })
+  assert.deepEqual(f.presenter({ index: 4, step: 0, freeze: { index: 2, step: -1 } }), { index: 2, step: -1 })
+  assert.deepEqual(f.moved({ index: 3, step: -1 }), { index: 2, step: -1 }, 'the slides the presenter shows meanwhile stay hidden')
+  assert.deepEqual(f.presenter({ index: 4, step: 0, freeze: null }), { index: 4, step: 0, freeze: null }, 'unfrozen, live again')
+})
