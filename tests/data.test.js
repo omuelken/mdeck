@@ -197,6 +197,14 @@ test('a value column with no values says so', () => {
   assert.match(messages[0], /"value" has no values/)
 })
 
+test('an empty column never labels the rows, and is named', () => {
+  const data = buildDataset('year, a, b\n2020, 1,\n2021, 2,', {})
+  assert.equal(data.columns[data.x].name, 'year')
+  assert.deepEqual(data.series.map(series => series.name), ['a'])
+  assert.deepEqual(data.problems, [{ severity: 'warning', message: 'The column "b" has no values' }])
+  assert.deepEqual(buildDataset('year, a\n2020, 1', {}).problems, [])
+})
+
 test('HTML\'s own <data value="…"> is left as HTML, and no dataview may take a value property', () => {
   const html = 'The answer: <data value="42">forty-two</data>.'
   assert.equal(expandDataTags(html), html)
@@ -225,4 +233,16 @@ test('mdeck check: bars start at 0, and line rows without x are left out', () =>
   assert.deepEqual(found.map(d => [d.line, d.severity]), [[3, 'warning'], [9, 'warning']])
   assert.match(found[0].message, /bars always start at 0, so min="40" is ignored/)
   assert.match(found[1].message, /row 2 .*has no year and is left out/)
+})
+
+test('mdeck check: a bar chart\'s max below a value, too many bars, and lines counted past HTML\'s <data value>', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'mdeck-data-check-'))
+  const deck = resolve(dir, 'talk.md')
+  const many = Array.from({ length: 21 }, (_, i) => `r${i}, ${i}`).join('\n')
+  const source = `# One\n\nAbout <data value="42">forty-two</data>.\n\n<data show="bar" max="95">\nname, a\nx, 90\ny, 97\n</data>\n\n<data show="bar">\nname, a\n${many}\n</data>\n`
+  writeFileSync(deck, source)
+  const found = dataDiagnostics(deck, builtInRegistry(), source)
+  assert.deepEqual(found.map(d => [d.line, d.severity]), [[5, 'warning'], [11, 'warning']])
+  assert.match(found[0].message, /max="95" is below the highest value, 97/)
+  assert.match(found[1].message, /21 bars, more than read well/)
 })

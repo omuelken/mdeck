@@ -24,7 +24,8 @@
 .dataview-body { position: relative; width: 100%; }
 .dataview-body--fixed { height: var(--dataview-height, 520px); }
 .dataview-caption { margin: 0.5em 0 0; color: var(--muted); font-size: var(--dataview-small); }
-.dataview svg { display: block; overflow: visible; }
+/* Labels anchored at their start or end stay where the chart put them, also on a right-to-left slide. */
+.dataview svg { display: block; overflow: visible; direction: ltr; }
 .dataview svg text { fill: var(--dataview-axis); font-size: var(--dataview-small); }
 .dataview svg .dataview-value { fill: var(--ink); }
 .dataview svg .dataview-gridline { stroke: var(--dataview-grid); stroke-width: 1; shape-rendering: crispEdges; }

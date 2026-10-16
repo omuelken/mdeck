@@ -221,6 +221,8 @@ test('appearance: the theme default palette, the deck palette and appearance, th
   const full = buildAppearance({ theme, palettes, palette: 'paper', appearance: 'dark', params: { fontBody: 'serif', bogus: 1 }, meta: { title: 'T "q"' }, offline: true })
   assert.match(full.paletteCss, /--accent: #fb8c4a;/)
   assert.ok(Object.keys(DARK_TOKENS).every(token => full.paletteCss.includes(token)), 'dark code colours and logo filter')
+  assert.match(full.paletteCss, /--inverse-logo-filter: none;[^]*--inverse-token-default: #0a0a0a;/, 'an inverted slide on a dark deck takes the light code colours')
+  assert.match(base.paletteCss, /--inverse-logo-filter: invert\(1\);[^]*--inverse-token-default: #e2e8f0;/)
   assert.equal(full.overridesCss, ':root {\n  --font-body: serif;\n  --meta-title: "T \\"q\\"";\n}')
   assert.deepEqual(full.fonts, [])
   assert.deepEqual(full.warnings, ['Theme "academic" has no parameter "bogus"'])

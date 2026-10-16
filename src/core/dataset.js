@@ -58,13 +58,16 @@ export function buildDataset(csv, attrs = {}, { lang = null } = {}) {
   for (const { row, message } of parsed.problems) problem(row ? `Row ${row} ${message}` : `The data ${message}`)
   const { columns, rows: typed } = typeTable(parsed)
 
+  // A column with nothing in it is typed as text, but never labels the rows.
+  const empty = columns.map((_, column) => parsed.rows.every(row => row[column] === ''))
+
   // The label column: `x`, else the first that is not numbers, else the first.
   let x = 0
   if (attrs.x != null && attrs.x !== '') {
     x = findColumn(columns, attrs.x)
     if (x < 0) { problem(`x names the column "${attrs.x}", which the data does not have. Columns: ${columns.map(column => column.name).join(', ')}`); x = 0 }
   } else {
-    const label = columns.findIndex(column => column.type !== 'number')
+    const label = columns.findIndex((column, index) => column.type !== 'number' && !empty[index])
     x = label >= 0 ? label : 0
   }
 
@@ -86,6 +89,10 @@ export function buildDataset(csv, attrs = {}, { lang = null } = {}) {
     if (!bad.length) problem(`The column "${name}" has no values; y names the columns of numbers to show`)
     else problem(`The column "${name}" should hold numbers, but row ${bad[0].row} has "${bad[0].text}"${bad.length > 1 ? ` (and ${bad.length - 1} more)` : ''}`)
   }
+  // An empty column that nothing asked for is probably a mistake in the file.
+  columns.forEach((column, index) => {
+    if (empty[index] && index !== x && !series.some(item => item.column === index)) problem(`The column "${column.name}" has no values`, 'warning')
+  })
 
   let rows = typed.map((cells, i) => ({
     index: i + 1,

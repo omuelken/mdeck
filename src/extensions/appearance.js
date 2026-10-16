@@ -25,6 +25,20 @@ export const DARK_TOKENS = {
   '--pen-green':      '#4ade80',
 }
 
+// The same on light slides: the code colours of code-block.css and the logo
+// as it is. A theme's inverted slide (neue's focus) takes the other set as
+// --inverse-token-* and --inverse-logo-filter.
+export const LIGHT_TOKENS = {
+  '--logo-filter':    'none',
+  '--token-default':  '#0a0a0a',
+  '--token-comment':  '#708090',
+  '--token-string':   '#669900',
+  '--token-number':   '#905050',
+  '--token-keyword':  '#0077aa',
+  '--token-function': '#dd4a68',
+  '--token-operator': '#9a6e3a',
+}
+
 const other = appearance => appearance === 'dark' ? 'light' : 'dark'
 
 /**
@@ -50,6 +64,7 @@ export function paletteTokens(palette, appearance = 'light') {
   const main = palette[appearance], inverse = palette[other(appearance)]
   const tokens = { ...(appearance === 'dark' ? DARK_TOKENS : {}), ...main }
   for (const role of COLOR_ROLES) tokens[`--inverse-${role.slice(2)}`] = inverse[role]
+  for (const name of Object.keys(LIGHT_TOKENS)) tokens[`--inverse-${name.slice(2)}`] = (appearance === 'dark' ? LIGHT_TOKENS : DARK_TOKENS)[name]
   return tokens
 }
 

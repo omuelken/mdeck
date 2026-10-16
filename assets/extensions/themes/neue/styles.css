@@ -243,7 +243,17 @@ strong { color: var(--ink); font-weight: 600; }
   --rule: var(--inverse-rule);
   --accent: var(--inverse-accent);
   --accent-2: var(--inverse-accent-2);
+  --accent-3: var(--inverse-accent-3);
   --on-accent: var(--inverse-on-accent);
+  /* Code and the logo follow the variant too (src/extensions/appearance.js). */
+  --logo-filter: var(--inverse-logo-filter, none);
+  --token-default: var(--inverse-token-default);
+  --token-comment: var(--inverse-token-comment);
+  --token-string: var(--inverse-token-string);
+  --token-number: var(--inverse-token-number);
+  --token-keyword: var(--inverse-token-keyword);
+  --token-function: var(--inverse-token-function);
+  --token-operator: var(--inverse-token-operator);
   --focus-bg: var(--bg);
   --focus-ink: var(--ink);
   background: var(--focus-bg);

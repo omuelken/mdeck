@@ -1,12 +1,12 @@
 import { h } from 'preact'
-import { extractContent, HtmlContent, Picture } from 'mdeck/layout'
+import { extractContent, HtmlContent, Picture, t } from 'mdeck/layout'
 
 export default function ImageTextLayout({ meta, content, props }) {
   const { headings, bodyHtml } = extractContent(content, { headingLevels: [1, 2] })
   return <div class="slide-body">
     <div class="image-pane">
       {props.image ? <Picture src={props.image} alt={props.alt} fit={props.fit} position={props.position} />
-        : <div class="image-placeholder"><span>Image placeholder</span></div>}
+        : <div class="image-placeholder"><span>{t('layout.imagePlaceholder')}</span></div>}
     </div>
     <div class="text-pane">
       {(headings[2] ?? meta.eyebrow) && <div class="eyebrow" dangerouslySetInnerHTML={{ __html: headings[2] ?? meta.eyebrow }} />}
