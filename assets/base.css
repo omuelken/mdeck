@@ -104,8 +104,11 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 /* The shared heading above, then the two columns side by side. */
 .split-heading { flex: none; margin-bottom: var(--gap-item); }
 .split-columns { flex: 1; min-height: 0; display: flex; flex-direction: row; align-items: stretch; gap: 100px; }
-.split-left  { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: safe center; --code-size: 20px; }
+.split-left  { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: safe center; }
 .split-right { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: safe center; gap: var(--gap-item); }
+/* Code in a column is set smaller. Themes set their size on the slide, not
+   on the block, so this reaches it (and a code block's output, code-block.css). */
+.split-columns { --code-size: 20px; }
 
 /* ── List containers ─────────────────────────────────────────────────────── */
 /* Lists have no margins of their own, and paragraphs only one below them, so
@@ -187,6 +190,14 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 /* The quote's paragraphs take its type: themes set the face and size of
    every paragraph, which would undo a quote set in its own. */
 .slide-body blockquote > p { font: inherit; color: inherit; letter-spacing: inherit; }
+
+/* ── Lesser headings and rules ──────────────────────────────────────────── */
+/* h1 and h2 are each theme's own. The levels below them and a rule (***)
+   between paragraphs read in the theme's type and colours; :where keeps
+   them weaker than any rule of the theme's own. */
+:where(.slide-body) h3 { font-family: var(--font-display); font-size: var(--fs-body); font-weight: 600; line-height: 1.3; color: var(--ink); margin: 0 0 calc(var(--gap-item) * 0.4); }
+:where(.slide-body) h4 { font-family: var(--font-body); font-size: var(--fs-body); font-weight: 600; line-height: 1.3; color: var(--ink); margin: 0 0 calc(var(--gap-item) * 0.3); }
+:where(.slide-body) hr { border: 0; border-top: 1px solid var(--rule); margin: 0 0 var(--gap-item); }
 
 /* ── Code blocks ─────────────────────────────────────────────────────────── */
 .code-block { white-space: pre-wrap; overflow-x: hidden; }

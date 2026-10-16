@@ -56,6 +56,9 @@
   filter: var(--logo-filter, none);
   transform: translateY(calc(20px - 50%));
 }
+/* On the other slides (show.organization: all) it stays in the header's
+   40px line instead of hanging below the band. */
+.slide:not(.slide--title, .slide--chapter) .slide-logo { top: 0; height: 40px; transform: none; }
 
 .slide-footer {
   position: relative;
@@ -458,7 +461,6 @@ strong { font-weight: 600; color: var(--ink); }
 .code-block {
   --code-bg: var(--surface);
   --code-radius: 4px;
-  --code-size: 25px;
   background: var(--code-bg);
   border-radius: var(--code-radius);
   border: 1px solid var(--rule);
@@ -469,6 +471,9 @@ strong { font-weight: 600; color: var(--ink); }
   font-size: var(--code-size);
   line-height: 1.55;
 }
+/* The size is set on the slide, so the split layout's smaller code (on its
+   columns) reaches the block. */
+.slide { --code-size: 25px; }
 .code-block code { font-family: inherit; font-size: inherit; background: none; padding: 0; }
 .slide-body .code-block-wrapper { margin: 24px 0; }
 

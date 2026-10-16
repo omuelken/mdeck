@@ -172,7 +172,7 @@ meta:
 
 The text on the title slide still comes from the heading you write on that slide. The settings above supply information for the slide's header and footer.
 
-You can also add `logo: ./img/logo.png` inside the `meta` group.
+You can also add `logo: ./img/logo.png` inside the `meta` group. The logo appears on the title slide, and on every slide with `show.organization: all` (below). On dark slides the logo is inverted, so a black logo turns white; a coloured logo's colours turn around with it. To show it as it is, give the deck its own [palette](theme-authoring.html) with `"--logo-filter" = "none"` in its `[dark]` block, and a logo that reads on a dark ground.
 
 ## Control headers and page numbers
 
@@ -186,7 +186,7 @@ show:
 
 | Setting | Choices | Usual behavior |
 |---|---|---|
-| `show.organization` | `title`, `all`, `none` | Organization appears on the title slide |
+| `show.organization` | `title`, `all`, `none` | Organization and logo appear on the title slide |
 | `show.author` | `title`, `all`, `none` | Author and date appear on the title slide |
 | `show.numbers` | `slides`, `all`, `none` | Numbers appear after the title slide |
 | `show.sections` | `all`, `none` | Section labels appear when provided |

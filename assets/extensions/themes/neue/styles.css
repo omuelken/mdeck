@@ -37,6 +37,19 @@
   background: var(--bg);
   padding-inline-start: 32px;
 }
+/* On the other slides (show.organization: all) it stands in the header's
+   line, before the section, instead of in the corner. */
+.slide:not(.slide--title) .slide-logo {
+  position: static;
+  height: 40px;
+  max-width: 240px;
+  margin-inline-start: auto;
+  transform: none;
+  /* Not the title slide's field of white, the rule runs on above. */
+  background: none;
+  padding: 0;
+}
+.slide:not(.slide--title) .slide-logo + span:not(:empty) { margin-inline-start: 32px; }
 
 .slide-footer {
   font-family: var(--font-body);
@@ -459,7 +472,6 @@ strong { color: var(--ink); font-weight: 600; }
 .code-block {
   --code-bg: var(--surface, var(--rule));
   --code-radius: 0;
-  --code-size: 30px;
   background: var(--code-bg);
   border-radius: 0;
   border-top: 6px solid var(--accent);
@@ -470,6 +482,9 @@ strong { color: var(--ink); font-weight: 600; }
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   line-height: 1.6;
 }
+/* The size is set on the slide, so the split layout's smaller code (on its
+   columns) reaches the block. */
+.slide { --code-size: 30px; }
 .code-block code {
   font-family: inherit;
   font-size: inherit;

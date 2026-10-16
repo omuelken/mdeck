@@ -188,6 +188,8 @@ function SlideHeader({ deckConfig, right, logo, isTitle = false }) {
   // show.organization: 'title' (default) | 'all' | 'none'
   const instSetting = deckConfig.show?.organization ?? 'title'
   const showOrg = instSetting === 'all' || (instSetting === 'title' && isTitle)
+  // The logo stands on the title slide, and on every slide with 'all'.
+  const showLogo = Boolean(logo) && (isTitle || instSetting === 'all')
 
   // show.sections: 'all' (default) | 'none'
   const showSection = (deckConfig.show?.sections ?? 'all') !== 'none'
@@ -195,7 +197,7 @@ function SlideHeader({ deckConfig, right, logo, isTitle = false }) {
   return (
     <div class="slide-header">
       <span class="brand">{showOrg ? org : ''}</span>
-      {logo && <img class="slide-logo" src={logo} alt="" />}
+      {showLogo && <img class="slide-logo" src={logo} alt="" />}
       {showSection && right != null && <span>{right}</span>}
     </div>
   )
@@ -280,8 +282,7 @@ export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, 
   // Its own hotspots setting, if any (runtime/hotspots.js).
   const hotspots = meta.hotspots == null ? undefined : String(meta.hotspots)
   return <section class={classes} dir={dir} data-slide-id={id} data-label={`${slideNum(index)} ${manifest.title}`} data-hotspots={hotspots}>
-    {frame !== 'none' && <SlideHeader deckConfig={deckConfig} logo={title ? deckConfig.meta?.logo : undefined}
-      isTitle={title} right={frame === 'chapter' ? meta.part ?? '' : meta.section ?? ''} />}
+    {frame !== 'none' && <SlideHeader deckConfig={deckConfig} logo={deckConfig.meta?.logo} isTitle={title} right={frame === 'chapter' ? meta.part ?? '' : meta.section ?? ''} />}
     {children}
     <SlideFootnotes html={footnotesHtml} />
     <SlideCitations html={citationsHtml} />
