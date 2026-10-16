@@ -14,7 +14,7 @@ import { validateManifest, ManifestError } from '../src/extensions/manifest.js'
 import { builtInRegistry, loadRegistry } from '../src/extensions/discover.js'
 import { dataDiagnostics } from '../src/build/dataCheck.js'
 import { dataFiles, slidesPlugin, rewriteAssetRefs, generateExtensionsModule } from '../src/build/slidesPlugin.js'
-import { niceTicks, formatTick, barPath } from '../src/dataviews/api.js'
+import { niceTicks, formatTick, barPath, axisTicks, dateTicks } from '../src/dataviews/api.js'
 
 test('CSV as people export it: commas, semicolons, tabs, quotes, blank lines and an indent', () => {
   assert.deepEqual(parseCsv('a, b\n1, 2\n\n3, 4\n'), { header: ['a', 'b'], rows: [['1', '2'], ['3', '4']], separator: ',', problems: [] })
@@ -28,19 +28,21 @@ test('CSV as people export it: commas, semicolons, tabs, quotes, blank lines and
   assert.match(parseCsv('').problems[0].message, /no data/)
 })
 
-test('numbers with a decimal point or comma, thousands, percentages and minus signs', () => {
+test('numbers with a decimal point or a decimal comma, percentages and minus signs, and no thousands', () => {
   assert.equal(parseNumber('7.1').value, 7.1)
-  assert.equal(parseNumber('1,234').value, 1234)
-  assert.equal(parseNumber('7,1', { decimalComma: true }).value, 7.1)
-  assert.equal(parseNumber('1.234,5', { decimalComma: true }).value, 1234.5)
-  assert.equal(parseNumber("1'234.5").value, 1234.5, 'Swiss thousands')
+  assert.equal(parseNumber('7,1').value, 7.1, 'a comma is the decimal comma')
+  assert.deepEqual(parseNumber('8,336'), { value: 8.336, percent: false, decimals: 3 }, 'never a thousands separator')
+  assert.equal(parseNumber('1,234.5'), null, 'a number has one decimal separator')
+  assert.equal(parseNumber('1.234,5'), null)
+  assert.equal(parseNumber("1'234"), null)
   assert.equal(parseNumber('−3').value, -3)
-  assert.deepEqual(parseNumber('12 %'), { value: 12, percent: true, decimals: 0 })
+  assert.equal(parseNumber('-0,5').value, -0.5)
+  assert.deepEqual(parseNumber('12,5 %'), { value: 12.5, percent: true, decimals: 1 })
   assert.equal(parseNumber('n/a'), null)
-  // A semicolon file or a German deck reads 7,1 as seven point one.
+  // The same in every file and deck, whatever its separator or language.
   assert.equal(typeTable(parseCsv('a;b\nx;7,1')).rows[0][1].value, 7.1)
-  assert.equal(typeTable(parseCsv('a,b\nx,"7,1"'), { lang: 'de' }).rows[0][1].value, 7.1)
-  assert.equal(typeTable(parseCsv('a,b\nx,"7,100"'), { lang: 'en' }).rows[0][1].value, 7100)
+  assert.equal(typeTable(parseCsv('a,b\nx,"7,1"')).rows[0][1].value, 7.1)
+  assert.equal(typeTable(parseCsv('city\tpop\nNY\t8,336')).rows[0][1].value, 8.336)
   const { columns } = typeTable(parseCsv('when,share,name\n2024-03,12 %,a\n2024-04,15 %,b'))
   assert.deepEqual(columns.map(column => column.type), ['date', 'number', 'text'])
   assert.equal(columns[1].percent, true)
@@ -51,6 +53,8 @@ test('the dataset: label and value columns, rows, sorting, highlights and steps'
   const data = buildDataset(csv, {})
   assert.equal(data.columns[data.x].name, 'region')
   assert.deepEqual(data.series.map(series => series.name), ['wheat', 'barley'], 'every column of numbers but the label')
+  assert.equal(data.chosen, false)
+  assert.equal(buildDataset(csv, { y: 'wheat' }).chosen, true)
   assert.deepEqual(data.rows[2].values, [6.9, null], 'an empty cell is no value')
   const sorted = buildDataset(csv, { sort: 'wheat desc', rows: '1-2', highlight: 'bern', y: 'wheat', steps: 'rows' })
   assert.deepEqual(sorted.rows.map(row => row.label), ['Bern', 'Aargau'], 'rows count after sorting: the top two')
@@ -186,4 +190,39 @@ test('a column that is not all numbers names its first cell that is not one', ()
   const message = csv => buildDataset(csv, { y: 'value' }).problems.map(problem => problem.message).join('\n')
   assert.match(message('name, value\na, 1\nb, 2\nc, abc'), /row 3 has "abc"$/)
   assert.match(message('name, value\na, x\nb, 2\nc, y'), /row 1 has "x" \(and 1 more\)/)
+})
+
+test('a value column with no values says so', () => {
+  const messages = buildDataset('name, value\na,\nb,', { y: 'value' }).problems.map(problem => problem.message)
+  assert.match(messages[0], /"value" has no values/)
+})
+
+test('HTML\'s own <data value="…"> is left as HTML, and no dataview may take a value property', () => {
+  const html = 'The answer: <data value="42">forty-two</data>.'
+  assert.equal(expandDataTags(html), html)
+  assert.deepEqual(dataTagsIn(html), [])
+  assert.throws(() => validateManifest({ schema: 1, kind: 'dataview', id: 'v', title: 'V', properties: { value: { type: 'string' } } }, { dir: '/v', folderName: 'v', fileExists: () => true }), /left to HTML/)
+})
+
+test('axes the author starts or ends, and dates on calendar ticks', () => {
+  const line = axisTicks(52, 71, { zero: false, min: 50, max: 72 })
+  assert.equal(line.min, 50)
+  assert.equal(line.max, 72)
+  assert.ok(line.ticks.every(tick => tick >= 50 && tick <= 72))
+  const years = dateTicks(Date.UTC(2015, 0, 1), Date.UTC(2024, 0, 1), { lang: 'en' })
+  assert.deepEqual(years.ticks.map(tick => tick.label), ['2016', '2018', '2020', '2022', '2024'])
+  const months = dateTicks(Date.UTC(2024, 0, 1), Date.UTC(2024, 5, 1), { lang: 'en' })
+  assert.equal(months.ticks[0].value, Date.UTC(2024, 0, 1))
+  assert.match(months.ticks[0].label, /Jan/)
+})
+
+test('mdeck check: bars start at 0, and line rows without x are left out', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'mdeck-data-check-'))
+  const deck = resolve(dir, 'talk.md')
+  const source = '# One\n\n<data show="bar" min="40">\nname, a\nx, 50\ny, 60\n</data>\n\n<data show="line">\nyear, a\n2020, 1\n, 2\n2022, 3\n</data>\n\n<data show="">\nname, a\nx, 1\n</data>\n'
+  writeFileSync(deck, source)
+  const found = dataDiagnostics(deck, builtInRegistry(), source)
+  assert.deepEqual(found.map(d => [d.line, d.severity]), [[3, 'warning'], [9, 'warning']])
+  assert.match(found[0].message, /bars always start at 0, so min="40" is ignored/)
+  assert.match(found[1].message, /row 2 .*has no year and is left out/)
 })

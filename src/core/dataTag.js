@@ -23,7 +23,7 @@ export function expandDataTags(markdown) {
   const tags = tagsIn(text)
   let out = '', last = 0
   tags.forEach((open, at) => {
-    if (open.name !== 'data' || open.closing || open.selfClosing || open.start == null || open.start < last || open.attrs['data-csv'] != null) return
+    if (open.name !== 'data' || open.closing || open.selfClosing || open.start == null || open.start < last || open.attrs['data-csv'] != null || isHtmlData(open.attrs)) return
     const close = closingTagOf(tags, at)
     if (close?.start == null) return
     const csv = text.slice(open.end, close.start)
@@ -34,9 +34,15 @@ export function expandDataTags(markdown) {
   return last ? out + text.slice(last) : source
 }
 
+/**
+ * Whether a tag is HTML's own <data value="398">Mini Ketchup</data>, which
+ * gives text a machine-readable value: it stays as it is, no table of data.
+ */
+export const isHtmlData = attrs => Object.hasOwn(attrs ?? {}, 'value')
+
 /** Every <data> tag of a slide's text: [{ attrs, csv }], `csv` null for a file (`src`). */
 export function dataTagsIn(markdown) {
   return tagsIn(expandDataTags(markdown))
-    .filter(tag => tag.name === 'data' && !tag.closing)
+    .filter(tag => tag.name === 'data' && !tag.closing && !isHtmlData(tag.attrs))
     .map(tag => ({ attrs: tag.attrs, csv: tag.attrs['data-csv'] ?? null }))
 }

@@ -44,6 +44,15 @@ export function dataDiagnostics(slidesPath, registry, source = readFileSync(slid
     if (data.problems.some(problem => problem.severity === 'error')) return
     for (const message of unmetNeeds(data, view.manifest.needs, view.manifest.title)) add('error', `${where}: ${message}`)
     if (data.steps && !view.manifest.steps.includes(data.steps)) add('error', `${where}: ${view.manifest.title} builds up by ${view.manifest.steps.join(' or ') || 'nothing'}, not by ${data.steps}`)
+    // Bars start at 0: bars cut off below it make small differences look large.
+    const { options } = dataviewOptions(view.manifest, attrs)
+    if (show === 'bar' && Number.isFinite(options.min) && options.min > 0) add('warning', `${where}: bars always start at 0, so min="${attrs.min}" is ignored: bars cut off below make differences look larger than they are. To start the axis at ${attrs.min}, use show="line"`)
+    // Rows a line or a scatter plot cannot place: no number or date across.
+    const xColumn = data.columns[data.x]
+    if (['line', 'scatter'].includes(show) && xColumn && xColumn.type !== 'text') {
+      const missing = data.rows.filter(row => row.cells[data.x].value == null)
+      if (missing.length) add('warning', `${where}: row ${missing[0].index}${missing.length > 1 ? ` (and ${missing.length - 1} more)` : ''} has no ${xColumn.name} and is left out`)
+    }
     if (!['table', 'heatmap'].includes(show) && data.series.length > MANY_SERIES) add('warning', `${where} shows ${data.series.length} value columns; the palette has three accents, and the ones after are harder to tell apart. Show fewer with y="…", or split the data over two slides`)
   })
   return diagnostics

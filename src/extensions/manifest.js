@@ -173,6 +173,7 @@ function validateDataview(raw, shared, fail) {
     const path = `properties.${name}`
     if (!/^[a-z][a-z0-9-]*$/.test(name)) fail('property names are attribute names: lowercase letters, digits and hyphens, starting with a letter', path)
     if (SHARED_ATTRIBUTES.includes(name)) fail(`"${name}" is an attribute every dataview shares`, path)
+    if (name === 'value') fail('"value" is left to HTML\'s own <data value="…">, which a dataview never sees', path)
     if (isPlainObject(schema) && ['array', 'object'].includes(schema.type)) fail('a property is a string, number, integer or boolean: it is written as an attribute', `${path}.type`)
     properties[name] = validatePropertySchema(schema, path, fail)
   }

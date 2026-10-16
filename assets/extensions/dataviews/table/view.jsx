@@ -5,7 +5,8 @@ import { stepOf, format, t } from 'mdeck/dataview'
 // y, the label column and those. Numbers sit right, under their header with
 // the unit; highlighted rows stand out; rows past max-rows are counted.
 export default function Table({ data, props }) {
-  const columns = data.series.length && data.series.length < data.columns.length - 1
+  // Without y, text columns too: a table shows what the file holds.
+  const columns = data.chosen
     ? [data.x, ...data.series.map(series => series.column)]
     : data.columns.map((column, index) => index)
   const shown = data.rows.slice(0, props['max-rows'])

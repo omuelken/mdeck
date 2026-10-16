@@ -23,7 +23,7 @@ year, students
 </data>
 ```
 
-This is CSV, the format spreadsheets save as. Separate the cells with commas, or with semicolons or tabs, as Excel often does. Numbers may be written `7.1` or, in a German deck (`lang: de`) and in a file separated by semicolons, `7,1`. A cell that contains a comma goes in double quotes: `"Smith, J."`.
+This is CSV, the format spreadsheets save as. Separate the cells with commas, or with semicolons or tabs, as Excel often does. Write numbers without thousands separators (`1234`, not `1,234`), with a point or a comma before the decimals: `7.1` or `7,1`. In a file separated by commas, a number with a comma goes in double quotes: `"7,1"`. The slides show numbers as your deck's language writes them. A cell that contains a comma goes in double quotes: `"Smith, J."`.
 
 Numbers you keep in a spreadsheet can stay there. Save it as CSV beside the slides and name the file:
 
@@ -62,8 +62,8 @@ Each way of showing has a few settings of its own, written like the others; `mde
 | `show` | Settings |
 |---|---|
 | `table` | `max-rows="8"` (the rest are counted below), `numbers="formatted"` (your language's separators instead of the numbers as written) |
-| `bar` | `orientation="horizontal"` (or `vertical`), `stacked`, `values="all"` (or `highlight`, `none`), `min`, `max` |
-| `line` | `points="all"` (or `none`), `fill` (for one line), `zero` (the axis starts at 0), `min`, `max` |
+| `bar` | `orientation="horizontal"` (or `vertical`), `stacked`, `values="all"` (or `highlight`, `none`), `max`, `min` (0 or below: bars always start at 0) |
+| `line` | `points="all"` (or `none`), `fill` (for one line), `zero` (the axis starts at 0), `min`, `max` (the axis starts and ends there) |
 | `scatter` | `labels="site"` (a column that names the points), `zero` |
 | `stat` | `change="change"` (a column with each figure's change) |
 | `heatmap` | `values="false"` (no numbers in the cells), `scale="diverging"` (two colours either side of 0), `min`, `max` |

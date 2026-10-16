@@ -1,8 +1,8 @@
 // Tables of data as people write and export them: CSV with a header row,
 // separated by commas, semicolons or tabs (Excel in many countries uses
 // semicolons), quoted cells that hold separators or line breaks, numbers
-// with a decimal point or comma, thousands separators (1,234 or 1.234 or
-// 1'234), percentages and dates. Plain functions, for the slides and for
+// with a decimal point or a decimal comma (and no thousands separators),
+// percentages and dates. Plain functions, for the slides and for
 // `mdeck check` alike.
 
 const SEPARATORS = [',', ';', '\t']
@@ -66,36 +66,19 @@ export function parseCsv(text) {
   return { header, rows, separator, problems }
 }
 
-// Whether a language writes 1,5 for one and a half.
-const commaLanguages = new Map()
-export function usesDecimalComma(lang) {
-  if (!lang) return false
-  if (!commaLanguages.has(lang)) {
-    let comma = false
-    try { comma = new Intl.NumberFormat(lang).format(1.5).includes(',') } catch {}
-    commaLanguages.set(lang, comma)
-  }
-  return commaLanguages.get(lang)
-}
-
 const NUMBER_RE = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i
 
 /**
- * A cell as a number: { value, percent, decimals } or null. `decimalComma`
- * reads 7,1 as seven point one and 1.234 as one thousand two hundred and
- * thirty-four; otherwise 1,234 is the thousand and 7.1 the decimal.
+ * A cell as a number: { value, percent, decimals } or null. The decimal
+ * separator is a point or a comma (7.1 or 7,1); numbers have no thousands
+ * separators, so 1,234 is one point two three four.
  */
-export function parseNumber(text, { decimalComma = false } = {}) {
-  let plain = String(text ?? '').replace(/[\s  ]/g, '').replace(/[−–]/g, '-')
+export function parseNumber(text) {
+  let plain = String(text ?? '').replace(/[\s\u00a0\u202f]/g, '').replace(/[\u2212\u2013]/g, '-')
   if (!plain) return null
   const percent = plain.endsWith('%')
   if (percent) plain = plain.slice(0, -1)
-  // Swiss thousands: 1'234.5
-  plain = plain.replace(/(\d)['’](?=\d{3}(\D|$))/g, '$1')
-  if (decimalComma) {
-    if (/^[+-]?\d{1,3}(\.\d{3})+(,\d+)?$/.test(plain)) plain = plain.replace(/\./g, '')
-    plain = plain.replace(',', '.')
-  } else if (/^[+-]?\d{1,3}(,\d{3})+(\.\d+)?$/.test(plain)) plain = plain.replace(/,/g, '')
+  if (!plain.includes('.')) plain = plain.replace(/,(?=\d*$)/, '.')
   if (!NUMBER_RE.test(plain)) return null
   const value = Number(plain)
   if (!Number.isFinite(value)) return null
@@ -119,16 +102,12 @@ export function parseDate(text) {
  * [{ name, type: 'number' | 'date' | 'text', percent, decimals }], and the
  * cells as { text, value } (value a number for numbers and dates, else the
  * text; null when empty). A column is of numbers when every filled cell is
- * one. Whether 7,1 has a decimal comma: the deck's language says so, or a
- * table separated by semicolons or tabs that writes numbers that way.
+ * one.
  */
-export function typeTable({ header, rows, separator }, { lang = null } = {}) {
-  const cells = rows.flat().filter(Boolean)
-  const commaNumbers = cells.some(cell => /^[+-]?\d+,\d+\s*%?$/.test(cell.trim()))
-  const decimalComma = commaNumbers && (separator !== ',' || usesDecimalComma(lang))
+export function typeTable({ header, rows }) {
   const columns = header.map((name, column) => {
     const filled = rows.map(row => row[column]).filter(cell => cell !== '')
-    const numbers = filled.map(cell => parseNumber(cell, { decimalComma }))
+    const numbers = filled.map(cell => parseNumber(cell))
     if (filled.length && numbers.every(Boolean)) {
       return { name, type: 'number', percent: numbers.every(number => number.percent), decimals: Math.min(4, Math.max(0, ...numbers.map(number => number.decimals))) }
     }
@@ -138,15 +117,14 @@ export function typeTable({ header, rows, separator }, { lang = null } = {}) {
   const typed = rows.map(row => row.map((text, column) => {
     if (text === '') return { text, value: null }
     const type = columns[column].type
-    if (type === 'number') return { text, value: parseNumber(text, { decimalComma }).value }
+    if (type === 'number') return { text, value: parseNumber(text).value }
     if (type === 'date') return { text, value: parseDate(text) }
     return { text, value: text }
   }))
-  return { columns, rows: typed, decimalComma }
+  return { columns, rows: typed }
 }
 
 /** The cells of a column that are not numbers, as [{ row, text }] (rows from 1), for messages. */
-export function notNumbers({ header, rows, separator }, column, { lang = null } = {}) {
-  const { decimalComma } = typeTable({ header, rows, separator }, { lang })
-  return rows.map((row, index) => ({ row: index + 1, text: row[column] })).filter(({ text }) => text !== '' && !parseNumber(text, { decimalComma }))
+export function notNumbers({ rows }, column) {
+  return rows.map((row, index) => ({ row: index + 1, text: row[column] })).filter(({ text }) => text !== '' && !parseNumber(text))
 }
