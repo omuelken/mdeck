@@ -26,6 +26,16 @@
   filter: var(--logo-filter, none);
   transform: translateY(calc(var(--fs-eyebrow) * 0.5 - 50%));
 }
+/* On the other slides (show.organization: all) it stands in the header's
+   line, before the section, instead of in the corner. */
+.slide:not(.slide--title) .slide-logo {
+  position: static;
+  height: 40px;
+  max-width: 240px;
+  margin-inline-start: auto;
+  transform: none;
+}
+.slide:not(.slide--title) .slide-logo + span:not(:empty) { margin-inline-start: 28px; }
 .slide-footer {
   font-family: var(--font-body);
   font-size: var(--fs-small);
@@ -311,7 +321,6 @@ strong { color: var(--ink); font-weight: 600; }
 .code-block {
   --code-bg: var(--surface, var(--rule));
   --code-radius: 6px;
-  --code-size: 28px;
   background: var(--code-bg);
   border-radius: var(--code-radius);
   padding: 36px 44px;
@@ -321,6 +330,9 @@ strong { color: var(--ink); font-weight: 600; }
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   line-height: 1.6;
 }
+/* The size is set on the slide, so the split layout's smaller code (on its
+   columns) reaches the block. */
+.slide { --code-size: 28px; }
 .code-block code { font-family: inherit; font-size: inherit; background: none; padding: 0; }
 
 /* ─────────────────────────────────────────────

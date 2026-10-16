@@ -99,13 +99,35 @@ const withKey = (headers = {}) => { const key = presenterKey(); return key ? { .
 
 // Only an answer is kept; after a failure the next call asks again, so a room
 // server that starts later is found. `reachable` is false when it did not answer.
-let infoRequest = null
-function serverInfo() {
-  infoRequest ??= fetch(`${controlBase()}/info?session=${encodeURIComponent(settings.code)}`, { headers: withKey() })
-    .then(response => { if (!response.ok) throw new Error(String(response.status)); return response.json() })
-    .then(info => ({ ...info, reachable: true }))
-    .catch(() => { infoRequest = null; return { reachable: false } })
+// `again` asks once more, unless the answer is a moment old (every slide
+// that shows a join link asks at the same time).
+let infoRequest = null, infoAskedAt = 0
+function serverInfo({ again = false } = {}) {
+  if (again && Date.now() - infoAskedAt > 1000) infoRequest = null
+  if (!infoRequest) {
+    infoAskedAt = Date.now()
+    infoRequest = fetch(`${controlBase()}/info?session=${encodeURIComponent(settings.code)}`, { headers: withKey() })
+      .then(response => { if (!response.ok) throw new Error(String(response.status)); return response.json() })
+      .then(info => ({ ...info, reachable: true }))
+      .catch(() => { infoRequest = null; return { reachable: false } })
+  }
   return infoRequest
+}
+
+// What the server said, asked again whenever the page comes back into view:
+// the laptop may have changed networks since, and with it the join link.
+function useServerInfo() {
+  const [info, setInfo] = useState({})
+  useEffect(() => {
+    let gone = false
+    const ask = options => serverInfo(options).then(next => { if (!gone) setInfo(next) })
+    ask()
+    const again = () => { if (document.visibilityState !== 'hidden') ask({ again: true }) }
+    window.addEventListener('focus', again)
+    document.addEventListener('visibilitychange', again)
+    return () => { gone = true; window.removeEventListener('focus', again); document.removeEventListener('visibilitychange', again) }
+  }, [])
+  return info
 }
 
 // The join link phones can open: the `server` setting, or `mdeck run --network`'s
@@ -181,9 +203,7 @@ export function useRoom(room) {
   const [state, setRoomState] = useState(null)
   const [present, setPresent] = useState(null)
   const [resets, setResets] = useState(0)
-  const [info, setInfo] = useState({})
-
-  useEffect(() => { serverInfo().then(setInfo) }, [])
+  const info = useServerInfo()
 
   useEffect(() => {
     if (!live || !room || typeof EventSource === 'undefined') return
@@ -236,15 +256,13 @@ export function listenToReactions(onReaction) {
 
 /** The deck's join link alone, for a slide that only invites people in (<qrcode join />). */
 export function useJoinLink() {
-  const [info, setInfo] = useState({})
-  useEffect(() => { serverInfo().then(setInfo) }, [])
+  const info = useServerInfo()
   return { joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
 }
 
 /** The link for following the slides, for a slide that shows it (<qrcode follow />). */
 export function useFollowLink() {
-  const [info, setInfo] = useState({})
-  useEffect(() => { serverInfo().then(setInfo) }, [])
+  const info = useServerInfo()
   return { joinUrl: followUrl(info), localJoinUrl: localFollowUrl(), code: settings.code, ...reach(info) }
 }
 

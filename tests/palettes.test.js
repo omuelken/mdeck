@@ -39,6 +39,9 @@ test('a deck gets the theme default, its own palette, and the other variant for 
   assert.match(dark.paletteCss, /--inverse-bg: #fbfaf7;/)
   assert.match(dark.paletteCss, /color-scheme: dark;/)
   assert.equal(buildAppearance({ theme: houseThemes.night, palettes }).appearance, 'dark', 'night starts dark')
+  // A palette may keep a coloured logo as it is on dark slides.
+  const asIs = { ...palettes.paper, dark: { ...palettes.paper.dark, '--logo-filter': 'none' } }
+  assert.match(buildAppearance({ theme: themes.neue, palettes: { ...palettes, paper: asIs }, palette: 'paper', appearance: 'dark' }).paletteCss, /--logo-filter: none;/)
 })
 
 test('an unknown palette, or one the theme does not offer, falls back to the default with a warning', () => {

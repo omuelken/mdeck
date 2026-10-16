@@ -50,12 +50,12 @@ export function slideLabels(source) {
 // Builds the deck into a temporary folder and opens it in Chrome for
 // `use({ page, count })`, at `appearance` ('' for the deck's own), with every
 // step revealed.
-async function withDeckPage(slidesPath, { appearance = '', width = 1600, height = 900 } = {}, use) {
+async function withDeckPage(slidesPath, { appearance = '', width = 1600, height = 900, buildFlags = [] } = {}, use) {
   const abs = resolve(slidesPath)
   const temp = mkdtempSync(resolve(tmpdir(), 'mdeck-render-'))
   try {
     try {
-      execFileSync(process.execPath, [resolve(frameworkRoot, 'bin/mdeck.js'), 'build', abs, '-o', resolve(temp, 'out/index.html')], { cwd: dirname(abs), stdio: 'pipe' })
+      execFileSync(process.execPath, [resolve(frameworkRoot, 'bin/mdeck.js'), 'build', abs, '-o', resolve(temp, 'out/index.html'), ...buildFlags], { cwd: dirname(abs), stdio: 'pipe' })
     } catch (error) {
       throw new Error(`The deck could not be built: ${String(error.stderr ?? error.message).replace(/\x1b\[[0-9;]*m/g, '').trim().split('\n').slice(-3).join(' ')}`)
     }
@@ -103,11 +103,13 @@ export function renderCheck(slidesPath) {
 // <deck>-sheet.png: the slides in a grid, each under its number and heading,
 // so a person or an assistant sees the whole deck at once. Returns the files
 // written.
-export async function snapshot(slidesPath, { slides = [], outDir, width = 1280, height = 720, appearance = '', sheet = false } = {}) {
+export async function snapshot(slidesPath, { slides = [], outDir, width = 1280, height = 720, appearance = '', sheet = false, drawings = true, results = true } = {}) {
+  // Without the drawings or the answers kept in the talk, as build and pdf can leave them out.
+  const buildFlags = [...(drawings ? [] : ['--no-drawings']), ...(results ? [] : ['--no-results'])]
   const name = basename(slidesPath).replace(/\.md$/i, '')
   const labels = sheet ? deckLabels(slidesPath) : []
   mkdirSync(outDir, { recursive: true })
-  return withDeckPage(slidesPath, { appearance, width, height }, async ({ page, count, show }) => {
+  return withDeckPage(slidesPath, { appearance, width, height, buildFlags }, async ({ page, count, show }) => {
     const wanted = slides.length ? slides : Array.from({ length: count }, (_, i) => i + 1)
     const files = [], shots = []
     for (const number of wanted) {

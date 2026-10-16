@@ -49,8 +49,8 @@ Slide layouts are small programs; ask your assistant for one, or see [Make your 
 
 | Keys | What happens |
 |---|---|
-| ⌘Z, ⇧⌘Z | Undo, redo |
-| ↑ ↓ | Select the previous or next slide (outside text fields) |
+| ⌘Z, ⇧⌘Z or ⌘Y | Undo, redo |
+| ↑ ↓, ← →, PgUp PgDn | Select the previous or next slide (outside text fields) |
 | ⌘↩ | Add a slide after the selected one |
 | ⌘⌫ | Remove the selected slide |
 

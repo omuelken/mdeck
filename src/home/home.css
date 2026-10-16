@@ -84,6 +84,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--home-focus); ou
 .home-answer-files { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .home-answer-files a { text-decoration: none; }
 .home-head-actions { display: flex; gap: 6px; }
+.home-confirm { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
 .home-output > .home-btn { flex: none; }
 .home-languages .is-current { color: var(--home-strong); font-weight: 600; }
 .home-answers .home-hint { color: var(--home-faint); font-size: 12px; margin: 8px 0 0; }

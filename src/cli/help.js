@@ -32,7 +32,6 @@ ${cmd('starter', '<layout>', 'Starter Markdown for a layout')}
 ${cmd('docs', '[guide]', 'Open the guides')}
 ${cmd('skill', '', 'The slide-writing skill for AI assistants')}
 ${cmd('server', '', 'The server for polls and for presenting from an iPad')}
-${cmd('migrate', '[slides.md]', 'Update a deck from before 2.0')}
 
   ${c.bold}slides.md${c.reset} defaults to the deck in this folder.
   ${c.green}mdeck <command> --help${c.reset} shows a command's options; ${c.green}mdeck --version${c.reset} which mdeck this is.
@@ -99,7 +98,8 @@ export const COMMAND_HELP = {
       Pictures go to .mdeck-snapshots/ unless -o names a folder.
       --slide <numbers>      only these slides: 3, 3,5 or 2-4
       --sheet                one picture of them all in a grid, each under its number and heading
-      --dark | --light       in this appearance instead of the deck's own`,
+      --dark | --light       in this appearance instead of the deck's own
+      --no-drawings          without the drawings; --no-results without the answers kept in the talk`,
   results: `
     ${c.green}mdeck results${c.reset} [slides.md] [-o answers.csv]
       Every answer as CSV: slide, room, kind, question, phone, time, answer.
@@ -124,7 +124,4 @@ export const COMMAND_HELP = {
     ${c.green}mdeck server${c.reset} [--port 8787] [--host [address]]
       Rooms for polls and for presenting through it; MDECK_SERVER_KEY is the presenter's key.
       Put a web server with HTTPS in front.`,
-  migrate: `
-    ${c.green}mdeck migrate${c.reset} [slides.md] [--dry-run]
-      Updates settings, local layouts and drawings from before 2.0.`,
 }

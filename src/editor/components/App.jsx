@@ -40,6 +40,9 @@ export function App() {
   if (!state.loaded) return <div class="loading">Loading…</div>
   const { deck, selectedIndex, tab } = state
   const slide = deck.slides[selectedIndex]
+  // The presenter view of the `mdeck run` that opened this editor, where its
+  // audience window and the phones are; this server's own has neither.
+  const presenterUrl = home ? new URL('?view=presenter', home).href : '/?view=presenter'
   const selection = { index: selectedIndex, slideId: slide?.id ?? null }
 
   return <div class="editor">
@@ -50,10 +53,10 @@ export function App() {
       {state.status === 'error' && <button class="btn is-small" onClick={retry}>Try again</button>}
       <span class="spacer" />
       <button class="btn is-small" onClick={actions.undo} disabled={!state.history.past.length} title="Undo (⌘Z)">Undo</button>
-      <button class="btn is-small" onClick={actions.redo} disabled={!state.history.future.length} title="Redo (⇧⌘Z)">Redo</button>
+      <button class="btn is-small" onClick={actions.redo} disabled={!state.history.future.length} title="Redo (⇧⌘Z or ⌘Y)">Redo</button>
       {home && <a class="btn is-small" href={home}>Launch page</a>}
       <a class="btn is-small" href={designUrl()} target={DESIGN_TAB} title="Make and change themes, palettes and layouts, on a sample deck">Design themes</a>
-      <a class="btn is-small" href="/?view=presenter" target="_blank" rel="noopener">Present</a>
+      <a class="btn is-small" href={presenterUrl} target="_blank" rel="noopener" title={home ? 'Open the presenter view of mdeck run, with its audience window and phones' : 'Open the presenter view on this server; for the audience window and polls, present from mdeck run'}>Present</a>
       <a class="btn is-small" href="/" target="_blank" rel="noopener">Open deck</a>
     </header>
     {state.status === 'conflict' && <ConflictBanner onReload={() => actions.resolve('reload')} onOverwrite={() => actions.resolve('overwrite')} />}

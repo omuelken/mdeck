@@ -192,7 +192,8 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
       return { status: 200, deckHash: hash, renamed }
     },
     // Drops one slide's drawings, or all of them, from the launch page; the
-    // open windows fetch the ink again.
+    // open windows fetch the ink again. Like any write, it keeps the
+    // session's backup first.
     drop(slideId = null) {
       let deck
       try { deck = readDeck().deck } catch { deck = { deckConfig: {} } }
