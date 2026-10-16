@@ -90,6 +90,10 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
     backedUp = true
   }
 
+  // Writes what waits for the debounce, and nothing when nothing does: a
+  // deck that was only shown gets no drawings file (nor a backup) on Ctrl+C.
+  function flushPending() { if (timer) flush() }
+
   function flush() {
     clearTimeout(timer)
     timer = null
@@ -200,6 +204,7 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
       onChange({ renamed: [] })
     },
     flush,
+    flushPending,
   }
 }
 

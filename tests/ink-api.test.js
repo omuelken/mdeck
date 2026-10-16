@@ -116,3 +116,16 @@ test('only this computer may change the ink', async () => {
   assert.equal(await call({ host: 'localhost:5173' }), 200)
   assert.equal(await call({ host: '192.168.1.20:5173' }), 403)
 })
+
+test('flushPending writes only what waits: a deck that was only shown gets no drawings file on Ctrl+C', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'mdeck-ink-pending-'))
+  const deck = resolve(dir, 'talk.md')
+  writeFileSync(deck, SOURCE)
+  const file = createInkFile(deck, { debounceMs: 60000 })
+  file.read()
+  file.flushPending()
+  assert.equal(existsSync(inkFileFor(deck)), false, 'nothing drawn, nothing written')
+  file.apply([{ type: 'add', slideId: 'slide-1', stroke: stroke('dev:1') }], hashSource(SOURCE))
+  file.flushPending()
+  assert.equal(existsSync(inkFileFor(deck)), true, 'a stroke waiting for the debounce is written')
+})

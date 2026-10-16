@@ -137,7 +137,7 @@ export default async function run({ command, hasFlag, portOption, serverOption, 
     server.watcher.on('change', file => { if (resolve(file) === abs) tunnel.push() })
   }
   // Ctrl+C: strokes and answers still waiting to be written go to their files first.
-  const stop = () => { tunnel?.stop(); ink.api.file.flush(); results.api.file.flush(); process.exit(0) }
+  const stop = () => { tunnel?.stop(); ink.api.file.flushPending(); results.api.file.flushPending(); process.exit(0) }
   process.once('SIGINT', stop)
   process.once('SIGTERM', stop)
   console.log()
