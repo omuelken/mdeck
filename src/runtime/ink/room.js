@@ -111,10 +111,10 @@ export function followStageRoom(stage, { onLanguage } = {}) {
     // mdeck run the room is empty, and a presenter view opened or reloaded
     // then would take the projector back to the first slide.
     if (!state.at) return
-    const position = { index: state.index, step: state.step ?? -1, slideId: state.slideId, ...(typeof state.blank === 'boolean' ? { blank: state.blank } : {}), ...(typeof state.join === 'boolean' ? { join: state.join } : {}) }
+    const position = { index: state.index, step: state.step ?? -1, slideId: state.slideId, ...(typeof state.blank === 'boolean' ? { blank: state.blank } : {}), ...(typeof state.join === 'boolean' ? { join: state.join } : {}), ...('freeze' in state ? { freeze: state.freeze ?? null } : {}) }
     if (state.lang && onLanguage?.(state.lang, position)) return
     const current = stage.state
-    if (current?.index === state.index && current?.step === state.step && (position.blank === undefined || current?.blank === position.blank) && (position.join === undefined || current?.join === position.join)) return
+    if (current?.index === state.index && current?.step === state.step && (position.blank === undefined || current?.blank === position.blank) && (position.join === undefined || current?.join === position.join) && (position.freeze === undefined || JSON.stringify(current?.freeze) === JSON.stringify(position.freeze))) return
     stage.setState(position)
   })
 }
@@ -123,7 +123,7 @@ export function followStageRoom(stage, { onLanguage } = {}) {
 export function onStagePosition(listener) {
   stateListeners.add(state => {
     if (!state || state.screen === stageRoom().screen || !Number.isInteger(state.index)) return
-    listener({ index: state.index, step: state.step ?? -1, slideId: state.slideId, lang: state.lang, blank: state.blank, join: state.join })
+    listener({ index: state.index, step: state.step ?? -1, slideId: state.slideId, lang: state.lang, blank: state.blank, join: state.join, freeze: state.freeze ?? null })
   })
 }
 
@@ -136,9 +136,9 @@ export function announceStagePosition(stage, { language = () => null } = {}) {
   const room = stageRoom()
   let allowed = null, last = null
   async function post(event) {
-    const { index, step, slideId, blank, join } = stage.state
+    const { index, step, slideId, blank, join, freeze } = stage.state
     const lang = language() ?? undefined
-    const key = `${slideId}:${index}:${step}:${lang}:${blank}:${join}`
+    const key = `${slideId}:${index}:${step}:${lang}:${blank}:${join}:${JSON.stringify(freeze)}`
     if (event?.detail.reason === 'sync') { last = key; return }
     if (key === last || allowed === false) return
     // Opening a window must not move the projector; only changes count.
@@ -149,7 +149,7 @@ export function announceStagePosition(stage, { language = () => null } = {}) {
       allowed = info.reachable && !!info.canReset
       if (!allowed) return
     }
-    fetch(`${room.url}/state`, { method: 'POST', headers: room.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state: { index, step, slideId, lang, blank, join, at, screen: room.screen } }) }).catch(() => {})
+    fetch(`${room.url}/state`, { method: 'POST', headers: room.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state: { index, step, slideId, lang, blank, join, freeze, at, screen: room.screen } }) }).catch(() => {})
   }
   stage.addEventListener('statechange', post)
   reannounce.add(() => { last = null; post({ detail: { reason: 'reconnect' } }) })

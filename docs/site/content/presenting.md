@@ -36,7 +36,7 @@ mdeck run my-talk.md
 
 The launch page it opens has a **Presenter view** button. The presenter view shows the slide with a toolbar under it, and beside it the time, the next slide and your notes:
 
-- **Under the slide**: previous and next, then drawing, black screen, all slides, hotspots and full screen, and **This slide**: what can be done on the slide shown, such as a poll's lock, results and right answer, or playing its video. Point at a button to see what it does and its key; **?** lists all keys.
+- **Under the slide**: previous and next, then drawing, black screen, freeze, all slides, hotspots and full screen, and **This slide**: what can be done on the slide shown, such as a poll's lock, results and right answer, or playing its video. Point at a button to see what it does and its key; **?** lists all keys.
 - **At the top of the notes**: the slide number (type one to jump there), the timer, the audience window button (a projector), the icons of who is connected, and the settings.
 - **Who is connected** (the icons): the audience windows, a paired iPad, phones; the join link for polls; and the codes that pair an iPad or a phone. A red dot means something needs you, such as phones that do not follow.
 - **Settings**: the layout (speaker, slide only, phone clicker), the theme, palette and light or dark to try, the language, the timer and rehearsal, the size of the notes, and the way back to the launch page.
@@ -83,6 +83,8 @@ The clicker is one of the presenter view's layouts: the settings switch any pres
 ## Black out the screen
 
 Press **B** when the room should look at you, not at the slide: the audience window goes black, and so do a paired iPad's audience window and phones following the talk. Your presenter view keeps the slide under a dark veil and says that the audience sees a black screen. **B** again, the next key (→, Space) or a click on the black screen shows the slide again, without moving on. Many presentation clickers have a button for this; it sends a full stop, which works like **B**. The presenter view also has a button for it.
+
+Press **P** to freeze the slide the audience sees, for example to look something up on another slide or to prepare the next one: the audience window keeps its slide, and so do phones following the talk and the phones of a poll, while you go on in the presenter view or on a paired iPad. The presenter view says which slide the audience still sees. While it is frozen, the audience window does not page on its own. **P** again, or the snowflake button, lets the audience follow again: it goes to the slide you are on.
 
 ## Find a slide
 
