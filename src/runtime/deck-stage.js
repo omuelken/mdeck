@@ -115,7 +115,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     this._blank = false;
     // The join code over the slide (J), the same: shown on every screen.
     this._join = false;
-    // A frozen projector (P): the position the audience's screens keep
+    // A frozen projector (Z): the position the audience's screens keep
     // while the presenter goes on, or null. Part of the position too; only
     // a stage marked data-freezable (the audience window) stays there.
     this._freeze = null;
@@ -485,7 +485,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
       step: this._stepMap.get(this._index) ?? -1, blank: this._blank, join: this._join, freeze: this._freeze };
   }
 
-  /** The position the audience's screens keep (P), or null. */
+  /** The position the audience's screens keep (Z), or null. */
   get freeze() { return this._freeze; }
   /** Freeze the audience's screens at the position shown here, or let them follow again. */
   setFreeze(on, reason = 'api') {
@@ -649,8 +649,9 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     } else if ((key === 'j' || key === 'J') && this._isPage() && !this.hasAttribute('data-watching') && this.hasAttribute('data-joinable')) {
       // J: the join code over the slide, in a deck phones join (deckWindow.jsx sets data-joinable).
       this.setJoin(!this._join, 'keyboard');
-    } else if ((key === 'p' || key === 'P') && this._isPage() && this.hasAttribute('data-presenter')) {
-      // P in the presenter's slide frame: the audience's screens keep this slide.
+    } else if ((key === 'z' || key === 'Z') && this._isPage() && this.hasAttribute('data-presenter')) {
+      // Z (freeze) in the presenter's slide frame: the audience's screens keep
+      // this slide. Not P, which is "previous" in PowerPoint.
       this.setFreeze(!this._freeze, 'keyboard');
     } else if ((key === 'b' || key === 'B' || key === '.') && this._isPage() && !this.hasAttribute('data-watching')) {
       // B, or the "blank" button of a presenter's clicker, which sends a full stop.

@@ -511,16 +511,20 @@ try {
   await press('ArrowRight')
   await until(audience, `${audienceStage}.blank === false`)
   assert.equal(await audience.evaluate(`${audienceStage}.state.index`), 0, 'showing the slide again does not move on')
-  // P: the audience window keeps its slide while the presenter goes on, and
+  // Z: the audience window keeps its slide while the presenter goes on, and
   // follows again when it is pressed once more.
-  await press('p')
+  await press('z')
   await until(audience, `${audienceStage}.freeze?.index === 0`)
   await until(presenter, "!!document.querySelector('.presenter-freeze-note')")
   await presenter.evaluate(`${stage}.goTo(1)`)
   await until(presenter, "document.querySelector('.presenter-freeze-note')?.textContent.includes('slide 1')")
   await delay(300)
   assert.equal(await audience.evaluate(`${audienceStage}.state.index`), 0, 'the frozen audience window keeps its slide')
-  await press('p')
+  // An audience window opened now opens at the frozen slide, never the one
+  // the presenter is on (it may be the solution).
+  const opened = await presenter.evaluate("(() => { const open = window.open; let url = null; window.open = u => { url = u; return null }; document.querySelector('.presenter-audience').click(); window.open = open; return url })()")
+  assert.equal(new URL(opened).hash, '#1', 'the audience window opens at the frozen slide')
+  await press('z')
   await until(audience, `${audienceStage}.freeze === null && ${audienceStage}.state.index === 1`)
   assert.equal(await presenter.evaluate("!!document.querySelector('.presenter-freeze-note')"), false)
   await presenter.evaluate(`${stage}.reset()`)
@@ -604,7 +608,7 @@ try {
   await until(projector2, "document.querySelector('deck-stage').join === true")
   await ipad.evaluate(`${ipadFrame}.querySelector('deck-stage').setJoin(false, 'keyboard')`)
   await until(projector2, "document.querySelector('deck-stage').join === false")
-  // Frozen on the iPad (P), the projector keeps its slide through the stage room.
+  // Frozen on the iPad (Z), the projector keeps its slide through the stage room.
   await ipad.evaluate("document.querySelector('.presenter-freeze').click()")
   await until(projector2, "document.querySelector('deck-stage').freeze?.index === 1")
   await ipad.evaluate(`${ipadFrame}.querySelector('deck-stage').prev()`)

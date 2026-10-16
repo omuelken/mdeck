@@ -22,7 +22,6 @@
 > | Change | Status |
 > |---|---|
 > | A countdown for the room, set in the presenter view, with a sound at the end (`<countdown />`, in [`contrib/countdown`](contrib/countdown/Countdown.jsx)) | only here |
-> | Freeze the projector (**P**, or the snowflake button in the presenter view and on the iPad): the audience window and the phones keep their slide while you go on | only here |
 > | A paired iPad stays paired when `mdeck run` restarts (same laptop address) | only here; Tilman wants it as an option for mdeck as a whole ([issue #17](https://github.com/tilman-schieber/mdeck/issues/17)) |
 >
 > To use it: clone, `git switch unterricht`, `npm install`, `npm link` (see [CONTRIBUTING.md](CONTRIBUTING.md)).

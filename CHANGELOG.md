@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Z** (freeze) in the presenter view, or its snowflake button, freezes the slide the audience sees: the audience window and the phones keep it while you go on.
 - A paired iPad stays paired when `mdeck run` or the laptop restarts: reload its presenter view. The laptop keeps the pairing in `~/.mdeck/paired/` (one file per deck, readable only by you) and forgets an iPad unused for 30 days; **Unpair** still ends every pairing.
 
 ## 3.14.0 — 2026-10-14

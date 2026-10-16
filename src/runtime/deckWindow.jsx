@@ -57,7 +57,7 @@ function handleDeckControl(ctrl, { drawHere, switchLanguage }) {
   else if (ctrl.command === 'overview') stage.overview = ctrl.value === 'toggle' ? !stage.overview : !!ctrl.value
   else if (ctrl.command === 'overviewKey' && typeof ctrl.value === 'string') stage.overviewKey(ctrl.value)
   else if (ctrl.command === 'blank') stage.setBlank(ctrl.value === 'toggle' ? !stage.blank : !!ctrl.value, 'keyboard')
-  // P in the presenter view: the audience's screens keep the slide shown.
+  // Z in the presenter view: the audience's screens keep the slide shown.
   else if (ctrl.command === 'freeze') stage.setFreeze(ctrl.value === 'toggle' ? !stage.freeze : !!ctrl.value, 'keyboard')
   else if (ctrl.command === 'join') stage.setJoin(ctrl.value === 'toggle' ? !stage.join : !!ctrl.value, 'keyboard')
 }
@@ -277,7 +277,7 @@ export async function startDeck({ url, parsed, deckConfig, editorMode, audienceM
   } else if (inkStage && audienceMode) {
     // The audience window shows the presenter's zoom and a poll's answer, without their controls.
     inkStage.setAttribute('data-follower', '')
-    // While the presenter freezes it (P), it keeps its slide.
+    // While the presenter freezes it (Z), it keeps its slide.
     inkStage.setAttribute('data-freezable', '')
     watchInk(inkStage, { storageKey: inkStorageKey, transports: [roomTransport({ receive: true, view: 'audience' })] })
   } else if (inkStage) watchInk(inkStage, { storageKey: inkStorageKey })

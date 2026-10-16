@@ -89,7 +89,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [blank, setBlank] = useState(false)
   // The join code over the slide (J), on every screen.
   const [join, setJoin] = useState(false)
-  // A frozen projector (P): the position the audience's screens keep, or null.
+  // A frozen projector (Z): the position the audience's screens keep, or null.
   const [freeze, setFreeze] = useState(null)
   // The phone clicker: the slide's controls, as its frame reports them (slideControls.js).
   const [slideControls, setSlideControls] = useState({ items: [], hotspots: 0, hotspot: null })
@@ -305,7 +305,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       if (e.key === 'h' || e.key === 'H') { e.preventDefault(); toggleHotspots(); return }
       // B, or a clicker's blank button (a full stop).
       if (e.key === 'b' || e.key === 'B' || e.key === '.') { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'blank', 'toggle'); return }
-      if (e.key === 'p' || e.key === 'P') { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'freeze', 'toggle'); return }
+      if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'freeze', 'toggle'); return }
       if ((e.key === 'j' || e.key === 'J') && (hasActivities() || reactionsOf(firstConfig))) { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'join', 'toggle'); return }
       // Digits zoom to hotspots; Escape zooms out.
       if (/^[0-9]$/.test(e.key) || e.key === 'Escape') { if (e.key !== 'Escape') e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'hotspotKey', e.key); return }
@@ -359,8 +359,10 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   }
 
   function openAudienceWindow() {
+    // While frozen (Z), it opens at the frozen slide: the one shown here may
+    // be the one the audience must not see yet, such as the solution.
     const aw = window.open(
-      buildAudienceUrl(theme, palette, appearance, indexRef.current),
+      buildAudienceUrl(theme, palette, appearance, freeze?.index ?? indexRef.current),
       'deck-audience-view'
     )
     if (!aw) return
@@ -428,7 +430,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   </>
   const drawButton = <ToolButton class="presenter-draw" icon="pen" label="Draw on the slide (D)" pressed={inking} style={inking ? { background: '#e11d48', borderColor: '#e11d48', color: '#fff' } : undefined} onClick={() => sendTo(frame(), 'ink', 'toggle')} />
   const blankButton = <ToolButton class="presenter-blank" icon="blank" label={blankLabel} pressed={blank} onClick={toggleBlank} />
-  const freezeButton = <ToolButton class="presenter-freeze" icon="freeze" label={freeze ? 'Let the audience follow again (P)' : 'Freeze the slide the audience sees (P)'} pressed={!!freeze} onClick={() => sendTo(frame(), 'freeze', 'toggle')} />
+  const freezeButton = <ToolButton class="presenter-freeze" icon="freeze" label={freeze ? 'Let the audience follow again (Z)' : 'Freeze the slide the audience sees (Z)'} pressed={!!freeze} onClick={() => sendTo(frame(), 'freeze', 'toggle')} />
   // Only where phones join: decks with activities or reactions.
   const joinButton = (hasActivities() || reacting) && <ToolButton class="presenter-join" icon="join" label={join ? 'Hide the join code (J)' : 'Show the join code on the slide (J)'} pressed={join} onClick={() => sendTo(frame(), 'join', 'toggle')} />
   const overviewButton = <ToolButton class="presenter-overview" icon="overview" label="All slides (O)" pressed={overviewOpen} onClick={toggleOverview} />
