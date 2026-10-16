@@ -115,6 +115,10 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     this._blank = false;
     // The join code over the slide (J), the same: shown on every screen.
     this._join = false;
+    // A frozen projector (P): the position the audience's screens keep
+    // while the presenter goes on, or null. Part of the position too; only
+    // a stage marked data-freezable (the audience window) stays there.
+    this._freeze = null;
     this._onBeforePrint = () => { this.printing = true; };
     this._onAfterPrint = () => { this.printing = false; };
   }
@@ -478,8 +482,24 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
 
   get state() {
     return { index: this._index, slideId: this._slides[this._index]?.dataset.slideId,
-      step: this._stepMap.get(this._index) ?? -1, blank: this._blank, join: this._join };
+      step: this._stepMap.get(this._index) ?? -1, blank: this._blank, join: this._join, freeze: this._freeze };
   }
+
+  /** The position the audience's screens keep (P), or null. */
+  get freeze() { return this._freeze; }
+  /** Freeze the audience's screens at the position shown here, or let them follow again. */
+  setFreeze(on, reason = 'api') {
+    if (!!on === !!this._freeze) return;
+    const { index, step, slideId } = this.state;
+    this._applyFreeze(on ? { index, step, slideId } : null);
+    this._broadcastState(reason);
+  }
+  _applyFreeze(position) {
+    this._freeze = position;
+    this.toggleAttribute('data-frozen', !!position);
+  }
+  // Whether this screen keeps the frozen position instead of following.
+  _frozenHere() { return !!this._freeze && this.hasAttribute('data-freezable'); }
 
   /** Whether the screen is black (B). Setting it tells the other screens. */
   get blank() { return this._blank; }
@@ -524,18 +544,26 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
 
   setState(state) {
     if (!state || !Number.isInteger(state.index) || !Number.isInteger(state.step)) return;
-    const byId = state.slideId ? this._slides.findIndex(s => s.dataset.slideId === state.slideId) : -1;
-    const index = byId >= 0 ? byId : state.index;
-    if (index < 0 || index >= this._slides.length) return;
+    // A position without `freeze` (a follower paging on its own) leaves it.
+    const freeze = !('freeze' in state) ? this._freeze
+      : Number.isInteger(state.freeze?.index) && Number.isInteger(state.freeze?.step)
+        ? { index: state.freeze.index, step: state.freeze.step, slideId: state.freeze.slideId } : null;
+    const freezeChanged = JSON.stringify(freeze) !== JSON.stringify(this._freeze);
+    if (freezeChanged) this._applyFreeze(freeze);
+    // The audience window stays at the frozen position.
+    const target = this._frozenHere() ? this._freeze : state;
+    const byId = target.slideId ? this._slides.findIndex(s => s.dataset.slideId === target.slideId) : -1;
+    const index = byId >= 0 ? byId : target.index;
+    if (index < 0 || index >= this._slides.length) { if (freezeChanged) this._broadcastState('sync'); return; }
     const max = this._getSteps(this._slides[index]).length - 1;
-    const step = Math.max(-1, Math.min(max, state.step));
+    const step = Math.max(-1, Math.min(max, target.step));
     // A position without `blank` (a follower paging on its own) leaves it.
     const blankChanged = typeof state.blank === 'boolean' && state.blank !== this._blank;
     if (blankChanged) this._applyBlank(state.blank);
     const joinChanged = typeof state.join === 'boolean' && state.join !== this._join;
     if (joinChanged) this._applyJoin(state.join);
     if (index === this._index) {
-      if (step === this.state.step) { if (blankChanged || joinChanged) this._broadcastState('sync'); return; }
+      if (step === this.state.step) { if (blankChanged || joinChanged || freezeChanged) this._broadcastState('sync'); return; }
       if (this._hotspot) this.wholeSlide();
       this._stepMap.set(index, step);
       this._applySteps(index);
@@ -621,6 +649,9 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     } else if ((key === 'j' || key === 'J') && this._isPage() && !this.hasAttribute('data-watching') && this.hasAttribute('data-joinable')) {
       // J: the join code over the slide, in a deck phones join (deckWindow.jsx sets data-joinable).
       this.setJoin(!this._join, 'keyboard');
+    } else if ((key === 'p' || key === 'P') && this._isPage() && this.hasAttribute('data-presenter')) {
+      // P in the presenter's slide frame: the audience's screens keep this slide.
+      this.setFreeze(!this._freeze, 'keyboard');
     } else if ((key === 'b' || key === 'B' || key === '.') && this._isPage() && !this.hasAttribute('data-watching')) {
       // B, or the "blank" button of a presenter's clicker, which sends a full stop.
       this.setBlank(!this._blank, 'keyboard');
@@ -642,7 +673,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   _isPage() { return this.parentElement === document.body; }
 
   _go(i, reason = 'api') {
-    if (!this._slides.length) return;
+    if (!this._slides.length || this._frozenHere()) return;
     const clamped = Math.max(0, Math.min(this._slides.length - 1, i));
     if (clamped === this._index) {
       this._flashOverlay();
@@ -731,6 +762,8 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   goTo(i) { this._go(i, 'api'); }
   /** Advance: reveals next step if the current slide has unrevealed steps, else goes to next slide. */
   next(reason = 'api') {
+    // A frozen audience window stays where it is (P in the presenter view).
+    if (this._frozenHere()) return;
     // On a black screen, the next press shows the slide again first; so with the join code.
     if (this._blank) { this.setBlank(false, reason); return; }
     if (this._join) { this.setJoin(false, reason); return; }
@@ -749,6 +782,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   }
   /** Go back: hides last revealed step if any, else goes to previous slide. */
   prev(reason = 'api') {
+    if (this._frozenHere()) return;
     if (this._blank) { this.setBlank(false, reason); return; }
     if (this._join) { this.setJoin(false, reason); return; }
     const steps = this._getSteps(this._slides[this._index]);
@@ -765,6 +799,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   }
   /** Reset to first slide and clear all step state. */
   reset() {
+    if (this._frozenHere()) return;
     this._stepMap.clear();
     // Moving to the first slide reports the new position itself; report it
     // once more only when the deck was already there, for the cleared steps.
