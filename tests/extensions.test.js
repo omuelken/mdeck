@@ -252,3 +252,14 @@ test('a palette without the third accent gets the amber, and says so', () => {
   const full = validateManifest(parseManifestText(PALETTE, 'extension.toml'), { file: 'extension.toml', dir: '/x/ocean', folderName: 'ocean', fileExists: () => true })
   assert.equal(full.manifest.fallbacks, undefined)
 })
+
+test('the appearance says which of the two logos shows: the dark one on dark slides, never inverted by the tokens', () => {
+  const theme = registry.themes.neue.manifest, palettes = manifestsOf(registry, 'palette')
+  const dark = buildAppearance({ theme, palettes, appearance: 'dark' }).paletteCss
+  assert.match(dark, /--logo-light-display: none;/)
+  assert.match(dark, /--logo-dark-display: block;/)
+  assert.match(dark, /--inverse-logo-dark-display: none;/, 'an inverted slide on a dark deck shows the light logo')
+  const light = buildAppearance({ theme, palettes, appearance: 'light' }).paletteCss
+  assert.doesNotMatch(light, /--logo-light-display:/, 'light is the default in base.css')
+  assert.match(light, /--inverse-logo-dark-display: block;/)
+})

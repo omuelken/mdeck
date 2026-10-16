@@ -47,7 +47,8 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `meta.author` | — | Author name (shown in footer) |
 | `meta.organization` | — | Organization name (shown in header) |
 | `meta.date` | — | Date string (shown in footer) |
-| `meta.logo` | — | Path to logo image (shown on the title slide, and on every slide with `show.organization: all`; inverted on dark slides unless the palette sets `--logo-filter`) |
+| `meta.logo` | — | Path to logo image (shown on the title slide, and on every slide with `show.organization: all`; inverted on dark slides unless `meta.logo-dark` is set or the palette sets `--logo-filter`) |
+| `meta.logo-dark` | — | A second logo for dark slides, shown as it is instead of the inverted `meta.logo` |
 | `width` / `height` | `1920` / `1080` | Slide canvas dimensions in px |
 | `show.organization` | `title` | When to show the organization name and logo: `title`, `all`, or `none` (the logo stays on the title slide) |
 | `show.author` | `title` | When to show the author and date line: `title`, `all`, or `none` |
