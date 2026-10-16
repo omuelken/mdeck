@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- `mdeck migrate` is gone: it updated decks from before 2.0. A deck or extension that still uses the old names is told what to change.
+- `mdeck snapshot` takes `--no-drawings` and `--no-results`, as build, send and pdf do.
+- The **?** button that lists the keys is in the presenter view's iPad layout too.
+- Fixed: after the laptop changed networks, join codes and QR codes on the slides and in the presenter view's connections panel kept the old address until a reload; they are read again when the window comes back.
+- The editor's **Present** button opens the presenter view of the `mdeck run` that started the editor, with its audience window and phones, and says so.
+- The editing guide lists ⌘Y for redo and ← → and PgUp/PgDn for moving between slides.
+- Third- and fourth-level headings and a rule (`***`) are set in the theme's type in every theme; before, neue, minimal, academic and glass showed them in the browser's own sizes.
+- Fixed: code in a split slide's columns was only smaller in the plain theme; it is in every theme now, in both columns, and a code block's output takes the theme's code size.
+- With `show.organization: all` the logo appears on every slide, in the header's line, as the name does; by default it stays on the title slide.
+- The appearance pages say that a logo is inverted on dark slides and how a palette keeps it as it is (`"--logo-filter" = "none"` in `[dark]`).
 - Fixed: closing the editor tab right after typing could lose the last change; the final save now outlives the page.
 - Fixed: a change saved in a second editor tab, or with **Use in my deck** on the design page, was not shown in the first tab, and **Keep my edits** there could overwrite it.
 - Fixed: when a save failed, the editor retried every 400 ms with the message flickering; it waits longer each time, keeps the message on show and has **Try again**.
@@ -72,7 +82,7 @@
 - On an iPad the presenter view starts with the drawing toolbar open, in its strip below the slide.
 - On an iPad, the presenter view's bar and the open drawing toolbar no longer cover the slide.
 - `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`.
-- The launch page drops answers and drawings at once, without asking and without a backup.
+- The launch page asks before dropping answers or drawings; dropped answers are gone for good, while the drawings file as it was at the start of the session stays in `.mdeck-backups/`.
 - Fixed: the join code shown with **J** on a paired iPad did not show in the laptop's audience window or on phones following the talk.
 - Fixed: two things circled with the laser one after the other were briefly joined by a line on the screen they were drawn on.
 
