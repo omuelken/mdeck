@@ -10,6 +10,6 @@ export default async function takeSnapshots({ options, hasFlag, outputOption, re
     const outDir = resolve(outputOption() ?? resolve(dirname(resolve(input)), '.mdeck-snapshots'))
     const appearance = hasFlag('--dark') ? 'dark' : hasFlag('--light') ? 'light' : ''
     const { snapshot } = await import('../../build/renderCheck.js')
-    for (const file of await snapshot(input, { slides, outDir, appearance, sheet: hasFlag('--sheet') })) console.log(relative(process.cwd(), file))
+    for (const file of await snapshot(input, { slides, outDir, appearance, sheet: hasFlag('--sheet'), drawings: !hasFlag('--no-drawings'), results: !hasFlag('--no-results') })) console.log(relative(process.cwd(), file))
   } catch (error) { err(error.message); process.exitCode = 1 }
 }

@@ -16,7 +16,6 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck themes search`, `install <theme>`, `remove`, `update`, `list` | Themes: install more (each with its palette), remove the ones you do not use; see [Install, remove or share a theme](theme-repository.html) |
 | `mdeck palettes search`, `install <palette>`, … | The same for palettes |
 | `mdeck design [my-talk.md or folder]` | Look at themes and palettes on a sample deck and fine-tune them; saves to `extensions/` |
-| `mdeck migrate my-talk.md --dry-run` | Preview the changes needed for API 2.0 |
 | `mdeck check my-talk.md` | Check settings and look for missing local files; `--render` also finds slides whose content does not fit |
 | `mdeck snapshot my-talk.md` | Save pictures of the slides as PNG files, for you or your assistant to look at |
 | `mdeck send my-talk.md` | Make one file to send to readers, with a PDF inside |
@@ -108,17 +107,6 @@ The design page shows themes and palettes on a sample deck with every kind of sl
 
 See [Send, host or print your slides](sharing.html) for help choosing between them. Unknown options, missing option values and extra filenames stop the command before it changes any output. `--output=path` and `-o path` are both accepted. `mdeck preview --no-open --port 4200` previews without opening a browser and chooses a port.
 
-## Update a deck to API 2.0
-
-```sh
-mdeck migrate my-talk.md --dry-run
-mdeck migrate my-talk.md
-```
-
-The dry run lists changes without writing files. Applying them renames deck settings, changes local extension manifests from `template` to `layout`, updates `mdeck/template-api` imports in local extensions and components, and renames `<deck>.ink.json` to `<deck>.drawings.json`. Unrelated source text and comments stay unchanged. Speaker notes use `:::notes` blocks; there is no migration for metadata notes.
-
-Conflicting old and new values, or two drawings files, stop the whole migration before any writes. Originals are copied into `.mdeck-backups/migration-…` beside the deck. Running it again makes no changes. Shared component folders outside the deck are not rewritten; update those imports separately.
-
 ## Check more strictly
 
 ```sh
@@ -150,7 +138,7 @@ mdeck snapshot my-talk.md --slide 3,5-7 --dark
 mdeck snapshot my-talk.md --sheet
 ```
 
-This saves each slide, with all steps revealed, as a 1280×720 PNG file in `.mdeck-snapshots/` beside the deck (`-o` for another folder), named `my-talk-03.png` and so on, and prints the paths. `--slide` picks slides by number; `--dark` and `--light` show that appearance instead of the deck's own. `--sheet` saves one picture instead, `my-talk-sheet.png`: the slides in a grid, each under its number and heading, to see a whole deck at a glance. An AI assistant that reads pictures can use them to look at what it wrote. If you keep your slides in Git, add `.mdeck-snapshots/` to your `.gitignore`.
+This saves each slide, with all steps revealed, as a 1280×720 PNG file in `.mdeck-snapshots/` beside the deck (`-o` for another folder), named `my-talk-03.png` and so on, and prints the paths. `--slide` picks slides by number; `--dark` and `--light` show that appearance instead of the deck's own. `--no-drawings` and `--no-results` leave out the drawings and the kept answers, as for `build`. `--sheet` saves one picture instead, `my-talk-sheet.png`: the slides in a grid, each under its number and heading, to see a whole deck at a glance. An AI assistant that reads pictures can use them to look at what it wrote. If you keep your slides in Git, add `.mdeck-snapshots/` to your `.gitignore`.
 
 ## Layouts, themes and palettes
 

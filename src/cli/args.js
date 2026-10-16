@@ -15,13 +15,12 @@ const commands = {
   pdf: { ...output, '--no-polls': flag, '--slide': value, max: 1 },
   preview: { ...common, max: 1 },
   check: { '--strict': flag, '--render': flag, max: 1 },
-  snapshot: { '--output': value, '-o': '--output', '--slide': value, '--dark': flag, '--light': flag, '--sheet': flag, max: 1 },
+  snapshot: { ...output, '--slide': value, '--dark': flag, '--light': flag, '--sheet': flag, max: 1 },
   list: { '--json': flag, max: 2 },
   starter: { max: 2 },
   docs: { ...common, '--build': flag, max: 1 },
   server: { '--port': value, '--host': optional, max: 0 },
   skill: { '--print': flag, '--install': 'list', '--project': flag, max: 0 },
-  migrate: { '--dry-run': flag, max: 1 },
   results: { '--output': value, '-o': '--output', '--summary': flag, '--json': flag, max: 1 },
 }
 

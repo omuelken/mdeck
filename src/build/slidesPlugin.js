@@ -410,7 +410,7 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
       for (const event of ['add', 'unlink', 'addDir', 'unlinkDir']) server.watcher.on(event, refresh)
     },
     resolveId(id) {
-      if (id === 'mdeck/template-api') throw new Error('mdeck/template-api is now mdeck/layout. Run mdeck migrate to update local imports.')
+      if (id === 'mdeck/template-api') throw new Error('mdeck/template-api is now mdeck/layout; change the import')
       if (id === 'mdeck/layout') return fileURLToPath(new URL('../layouts/layoutApi.jsx', import.meta.url))
       if (id === 'mdeck/live') return fileURLToPath(new URL('../live/client.js', import.meta.url))
       if (id === 'mdeck/dataview') return fileURLToPath(new URL('../dataviews/api.js', import.meta.url))

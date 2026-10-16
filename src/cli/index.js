@@ -11,7 +11,6 @@ const COMMANDS = {
   new: 'new', run: 'run', rehearse: 'run', edit: 'edit', design: 'design', themes: 'packages', palettes: 'packages',
   build: 'build', send: 'build', pdf: 'pdf', preview: 'preview',
   check: 'check', snapshot: 'snapshot', results: 'results', list: 'list', starter: 'starter', docs: 'docs', skill: 'skill', server: 'server',
-  migrate: 'migrate',
 }
 
 // ── Argument parsing ──────────────────────────────────────────────────────────
