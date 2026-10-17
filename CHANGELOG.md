@@ -7,6 +7,7 @@
 - `mdeck snapshot` takes `--no-drawings` and `--no-results`, as build, send and pdf do.
 - The **?** button that lists the keys is in the presenter view's iPad layout too.
 - Fixed: with a phone clicker paired, the presenter view kept warning "Phones follow another screen" although both showed the same slide; it warns only when the phones show something else.
+- Fixed: on a phone, the clicker's top bar overlapped the timer and pushed the settings menu off the screen; freeze (Z) sits in the menu's "During the talk" row there.
 - Fixed: a presenter view button that was switched on and off again (draw, black screen, notes, …) kept a light frame; its grey border comes back now.
 - Fixed: after the laptop changed networks, join codes and QR codes on the slides and in the presenter view's connections panel kept the old address until a reload; they are read again when the window comes back.
 - The editor's **Present** button opens the presenter view of the `mdeck run` that started the editor, with its audience window and phones, and says so.

@@ -58,6 +58,12 @@ const SLIM_PILL = `
   .presenter--slide .presenter-pill .presenter-clock { gap: 6px !important; }
   .presenter--slide .presenter-pill .presenter-slide-time { font-size: 11px !important; }
 `
+// The phone's bar, a little tighter, so it fits a 375 px wide phone with
+// phones connected; on a narrower one it wraps instead of overlapping.
+const SLIM_REMOTE_BAR = `
+  .presenter-remote-bar { gap: 4px !important; }
+  .presenter-remote-bar > button, .presenter-remote-bar > span > [class$="-toggle"] { min-width: 36px !important; padding: 0 7px !important; }
+`
 // A slide's first heading, as plain words, for the phone's "Next:" line.
 function slideTitleOf(slide) {
   const texts = [slide?.content ?? '', ...Object.values(slide?.regions ?? {}).map(region => region.content ?? '')]
@@ -458,7 +464,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const fullscreenButton = canFullscreen && <ToolButton class="presenter-fullscreen" icon={fullscreenIcon} label={fullscreenLabel} pressed={isFullscreen} onClick={() => fullscreen.toggle()} />
   const helpButton = <ToolButton class="presenter-help" icon="guides" label="All keys (?)" onClick={() => setHelpOpen(open => !open)} />
   const separator = <span aria-hidden="true" style={{ width: '1px', alignSelf: 'stretch', margin: '6px 4px', background: '#2a2a2a' }} />
-  const settings = <Settings layout={layout} onLayout={chooseLayout} duringTalk={remoteLayout && <>{overviewButton}{hotspotsButton}{fullscreenButton}</>}
+  const settings = <Settings layout={layout} onLayout={chooseLayout} duringTalk={remoteLayout && <>{freezeButton}{overviewButton}{hotspotsButton}{fullscreenButton}</>}
     theme={theme} themeMeta={themeMeta} onThemes={() => setThemeModalOpen(true)} offered={offered} shown={shown} setPalette={setPalette} setAppearance={setAppearance}
     lang={lang} setLang={setLang} timer={timer} noteSize={noteSize} setNoteSize={setNoteSize} launchPage={launchPage} />
   const notesBox = <div class="notes-md" dir={notesDir} style={{ flex: 1, minHeight: 0, overflow: 'auto', margin: 0, padding: '12px 14px', lineHeight: 1.55, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', fontSize: `${noteSize}px`, color: note ? '#c8c8c8' : '#3a3a3a' }}
@@ -503,10 +509,11 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     const big = { ...S.btn, height: '72px', fontSize: '18px', fontWeight: 600, borderRadius: '14px' }
     return (
       <div class="presenter presenter--remote" style={{ ...font, fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '10px', height: '100dvh', boxSizing: 'border-box', padding: 'max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left))', background: '#111', overflow: 'hidden', touchAction: 'manipulation' }}>
-        <div class="presenter-remote-bar" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+        <style>{SLIM_REMOTE_BAR}</style>
+        <div class="presenter-remote-bar" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ color: '#888', whiteSpace: 'nowrap' }} />
           <span style={{ flex: 1 }} />
-          {finishButton}{timerChip}{joinButton}{blankButton}{freezeButton}{connections}{settings}
+          {finishButton}{timerChip}{joinButton}{blankButton}{connections}{settings}
         </div>
         <div style={{ position: 'relative', flexShrink: 0, width: '100%', maxHeight: '32dvh', aspectRatio: '16/9', margin: '0 auto', borderRadius: '8px', overflow: 'hidden', border: '1px solid #2a2a2a', background: '#000' }}>
           <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ width: '100%', height: '100%', border: '0', display: 'block' }} />
