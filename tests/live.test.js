@@ -122,6 +122,16 @@ test('the latest change wins over repeats from a screen changed earlier', () => 
   assert.deepEqual(rooms.state('s'), { room: null, at: 300 })
 })
 
+test('a screen turned away on the activity the phones follow is told it agrees', async t => {
+  const url = await smallServer(t, { canReset: () => true })
+  const send = state => fetch(`${url}/rooms/talk/state`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state }) }).then(response => response.json())
+  const poll = { type: 'choice', options: ['A', 'B'] }
+  assert.deepEqual(await send({ room: 'q', activity: poll, at: 100, screen: 'phone' }), { ok: true })
+  assert.deepEqual(await send({ room: 'q', activity: poll, at: 200, screen: 'computer' }), { ok: true }, 'the computer follows the phone clicker')
+  assert.deepEqual(await send({ room: 'q', activity: poll, at: 100, screen: 'phone', look: 'other' }), { ok: true, ignored: true, same: true }, 'the phone repeats the same slide')
+  assert.deepEqual(await send({ room: null, at: 0, screen: 'tab' }), { ok: true, ignored: true }, 'a newly opened tab on another slide')
+})
+
 test('rooms fill up, idle rooms are forgotten and senders are rate limited', () => {
   let t = 0
   const rooms = createRooms({ maxMessages: 2, maxRooms: 1, idleMs: 100, now: () => t })

@@ -20,6 +20,8 @@ const ANSWER_TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript; c
 export const ROOM_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/
 // A session's reactions room: `<code>.reactions`.
 const isReactionRoom = id => id.endsWith('.reactions')
+// Whether two screens' states put the same activity on the phones.
+const sameActivity = (a, b) => JSON.stringify([a?.room ?? null, a?.activity ?? null]) === JSON.stringify([b?.room ?? null, b?.activity ?? null])
 // What a connected window may say it is, for the presenter's overview of
 // who is connected (src/components/ConnectedViews.jsx); phones only count,
 // and so do followers (?view=follow), who cannot answer.
@@ -293,7 +295,12 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
       if (match[2] === '/reset' || match[2] === '/state') {
         if (!canReset(request, id)) return reply(response, 403, { error: 'Only the presenter can change a room' })
         if (match[2] === '/reset') rooms.reset(id)
-        else if (!rooms.setState(id, (await readBody(request, MAX_STATE)).state)) return reply(response, 200, { ok: true, ignored: true })
+        else {
+          const { state } = await readBody(request, MAX_STATE)
+          // A screen turned away on the same activity as the one the phones
+          // follow (the computer and its paired phone or iPad) is told so.
+          if (!rooms.setState(id, state)) return reply(response, 200, { ok: true, ignored: true, ...(sameActivity(state, rooms.state(id)) ? { same: true } : {}) })
+        }
         return reply(response, 200, { ok: true })
       }
       // Reactions have a limit of their own: a room behind one address (a

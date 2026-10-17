@@ -351,7 +351,7 @@ async function sendCurrent() {
   try {
     const response = await fetch(`${controlSessionPath()}/state`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state }) })
     const body = response.ok ? await response.json().catch(() => ({})) : {}
-    report(!response.ok ? { ok: false, reason: response.status === 403 ? 'wrong-code' : 'unreachable' } : body.ignored ? { ok: false, reason: 'other-screen' } : { ok: true })
+    report(!response.ok ? { ok: false, reason: response.status === 403 ? 'wrong-code' : 'unreachable' } : body.ignored && !body.same ? { ok: false, reason: 'other-screen' } : { ok: true })
   } catch { report({ ok: false, reason: 'unreachable' }) }
 }
 
