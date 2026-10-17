@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.15.0 — 2026-10-17
 
 - A deck can bring a second logo for dark slides: `logo-dark: ./img/logo-white.png` in `meta` is shown as it is on dark slides, instead of the inverted `logo`.
 - `mdeck migrate` is gone: it updated decks from before 2.0. A deck or extension that still uses the old names is told what to change.
