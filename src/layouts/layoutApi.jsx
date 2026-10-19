@@ -164,6 +164,8 @@ export function HtmlContent({ html, class: className, ...attributes }) {
     const mounted = []
     for (const [name, Component] of Object.entries(registry)) {
       for (const el of [...ref.current.querySelectorAll(name)]) {
+        // A component may leave an element to HTML, as <data> does a <data value="…">.
+        if (Component.leavesToHtml?.(el)) continue
         const props = Object.fromEntries([...el.attributes].map(a => [a.name, a.value]))
         const children = el.textContent
         const wrapper = document.createElement('div')
@@ -180,12 +182,14 @@ export function HtmlContent({ html, class: className, ...attributes }) {
 
 // ─── Header / footer / footnotes rails ────────────────────────────────────
 
-function SlideHeader({ deckConfig, right, logo, isTitle = false }) {
+function SlideHeader({ deckConfig, right, logo, logoDark, isTitle = false }) {
   const org = deckConfig.meta?.organization ?? ''
 
   // show.organization: 'title' (default) | 'all' | 'none'
   const instSetting = deckConfig.show?.organization ?? 'title'
   const showOrg = instSetting === 'all' || (instSetting === 'title' && isTitle)
+  // The logo stands on the title slide, and on every slide with 'all'.
+  const showLogo = Boolean(logo) && (isTitle || instSetting === 'all')
 
   // show.sections: 'all' (default) | 'none'
   const showSection = (deckConfig.show?.sections ?? 'all') !== 'none'
@@ -193,7 +197,9 @@ function SlideHeader({ deckConfig, right, logo, isTitle = false }) {
   return (
     <div class="slide-header">
       <span class="brand">{showOrg ? org : ''}</span>
-      {logo && <img class="slide-logo" src={logo} alt="" />}
+      {/* With a logo for dark slides, both are there and the appearance shows one (base.css). */}
+      {showLogo && <img class={`slide-logo${logoDark ? ' slide-logo--light' : ''}`} src={logo} alt="" />}
+      {showLogo && logoDark && <img class="slide-logo slide-logo--dark" src={logoDark} alt="" />}
       {showSection && right != null && <span>{right}</span>}
     </div>
   )
@@ -278,8 +284,7 @@ export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, 
   // Its own hotspots setting, if any (runtime/hotspots.js).
   const hotspots = meta.hotspots == null ? undefined : String(meta.hotspots)
   return <section class={classes} dir={dir} data-slide-id={id} data-label={`${slideNum(index)} ${manifest.title}`} data-hotspots={hotspots}>
-    {frame !== 'none' && <SlideHeader deckConfig={deckConfig} logo={title ? deckConfig.meta?.logo : undefined}
-      isTitle={title} right={frame === 'chapter' ? meta.part ?? '' : meta.section ?? ''} />}
+    {frame !== 'none' && <SlideHeader deckConfig={deckConfig} logo={deckConfig.meta?.logo} logoDark={deckConfig.meta?.['logo-dark']} isTitle={title} right={frame === 'chapter' ? meta.part ?? '' : meta.section ?? ''} />}
     {children}
     <SlideFootnotes html={footnotesHtml} />
     <SlideCitations html={citationsHtml} />

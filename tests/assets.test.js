@@ -34,3 +34,22 @@ test('SVG pictures that use theme colours are drawn inline, not embedded as file
   assert.match(out, /image: \.\/img\/mdeck\.svg/)
   assert.match(out, /data:image\/jpeg/)
 })
+
+test('posters, srcset candidates, url(…) in styles and links to files count as local files', () => {
+  const source = '# T\n\n<video src="./a.mp4" poster="./p.png"></video>\n\n<img src="./s.png" srcset="./s.png 1x, ./s2.png 2x" style="background: url(./bg.png)">\n\n<div style="background-image: url(\'./bg2.jpg\')">x</div>\n\n<a href="./handout.pdf">h</a> <a href="https://x.org/a.pdf">no</a> <a href="mailto:a@b.c">m</a>\n\nRead [the paper](./paper.pdf), [the site](https://x.org), [the reader](?view=reader) or [below](#x).\n'
+  assert.deepEqual(collectLocalAssetRefs(source).sort(), ['./a.mp4', './bg.png', './bg2.jpg', './handout.pdf', './p.png', './paper.pdf', './s.png', './s2.png'])
+  const deck = new URL('../examples/showcase/slides.en.md', import.meta.url).pathname
+  const out = maybeInlineAssets('<img src="./img/image.jpg" srcset="./img/image.jpg 2x" style="background: url(./img/image.jpg)"> <a href="./img/image.jpg">x</a>\n', deck, { inlineImages: true })
+  assert.equal(out.match(/data:image\/jpeg/g).length, 3)
+  assert.ok(out.includes('<a href="./img/image.jpg">'), 'a link to a file stays a link')
+})
+
+test('a logo for dark slides is a local picture like the logo: collected, embedded and moved', async () => {
+  const { rewriteAssetRefs } = await import('../src/build/slidesPlugin.js')
+  const source = '---\nmeta:\n  logo: ./img/a.svg\n  logo-dark: ./img/a-white.svg\n---\n# T\n'
+  assert.deepEqual(collectLocalAssetRefs(source).sort(), ['./img/a-white.svg', './img/a.svg'])
+  assert.match(rewriteAssetRefs(source, ref => `../parts/${ref.slice(2)}`), /logo-dark: "\.\.\/parts\/img\/a-white\.svg"/)
+  const deck = new URL('../examples/showcase/slides.en.md', import.meta.url).pathname
+  const out = maybeInlineAssets('---\nmeta:\n  logo: ./img/image.jpg\n  logo-dark: ./img/image.jpg\n---\n# T\n', deck, { inlineImages: true })
+  assert.equal(out.match(/data:image\/jpeg/g).length, 2)
+})

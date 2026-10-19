@@ -5,6 +5,7 @@ import { PaletteForm, ThemeForm } from './ExtensionForms.jsx'
 import { Diagnostics } from './Diagnostics.jsx'
 import { Field, TextArea } from './Field.jsx'
 import { Swatches } from './PalettePicker.jsx'
+import { STATUS } from '../state.js'
 
 const KIND_LABEL = { palette: 'Palette', theme: 'Theme' }
 
@@ -27,7 +28,7 @@ export function ExtensionEditor({ extension, palettes = {}, status, error, note,
       <button class={mode === 'form' ? 'is-active' : ''} onClick={() => setMode('form')}>{KIND_LABEL[kind]}</button>
       <button class={mode === 'raw' ? 'is-active' : ''} onClick={() => setMode('raw')}>extension.toml</button>
       <span style={{ flex: 1 }} />
-      <span class={`editor-status is-${status}`} style={{ alignSelf: 'center' }}>{{ saved: 'Saved', unsaved: 'Unsaved', saving: 'Saving…', error: 'Not saved' }[status]}</span>
+      <span class={`editor-status is-${status}`} style={{ alignSelf: 'center' }}>{STATUS[status]}</span>
     </div>
     <div class="form">
       <Diagnostics items={problems} />

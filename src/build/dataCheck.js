@@ -6,7 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve, dirname, basename } from 'node:path'
 import { tagsIn } from '../core/tags.js'
-import { dataTagsIn } from '../core/dataTag.js'
+import { dataTagsIn, isHtmlData } from '../core/dataTag.js'
 import { buildDataset, unmetNeeds } from '../core/dataset.js'
 import { dataviewOptions } from '../core/dataviewOptions.js'
 import { parseSlides } from '../core/parseSlides.js'
@@ -15,9 +15,12 @@ import { languageOfFile } from '../core/languages.js'
 // Past this many value columns the palette's three accents run out, and
 // the mixes that follow are harder to tell apart.
 const MANY_SERIES = 3
+// Past this many bars their labels thin out and the bars get too narrow to read from the back.
+const MANY_BARS = 20
 
 export function dataDiagnostics(slidesPath, registry, source = readFileSync(slidesPath, 'utf8')) {
-  const opens = tagsIn(source).filter(tag => tag.name === 'data' && !tag.closing)
+  // The same tags dataTagsIn reads: HTML's own <data value> is left out of both.
+  const opens = tagsIn(source).filter(tag => tag.name === 'data' && !tag.closing && !isHtmlData(tag.attrs))
   if (!opens.length) return []
   const config = parseSlides(source).deckConfig ?? {}
   const lang = typeof config.lang === 'string' ? config.lang : languageOfFile(basename(slidesPath))?.lang ?? null
@@ -44,6 +47,21 @@ export function dataDiagnostics(slidesPath, registry, source = readFileSync(slid
     if (data.problems.some(problem => problem.severity === 'error')) return
     for (const message of unmetNeeds(data, view.manifest.needs, view.manifest.title)) add('error', `${where}: ${message}`)
     if (data.steps && !view.manifest.steps.includes(data.steps)) add('error', `${where}: ${view.manifest.title} builds up by ${view.manifest.steps.join(' or ') || 'nothing'}, not by ${data.steps}`)
+    // Bars start at 0: bars cut off below it make small differences look large.
+    const { options } = dataviewOptions(view.manifest, attrs)
+    if (show === 'bar' && Number.isFinite(options.min) && options.min > 0) add('warning', `${where}: bars always start at 0, so min="${attrs.min}" is ignored: bars cut off below make differences look larger than they are. To start the axis at ${attrs.min}, use show="line"`)
+    // A bar taller than the axis is cut off at its top.
+    if (show === 'bar' && Number.isFinite(options.max)) {
+      const highest = Math.max(...data.rows.map(row => options.stacked ? row.values.filter(value => value > 0).reduce((sum, value) => sum + value, 0) : Math.max(...row.values.filter(value => value != null))))
+      if (highest > options.max) add('warning', `${where}: max="${attrs.max}" is below the highest value, ${highest}; bars beyond it are cut off at the top`)
+    }
+    if (show === 'bar' && data.rows.length > MANY_BARS) add('warning', `${where} shows ${data.rows.length} bars, more than read well on a slide; show fewer with rows="1-${MANY_BARS}", or the largest with sort="… desc"`)
+    // Rows a line or a scatter plot cannot place: no number or date across.
+    const xColumn = data.columns[data.x]
+    if (['line', 'scatter'].includes(show) && xColumn && xColumn.type !== 'text') {
+      const missing = data.rows.filter(row => row.cells[data.x].value == null)
+      if (missing.length) add('warning', `${where}: row ${missing[0].index}${missing.length > 1 ? ` (and ${missing.length - 1} more)` : ''} has no ${xColumn.name} and is left out`)
+    }
     if (!['table', 'heatmap'].includes(show) && data.series.length > MANY_SERIES) add('warning', `${where} shows ${data.series.length} value columns; the palette has three accents, and the ones after are harder to tell apart. Show fewer with y="…", or split the data over two slides`)
   })
   return diagnostics

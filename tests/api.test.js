@@ -6,8 +6,6 @@ import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import { parseArgs, parseSlideNumbers } from '../src/cli/args.js'
 import { slideLabels } from '../src/build/renderCheck.js'
-import { migrateDeck } from '../src/cli/migrate.js'
-import { parseSlides } from '../src/core/parseSlides.js'
 import { readerLink, validatePageUrl } from '../src/core/urls.js'
 import { drawingsDiagnostic } from '../src/build/drawings.js'
 import { serializeRegistry, loadRegistry } from '../src/extensions/discover.js'
@@ -63,7 +61,7 @@ test('old drawings stop run and every export, unless explicitly excluded', t => 
   for (const command of ['run', 'build', 'send', 'pdf']) {
     const result = spawnSync(process.execPath, [cli, command, deck], { cwd: dir, encoding: 'utf8' })
     assert.equal(result.status, 1)
-    assert.match(result.stderr, /mdeck migrate/)
+    assert.match(result.stderr, /rename it to keep your drawings/)
     assert.equal(existsSync(resolve(dir, 'dist')), false)
   }
 })
@@ -91,47 +89,6 @@ test('legacy URLs get an explicit correction without leaking keys', () => {
   assert.equal(new URL(validatePageUrl(new URL('https://example.org/?view=share')).corrected).searchParams.get('view'), 'reader')
   assert.match(validatePageUrl(new URL('https://example.org/?view=typo')).message, /Unknown view/)
   assert.equal(validatePageUrl(new URL('https://example.org/?view=presenter')), null)
-})
-
-test('migration dry run is read-only; apply preserves unrelated bytes and is idempotent', t => {
-  const dir = fixture(t), deck = resolve(dir, 'slides.md'), ext = resolve(dir, 'extensions/custom')
-  mkdirSync(ext, { recursive: true })
-  const source = '---\r\n# keep this\r\ndesign: neue\r\ninstitution: none\r\nlive:\r\n  server: https://example.org\r\n  code: "123456"\r\nmeta: # untouched\r\n  title: "My talk"\r\n---\r\n\r\n# Body\r\n\r\n:::notes\r\nPrivate words\r\n:::\r\n'
-  writeFileSync(deck, source)
-  const toml = '# leave me\r\nschema = 1\r\nkind = "template" # old name\r\nid = "custom"\r\ntitle = "Custom"\r\n[regions.body]\r\n'
-  writeFileSync(resolve(ext, 'extension.toml'), toml)
-  const jsx = '// 🐈 mdeck/template-api\r\nimport { Standard } from "mdeck/template-api";\r\nconst text = "mdeck/template-api";\r\nexport default () => <Standard/>;\r\n'
-  writeFileSync(resolve(ext, 'layout.jsx'), jsx)
-  writeFileSync(resolve(dir, 'slides.ink.json'), '{"version":1}')
-  assert.equal(migrateDeck(deck, { dryRun: true }).length, 4)
-  assert.equal(readFileSync(deck, 'utf8'), source)
-  assert.equal(existsSync(resolve(dir, '.mdeck-backups')), false)
-  assert.equal(migrateDeck(deck).length, 4)
-  const after = readFileSync(deck, 'utf8'), config = parseSlides(after).deckConfig
-  assert.equal(config.theme, 'neue'); assert.deepEqual(config.show, { organization: 'none' })
-  assert.equal(config.session.code, '123456'); assert.equal(config.server, 'https://example.org')
-  assert.ok(after.includes('meta: # untouched\r\n  title: "My talk"\r\n'))
-  assert.equal(after.slice(after.indexOf('# Body')), source.slice(source.indexOf('# Body')))
-  assert.equal(readFileSync(resolve(ext, 'extension.toml'), 'utf8'), toml.replace('"template"', '"layout"'))
-  assert.equal(readFileSync(resolve(ext, 'layout.jsx'), 'utf8'), jsx.replace('from "mdeck/template-api"', 'from "mdeck/layout"'))
-  assert.equal(readFileSync(resolve(dir, 'slides.drawings.json'), 'utf8'), '{"version":1}')
-  assert.equal(existsSync(resolve(dir, 'slides.ink.json')), false)
-  assert.deepEqual(migrateDeck(deck), [])
-  assert.equal(loadRegistry(deck).layouts.custom.id, 'custom')
-})
-
-test('migration conflicts are detected before any changes', t => {
-  const dir = fixture(t), deck = resolve(dir, 'slides.md')
-  const source = '---\ndesign: neue\ntheme: terminal\n---\n# Talk\n'
-  writeFileSync(deck, source)
-  assert.throws(() => migrateDeck(deck), /Migration conflict: theme/)
-  assert.equal(readFileSync(deck, 'utf8'), source)
-  writeFileSync(deck, source.replace('theme: terminal\n', ''))
-  writeFileSync(resolve(dir, 'slides.ink.json'), 'old')
-  writeFileSync(resolve(dir, 'slides.drawings.json'), 'new')
-  assert.throws(() => migrateDeck(deck), /both.*exist/)
-  assert.equal(parseSlides(readFileSync(deck, 'utf8')).deckConfig.design, 'neue')
-  assert.equal(existsSync(resolve(dir, '.mdeck-backups')), false)
 })
 
 test('API 2.0 registry envelope has its own schema version', () => {

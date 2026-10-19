@@ -44,7 +44,7 @@ import { planFor, formatTime } from '../core/timing.js'
 import { CALLOUT_TYPES } from '../core/labels.js'
 import { isPlainObject, DECK_KEYS, SLIDE_KEYS } from '../core/parseSlides.js'
 import { parseSlideNumbers } from '../cli/args.js'
-import { rewriteAssetRefs } from './slidesPlugin.js'
+import { rewriteAssetRefs, lineNaming } from './slidesPlugin.js'
 import { deckTexts } from './bibliography.js'
 import { scanCitations, citedKeys } from '../core/citations.js'
 import { replaceTagsIn } from '../core/tags.js'
@@ -81,6 +81,7 @@ export const expandedSource = (file, options) => expandDeck(file, options).sourc
 // One file's slides, ids given, its own includes in place, paths written from
 // the deck's folder; the top file keeps its settings in front.
 function expandFile(abs, source, { state, language, stack, prefix, top }) {
+  const written = source
   let deck = parseSlides(source)
   // Where each include is written, for messages, before ids change the lines.
   const lines = deck.slides.filter(slide => slide.include).map(slide => {
@@ -100,7 +101,18 @@ function expandFile(abs, source, { state, language, stack, prefix, top }) {
   }
   const fromHere = dirname(abs)
   const moved = fromHere !== state.root
-  const own = text => moved ? rewriteAssetRefs(text, ref => relative(state.root, resolve(fromHere, ref)).split(sep).join('/')) : text
+  // A file outside the deck's folder (../pictures/x.png from the deck) is not
+  // copied by a build, nor seen by check --render and snapshot: say so, once.
+  const outside = new Set()
+  const fromRoot = ref => {
+    const next = relative(state.root, resolve(fromHere, ref)).split(sep).join('/')
+    if (next.startsWith('../') && !outside.has(ref)) {
+      outside.add(ref)
+      state.diagnostics.push({ file: abs, line: lineNaming(written, ref), severity: 'warning', code: 'asset-outside-deck', message: `${ref} is outside the folder of the deck that includes this file (${next}), so a build of the deck, check --render and snapshot leave it out; move it into that folder` })
+    }
+    return next
+  }
+  const own = text => moved ? rewriteAssetRefs(text, fromRoot) : text
   let included = 0
   const chunks = deck.slides.map(slide => {
     const text = deck.source.slice(slide.source.start, slide.source.end)

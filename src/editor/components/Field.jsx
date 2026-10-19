@@ -15,6 +15,16 @@ export function TextArea({ value, onInput, rows = 4, tall = false, ...rest }) {
     onInput={event => { setDraft(event.currentTarget.value); onInput(event.currentTarget.value) }} {...rest} />
 }
 
+// A number box that writes to the deck when the typing is done (Enter or
+// leaving the box), not after each digit; a draft keeps what is typed.
+export function NumberInput({ value, onChange, ...rest }) {
+  const [draft, setDraft] = useState(value == null ? '' : String(value))
+  useEffect(() => { setDraft(value == null ? '' : String(value)) }, [value])
+  const commit = () => { if (draft !== (value == null ? '' : String(value))) onChange(draft) }
+  return <input type="number" value={draft} onInput={event => setDraft(event.currentTarget.value)} onChange={commit}
+    onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur() }} {...rest} />
+}
+
 export function Field({ label, required, hint, error, children }) {
   return <div class="field">
     {label && <label>{label}{required && <span class="req">required</span>}{hint && <span class="hint">{hint}</span>}</label>}

@@ -21,8 +21,9 @@ test('the presenter view lists its own keys', () => {
   assert.ok(keys.includes('H: Turn hotspots on'))
   assert.ok(listed({ view: 'presenter', hotspots: true }).includes('H: Turn hotspots off'))
   assert.ok(listed({ view: 'presenter', hotspots: false, hotspotSwitch: true }).includes('H: Turn hotspots off'), 'H names the switch, not the slide')
-  assert.ok(keys.includes('Home/R: Back to the first slide'))
-  assert.ok(!keys.some(line => line.startsWith('End')), 'End does nothing in the presenter view')
+  assert.ok(keys.includes('Home: First slide'))
+  assert.ok(keys.includes('End: Last slide'))
+  assert.ok(keys.includes('R: Back to the first slide, steps hidden again'))
   assert.ok(!listed({ view: 'deck' }).some(line => line.startsWith('T:')), 'the timer is the presenter view’s')
 })
 

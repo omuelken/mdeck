@@ -40,11 +40,15 @@ function ScreenReaderTable({ data }) {
 }
 
 export default function Data(props) {
-  const { src, show = 'table', caption, height, children } = props
+  const { src, caption, height, children } = props
+  // An empty show="" is the table too, as mdeck check reads it.
+  const show = props.show || 'table'
   const ref = useRef(null)
   const box = useBox(ref)
   const view = dataviews[show]
-  const csv = props['data-csv'] ?? (src ? dataFile(src) : children)
+  // Nothing between the tags (<data src="…"></data>) leaves the file to speak.
+  const inline = props['data-csv']
+  const csv = inline != null && inline.trim() ? inline : src ? dataFile(src) : inline ?? children
   const lang = deckLanguage()
   const prepared = useMemo(() => {
     if (!view) return { fatal: { title: `No dataview "${show}"`, messages: [`Available: ${Object.keys(dataviews).join(', ')}`] } }
@@ -57,11 +61,15 @@ export default function Data(props) {
     return errors.length ? { fatal: { title: `This ${view.manifest.title.toLowerCase()} cannot show the data`, messages: errors } } : { data, options }
   }, [view, csv, lang, JSON.stringify(props)])
 
-  if (prepared.fatal) return <figure class="dataview dataview--problem"><Problem {...prepared.fatal} /></figure>
+  // The author's class, style, id and data-hotspot go to the figure.
+  const own = { id: props.id || undefined, 'data-hotspot': props['data-hotspot'] }
+  const classes = extra => ['dataview', extra, props.class].filter(Boolean).join(' ')
+  if (prepared.fatal) return <figure class={classes('dataview--problem')} {...own}><Problem {...prepared.fatal} /></figure>
   const { data, options } = prepared
   const fixed = view.manifest.size !== 'content'
-  const style = height && Number.isFinite(Number(height)) ? { '--dataview-height': `${Number(height)}px` } : undefined
-  return <figure class={`dataview dataview--${show}`} style={style} aria-label={data.title || undefined}>
+  const heightStyle = height && Number.isFinite(Number(height)) ? `--dataview-height: ${Number(height)}px` : ''
+  const style = [props.style, heightStyle].filter(Boolean).join('; ') || undefined
+  return <figure class={classes(`dataview--${show}`)} style={style} aria-label={data.title || undefined} {...own}>
     {data.title && <figcaption class="dataview-title">{data.title}</figcaption>}
     <div ref={ref} class={`dataview-body${fixed ? ' dataview-body--fixed' : ''}`}>
       {(!fixed || box.width > 0) && h(view.render, { data, props: options, width: box.width, height: box.height, font: box.font })}
@@ -70,3 +78,6 @@ export default function Data(props) {
     {caption && <p class="dataview-caption">{caption}</p>}
   </figure>
 }
+
+// HTML's own <data value="…"> is left as it is (layoutApi.jsx asks).
+Data.leavesToHtml = element => element.hasAttribute('value')

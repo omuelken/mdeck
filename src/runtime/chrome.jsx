@@ -12,7 +12,11 @@ export const S = {
     gap: '5px',
     padding: '5px 12px',
     borderRadius: '5px',
-    border: '1px solid #3a3a3a',
+    // Longhands: a pressed button's borderColor goes back to this one when it
+    // is let go; cleared under a shorthand, it left the browser's own colour.
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: '#3a3a3a',
     background: '#222',
     color: '#e0e0e0',
     cursor: 'pointer',

@@ -34,7 +34,8 @@ function segmentsOf(source) {
     if (before || fence) continue
     if (/^:::\s*[\w-]+/.test(line.text) && !isIncludeLine(line.text)) depth++
     else if (/^:::\s*$/.test(line.text)) depth = Math.max(0, depth - 1)
-    if (!depth && /^---[ \t]*$/.test(line.text)) {
+    // A byte order mark at the start of the file is not part of the first separator.
+    if (!depth && /^\uFEFF?---[ \t]*$/.test(line.text)) {
       segments.push({ start, end: line.start, delimiterEnd: line.end })
       start = line.end
     }
@@ -71,6 +72,15 @@ function extractBody(source, body, diagnostics) {
   const blocks = []
   const bodyParts = []
   let cursor = 0
+  // :::notes inside another block (:::steps, a callout) is not read as
+  // notes: it stays that block's text.
+  const nested = (parent, children) => {
+    for (const child of children) {
+      if (child.name === 'notes') diagnostics.push(diagnostic(source, 'nested-notes', `:::notes inside :::${parent.name} is not read as speaker notes; close the :::${parent.name} block first`, offset + child.start, 'warning'))
+      nested(child, child.children)
+    }
+  }
+  for (const node of scan.nodes) if (node.end != null && !['slot', 'notes', 'meta'].includes(node.name)) nested(node, node.children)
   for (const node of scan.nodes) {
     if (node.end == null || !['slot', 'notes', 'meta'].includes(node.name)) continue
     if (node.start > cursor) bodyParts.push({ start: offset + cursor, end: offset + node.start })
@@ -130,7 +140,7 @@ export function parseSlides(source) {
   let deckConfig = {}
   let configSource = null
   let i = 0
-  if (segments[0] && /^\s*---[ \t]*\r?\n/.test(source) && looksLikeMeta(text(segments[0]), ANY_DECK_KEYS, { frontmatter: true }) && isDeckBlock(text(segments[0]))) {
+  if (segments[0] && /^\uFEFF?\s*---[ \t]*\r?\n/.test(source) && looksLikeMeta(text(segments[0]), ANY_DECK_KEYS, { frontmatter: true }) && isDeckBlock(text(segments[0]))) {
     deckConfig = readMeta(segments[0])
     configSource = { start: segments[0].start, end: segments[0].end }
     i++

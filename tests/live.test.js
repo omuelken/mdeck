@@ -1,6 +1,7 @@
 import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
-import { createRooms, createLimiter, clientAddress } from '../src/live/rooms.js'
+import { createServer } from 'node:http'
+import { createRooms, createLimiter, clientAddress, liveHandler } from '../src/live/rooms.js'
 import { startLiveServer } from '../src/live/server.js'
 import { findRoomTag, roomsIn, roomsOnSlide, slideTitleFor } from '../src/live/roomTag.js'
 import { sessionCode } from '../src/live/code.js'
@@ -44,8 +45,25 @@ test('phones post, slides get a snapshot and then each new message', async () =>
   })
   assert.equal(seen[0].type, 'snapshot')
   assert.deepEqual(seen[0].data.messages.map(m => m.data.vote), ['Thai'])
-  assert.deepEqual(seen.slice(1).map(e => [e.type, e.data.from, e.data.data.vote]), [['message', 'phone-2', 'Pizza'], ['message', 'phone-1', 'Mensa']])
-  assert.deepEqual(seen.slice(1).map(e => e.data.n), [2, 3])
+  assert.deepEqual(seen.slice(1).map(e => [e.type, e.data.data.vote]), [['message', 'Pizza'], ['message', 'Mensa']])
+  const first = seen[0].data.messages[0].n
+  assert.deepEqual(seen.slice(1).map(e => e.data.n), [first + 1, first + 2])
+  // A phone's id never shows on the open stream, but its answers stay its own.
+  const [thai, pizza, mensa] = [seen[0].data.messages[0], seen[1].data, seen[2].data]
+  assert.equal(thai.from, mensa.from)
+  assert.notEqual(thai.from, pizza.from)
+  assert.ok(![thai.from, pizza.from].some(from => /phone/.test(from)))
+})
+
+test('message numbers of a server that restarted stay above those given before', () => {
+  let t = 1_700_000_000_000
+  const before = createRooms({ now: () => t })
+  for (let i = 0; i < 100; i++) before.post('a', { data: i })
+  const last = before.snapshot('a').at(-1).n
+  t += 1000
+  const after = createRooms({ now: () => t })
+  assert.ok(after.post('a', { data: 'new' }).n > last, 'a closed poll stays closed to new answers')
+  assert.equal(createRooms({ now: () => 0 }).post('a', { data: 1 }).n, 1)
 })
 
 test('only the key holder can reset a room, and listeners hear it', async () => {
@@ -55,6 +73,12 @@ test('only the key holder can reset a room, and listeners hear it', async () => 
   const seen = await events('deck.reset', 2, () => fetch(`${live.url}/rooms/deck.reset/reset`, { method: 'POST', headers: { Authorization: 'Bearer secret' } }))
   assert.deepEqual(seen.map(e => e.type), ['snapshot', 'reset'])
   assert.deepEqual((await events('deck.reset', 1))[0].data.messages, [])
+  // Phones follow the state alone, but hear a reset: they forget their answer.
+  const phone = await events('deck.reset', 2, async () => {
+    await post('deck.reset', { data: 2 })
+    await fetch(`${live.url}/rooms/deck.reset/reset`, { method: 'POST', headers: { Authorization: 'Bearer secret' } })
+  }, '?only=state')
+  assert.deepEqual(phone.map(e => e.type), ['snapshot', 'reset'])
   assert.equal((await (await fetch(`${live.url}/info`, { headers: { Authorization: 'Bearer secret' } })).json()).canReset, true)
   assert.equal((await (await fetch(`${live.url}/info`)).json()).canReset, false)
 })
@@ -98,6 +122,16 @@ test('the latest change wins over repeats from a screen changed earlier', () => 
   assert.deepEqual(rooms.state('s'), { room: null, at: 300 })
 })
 
+test('a screen turned away on the activity the phones follow is told it agrees', async t => {
+  const url = await smallServer(t, { canReset: () => true })
+  const send = state => fetch(`${url}/rooms/talk/state`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state }) }).then(response => response.json())
+  const poll = { type: 'choice', options: ['A', 'B'] }
+  assert.deepEqual(await send({ room: 'q', activity: poll, at: 100, screen: 'phone' }), { ok: true })
+  assert.deepEqual(await send({ room: 'q', activity: poll, at: 200, screen: 'computer' }), { ok: true }, 'the computer follows the phone clicker')
+  assert.deepEqual(await send({ room: 'q', activity: poll, at: 100, screen: 'phone', look: 'other' }), { ok: true, ignored: true, same: true }, 'the phone repeats the same slide')
+  assert.deepEqual(await send({ room: null, at: 0, screen: 'tab' }), { ok: true, ignored: true }, 'a newly opened tab on another slide')
+})
+
 test('rooms fill up, idle rooms are forgotten and senders are rate limited', () => {
   let t = 0
   const rooms = createRooms({ maxMessages: 2, maxRooms: 1, idleMs: 100, now: () => t })
@@ -113,6 +147,45 @@ test('rooms fill up, idle rooms are forgotten and senders are rate limited', () 
   assert.equal(limit('x'), true)
   assert.equal(clientAddress({ socket: { remoteAddress: '127.0.0.1' }, headers: { 'x-forwarded-for': '203.0.113.9, 10.0.0.1' } }), '203.0.113.9')
   assert.equal(clientAddress({ socket: { remoteAddress: '198.51.100.2' }, headers: { 'x-forwarded-for': '203.0.113.9' } }), '198.51.100.2')
+})
+
+// A server of its own, with small limits.
+async function smallServer(t, options) {
+  const server = createServer(liveHandler(options))
+  await new Promise(done => server.listen(0, '127.0.0.1', done))
+  t.after(() => { server.closeAllConnections(); server.close() })
+  return `http://127.0.0.1:${server.address().port}`
+}
+
+test('phones behind one address are limited one by one, with a backstop for the address', async t => {
+  const url = await smallServer(t, { limit: createLimiter({ burst: 2, perMs: 60000 }), addressLimit: createLimiter({ burst: 5, perMs: 60000 }) })
+  const send = from => fetch(`${url}/rooms/hall.q`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from, data: { value: 'A' } }) }).then(response => response.status)
+  assert.deepEqual([await send('a'), await send('a'), await send('a')], [201, 201, 429], 'one phone, twice')
+  assert.deepEqual([await send('b'), await send('c')], [201, 201], 'the next phones still answer')
+  assert.equal(await send('d'), 429, 'the address as a whole')
+})
+
+test('a full server refuses a new stream with a 503 and forgets rooms that only listeners opened', async t => {
+  const rooms = createRooms({ maxRooms: 2 })
+  const url = await smallServer(t, { rooms })
+  const open = []
+  const connect = async room => { const controller = new AbortController(); open.push(controller); const response = await fetch(`${url}/rooms/${room}/events`, { signal: controller.signal }); return response }
+  t.after(() => { for (const controller of open) controller.abort() })
+  rooms.post('spoken', { data: 1 })
+  const listened = await connect('listened')
+  assert.equal(listened.status, 200)
+  assert.equal(rooms.size, 2)
+  // The third room takes the place of the one that holds nothing: its stream
+  // ends, and the browser would open it again.
+  assert.equal((await connect('third')).status, 200)
+  assert.equal(rooms.size, 2)
+  assert.match(await Promise.race([listened.text(), new Promise((_, fail) => setTimeout(() => fail(new Error('the stream did not end')), 2000))]), /snapshot/)
+  assert.equal(rooms.snapshot('spoken').length, 1, 'a room with answers stays')
+  // With every room holding something, the next is refused before the stream starts.
+  rooms.post('third', { data: 1 })
+  const refused = await connect('fourth')
+  assert.equal(refused.status, 503)
+  assert.match(refused.headers.get('content-type'), /json/)
 })
 
 test('the answer page finds the component by its room', () => {
@@ -228,22 +301,26 @@ test('windows that say what they are count as connected to their session, and le
     await connect('424242', 'view=phone&device=phone')
     open.shift().abort()
   }, '?presence=1')
-  assert.deepEqual(seen[0].data.presence, { views: [], phones: 0 })
+  assert.deepEqual(seen[0].data.presence, { views: [], phones: 0, followers: 0 })
   assert.deepEqual(seen.slice(1).map(event => event.data), [
-    { views: [{ view: 'presenter', device: 'ipad' }], phones: 0 },
-    { views: [{ view: 'presenter', device: 'ipad' }], phones: 1 },
-    { views: [], phones: 1 },
+    { views: [{ view: 'presenter', device: 'ipad' }], phones: 0, followers: 0 },
+    { views: [{ view: 'presenter', device: 'ipad' }], phones: 1, followers: 0 },
+    { views: [], phones: 1, followers: 0 },
   ])
   for (const controller of open) controller.abort()
   // Unknown views do not count, unknown devices are computers, and only asking windows hear it.
   const rooms = createRooms()
   rooms.subscribe('1.stage', () => {}, { view: 'audience', device: 'computer' })
   rooms.subscribe('2.stage', () => {}, { view: 'deck', device: 'computer' })
-  assert.deepEqual(rooms.presence('1'), { views: [{ view: 'audience', device: 'computer' }], phones: 0 })
+  assert.deepEqual(rooms.presence('1'), { views: [{ view: 'audience', device: 'computer' }], phones: 0, followers: 0 })
+  // Followers (?view=follow) count as phones, and apart: they cannot answer.
+  rooms.subscribe('1.stage', () => {}, { view: 'follow', device: 'computer' })
+  rooms.subscribe('1', () => {}, { view: 'phone', device: 'phone' })
+  assert.deepEqual(rooms.presence('1'), { views: [{ view: 'audience', device: 'computer' }], phones: 2, followers: 1 })
   // The same, asked once; closed connections leave a moment after they close.
   const ask = async () => (await fetch(`${live.url}/rooms/424242.stage/presence`)).json()
   for (let tries = 0; (await ask()).phones && tries < 50; tries++) await new Promise(done => setTimeout(done, 20))
-  assert.deepEqual(await ask(), { views: [], phones: 0 })
+  assert.deepEqual(await ask(), { views: [], phones: 0, followers: 0 })
   const quiet = await events('424243.stage', 1, undefined, '?view=nonsense&device=toaster')
   assert.equal(quiet[0].data.presence, undefined)
 })

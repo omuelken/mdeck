@@ -33,7 +33,7 @@ The list includes the usual layouts and any extra ones saved beside your talk.
 Ask mdeck to show the starting text for a layout:
 
 ```sh
-mdeck starter comparison my-talk.md
+mdeck starter split my-talk.md
 ```
 
 Copy the text it prints into your slide file. Put `---` on its own line before it if you are adding it after an existing slide.

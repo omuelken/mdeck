@@ -24,6 +24,8 @@ export function createResultsFile(deckPath, { debounceMs = 500 } = {}) {
     return results
   }
 
+  function flushPending() { if (timer) flush() }
+
   function flush() {
     clearTimeout(timer)
     timer = null
@@ -58,6 +60,7 @@ export function createResultsFile(deckPath, { debounceMs = 500 } = {}) {
       if (existsSync(path)) unlinkSync(path)
     },
     flush,
+    flushPending,
   }
 }
 

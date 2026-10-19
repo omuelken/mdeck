@@ -12,6 +12,9 @@ import { getStroke } from 'perfect-freehand'
 export const INK_VERSION = 1
 export const INK_TOOLS = ['pen', 'highlighter']
 const COLOR_RE = /^#[0-9a-f]{3,8}$|^[a-z]+$/i
+// A slide id is a key of `slides`: a name Object has of its own (__proto__,
+// constructor) would reach the object itself instead of the ink.
+export const isSlideId = id => typeof id === 'string' && id.length > 0 && id.length <= 200 && !(id in Object.prototype)
 
 /** The drawings file that belongs to a deck file. */
 export const inkFileFor = deckPath => String(deckPath).replace(/\.md$/i, '') + '.drawings.json'
@@ -51,7 +54,7 @@ export function normalizeInk(raw, { width = 1920, height = 1080 } = {}) {
   const scaleX = Number(raw.width) > 0 ? width / raw.width : 1
   const scaleY = Number(raw.height) > 0 ? height / raw.height : 1
   for (const [slideId, strokes] of Object.entries(raw.slides ?? {})) {
-    if (!Array.isArray(strokes)) continue
+    if (!Array.isArray(strokes) || !isSlideId(slideId)) continue
     const clean = strokes.map(stroke => cleanStroke(stroke, scaleX, scaleY)).filter(Boolean)
     if (clean.length) ink.slides[slideId] = clean
   }
@@ -89,16 +92,17 @@ export function applyOp(ink, op) {
   const next = { ...ink, slides: { ...ink.slides } }
   if (op?.type === 'add') {
     const stroke = cleanStroke(op.stroke)
-    if (!stroke || !stroke.id || !op.slideId) return ink
+    if (!stroke || !stroke.id || !isSlideId(op.slideId)) return ink
     const list = (next.slides[op.slideId] ?? []).filter(s => s.id !== stroke.id)
     next.slides[op.slideId] = [...list, stroke]
   } else if (op?.type === 'remove' || op?.type === 'clear') {
+    if (!isSlideId(op.slideId)) return ink
     const gone = new Set(op.ids ?? [])
     const list = (next.slides[op.slideId] ?? []).filter(stroke => !gone.has(stroke.id))
     if (list.length) next.slides[op.slideId] = list
     else delete next.slides[op.slideId]
   } else if (op?.type === 'rename') {
-    if (!op.from || !op.to || op.from === op.to || !next.slides[op.from]) return ink
+    if (!isSlideId(op.from) || !isSlideId(op.to) || op.from === op.to || !next.slides[op.from]) return ink
     // A stroke already under the new id (the same change heard twice, say
     // from a window that replays the room's history) is not doubled.
     const known = new Set((next.slides[op.to] ?? []).map(stroke => stroke.id))

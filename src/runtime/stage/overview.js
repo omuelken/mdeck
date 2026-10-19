@@ -33,7 +33,11 @@ export const Overview = (Base) => class extends Base {
     }
     this._fit();
     if (on) this._showCursor();
-    else if (this._stageEl) this._stageEl.scrollTop = 0;
+    else {
+      if (this._stageEl) this._stageEl.scrollTop = 0;
+      // The badges were placed for the window as it was when the grid opened.
+      this._queueHotspots();
+    }
     this.dispatchEvent(new CustomEvent('overviewchange', { detail: { open: on }, bubbles: true, composed: true }));
   }
 

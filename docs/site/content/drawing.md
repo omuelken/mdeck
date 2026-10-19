@@ -26,8 +26,10 @@ The audience window, and any other deck window in the same browser, shows every 
 
 Drawings live in a file next to your slides: `my-talk.drawings.json` for `my-talk.md`. Keep the two together, and send or check in both.
 
-- **With `mdeck run`**, each stroke is saved in that file as soon as you lift the pen. Nothing reloads, and the talk goes on.
+- **With `mdeck run`**, each stroke is saved in that file as soon as you lift the pen. Nothing reloads, and the talk goes on. A stroke the server cannot take (the deck changed under the page) is dropped and a short notice over the slide says so.
 - A slide that gets its first drawing receives an `id:` in its settings, made from its heading, for example `id: the-important-part`. The drawing stays with that slide when you add or move slides. If you change the `id:` in the editor, the drawing moves with it.
+- A slide from an included file (`:::include`) keeps its drawings by its place in that file; give it an `id:` there, and they stay with it when you insert slides before it.
+- A deck in several languages (`talk.en.md` beside `talk.de.md`) keeps its drawings with the file you started `mdeck run` with, under that file's slide ids; drawing in the other language goes to the same file, slide by slide. Build, send or print from that file to include them.
 - If you delete a slide that has drawings, they stay in the file. `mdeck check` tells you about them; bring the slide back, or delete them from the file.
 - The first save of a session keeps a copy of the previous file in `.mdeck-backups`, next to your slides.
 - **Opened from a built folder or a single file**, the page has nowhere to save. Drawings are kept in that browser, and the toolbar's download button saves them as the drawings file, to put next to your slides. Safari may clear such browser data after a week without use, so download it after drawing.

@@ -16,7 +16,6 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck themes search`, `install <theme>`, `remove`, `update`, `list` | Themes: install more (each with its palette), remove the ones you do not use; see [Install, remove or share a theme](theme-repository.html) |
 | `mdeck palettes search`, `install <palette>`, … | The same for palettes |
 | `mdeck design [my-talk.md or folder]` | Look at themes and palettes on a sample deck and fine-tune them; saves to `extensions/` |
-| `mdeck migrate my-talk.md --dry-run` | Preview the changes needed for API 2.0 |
 | `mdeck check my-talk.md` | Check settings and look for missing local files; `--render` also finds slides whose content does not fit |
 | `mdeck snapshot my-talk.md` | Save pictures of the slides as PNG files, for you or your assistant to look at |
 | `mdeck send my-talk.md` | Make one file to send to readers, with a PDF inside |
@@ -36,11 +35,13 @@ For how the commands, the views and the servers fit together, see [Views, comman
 - **Preview:** a small live copy of the deck to flip through; click it to open the audience window at that slide.
 - **Present:** the presenter view, audience window and reader view, each in a new tab. The presenter view has notes, drawing controls, a timer and next-slide preview; **Rehearse** opens it timing each slide; switch to its slide-only layout for a single screen. The audience window shows slides without notes. Fullscreen is a control inside either view, not a separate view.
 - **Write and learn:** the visual editor, the theme editor (themes and palettes on a sample deck, see [Install, remove or share a theme](theme-repository.html)) and these guides. Each starts the first time you click it.
-- **Send:** buttons that make the `dist` folder, one file to send, or a PDF, next to your slide file, and show them in your file manager.
-- **Polls:** for a deck with polls: the server (built in, or the `server` setting and whether it answers), the join link and session code for phones, and for a server of your own the key that lets your browser move the phones along and reset polls (see below).
+- **Share:** buttons that make the `dist` folder, one file to send, or a PDF, next to your slide file, and show them in your file manager.
+- **Answers from the talk** and **Drawings:** what was kept during the talk, to save or drop.
 - **Check:** the same problems `mdeck check` reports, such as missing pictures.
 
-The key is the one the server was started with. Start `mdeck run` with the same key, for example `MDECK_SERVER_KEY=choose-a-secret mdeck run my-talk.md`, and the launch page shows it, and its presenter and audience buttons open those views with it, so they move the phones along. Local views control this deck through the laptop; paired devices receive only a revocable token. Pairing codes never contain the master key. A hosted presenter can unlock the server separately with `?serverkey=…`; that key is removed from the address as soon as the page has it. It never goes into the slide file, because that file reaches everyone who opens the slides.
+For a deck with polls, the presenter view's connections panel (the connection icons in its bar) shows the server (built in, or the `server` setting and whether it answers), the join link and session code for phones, and for a server of your own whether it accepts the key that lets your browser move the phones along and reset polls (see below).
+
+The key is the one the server was started with. Start `mdeck run` with the same key, for example `MDECK_SERVER_KEY=choose-a-secret mdeck run my-talk.md`, and the launch page's presenter and audience buttons open those views with it, so they move the phones along. Local views control this deck through the laptop; paired devices receive only a revocable token. Pairing codes never contain the master key. A hosted presenter can unlock the server separately with `?serverkey=…`; that key is removed from the address as soon as the page has it. It never goes into the slide file, because that file reaches everyone who opens the slides.
 
 Two options make the slides reachable from other devices:
 
@@ -106,17 +107,6 @@ The design page shows themes and palettes on a sample deck with every kind of sl
 
 See [Send, host or print your slides](sharing.html) for help choosing between them. Unknown options, missing option values and extra filenames stop the command before it changes any output. `--output=path` and `-o path` are both accepted. `mdeck preview --no-open --port 4200` previews without opening a browser and chooses a port.
 
-## Update a deck to API 2.0
-
-```sh
-mdeck migrate my-talk.md --dry-run
-mdeck migrate my-talk.md
-```
-
-The dry run lists changes without writing files. Applying them renames deck settings, changes local extension manifests from `template` to `layout`, updates `mdeck/template-api` imports in local extensions and components, and renames `<deck>.ink.json` to `<deck>.drawings.json`. Unrelated source text and comments stay unchanged. Speaker notes use `:::notes` blocks; there is no migration for metadata notes.
-
-Conflicting old and new values, or two drawings files, stop the whole migration before any writes. Originals are copied into `.mdeck-backups/migration-…` beside the deck. Running it again makes no changes. Shared component folders outside the deck are not rewritten; update those imports separately.
-
 ## Check more strictly
 
 ```sh
@@ -148,13 +138,13 @@ mdeck snapshot my-talk.md --slide 3,5-7 --dark
 mdeck snapshot my-talk.md --sheet
 ```
 
-This saves each slide, with all steps revealed, as a 1280×720 PNG file in `.mdeck-snapshots/` beside the deck (`-o` for another folder), named `my-talk-03.png` and so on, and prints the paths. `--slide` picks slides by number; `--dark` and `--light` show that appearance instead of the deck's own. `--sheet` saves one picture instead, `my-talk-sheet.png`: the slides in a grid, each under its number and heading, to see a whole deck at a glance. An AI assistant that reads pictures can use them to look at what it wrote. If you keep your slides in Git, add `.mdeck-snapshots/` to your `.gitignore`.
+This saves each slide, with all steps revealed, as a 1280×720 PNG file in `.mdeck-snapshots/` beside the deck (`-o` for another folder), named `my-talk-03.png` and so on, and prints the paths. `--slide` picks slides by number; `--dark` and `--light` show that appearance instead of the deck's own. `--no-drawings` and `--no-results` leave out the drawings and the kept answers, as for `build`. `--sheet` saves one picture instead, `my-talk-sheet.png`: the slides in a grid, each under its number and heading, to see a whole deck at a glance. An AI assistant that reads pictures can use them to look at what it wrote. If you keep your slides in Git, add `.mdeck-snapshots/` to your `.gitignore`.
 
 ## Layouts, themes and palettes
 
 ```sh
 mdeck list layouts my-talk.md
-mdeck starter comparison my-talk.md
+mdeck starter split my-talk.md
 ```
 
 The first lists the layouts available to your talk. The second prints starting text for one layout. `mdeck list layouts --json` prints the layout descriptions in a structured form intended for other tools.

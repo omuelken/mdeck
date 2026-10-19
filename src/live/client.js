@@ -99,13 +99,35 @@ const withKey = (headers = {}) => { const key = presenterKey(); return key ? { .
 
 // Only an answer is kept; after a failure the next call asks again, so a room
 // server that starts later is found. `reachable` is false when it did not answer.
-let infoRequest = null
-function serverInfo() {
-  infoRequest ??= fetch(`${controlBase()}/info?session=${encodeURIComponent(settings.code)}`, { headers: withKey() })
-    .then(response => { if (!response.ok) throw new Error(String(response.status)); return response.json() })
-    .then(info => ({ ...info, reachable: true }))
-    .catch(() => { infoRequest = null; return { reachable: false } })
+// `again` asks once more, unless the answer is a moment old (every slide
+// that shows a join link asks at the same time).
+let infoRequest = null, infoAskedAt = 0
+function serverInfo({ again = false } = {}) {
+  if (again && Date.now() - infoAskedAt > 1000) infoRequest = null
+  if (!infoRequest) {
+    infoAskedAt = Date.now()
+    infoRequest = fetch(`${controlBase()}/info?session=${encodeURIComponent(settings.code)}`, { headers: withKey() })
+      .then(response => { if (!response.ok) throw new Error(String(response.status)); return response.json() })
+      .then(info => ({ ...info, reachable: true }))
+      .catch(() => { infoRequest = null; return { reachable: false } })
+  }
   return infoRequest
+}
+
+// What the server said, asked again whenever the page comes back into view:
+// the laptop may have changed networks since, and with it the join link.
+function useServerInfo() {
+  const [info, setInfo] = useState({})
+  useEffect(() => {
+    let gone = false
+    const ask = options => serverInfo(options).then(next => { if (!gone) setInfo(next) })
+    ask()
+    const again = () => { if (document.visibilityState !== 'hidden') ask({ again: true }) }
+    window.addEventListener('focus', again)
+    document.addEventListener('visibilitychange', again)
+    return () => { gone = true; window.removeEventListener('focus', again); document.removeEventListener('visibilitychange', again) }
+  }, [])
+  return info
 }
 
 // The join link phones can open: the `server` setting, or `mdeck run --network`'s
@@ -152,6 +174,10 @@ export function keepAnswers(room, messages, { closed = false } = {}) {
   }, 800))
 }
 
+// The phones that can answer: followers (?view=follow) count as phones in
+// the presence, but watch the slides instead of the answer page.
+const answering = presence => presence.phones - (presence.followers ?? 0)
+
 /**
  * Follow a room's answers on a slide.
  *   messages  every answer so far: { n, at, from, data: { value } }
@@ -160,8 +186,9 @@ export function keepAnswers(room, messages, { closed = false } = {}) {
  *   canReset / reset()  presenter only
  *   state     the room's state, which only the presenter sets (setState):
  *             an activity's controls, such as closed or revealed
- *   present   how many phones (and followers) are connected to the deck,
+ *   present   how many phones that can answer are connected to the deck,
  *             or null before the server said
+ *   resets    how often the room was reset since this slide opened
  *   connected false until the live stream is open
  *   offline   no room server answered: a PDF, a file sent to readers or a
  *             build hosted without one. Activities then show their question
@@ -175,9 +202,8 @@ export function useRoom(room) {
   const [connected, setConnected] = useState(false)
   const [state, setRoomState] = useState(null)
   const [present, setPresent] = useState(null)
-  const [info, setInfo] = useState({})
-
-  useEffect(() => { serverInfo().then(setInfo) }, [])
+  const [resets, setResets] = useState(0)
+  const info = useServerInfo()
 
   useEffect(() => {
     if (!live || !room || typeof EventSource === 'undefined') return
@@ -188,12 +214,12 @@ export function useRoom(room) {
       const snapshot = JSON.parse(event.data)
       setMessages(snapshot.messages)
       setRoomState(snapshot.state ?? null)
-      if (snapshot.presence) setPresent(snapshot.presence.phones)
+      if (snapshot.presence) setPresent(answering(snapshot.presence))
     })
     source.addEventListener('state', event => setRoomState(JSON.parse(event.data).state ?? null))
-    source.addEventListener('presence', event => setPresent(JSON.parse(event.data).phones))
+    source.addEventListener('presence', event => setPresent(answering(JSON.parse(event.data))))
     source.addEventListener('message', event => { const message = JSON.parse(event.data); setMessages(list => list.some(m => m.n === message.n) ? list : [...list, message]) })
-    source.addEventListener('reset', () => setMessages([]))
+    source.addEventListener('reset', () => { setMessages([]); setResets(n => n + 1) })
     return () => { source.close(); setConnected(false) }
   }, [room, live])
 
@@ -209,7 +235,7 @@ export function useRoom(room) {
   }, [room])
 
   const kept = info.reachable === false ? savedRooms[room] : null
-  return { messages: kept ? answersAsMessages(kept.answers) : messages, reset, state, setState, present, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
+  return { messages: kept ? answersAsMessages(kept.answers) : messages, reset, state, setState, present, resets, connected, canReset: !!info.canReset, joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
 }
 
 /**
@@ -230,15 +256,13 @@ export function listenToReactions(onReaction) {
 
 /** The deck's join link alone, for a slide that only invites people in (<qrcode join />). */
 export function useJoinLink() {
-  const [info, setInfo] = useState({})
-  useEffect(() => { serverInfo().then(setInfo) }, [])
+  const info = useServerInfo()
   return { joinUrl: joinUrl(info), localJoinUrl: localJoinUrl(), code: settings.code, ...reach(info) }
 }
 
 /** The link for following the slides, for a slide that shows it (<qrcode follow />). */
 export function useFollowLink() {
-  const [info, setInfo] = useState({})
-  useEffect(() => { serverInfo().then(setInfo) }, [])
+  const info = useServerInfo()
   return { joinUrl: followUrl(info), localJoinUrl: localFollowUrl(), code: settings.code, ...reach(info) }
 }
 
@@ -327,7 +351,7 @@ async function sendCurrent() {
   try {
     const response = await fetch(`${controlSessionPath()}/state`, { method: 'POST', headers: withKey({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state }) })
     const body = response.ok ? await response.json().catch(() => ({})) : {}
-    report(!response.ok ? { ok: false, reason: response.status === 403 ? 'wrong-code' : 'unreachable' } : body.ignored ? { ok: false, reason: 'other-screen' } : { ok: true })
+    report(!response.ok ? { ok: false, reason: response.status === 403 ? 'wrong-code' : 'unreachable' } : body.ignored && !body.same ? { ok: false, reason: 'other-screen' } : { ok: true })
   } catch { report({ ok: false, reason: 'unreachable' }) }
 }
 

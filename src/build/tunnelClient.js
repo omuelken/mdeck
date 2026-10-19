@@ -72,12 +72,12 @@ export function shareable(address, method, { base, resources = new Set(), sessio
  * Returns { url, state(), push(), stop() }; `onState` hears 'connecting',
  * 'up', 'down' and 'refused' with a reason.
  */
-export function startTunnel({ server, key, id, target, base, resources = new Set(), allow = (path, method) => shareable(path, method, { base, resources, session: session() }), session = () => null, tokens = () => [], onState = () => {}, log = () => {} }) {
+export function startTunnel({ server, key, id, target, base, resources = new Set(), allow = (path, method) => shareable(path, method, { base, resources, session: session() }), session = () => null, tokens = () => [], onState = () => {}, log = () => {}, pingMs = 25000 }) {
   const root = server.replace(/\/+$/, '')
   const socketUrl = new URL(`${root}/tunnel/${id}`)
   socketUrl.protocol = socketUrl.protocol === 'https:' ? 'wss:' : 'ws:'
   const local = new URL(target)
-  let socket = null, state = 'connecting', stopped = false, delay = 1000, timer = null
+  let socket = null, state = 'connecting', stopped = false, delay = 1000, timer = null, beat = null
   const requests = new Map(), peers = new Map()
 
   const set = (next, reason) => { state = next; onState(next, reason) }
@@ -151,17 +151,30 @@ export function startTunnel({ server, key, id, target, base, resources = new Set
     if (stopped) return
     set('connecting')
     socket = new WebSocket(socketUrl, { headers: { Authorization: `Bearer ${key}` } })
-    let refused = false
-    socket.on('open', () => { delay = 1000; set('up'); push() })
+    let refused = false, answered = false
+    // A connection the server stopped answering on (the laptop slept) is
+    // dropped, so that it is opened again instead of looking connected.
+    let alive = true
+    socket.on('open', () => {
+      delay = 1000; set('up'); push()
+      beat = setInterval(() => { if (!alive) return socket?.terminate(); alive = false; socket?.ping() }, pingMs)
+    })
+    socket.on('pong', () => { alive = true })
     socket.on('message', onMessage)
     socket.on('unexpected-response', (_request, response) => {
-      refused = true
+      answered = true
       response.resume()
       const status = response.statusCode
-      set('refused', status === 401 ? 'The server did not accept the key' : status === 404 ? 'The server does not offer sharing: update mdeck there and start it with MDECK_SERVER_KEY' : status === 503 ? 'The server has too many shared presentations' : `The server answered ${status}`)
+      const reason = status === 401 ? 'The server did not accept the key' : status === 404 ? 'The server does not offer sharing: update mdeck there and start it with MDECK_SERVER_KEY' : status === 503 ? 'The server has too many shared presentations' : `The server answered ${status}`
+      // A wrong key or a server without sharing stay so. Anything else may
+      // pass: a web server answers 502 while the server behind it restarts.
+      if (status === 401 || status === 403 || status === 404) { refused = true; return set('refused', reason) }
+      log(`tunnel: ${reason}`)
+      socket.terminate()
     })
-    socket.on('error', error => { if (!refused) log(`tunnel: ${error.message}`) })
+    socket.on('error', error => { if (!refused && !answered) log(`tunnel: ${error.message}`) })
     socket.on('close', () => {
+      clearInterval(beat)
       for (const request of requests.values()) request.destroy()
       requests.clear()
       for (const { peer } of peers.values()) peer.terminate()
@@ -179,6 +192,6 @@ export function startTunnel({ server, key, id, target, base, resources = new Set
     url: `${root}/t/${id}/`,
     state: () => state,
     push,
-    stop() { stopped = true; clearTimeout(timer); socket?.close(1000); socket?.terminate() },
+    stop() { stopped = true; clearTimeout(timer); clearInterval(beat); socket?.close(1000); socket?.terminate() },
   }
 }

@@ -88,6 +88,11 @@ export function NewExtensionDialog({ kind, registry, existing, onCreate, onClose
   const [id, setId] = useState(initial?.id ?? '')
   const [title, setTitle] = useState(initial?.title ?? '')
   const [from, setFrom] = useState(initial?.from ?? '')
+  useEffect(() => {
+    const onKey = event => { if (event.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const taken = existing.has(id)
   const valid = ID_RE.test(id) && !taken && title.trim() && (from || kind !== 'theme')
   const options = registry?.[`${kind}s`] ?? []

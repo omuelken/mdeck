@@ -15,17 +15,18 @@ const BRACKETED = new RegExp(String.raw`\[([^\[\]\n]*?-?@[\w][^\[\]\n]*?)\]${NOT
 const ITEM = new RegExp(String.raw`^((?:.*?\s)?)(-?)@(${KEY})(.*)$`, 's')
 const NARRATIVE = new RegExp(String.raw`(?<![\w@\[\]\`])@(${KEY})(?:\s\[([^\[\]\n]+)\]${NOT_LINK})?`, 'g')
 
-// Locator terms readers write after a comma, mapped to CSL labels.
+// Locator terms readers write after a comma, mapped to CSL labels. The
+// whole word counts, the long forms first: `page 12` is not `p.` and `age 12`.
 const LOCATORS = [
-  [/^(pp?\.?|pages?|S\.|Seiten?)\s*/i, 'page'],
-  [/^(chaps?\.?|ch\.|chapters?|Kap\.)\s*/i, 'chapter'],
-  [/^(secs?\.?|sections?|§§?)\s*/i, 'section'],
-  [/^(figs?\.?|figures?|Abb\.)\s*/i, 'figure'],
-  [/^(vols?\.?|volumes?|Bd\.)\s*/i, 'volume'],
-  [/^(paras?\.?|paragraphs?|¶¶?)\s*/i, 'paragraph'],
-  [/^(nos?\.?|numbers?|Nr\.)\s*/i, 'issue'],
-  [/^(ll?\.|lines?)\s*/i, 'line'],
-  [/^(eqs?\.?|equations?)\s*/i, 'equation'],
+  [/^(pages?|pp?\.?|Seiten?|S\.)(?![a-z])\s*/i, 'page'],
+  [/^(chapters?|chaps?\.?|ch\.|Kap\.)(?![a-z])\s*/i, 'chapter'],
+  [/^(sections?|secs?\.?|§§?)(?![a-z])\s*/i, 'section'],
+  [/^(figures?|figs?\.?|Abb\.)(?![a-z])\s*/i, 'figure'],
+  [/^(volumes?|vols?\.?|Bd\.)(?![a-z])\s*/i, 'volume'],
+  [/^(paragraphs?|paras?\.?|¶¶?)(?![a-z])\s*/i, 'paragraph'],
+  [/^(numbers?|nos?\.?|Nr\.)(?![a-z])\s*/i, 'issue'],
+  [/^(lines?|ll?\.)(?![a-z])\s*/i, 'line'],
+  [/^(equations?|eqs?\.?)(?![a-z])\s*/i, 'equation'],
 ]
 
 // Keys end before trailing punctuation: `@smith2020.` cites `smith2020`.

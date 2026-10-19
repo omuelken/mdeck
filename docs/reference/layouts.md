@@ -136,7 +136,7 @@ folder; use a `[files]` table in the manifest to point at different names.
 ```sh
 mdeck list layouts slides.md
 mdeck list layouts slides.md --json
-mdeck list layouts slides.md --starter comparison
+mdeck starter split slides.md
 mdeck list slides.md
 mdeck check slides.md --strict
 ```

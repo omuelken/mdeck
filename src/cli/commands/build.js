@@ -1,6 +1,6 @@
 // mdeck build and mdeck send: a folder to host, or one file to send.
 import { build } from 'vite'
-import { existsSync, copyFileSync, mkdtempSync, readFileSync } from 'fs'
+import { existsSync, copyFileSync, mkdtempSync, readFileSync, statSync } from 'fs'
 import { rm, mkdir } from 'fs/promises'
 import { resolve, dirname, basename, relative, isAbsolute } from 'path'
 import { tmpdir } from 'os'
@@ -55,7 +55,10 @@ export default async function buildDeck({ command, options, hasFlag, outputOptio
 
   if (!hasFlag('--no-drawings')) { try { assertDrawings(input) } catch (error) { err(error.message); process.exit(1) } }
   const given = outputOption()
-  const outputPath = given ? resolve(process.cwd(), given) : sending ? resolve(process.cwd(), basename(input).replace(/\.md$/i, '') + '.html') : null
+  const defaultName = sending ? basename(input).replace(/\.md$/i, '') + '.html' : 'index.html'
+  // -o names the file; a folder (dist/, or one that exists) takes the file under its usual name.
+  const folderGiven = given && (/[\/\\]$/.test(given) || (existsSync(given) && statSync(given).isDirectory()))
+  const outputPath = given ? resolve(process.cwd(), given, folderGiven ? defaultName : '') : sending ? resolve(process.cwd(), defaultName) : null
 
   const tempDir = outputPath ? mkdtempSync(resolve(tmpdir(), 'mdeck-')) : null
   const outDir = tempDir ?? resolve(process.cwd(), 'dist')

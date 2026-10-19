@@ -140,7 +140,7 @@ The phones' answer page then has a row of buttons, 👍 👏 ❤️ 😮 🤔, b
 
 People reach the answer page through the join code: press **J** in the presenter view to show it, also in a deck with reactions and no questions.
 
-Hover over the results to see **Reset**, which clears the answers, for example before the real session. Only the presenter can reset.
+Hover over the results to see **Reset**, which clears the answers, for example before the real session; the phones forget their choice with it. Only the presenter can reset.
 
 ## How phones and slides meet
 
@@ -234,7 +234,7 @@ Two presentations with the same title share a session code. Give one of them `se
 
 ## What is stored
 
-Answers are anonymous. Each phone gets a random number so it can change its vote; nothing else identifies it. The server keeps answers in memory only. It forgets a room after twelve hours without visitors and everything when it restarts. Each phone can send a limited number of answers in a short time.
+Answers are anonymous. Each phone gets a random number so it can change its vote; nothing else identifies it, and the slides see only a disguised form of that number. A phone remembers its choice for twelve hours, so a reload keeps it. The server keeps answers in memory only. It forgets a room after twelve hours without visitors and everything when it restarts. Each phone can send a limited number of answers in a short time.
 
 While you present with `mdeck run`, the answers are also kept beside the presentation, in `my-talk.results.json`. It holds each answer with its time, and the phones numbered 1, 2, 3 … per question instead of their random numbers. Once a question was closed, only the answers that counted. **Reset** takes a question's answers out of the file; a new server that starts empty leaves the file as it is. A deck hosted with its own `server` keeps nothing beside it.
 

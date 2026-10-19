@@ -147,6 +147,13 @@ marked.use({
         .replace(/>/g, '&gt;')
       return `<codeblock lang="${lang}"${attrs ? ' ' + attrs : ''}>${encoded}</codeblock>`
     },
+    // An item that begins in bold (`- **Title** and its text`) is marked, so a
+    // theme can set the bold part as its title; bold later in an item is not.
+    listitem(item) {
+      const first = item.tokens[0]
+      const lead = (first?.type === 'text' || first?.type === 'paragraph') && first.tokens?.[0]?.type === 'strong'
+      return `<li${lead ? ' class="lead"' : ''}>${this.parser.parse(item.tokens)}</li>\n`
+    },
     // A paragraph of nothing but pictures (one, or several side by side) is
     // marked, so themes can fit it into the slide or set it as a row; a
     // sentence with an icon in it stays a sentence.

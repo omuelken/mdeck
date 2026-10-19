@@ -2,6 +2,7 @@ import { h } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import { useDeckDocument } from '../useDeckDocument.js'
 import { installShortcuts } from '../keyboard.js'
+import { STATUS } from '../state.js'
 import { insertSlide, removeSlide, moveSlide, slideSourceText } from '../../core/editDeck.js'
 import { Outline } from './Outline.jsx'
 import { Preview } from './Preview.jsx'
@@ -13,10 +14,8 @@ import { Resizer, readInspectorWidth, storeInspectorWidth } from './Resizer.jsx'
 import { designUrl, DESIGN_TAB, launchPageUrl } from '../designLink.js'
 import markUrl from '../../../assets/logo/mark.svg'
 
-const STATUS = { saved: 'Saved', unsaved: 'Unsaved changes', saving: 'Saving…', conflict: 'Conflict', error: 'Could not save' }
-
 export function App() {
-  const { state, stateRef, dispatch, edit, resolve, loadError, previewKey } = useDeckDocument()
+  const { state, stateRef, dispatch, edit, resolve, loadError, reload, retry, previewKey } = useDeckDocument()
   const [picker, setPicker] = useState(false)
   const [inspectorWidth, setInspectorWidth] = useState(readInspectorWidth)
   const resize = width => { setInspectorWidth(width); storeInspectorWidth(width) }
@@ -37,10 +36,13 @@ export function App() {
   }
   useEffect(() => installShortcuts(actions), [])
 
-  if (loadError) return <div class="loading">Could not load the deck: {loadError}</div>
+  if (loadError) return <div class="loading">Could not load the deck: {loadError} <button class="btn is-small" onClick={reload}>Try again</button></div>
   if (!state.loaded) return <div class="loading">Loading…</div>
   const { deck, selectedIndex, tab } = state
   const slide = deck.slides[selectedIndex]
+  // The presenter view of the `mdeck run` that opened this editor, where its
+  // audience window and the phones are; this server's own has neither.
+  const presenterUrl = home ? new URL('?view=presenter', home).href : '/?view=presenter'
   const selection = { index: selectedIndex, slideId: slide?.id ?? null }
 
   return <div class="editor">
@@ -48,12 +50,13 @@ export function App() {
       <img src={markUrl} alt="" width="22" height="22" style={{ borderRadius: '5px' }} />
       <h1 title={state.path}>{state.name}</h1>
       <span class={`editor-status is-${state.status}`}>{STATUS[state.status]}{state.error ? `: ${state.error}` : ''}</span>
+      {state.status === 'error' && <button class="btn is-small" onClick={retry}>Try again</button>}
       <span class="spacer" />
       <button class="btn is-small" onClick={actions.undo} disabled={!state.history.past.length} title="Undo (⌘Z)">Undo</button>
-      <button class="btn is-small" onClick={actions.redo} disabled={!state.history.future.length} title="Redo (⇧⌘Z)">Redo</button>
+      <button class="btn is-small" onClick={actions.redo} disabled={!state.history.future.length} title="Redo (⇧⌘Z or ⌘Y)">Redo</button>
       {home && <a class="btn is-small" href={home}>Launch page</a>}
       <a class="btn is-small" href={designUrl()} target={DESIGN_TAB} title="Make and change themes, palettes and layouts, on a sample deck">Design themes</a>
-      <a class="btn is-small" href="/?view=presenter" target="_blank" rel="noopener">Present</a>
+      <a class="btn is-small" href={presenterUrl} target="_blank" rel="noopener" title={home ? 'Open the presenter view of mdeck run, with its audience window and phones' : 'Open the presenter view on this server; for the audience window and polls, present from mdeck run'}>Present</a>
       <a class="btn is-small" href="/" target="_blank" rel="noopener">Open deck</a>
     </header>
     {state.status === 'conflict' && <ConflictBanner onReload={() => actions.resolve('reload')} onOverwrite={() => actions.resolve('overwrite')} />}

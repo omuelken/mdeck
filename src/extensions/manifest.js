@@ -60,7 +60,7 @@ export function validateManifest(raw, { file, dir, folderName, fileExists = exis
   if (!isPlainObject(raw)) fail('The manifest must be a table of settings')
 
   if (raw.schema !== SCHEMA_VERSION) fail(`schema must be ${SCHEMA_VERSION}${raw.schema == null ? ' (add "schema = 1" at the top)' : ''}`, 'schema')
-  if (raw.kind === 'template') fail('kind = \"template\" is now kind = \"layout\". Run mdeck migrate to update local manifests.', 'kind')
+  if (raw.kind === 'template') fail('kind = \"template\" is now kind = \"layout\"; change it in the manifest', 'kind')
   if (!KINDS.includes(raw.kind)) fail(`kind must be one of: ${KINDS.join(', ')}`, 'kind')
   const kind = raw.kind
   if (raw.name !== undefined) fail('name is not a setting; use id for the identifier and title for the display name', 'name')
@@ -173,6 +173,7 @@ function validateDataview(raw, shared, fail) {
     const path = `properties.${name}`
     if (!/^[a-z][a-z0-9-]*$/.test(name)) fail('property names are attribute names: lowercase letters, digits and hyphens, starting with a letter', path)
     if (SHARED_ATTRIBUTES.includes(name)) fail(`"${name}" is an attribute every dataview shares`, path)
+    if (name === 'value') fail('"value" is left to HTML\'s own <data value="…">, which a dataview never sees', path)
     if (isPlainObject(schema) && ['array', 'object'].includes(schema.type)) fail('a property is a string, number, integer or boolean: it is written as an attribute', `${path}.type`)
     properties[name] = validatePropertySchema(schema, path, fail)
   }

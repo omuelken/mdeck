@@ -11,6 +11,7 @@ import { t, stageLabels } from '../core/labels.js'
 import { followActiveRooms } from '../live/follow.js'
 import { Icon } from '../components/Icon.jsx'
 import { currentInk, onInkChange } from './ink/store.js'
+import { fitDeck, fitSlide } from './fit.js'
 
 // The reader view for decks sent around by email: outline, the slides at a
 // comfortable size or stacked for reading, light or dark, the drawings shown
@@ -91,15 +92,21 @@ export function ReaderView({ deck, deckConfig }) {
     if (!stage) return
     stage.setLabels(stageLabels())
     const stopFollowing = followActiveRooms(stage, slides)
+    // Code taller than its place scrolls here as it does in the deck (fit.js).
+    const unfit = fitDeck(stage, { report: false })
     const onChange = event => setIndex(event.detail.index)
     stage.addEventListener('slidechange', onChange)
-    return () => { stage.removeEventListener('slidechange', onChange); stopFollowing() }
+    return () => { stage.removeEventListener('slidechange', onChange); stopFollowing(); unfit() }
   }, [mode])
 
-  // Read mode shows every slide finished: all steps revealed, as in print.
+  // Read mode shows every slide finished: all steps revealed, as in print,
+  // and every page's code fitted to its place.
   useEffect(() => {
     if (mode !== 'read' || !readRef.current) return
     readRef.current.querySelectorAll('[data-step]').forEach(step => step.setAttribute('data-step-visible', ''))
+    const fitPages = () => readRef.current?.querySelectorAll('.reader-page-scale > .slide').forEach(slide => fitSlide(slide))
+    fitPages()
+    document.fonts?.ready.then(fitPages)
   }, [mode])
 
   useEffect(() => {
@@ -160,14 +167,14 @@ export function ReaderView({ deck, deckConfig }) {
       {metaLine && <span class="reader-meta">{metaLine}</span>}
       <span class="reader-spacer" />
       <span class="reader-count">{index + 1} / {slides.length}</span>
-      <button class={`reader-btn${mode === 'slides' ? ' is-active' : ''}`} onClick={() => switchMode('slides')}><ReaderIcon name="slides" />{t('reader.slides')}</button>
-      <button class={`reader-btn${mode === 'read' ? ' is-active' : ''}`} onClick={() => switchMode('read')}><ReaderIcon name="read" />{t('reader.read')}</button>
-      {toggleAllowed && <button class="reader-btn" onClick={() => setAppearance(other === ownAppearance ? '' : other)} title={t('reader.appearance')}><ReaderIcon name={other === 'dark' ? 'moon' : 'sun'} />{t(other === 'dark' ? 'reader.dark' : 'reader.light')}</button>}
-      {inked && <button class="reader-btn" onClick={() => setDrawings(on => !on)} aria-pressed={drawings} title={t(drawings ? 'reader.hideDrawings' : 'reader.showDrawings')}><ReaderIcon name={drawings ? 'eye' : 'eye-off'} />{t('reader.drawings')}</button>}
+      <button class={`reader-btn${mode === 'slides' ? ' is-active' : ''}`} onClick={() => switchMode('slides')}><ReaderIcon name="slides" /><span class="label-text">{t('reader.slides')}</span></button>
+      <button class={`reader-btn${mode === 'read' ? ' is-active' : ''}`} onClick={() => switchMode('read')}><ReaderIcon name="read" /><span class="label-text">{t('reader.read')}</span></button>
+      {toggleAllowed && <button class="reader-btn" onClick={() => setAppearance(other === ownAppearance ? '' : other)} title={t('reader.appearance')}><ReaderIcon name={other === 'dark' ? 'moon' : 'sun'} /><span class="label-text">{t(other === 'dark' ? 'reader.dark' : 'reader.light')}</span></button>}
+      {inked && <button class="reader-btn" onClick={() => setDrawings(on => !on)} aria-pressed={drawings} title={t(drawings ? 'reader.hideDrawings' : 'reader.showDrawings')}><ReaderIcon name={drawings ? 'eye' : 'eye-off'} /><span class="label-text">{t('reader.drawings')}</span></button>}
       {pdf
-        ? <a class="reader-btn" href={pdf} download={`${(meta.title ?? 'slides').replace(/[^\w.-]+/g, '-')}.pdf`}><ReaderIcon name="download" />{t('reader.downloadPdf')}</a>
-        : <button class="reader-btn" onClick={savePdf} title={t('reader.savePdfHint')}><ReaderIcon name="download" />{t('reader.savePdf')}</button>}
-      <a class="reader-btn" href={`?view=deck#${encodeURIComponent(slides[index]?.id ?? String(index + 1))}`}><ReaderIcon name="present" />{t('reader.present')}</a>
+        ? <a class="reader-btn" href={pdf} download={`${(meta.title ?? 'slides').replace(/[^\w.-]+/g, '-')}.pdf`}><ReaderIcon name="download" /><span class="label-text">{t('reader.downloadPdf')}</span></a>
+        : <button class="reader-btn" onClick={savePdf} title={t('reader.savePdfHint')}><ReaderIcon name="download" /><span class="label-text">{t('reader.savePdf')}</span></button>}
+      <a class="reader-btn" href={`?view=deck#${encodeURIComponent(slides[index]?.id ?? String(index + 1))}`}><ReaderIcon name="present" /><span class="label-text">{t('reader.present')}</span></a>
     </header>
     <div class="reader-main">
       <nav class={`reader-nav${navOpen ? ' is-open' : ''}`} aria-label={t('reader.slides')}>

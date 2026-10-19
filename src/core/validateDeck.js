@@ -11,7 +11,7 @@ import { reactionsProblem } from './reactions.js'
 // Hotspots (runtime/hotspots.js): the deck's setting and a slide's own.
 const HOTSPOT_SETTINGS = ['auto', 'marked', 'off', true, false]
 // Timing (core/timing.js): how long a slide, or the whole talk, may take.
-const TIME_HINT = value => `time: ${JSON.stringify(value)} is not a time; write it as 90s, 2m, 1m30s or 1.5m`
+const TIME_HINT = value => `time: ${JSON.stringify(value)} is not a time; write it as 90s, 2m, 1m30s, 1.5m or 1h30`
 
 // `layouts`, `themes` and `palettes` are manifest maps from the extension
 // registry (see src/extensions/discover.js). Checks for a kind are skipped when

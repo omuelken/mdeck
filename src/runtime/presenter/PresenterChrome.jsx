@@ -80,11 +80,17 @@ export function SlideControls({ controls, press, zoom, big = false }) {
 }
 
 // The launch page's view of this talk: whether devices can pair, from this
-// computer under `mdeck run` only.
+// computer under `mdeck run` only. Asked again when the window comes back,
+// as the join link changes with the laptop's network.
 function useHomeInfo() {
   const [info, setInfo] = useState(null)
   const load = () => fetch(devPath('__mdeck/home/info'), { cache: 'no-store' }).then(response => response.ok ? response.json() : null).then(setInfo, () => setInfo(null))
-  useEffect(() => { if (import.meta.env.DEV) load() }, [])
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    load()
+    window.addEventListener('focus', load)
+    return () => window.removeEventListener('focus', load)
+  }, [])
   return [info, load]
 }
 

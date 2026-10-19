@@ -221,6 +221,8 @@ test('appearance: the theme default palette, the deck palette and appearance, th
   const full = buildAppearance({ theme, palettes, palette: 'paper', appearance: 'dark', params: { fontBody: 'serif', bogus: 1 }, meta: { title: 'T "q"' }, offline: true })
   assert.match(full.paletteCss, /--accent: #fb8c4a;/)
   assert.ok(Object.keys(DARK_TOKENS).every(token => full.paletteCss.includes(token)), 'dark code colours and logo filter')
+  assert.match(full.paletteCss, /--inverse-logo-filter: none;[^]*--inverse-token-default: #0a0a0a;/, 'an inverted slide on a dark deck takes the light code colours')
+  assert.match(base.paletteCss, /--inverse-logo-filter: invert\(1\);[^]*--inverse-token-default: #e2e8f0;/)
   assert.equal(full.overridesCss, ':root {\n  --font-body: serif;\n  --meta-title: "T \\"q\\"";\n}')
   assert.deepEqual(full.fonts, [])
   assert.deepEqual(full.warnings, ['Theme "academic" has no parameter "bogus"'])
@@ -249,4 +251,15 @@ test('a palette without the third accent gets the amber, and says so', () => {
   assert.deepEqual(record.manifest.fallbacks, ['--accent-3'])
   const full = validateManifest(parseManifestText(PALETTE, 'extension.toml'), { file: 'extension.toml', dir: '/x/ocean', folderName: 'ocean', fileExists: () => true })
   assert.equal(full.manifest.fallbacks, undefined)
+})
+
+test('the appearance says which of the two logos shows: the dark one on dark slides, never inverted by the tokens', () => {
+  const theme = registry.themes.neue.manifest, palettes = manifestsOf(registry, 'palette')
+  const dark = buildAppearance({ theme, palettes, appearance: 'dark' }).paletteCss
+  assert.match(dark, /--logo-light-display: none;/)
+  assert.match(dark, /--logo-dark-display: block;/)
+  assert.match(dark, /--inverse-logo-dark-display: none;/, 'an inverted slide on a dark deck shows the light logo')
+  const light = buildAppearance({ theme, palettes, appearance: 'light' }).paletteCss
+  assert.doesNotMatch(light, /--logo-light-display:/, 'light is the default in base.css')
+  assert.match(light, /--inverse-logo-dark-display: block;/)
 })

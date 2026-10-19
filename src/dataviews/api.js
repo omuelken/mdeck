@@ -68,6 +68,53 @@ export function niceTicks(min, max, { count = 5, zero = true } = {}) {
   return { min: low, max: high, ticks, step }
 }
 
+/**
+ * niceTicks, but an axis that the author starts or ends (`min`, `max`)
+ * starts or ends there exactly, with the round ticks inside it.
+ */
+export function axisTicks(low, high, { min, max, zero = true, count } = {}) {
+  const scale = niceTicks(low, high, { zero, count })
+  const from = Number.isFinite(min) ? min : scale.min
+  const to = Number.isFinite(max) ? max : scale.max
+  return { ...scale, min: from, max: to, ticks: scale.ticks.filter(tick => tick >= from - 1e-9 && tick <= to + 1e-9) }
+}
+
+const DAY = 86400000
+/**
+ * Ticks for dates (times in ms) on calendar boundaries: years, quarters,
+ * months or days, about `count` of them, labelled as the deck's language
+ * writes them: { min, max, ticks: [{ value, label }] }.
+ */
+export function dateTicks(min, max, { count = 6, lang = null } = {}) {
+  const span = Math.max(max - min, DAY)
+  const units = [
+    { months: 12 * 10, format: { year: 'numeric' } }, { months: 12 * 5, format: { year: 'numeric' } },
+    { months: 12 * 2, format: { year: 'numeric' } }, { months: 12, format: { year: 'numeric' } },
+    { months: 6, format: { month: 'short', year: 'numeric' } }, { months: 3, format: { month: 'short', year: 'numeric' } },
+    { months: 1, format: { month: 'short', year: 'numeric' } },
+    { days: 7, format: { day: 'numeric', month: 'short' } }, { days: 1, format: { day: 'numeric', month: 'short' } },
+  ]
+  // The finest unit that gives no more than `count` ticks.
+  const unit = units.findLast(unit => span / ((unit.months ?? 0) * 30.44 * DAY + (unit.days ?? 0) * DAY) <= count) ?? units[0]
+  const start = new Date(min)
+  if (unit.months) {
+    const months = start.getUTCFullYear() * 12 + start.getUTCMonth()
+    const first = Math.floor(months / unit.months) * unit.months
+    const date = m => Date.UTC(Math.floor(m / 12), m % 12, 1)
+    const ticks = []
+    for (let m = first; date(m) <= max; m += unit.months) if (date(m) >= min) ticks.push(date(m))
+    return withLabels(min, max, ticks.length ? ticks : [min], unit.format, lang)
+  }
+  const ticks = []
+  for (let t = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()); t <= max; t += unit.days * DAY) if (t >= min) ticks.push(t)
+  return withLabels(min, max, ticks.length ? ticks : [min], unit.format, lang)
+}
+function withLabels(min, max, ticks, format, lang) {
+  let formatter
+  try { formatter = new Intl.DateTimeFormat(lang ?? undefined, { ...format, timeZone: 'UTC' }) } catch { formatter = new Intl.DateTimeFormat(undefined, { ...format, timeZone: 'UTC' }) }
+  return { min, max, ticks: ticks.map(value => ({ value, label: formatter.format(value) })) }
+}
+
 /** A linear scale from [d0, d1] onto [r0, r1]. */
 export function linear([d0, d1], [r0, r1]) {
   const k = d1 === d0 ? 0 : (r1 - r0) / (d1 - d0)

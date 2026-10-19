@@ -5,7 +5,7 @@
 // session room holds the activity on screen, which the answer page shows.
 // Everything lives in memory: nothing is written to disk, and idle rooms are
 // forgotten. The same handler runs inside `mdeck run` and as `mdeck server`.
-import { timingSafeEqual } from 'node:crypto'
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { CODE_RE } from './code.js'
 
@@ -20,9 +20,13 @@ const ANSWER_TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript; c
 export const ROOM_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/
 // A session's reactions room: `<code>.reactions`.
 const isReactionRoom = id => id.endsWith('.reactions')
+// Whether two screens' states put the same activity on the phones.
+const sameActivity = (a, b) => JSON.stringify([a?.room ?? null, a?.activity ?? null]) === JSON.stringify([b?.room ?? null, b?.activity ?? null])
 // What a connected window may say it is, for the presenter's overview of
-// who is connected (src/components/ConnectedViews.jsx); phones only count.
-export const VIEWS = ['presenter', 'audience', 'deck', 'phone']
+// who is connected (src/components/ConnectedViews.jsx); phones only count,
+// and so do followers (?view=follow), who cannot answer.
+export const VIEWS = ['presenter', 'audience', 'deck', 'phone', 'follow']
+const COUNTED = new Set(['phone', 'follow'])
 export const DEVICES = ['computer', 'ipad', 'tablet', 'phone']
 const HOUR = 60 * 60 * 1000
 
@@ -32,19 +36,36 @@ const QUIET_MS = 15000
 
 export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500, idleMs = 12 * HOUR, now = Date.now, quietMs = QUIET_MS } = {}) {
   const rooms = new Map()
-  const prune = () => { for (const [id, room] of rooms) if (!room.listeners.size && now() - room.touched > idleMs) rooms.delete(id) }
+  const broadcast = (room, event) => { for (const listener of room.listeners) listener(event) }
+  // A room that only listeners opened, before anything was said in it.
+  const empty = room => !room.messages.length && room.state === null && !room.ink.length
+  // Forgotten when the server is full: idle rooms, then empty ones. Their
+  // listeners' streams end, and a browser's EventSource opens a new one, so
+  // a room that is still wanted comes back at once.
+  const prune = () => {
+    for (const [id, room] of rooms) {
+      if (now() - room.touched <= idleMs && !(rooms.size >= maxRooms && empty(room))) continue
+      rooms.delete(id)
+      broadcast(room, { type: 'end' })
+    }
+  }
+  // Phones' ids are hashed before anyone else sees them: the answers stream
+  // is open to all, and knowing an id would let one change that phone's vote.
+  const salt = randomBytes(16)
+  const hashed = from => createHash('sha256').update(salt).update(from).digest('base64url').slice(0, 22)
   const get = id => {
     let room = rooms.get(id)
     if (!room) {
       if (rooms.size >= maxRooms) prune()
       if (rooms.size >= maxRooms) throw Object.assign(new Error('Too many rooms are open on this server'), { status: 503 })
-      room = { messages: [], state: null, stamp: 0, heard: 0, screens: new Map(), ink: [], listeners: new Set(), present: new Map(), next: 1, touched: now() }
+      // Message numbers start at the time: those of a server that restarted
+      // stay below the ones given before, so a closed poll stays closed.
+      room = { messages: [], state: null, stamp: 0, heard: 0, screens: new Map(), ink: [], listeners: new Set(), present: new Map(), next: Math.max(1, now()), touched: now() }
       rooms.set(id, room)
     }
     room.touched = now()
     return room
   }
-  const broadcast = (room, event) => { for (const listener of room.listeners) listener(event) }
   // A session is a room and the rooms named after it (`<code>.stage`, …).
   const sessionRooms = id => { const session = id.split('.')[0]; return [...rooms].filter(([name]) => name === session || name.startsWith(`${session}.`)).map(([, room]) => room) }
   // Phones connected elsewhere, by session: mdeck run keeps the stage room
@@ -52,8 +73,9 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
   const awayPhones = new Map()
   const presence = id => {
     const present = sessionRooms(id).flatMap(room => [...room.present.values()])
-    const views = present.filter(entry => entry.view !== 'phone').sort((a, b) => VIEWS.indexOf(a.view) - VIEWS.indexOf(b.view))
-    return { views, phones: present.length - views.length + (awayPhones.get(id.split('.')[0]) ?? 0) }
+    const views = present.filter(entry => !COUNTED.has(entry.view)).sort((a, b) => VIEWS.indexOf(a.view) - VIEWS.indexOf(b.view))
+    const followers = present.filter(entry => entry.view === 'follow').length
+    return { views, phones: present.length - views.length + (awayPhones.get(id.split('.')[0]) ?? 0), followers }
   }
   const announcePresence = id => { const event = { type: 'presence', presence: presence(id) }; for (const room of sessionRooms(id)) broadcast(room, event) }
   return {
@@ -69,7 +91,7 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
       // Reactions (src/core/reactions.js) are passed on and forgotten.
       const keep = !isReactionRoom(id)
       if (keep && room.messages.length >= maxMessages) throw Object.assign(new Error('This room is full'), { status: 429 })
-      const message = { n: room.next++, at: new Date(now()).toISOString(), from, data }
+      const message = { n: room.next++, at: new Date(now()).toISOString(), from: typeof from === 'string' ? hashed(from) : null, data }
       if (keep) room.messages.push(message)
       broadcast(room, { type: 'message', message })
       return message
@@ -143,7 +165,7 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
   }
 }
 
-// Per-address token bucket: `burst` messages at once, refilled over `perMs`.
+// Token bucket by key (an address, a phone): `burst` messages at once, refilled over `perMs`.
 export function createLimiter({ burst = 30, perMs = 10000, now = Date.now } = {}) {
   const buckets = new Map()
   return key => {
@@ -205,9 +227,10 @@ function reply(response, status, body) {
 //   GET  /<code>               the phones' answer page (and answer.js, answer.css)
 //   GET  /info                 { canReset, ...extra }
 //   GET  /rooms/<id>/events    Server-Sent Events: snapshot, message, reset, state;
+//                              end when the server forgot the room (open it again)
 //                              ?view=…&device=… counts this window as connected,
 //                              ?presence=1 adds who is connected to the session
-//                              ?only=state sends the room's state alone
+//                              ?only=state sends the room's state and resets alone
 //   GET  /rooms/<id>/presence  who is connected to the session, once
 //   POST /rooms/<id>           { from, data } → { n }; in <code>.reactions
 //                              passed on without being kept
@@ -215,7 +238,10 @@ function reply(response, status, body) {
 //   POST /rooms/<id>/state     { state } — presenter only
 //   POST /rooms/<id>/ink       { messages } — presenter only, live ink
 // Answers carry no cookies and no personal data, so any page may use them.
-export function liveHandler({ rooms = createRooms(), canReset = () => false, info = () => ({}), limit = createLimiter(), inkLimit = createLimiter({ burst: 60, perMs: 3000 }), reactionLimit = createLimiter({ burst: 120, perMs: 10000 }), heartbeatMs = 20000 } = {}) {
+// `limit` and `reactionLimit` are per phone (its address and `from`), so a
+// lecture hall behind one address is not one sender; `addressLimit` is the
+// backstop for an address, answers and reactions counted apart.
+export function liveHandler({ rooms = createRooms(), canReset = () => false, info = () => ({}), limit = createLimiter(), inkLimit = createLimiter({ burst: 60, perMs: 3000 }), reactionLimit = createLimiter({ burst: 120, perMs: 10000 }), addressLimit = createLimiter({ burst: 1000, perMs: 10000 }), heartbeatMs = 20000 } = {}) {
   return async (request, response, next = () => reply(response, 404, { error: 'Not found' })) => {
     const { pathname, searchParams } = new URL(request.url, 'http://localhost')
     response.setHeader('Access-Control-Allow-Origin', '*')
@@ -235,19 +261,22 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
       const id = decodeURIComponent(match[1])
       if (!ROOM_RE.test(id)) return reply(response, 400, { error: 'Room names use letters, digits, dots, hyphens and underscores' })
       if (match[2] === '/events' && request.method === 'GET') {
+        // Opens the room first: a full server says so with a 503.
+        const ink = rooms.ink(id)
         response.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' })
         const write = (event, data) => response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-        const ink = rooms.ink(id)
         const view = searchParams.get('view'), device = searchParams.get('device')
         const present = VIEWS.includes(view) ? { view, device: DEVICES.includes(device) ? device : 'computer' } : null
         const wantsPresence = searchParams.get('presence') === '1'
         // ?only=state: the room's state alone, as phones follow an activity's
-        // controls (closed, the right answer) without everyone's answers.
+        // controls (closed, the right answer) without everyone's answers;
+        // a reset still reaches them, so they forget what they chose.
         const onlyState = searchParams.get('only') === 'state'
         write('snapshot', { messages: onlyState ? [] : rooms.snapshot(id), state: rooms.state(id), ...(ink.length ? { ink } : {}), ...(wantsPresence ? { presence: rooms.presence(id) } : {}) })
         const unsubscribe = rooms.subscribe(id, event => {
+          if (event.type === 'end') return response.end()
           if (event.type === 'presence') { if (wantsPresence) write('presence', event.presence); return }
-          if (onlyState && event.type !== 'state') return
+          if (onlyState && event.type !== 'state' && event.type !== 'reset') return
           write(event.type, event.type === 'message' ? event.message : event.type === 'state' ? { state: event.state } : event.type === 'ink' ? { messages: event.messages } : {})
         }, present)
         const beat = setInterval(() => response.write(': ping\n\n'), heartbeatMs)
@@ -266,16 +295,24 @@ export function liveHandler({ rooms = createRooms(), canReset = () => false, inf
       if (match[2] === '/reset' || match[2] === '/state') {
         if (!canReset(request, id)) return reply(response, 403, { error: 'Only the presenter can change a room' })
         if (match[2] === '/reset') rooms.reset(id)
-        else if (!rooms.setState(id, (await readBody(request, MAX_STATE)).state)) return reply(response, 200, { ok: true, ignored: true })
+        else {
+          const { state } = await readBody(request, MAX_STATE)
+          // A screen turned away on the same activity as the one the phones
+          // follow (the computer and its paired phone or iPad) is told so.
+          if (!rooms.setState(id, state)) return reply(response, 200, { ok: true, ignored: true, ...(sameActivity(state, rooms.state(id)) ? { same: true } : {}) })
+        }
         return reply(response, 200, { ok: true })
       }
       // Reactions have a limit of their own: a room behind one address (a
       // lecture hall's network) must not use up its answers with them.
-      if (!(isReactionRoom(id) ? reactionLimit : limit)(clientAddress(request))) return reply(response, 429, { error: 'Too many answers at once; wait a moment' })
+      const address = clientAddress(request)
+      const reaction = isReactionRoom(id)
+      if (!addressLimit(`${reaction ? 'reactions' : 'answers'}:${address}`)) return reply(response, 429, { error: 'Too many answers at once; wait a moment' })
       const body = await readBody(request)
-      if (isReactionRoom(id) && (typeof body.data?.value !== 'string' || body.data.value.length > 16)) return reply(response, 400, { error: 'A reaction is a short text' })
+      if (reaction && (typeof body.data?.value !== 'string' || body.data.value.length > 16)) return reply(response, 400, { error: 'A reaction is a short text' })
       if (!('data' in body)) return reply(response, 400, { error: 'Send { data }' })
       const from = typeof body.from === 'string' ? body.from.slice(0, 64) : null
+      if (!(reaction ? reactionLimit : limit)(`${address}|${from ?? ''}`)) return reply(response, 429, { error: 'Too many answers at once; wait a moment' })
       return reply(response, 201, { n: rooms.post(id, { from, data: body.data }).n })
     } catch (error) {
       // An oversized body is not read to the end; answer, then drop the connection.

@@ -12,6 +12,9 @@ import { paramValue } from './params.js'
 // Code highlighting and logos on dark slides, unless the palette says otherwise.
 export const DARK_TOKENS = {
   '--logo-filter':    'invert(1)',
+  // A deck with a logo for dark slides (meta.logo-dark) shows that one.
+  '--logo-light-display': 'none',
+  '--logo-dark-display':  'block',
   '--token-default':  '#e2e8f0',
   '--token-comment':  '#718096',
   '--token-string':   '#68d391',
@@ -23,6 +26,25 @@ export const DARK_TOKENS = {
   '--pen-red':        '#fb7185',
   '--pen-blue':       '#60a5fa',
   '--pen-green':      '#4ade80',
+  // The highlighter brightens the text under it: screen on dark slides.
+  '--highlighter-blend': 'screen',
+}
+
+// The same on light slides: the code colours of code-block.css and the logo
+// as it is. A theme's inverted slide (neue's focus) takes the other set as
+// --inverse-token-* and --inverse-logo-filter.
+export const LIGHT_TOKENS = {
+  '--logo-filter':    'none',
+  '--logo-light-display': 'block',
+  '--logo-dark-display':  'none',
+  '--highlighter-blend': 'multiply',
+  '--token-default':  '#0a0a0a',
+  '--token-comment':  '#708090',
+  '--token-string':   '#669900',
+  '--token-number':   '#905050',
+  '--token-keyword':  '#0077aa',
+  '--token-function': '#dd4a68',
+  '--token-operator': '#9a6e3a',
 }
 
 const other = appearance => appearance === 'dark' ? 'light' : 'dark'
@@ -50,6 +72,7 @@ export function paletteTokens(palette, appearance = 'light') {
   const main = palette[appearance], inverse = palette[other(appearance)]
   const tokens = { ...(appearance === 'dark' ? DARK_TOKENS : {}), ...main }
   for (const role of COLOR_ROLES) tokens[`--inverse-${role.slice(2)}`] = inverse[role]
+  for (const name of Object.keys(LIGHT_TOKENS)) tokens[`--inverse-${name.slice(2)}`] = (appearance === 'dark' ? LIGHT_TOKENS : DARK_TOKENS)[name]
   return tokens
 }
 

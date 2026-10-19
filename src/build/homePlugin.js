@@ -59,11 +59,11 @@ function reveal(file) {
 // accepts the key (MDECK_SERVER_KEY, as given to the server), and which mdeck
 // it runs (servers before 3.12 do not say).
 const VERSION = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version
-// Whether mdeck `a` is older than `b`, by major and minor: a server that
-// lacks a feature of this mdeck (reactions came with 3.12) is older.
+// Whether mdeck `a` is older than `b`: a server that lacks a feature or a
+// fix of this mdeck (reactions came with 3.12, a fix for them with 3.12.1) is older.
 export function olderVersion(a, b) {
-  const [am, an] = String(a).split('.').map(Number), [bm, bn] = String(b).split('.').map(Number)
-  return am < bm || (am === bm && an < bn)
+  const [am, an, ap = 0] = String(a).split('.').map(Number), [bm, bn, bp = 0] = String(b).split('.').map(Number)
+  return am < bm || (am === bm && (an < bn || (an === bn && ap < bp)))
 }
 // A reachable server that runs an older mdeck than this computer, or does not say.
 const withVersion = status => status.reachable ? { ...status, version: VERSION, serverOutdated: !status.serverVersion || olderVersion(status.serverVersion, VERSION) } : status

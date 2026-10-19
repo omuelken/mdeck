@@ -38,24 +38,28 @@ const findColumn = (columns, name) => {
 }
 
 /**
- * The dataset: { columns, x, series, rows, title, unit, steps, problems }.
+ * The dataset: { columns, x, series, chosen, rows, title, unit, steps, problems }.
  *   columns  [{ name, type, percent, decimals }], all of the table's
  *   x        the index of the column that labels the rows
  *   series   [{ name, column, index }], the value columns, in order
+ *   chosen   whether y named them; without y, every column of numbers but x
  *   rows     [{ index, label, cells, values, highlight }]: `index` the row's
  *            number in the file (from 1), `label` the x cell's text,
  *            `values` the series' numbers (null when empty or not a number)
  *   steps    'rows', 'series' or null
  *   problems [{ severity, message }]
  * `csv` is the table's text; `attrs` the tag's attributes; `lang` the
- * deck's language, for 7,1 and for showing numbers.
+ * deck's language, for showing numbers and sorting text.
  */
 export function buildDataset(csv, attrs = {}, { lang = null } = {}) {
   const problems = []
   const problem = (message, severity = 'error') => problems.push({ severity, message })
   const parsed = parseCsv(csv)
   for (const { row, message } of parsed.problems) problem(row ? `Row ${row} ${message}` : `The data ${message}`)
-  const { columns, rows: typed } = typeTable(parsed, { lang })
+  const { columns, rows: typed } = typeTable(parsed)
+
+  // A column with nothing in it is typed as text, but never labels the rows.
+  const empty = columns.map((_, column) => parsed.rows.every(row => row[column] === ''))
 
   // The label column: `x`, else the first that is not numbers, else the first.
   let x = 0
@@ -63,7 +67,7 @@ export function buildDataset(csv, attrs = {}, { lang = null } = {}) {
     x = findColumn(columns, attrs.x)
     if (x < 0) { problem(`x names the column "${attrs.x}", which the data does not have. Columns: ${columns.map(column => column.name).join(', ')}`); x = 0 }
   } else {
-    const label = columns.findIndex(column => column.type !== 'number')
+    const label = columns.findIndex((column, index) => column.type !== 'number' && !empty[index])
     x = label >= 0 ? label : 0
   }
 
@@ -81,9 +85,14 @@ export function buildDataset(csv, attrs = {}, { lang = null } = {}) {
   for (const { name, column } of series) {
     if (columns[column].type === 'number') continue
     // Only the cells that are not numbers: the message names the first of them.
-    const bad = notNumbers(parsed, column, { lang })
-    problem(`The column "${name}" should hold numbers, but row ${bad[0]?.row} has "${bad[0]?.text}"${bad.length > 1 ? ` (and ${bad.length - 1} more)` : ''}`)
+    const bad = notNumbers(parsed, column)
+    if (!bad.length) problem(`The column "${name}" has no values; y names the columns of numbers to show`)
+    else problem(`The column "${name}" should hold numbers, but row ${bad[0].row} has "${bad[0].text}"${bad.length > 1 ? ` (and ${bad.length - 1} more)` : ''}`)
   }
+  // An empty column that nothing asked for is probably a mistake in the file.
+  columns.forEach((column, index) => {
+    if (empty[index] && index !== x && !series.some(item => item.column === index)) problem(`The column "${column.name}" has no values`, 'warning')
+  })
 
   let rows = typed.map((cells, i) => ({
     index: i + 1,
@@ -137,7 +146,8 @@ export function buildDataset(csv, attrs = {}, { lang = null } = {}) {
     else problem(`steps must be ${STEP_MODES.join(' or ')}, not "${attrs.steps}"`)
   }
 
-  return { columns, x, series, rows, title: attrs.title ?? '', unit: attrs.unit ?? '', steps, lang, problems }
+  const chosen = attrs.y != null && attrs.y !== ''
+  return { columns, x, series, chosen, rows, title: attrs.title ?? '', unit: attrs.unit ?? '', steps, lang, problems }
 }
 
 /** What a dataview needs (`needs` in its manifest) that the dataset lacks, as messages. */

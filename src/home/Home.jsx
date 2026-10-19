@@ -173,12 +173,21 @@ function Diagnostics({ diagnostics, name }) {
 // links on this page drive each other.
 const SESSION = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)
 
-// Drops kept answers or drawings, without asking.
+// Drops kept answers or drawings.
 async function drop(body, onDone, onError) {
   try { await api('/action', body); onDone() } catch (error) { onError(error.message) }
 }
 
-const DropButton = ({ label, onClick }) => <button class="home-btn home-btn--small" onClick={onClick} title={label} aria-label={label}><HomeIcon name="trash" size={13} />Drop</button>
+// Asks first: the button turns into the question, in its place.
+function DropButton({ label, all = false, onClick }) {
+  const [asking, setAsking] = useState(false)
+  if (asking) return <span class="home-confirm" role="group" aria-label={label}>
+    <span>{all ? 'Drop all?' : 'Drop?'}</span>
+    <button class="home-btn home-btn--small" onClick={() => { setAsking(false); onClick() }}>Yes, drop</button>
+    <button class="home-btn home-btn--small" onClick={() => setAsking(false)}>Keep</button>
+  </span>
+  return <button class="home-btn home-btn--small" onClick={() => setAsking(true)} title={label} aria-label={label}><HomeIcon name="trash" size={13} />{all ? 'Drop all' : 'Drop'}</button>
+}
 
 // The answers kept in the talk: each question with how it came out, and
 // the files to save them as (the same as `mdeck results`).
@@ -189,7 +198,7 @@ function Answers({ results, file, onRefresh, onError }) {
       <h2>Answers from the talk</h2>
       <div class="home-head-actions">
         <button class="home-btn home-btn--small" onClick={onRefresh}>Refresh</button>
-        <button class="home-btn home-btn--small" onClick={() => drop({ action: 'drop-answers' }, onRefresh, onError)}><HomeIcon name="trash" size={13} />Drop all</button>
+        <DropButton all label="Drop all the answers" onClick={() => drop({ action: 'drop-answers' }, onRefresh, onError)} />
       </div>
     </div>
     <ul class="home-outputs">
@@ -210,7 +219,7 @@ function Answers({ results, file, onRefresh, onError }) {
       <a class="home-btn" href={href('summary')} download><HomeIcon name="download" size={15} />Summary (CSV)</a>
       <a class="home-btn" href={href('json')} download><HomeIcon name="download" size={15} />Everything (JSON)</a>
     </div>
-    <p class="home-hint">Kept in <code>{file}</code> beside the deck while <code>mdeck run</code> runs; phones are numbered per question, never named. A poll that is still open keeps its answers again with the next one that comes in.</p>
+    <p class="home-hint">Kept in <code>{file}</code> beside the deck while <code>mdeck run</code> runs; phones are numbered per question, never named. A poll that is still open keeps its answers again with the next one that comes in. Dropped answers are gone for good.</p>
   </section>
 }
 
@@ -221,7 +230,7 @@ function Drawings({ drawings, file, onRefresh, onError }) {
   return <section class="home-section home-section--wide home-answers">
     <div class="home-section-head">
       <h2>Drawings</h2>
-      <button class="home-btn home-btn--small" onClick={() => drop({ action: 'drop-drawings' }, onRefresh, onError)}><HomeIcon name="trash" size={13} />Drop all</button>
+      <DropButton all label="Drop all the drawings" onClick={() => drop({ action: 'drop-drawings' }, onRefresh, onError)} />
     </div>
     <ul class="home-outputs">
       {drawings.map(entry => <li class="home-output" key={entry.id}>
@@ -233,7 +242,7 @@ function Drawings({ drawings, file, onRefresh, onError }) {
         <DropButton label={`Drop the drawings on ${entry.slide ? `slide ${entry.slide}` : entry.id}`} onClick={() => drop({ action: 'drop-drawings', slide: entry.id }, onRefresh, onError)} />
       </li>)}
     </ul>
-    <p class="home-hint">Kept in <code>{file}</code> beside the deck; builds show them. Dropped drawings clear from the open windows at once.</p>
+    <p class="home-hint">Kept in <code>{file}</code> beside the deck; builds show them. Dropped drawings clear from the open windows at once; the file as it was before this session's first change is in <code>.mdeck-backups/</code>.</p>
   </section>
 }
 

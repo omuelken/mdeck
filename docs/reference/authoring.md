@@ -47,9 +47,10 @@ Each `---` line starts a new slide. Frontmatter is only needed when you want a s
 | `meta.author` | — | Author name (shown in footer) |
 | `meta.organization` | — | Organization name (shown in header) |
 | `meta.date` | — | Date string (shown in footer) |
-| `meta.logo` | — | Path to logo image |
+| `meta.logo` | — | Path to logo image (shown on the title slide, and on every slide with `show.organization: all`; inverted on dark slides unless `meta.logo-dark` is set or the palette sets `--logo-filter`) |
+| `meta.logo-dark` | — | A second logo for dark slides, shown as it is instead of the inverted `meta.logo` |
 | `width` / `height` | `1920` / `1080` | Slide canvas dimensions in px |
-| `show.organization` | `title` | When to show the organization name: `title`, `all`, or `none` |
+| `show.organization` | `title` | When to show the organization name and logo: `title`, `all`, or `none` (the logo stays on the title slide) |
 | `show.author` | `title` | When to show the author and date line: `title`, `all`, or `none` |
 | `show.numbers` | `slides` | Slide numbers: `slides` (all except title), `all`, or `none` |
 | `show.sections` | `all` | Whether to show section labels in the header: `all` or `none` |
@@ -202,7 +203,7 @@ description: A short description shown under the title.
 | `section` | Section label shown in the slide header (auto-propagated — see below) |
 | `title` | Name in the outline and reader navigation, for slides without a heading (not shown on the slide) |
 | `hotspots` | This slide's own hotspots: `auto`, `marked`, `off` or `false` (see the deck field) |
-| `time` | How long to spend on the slide: `90s`, `2m`, `1m30s` or `1.5m`. The presenter view counts it down; `mdeck rehearse` measures and saves it |
+| `time` | How long to spend on the slide: `90s`, `2m`, `1m30s`, `1.5m` or `1h30`. The presenter view counts it down; `mdeck rehearse` measures and saves it |
 
 ### Section labels
 
@@ -530,10 +531,11 @@ year, wheat, barley
 
 The first row names the columns. Cells are separated by commas, semicolons or
 tabs (the first row decides); a cell with a separator, a quote or a line break
-is written in double quotes, a quote in it doubled. Numbers may use a decimal
-point, or a decimal comma in a deck whose `lang` writes one and in files
-separated by semicolons or tabs; thousands may be separated (`1,234`, `1.234`,
-`1'234`); `12 %` is a percentage, `2024-03` a date. A column is of numbers when
+is written in double quotes, a quote in it doubled. Numbers use a decimal
+point or a decimal comma (`7.1` or `7,1`; in a file separated by commas, a
+number with a comma is quoted: `"7,1"`) and no thousands separators: `1,234`
+is one point two three four. `12 %` is a percentage, `2024-03` a date. Numbers
+are shown as the deck's `lang` writes them. A column is of numbers when
 every filled cell is one; an empty cell is no value. The first column may go
 without a name, as the row names of a matrix often do. A file (`src`) is read
 from the deck's folder, bundled into builds, and redraws its slides under
@@ -562,10 +564,10 @@ lists them):
 | Dataview | Shows | Options |
 |---|---|---|
 | `table` | The data as the theme draws tables; numbers right, the unit in their headers, highlighted rows marked | `max-rows` (12; the rest are counted), `numbers` (`as-written` or `formatted`) |
-| `bar` | Columns from a baseline at 0, bars when the labels are long; several series side by side or `stacked` | `orientation` (`auto`, `vertical`, `horizontal`), `stacked`, `values` (`auto`, `all`, `highlight`, `none`), `min`, `max` |
-| `line` | One line per series, the last value at its end; numbers or dates in `x` are spaced by their value | `points` (`auto`, `all`, `none`), `fill` (one series), `zero`, `min`, `max` |
+| `bar` | Columns from a baseline at 0, bars when the labels are long; several series side by side or `stacked` | `orientation` (`auto`, `vertical`, `horizontal`), `stacked`, `values` (`auto`, `all`, `highlight`, `none`), `max` (the axis ends exactly there; bars beyond are cut off, and `mdeck check` warns), `min` (0 or below: bars start at 0, and `mdeck check` warns of a `min` above it) |
+| `line` | One line per series, the last value at its end; numbers or dates in `x` are spaced by their value | `points` (`auto`, `all`, `none`), `fill` (one series), `zero`, `min`, `max` (the axis starts and ends exactly there; lines beyond are cut off) |
 | `scatter` | Points: `x` across (a column of numbers or dates), each value column up | `labels` (a column naming the points), `zero` |
-| `stat` | One to four figures, large, as the data writes them, each with its row's label | `change` (a column with each figure's change) |
+| `stat` | One to four figures, large, as the deck's language writes them, each with its row's label | `change` (a column with each figure's change) |
 | `heatmap` | A grid coloured by value; values either side of 0 in two colours | `values`, `scale` (`auto`, `sequential`, `diverging`), `min`, `max` |
 | `dumbbell` | Two values per row joined by a line | `values`, `zero` |
 

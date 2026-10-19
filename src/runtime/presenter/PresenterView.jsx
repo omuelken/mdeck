@@ -58,6 +58,12 @@ const SLIM_PILL = `
   .presenter--slide .presenter-pill .presenter-clock { gap: 6px !important; }
   .presenter--slide .presenter-pill .presenter-slide-time { font-size: 11px !important; }
 `
+// The phone's bar, a little tighter, so it fits a 375 px wide phone with
+// phones connected; on a narrower one it wraps instead of overlapping.
+const SLIM_REMOTE_BAR = `
+  .presenter-remote-bar { gap: 4px !important; }
+  .presenter-remote-bar > button, .presenter-remote-bar > span > [class$="-toggle"] { min-width: 36px !important; padding: 0 7px !important; }
+`
 // A slide's first heading, as plain words, for the phone's "Next:" line.
 function slideTitleOf(slide) {
   const texts = [slide?.content ?? '', ...Object.values(slide?.regions ?? {}).map(region => region.content ?? '')]
@@ -68,8 +74,20 @@ function slideTitleOf(slide) {
   return ''
 }
 
+// The position this view was at, kept across a reload (sessionStorage, as
+// the timer's state is): its frame opens there, instead of sending the
+// audience window back to the first slide.
+const POSITION_KEY = `mdeck-position:${DECK_CHANNEL}`
+function keptPosition() {
+  try {
+    const kept = JSON.parse(sessionStorage.getItem(POSITION_KEY))
+    if (Number.isInteger(kept?.index) && Number.isInteger(kept?.step)) return kept
+  } catch {}
+  return { index: 0, step: -1 }
+}
+
 function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
-  const [index, setIndex] = useState(0)
+  const [index, setIndex] = useState(() => Math.min(keptPosition().index, firstSlides.length - 1))
   // The notes, slide count and phones follow the language shown.
   const [lang, setLang] = useState(deckLang)
   const { slides, deckConfig } = useMemo(() => {
@@ -178,14 +196,17 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const previewRef = useRef(null)
   const audienceRef = useRef(null)
   const bcRef = useRef(null)
-  // Positions sent to and taken from audience windows are ordered (syncOrder.js).
+  // Positions sent to and taken from audience windows are ordered (syncOrder.js);
+  // the clock carries on after a reload, like the position.
   const orderRef = useRef(null)
-  orderRef.current ??= createOrder()
-  const indexRef = useRef(0)
+  orderRef.current ??= createOrder(undefined, { storageKey: `mdeck-order:${DECK_CHANNEL}` })
+  const indexRef = useRef(index)
   const langRef = useRef(lang)
   langRef.current = lang
-  const stateRef = useRef({ index: 0, step: -1 })
+  const stateRef = useRef(keptPosition())
   indexRef.current = index
+  const countRef = useRef(slides.length)
+  countRef.current = slides.length
   // Phones see the look of the slide this view shows, read from its frame.
   useEffect(() => { setLookSource(() => iframeRef.current?.contentDocument) }, [])
   const announcedOnce = useRef(false)
@@ -243,6 +264,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       if (typeof data?.overview === 'boolean') { setOverviewOpen(data.overview); return }
       // ? typed while the slide's frame had the keyboard.
       if (data?.keyHelp === 'toggle') { setHelpOpen(open => !open); return }
+      // A key the frame had no use for (T, H, L …): as if typed here.
+      if (typeof data?.presenterKey === 'string') { window.dispatchEvent(new KeyboardEvent('keydown', { key: data.presenterKey })); return }
       // Another screen (a paired iPad) switched the language; the notes follow.
       if (LANGUAGES.includes(data?.deckLanguage)) { setLang(data.deckLanguage); return }
       if (!data?.deckStateChanged) return
@@ -263,6 +286,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         return
       }
       stateRef.current = state
+      try { sessionStorage.setItem(POSITION_KEY, JSON.stringify(state)) } catch {}
       atEndRef.current = !!data.atEnd
       setIndex(i)
       setBlank(!!state.blank)
@@ -294,10 +318,12 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       }
       if (e.key === 'o' || e.key === 'O') { e.preventDefault(); toggleOverviewRef.current(); return }
       if (e.key === 't' || e.key === 'T') { e.preventDefault(); timerRef.current.toggle(); return }
+      // Home and End go to the first and the last slide; R starts over, with every step hidden again.
+      if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); sendTo(iframeRef.current?.contentWindow, 'goTo', e.key === 'Home' ? 0 : countRef.current - 1); return }
       const cmd =
         (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') ? 'next' :
         (e.key === 'ArrowLeft'  || e.key === 'PageUp')                    ? 'prev' :
-        (e.key === 'Home' || e.key === 'r' || e.key === 'R')              ? 'reset' :
+        (e.key === 'r' || e.key === 'R')                                  ? 'reset' :
         (e.key === 'd' || e.key === 'D')                                  ? 'ink' : null
       if ((e.key === 'f' || e.key === 'F') && fullscreen.available) { e.preventDefault(); fullscreen.toggle(); return }
       if (e.key === 'n' || e.key === 'N') { e.preventDefault(); setDrawerOpen(open => !open); return }
@@ -436,8 +462,9 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const overviewButton = <ToolButton class="presenter-overview" icon="overview" label="All slides (O)" pressed={overviewOpen} onClick={toggleOverview} />
   const hotspotsButton = <ToolButton class="presenter-hotspots" icon="hotspots" label={hotspotsOn ? 'Hotspots on: 1–9 zoom in (H)' : 'Hotspots off (H)'} pressed={hotspotsOn} onClick={toggleHotspots} />
   const fullscreenButton = canFullscreen && <ToolButton class="presenter-fullscreen" icon={fullscreenIcon} label={fullscreenLabel} pressed={isFullscreen} onClick={() => fullscreen.toggle()} />
+  const helpButton = <ToolButton class="presenter-help" icon="guides" label="All keys (?)" onClick={() => setHelpOpen(open => !open)} />
   const separator = <span aria-hidden="true" style={{ width: '1px', alignSelf: 'stretch', margin: '6px 4px', background: '#2a2a2a' }} />
-  const settings = <Settings layout={layout} onLayout={chooseLayout} duringTalk={remoteLayout && <>{overviewButton}{hotspotsButton}{fullscreenButton}</>}
+  const settings = <Settings layout={layout} onLayout={chooseLayout} duringTalk={remoteLayout && <>{freezeButton}{overviewButton}{hotspotsButton}{fullscreenButton}</>}
     theme={theme} themeMeta={themeMeta} onThemes={() => setThemeModalOpen(true)} offered={offered} shown={shown} setPalette={setPalette} setAppearance={setAppearance}
     lang={lang} setLang={setLang} timer={timer} noteSize={noteSize} setNoteSize={setNoteSize} launchPage={launchPage} />
   const notesBox = <div class="notes-md" dir={notesDir} style={{ flex: 1, minHeight: 0, overflow: 'auto', margin: 0, padding: '12px 14px', lineHeight: 1.55, background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: '8px', fontSize: `${noteSize}px`, color: note ? '#c8c8c8' : '#3a3a3a' }}
@@ -482,10 +509,11 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     const big = { ...S.btn, height: '72px', fontSize: '18px', fontWeight: 600, borderRadius: '14px' }
     return (
       <div class="presenter presenter--remote" style={{ ...font, fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '10px', height: '100dvh', boxSizing: 'border-box', padding: 'max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left))', background: '#111', overflow: 'hidden', touchAction: 'manipulation' }}>
-        <div class="presenter-remote-bar" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+        <style>{SLIM_REMOTE_BAR}</style>
+        <div class="presenter-remote-bar" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ color: '#888', whiteSpace: 'nowrap' }} />
           <span style={{ flex: 1 }} />
-          {finishButton}{timerChip}{joinButton}{blankButton}{freezeButton}{connections}{settings}
+          {finishButton}{timerChip}{joinButton}{blankButton}{connections}{settings}
         </div>
         <div style={{ position: 'relative', flexShrink: 0, width: '100%', maxHeight: '32dvh', aspectRatio: '16/9', margin: '0 auto', borderRadius: '8px', overflow: 'hidden', border: '1px solid #2a2a2a', background: '#000' }}>
           <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ width: '100%', height: '100%', border: '0', display: 'block' }} />
@@ -546,7 +574,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}{slideBar(false)}</>}
         {separator}
         <ToolButton class="presenter-notes" icon="file-text" label="Notes and the next slide (N)" pressed={drawerOpen} onClick={() => setDrawerOpen(open => !open)} />
-        {fullscreenButton}{audienceButton}{connections}{settings}
+        {fullscreenButton}{audienceButton}{helpButton}{connections}{settings}
       </div>
       {aside}
       {extras}
@@ -563,7 +591,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
           {separator}{drawButton}{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}{fullscreenButton}
           {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}<span style={{ ...S.label, marginBottom: 0, marginInlineEnd: '4px' }}>This slide</span>{slideBar(false)}</>}
           <span style={{ flex: 1 }} />
-          <ToolButton class="presenter-help" icon="guides" label="All keys (?)" onClick={() => setHelpOpen(open => !open)} />
+          {helpButton}
         </div>
       </div>
       {aside}

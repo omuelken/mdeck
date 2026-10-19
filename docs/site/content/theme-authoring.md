@@ -64,7 +64,7 @@ title = "Blue notebook"
 "--on-accent" = "#0f1a2b"
 ```
 
-The folder must be called `notebook` to match `id`. Use it with `palette: notebook` in your deck, and `appearance: dark` for the dark version. Colour names start with two dashes, so they are written in quotation marks. Dark slides get dark code colours and an inverted logo; check the result with the actual logo, since automatic inversion does not suit every image.
+The folder must be called `notebook` to match `id`. Use it with `palette: notebook` in your deck, and `appearance: dark` for the dark version. Colour names start with two dashes, so they are written in quotation marks. Dark slides get dark code colours and an inverted logo; check the result with the actual logo, since automatic inversion does not suit every image. To show the logo as it is, add `"--logo-filter" = "none"` to the `[dark]` block.
 
 `mdeck check` warns when two colours are too close to read, such as a pale accent on white.
 

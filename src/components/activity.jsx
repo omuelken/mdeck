@@ -65,16 +65,16 @@ export function useControls(room, live, { results = true, solution = null } = {}
   }
   // The answers that count: once closed, those that came before.
   const counted = messages => controls.closed ? messages.filter(message => message.n <= controls.upTo) : messages
-  // They are kept beside the deck while `mdeck run` runs. A room that
-  // starts empty (a new server) leaves what was kept alone; one that was
-  // reset takes it out.
-  const answered = useRef(false)
+  // They are kept beside the deck while `mdeck run` runs. Answers of none
+  // are kept only after Reset: a room that starts empty, from a server that
+  // restarted while this slide was shown, leaves what was kept alone.
+  const resets = useRef(live.resets)
   const counting = counted(live.messages)
   useEffect(() => {
-    if (!live.canReset || !live.connected || live.offline || (!counting.length && !answered.current)) return
-    answered.current = true
+    if (!live.canReset || !live.connected || live.offline || (!counting.length && live.resets === resets.current)) return
+    resets.current = live.resets
     keepAnswers(room, counting, { closed: controls.closed })
-  }, [room, counting.length, counting.at(-1)?.n, controls.closed, live.canReset, live.connected])
+  }, [room, counting.length, counting.at(-1)?.n, controls.closed, live.canReset, live.connected, live.resets])
   const close = messages => change(controls.closed ? { closed: false } : { closed: true, upTo: Math.max(0, ...messages.map(message => message.n)) })
   // Reset starts over: open, the answer and results as at the start.
   const reset = () => { change({ closed: false, upTo: 0, revealed: false, results }); return live.reset() }
@@ -105,7 +105,7 @@ export function ActivityControls({ controls, messages, offline = false, results 
 export function ActivityFooter({ count, connected, canReset, reset, offline, present = null, perPhone = false, closed = false, children }) {
   // Without a server this is a record of the talk: no count, dot or buttons.
   if (offline && !count) return <p class="poll-total poll-static">{t('poll.static')}</p>
-  // Followers count as phones too; with more answers than phones, some left.
+  // With more answers than phones, some left.
   const of = perPhone && !offline && present > 0 && present >= count ? present : null
   return <p class="poll-total">
     {/* The answers kept in the talk, without a server: no live dot. */}

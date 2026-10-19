@@ -2,292 +2,361 @@
 
 ## Unreleased
 
-- **Z** (freeze) in the presenter view, or its snowflake button, freezes the slide the audience sees: the audience window and the phones keep it while you go on.
 - A paired iPad stays paired when `mdeck run` or the laptop restarts: reload its presenter view. The laptop keeps the pairing in `~/.mdeck/paired/` (one file per deck, readable only by you) and forgets an iPad unused for 30 days; **Unpair** still ends every pairing.
+
+## 3.15.0 — 2026-10-17
+
+- A deck can bring a second logo for dark slides: `logo-dark: ./img/logo-white.png` in `meta` is shown as it is on dark slides, instead of the inverted `logo`.
+- `mdeck migrate` is gone: it updated decks from before 2.0. A deck or extension that still uses the old names is told what to change.
+- `mdeck snapshot` takes `--no-drawings` and `--no-results`, as build, send and pdf do.
+- The **?** button that lists the keys is in the presenter view's iPad layout too.
+- Fixed: with a phone clicker paired, the presenter view kept warning "Phones follow another screen" although both showed the same slide; it warns only when the phones show something else.
+- Fixed: on a phone, the clicker's top bar overlapped the timer and pushed the settings menu off the screen; freeze (Z) sits in the menu's "During the talk" row there.
+- Fixed: a presenter view button that was switched on and off again (draw, black screen, notes, …) kept a light frame; its grey border comes back now.
+- Fixed: after the laptop changed networks, join codes and QR codes on the slides and in the presenter view's connections panel kept the old address until a reload; they are read again when the window comes back.
+- The editor's **Present** button opens the presenter view of the `mdeck run` that started the editor, with its audience window and phones, and says so.
+- The editing guide lists ⌘Y for redo and ← → and PgUp/PgDn for moving between slides.
+- Third- and fourth-level headings and a rule (`***`) are set in the theme's type in every theme; before, neue, minimal, academic and glass showed them in the browser's own sizes.
+- Fixed: code in a split slide's columns was only smaller in the plain theme; it is in every theme now, in both columns, and a code block's output takes the theme's code size.
+- With `show.organization: all` the logo appears on every slide, in the header's line, as the name does; by default it stays on the title slide.
+- The appearance pages say that a logo is inverted on dark slides and how a palette keeps it as it is (`"--logo-filter" = "none"` in `[dark]`).
+- Fixed: closing the editor tab right after typing could lose the last change; the final save now outlives the page.
+- Fixed: a change saved in a second editor tab, or with **Use in my deck** on the design page, was not shown in the first tab, and **Keep my edits** there could overwrite it.
+- Fixed: when a save failed, the editor retried every 400 ms with the message flickering; it waits longer each time, keeps the message on show and has **Try again**.
+- Fixed: moving or deleting the slide file reloaded the editor into "Could not load the deck"; it keeps your text and saves again once the file is back, and the error page has **Try again**.
+- Deck width and height, and a slide's chapter number, are written when you finish typing them, not after each digit; the design page no longer reloads its preview while the theme or palette you are editing is saved.
+- The design page uses the editor's status wording; Escape closes its New theme/palette dialog; a theme or palette that does not validate is answered with 400, not 500.
+- Fixed: in a lecture hall behind one network address, most answers after the first thirty in ten seconds were refused; phones are limited one by one now.
+- Fixed: **Reset** on a poll did not reach the phones, which kept showing their old choice; a phone also forgets its choice after twelve hours, so the same talk given later starts fresh.
+- Fixed: a poll server that restarted while a poll was on screen took that poll's answers out of `my-talk.results.json`, and a closed poll could take new answers after the restart.
+- Fixed: `mdeck run --server` gave up for good when the web server in front of the room server answered 502 while it restarted; it tries again now, and notices a connection that died while the laptop slept.
+- Fixed: a bad answer from the presenter's computer could stop `mdeck server`; a full room server answers a new stream with a proper error and frees rooms nobody has spoken in.
+- Phones' random ids no longer appear on the slides' answer stream; "12 of 31 answered" counts the phones that can answer, not laptops following the slides.
+- The phones' answer page reads right to left for a deck in Arabic, Farsi or Hebrew, and keeps text typed into a question or word cloud while the poll is locked or the slide changes.
+- Fixed: switching the language (L) in the middle of a slide hid the points already shown.
+- The presenter view's keys (T, H, L, N, F, Escape) work after a click on the slide too; Home goes to the first slide and End to the last.
+- Fixed: the time left on a slide without its own time could read a second more than the time it had.
+- Fixed: after a reload of the presenter view, the audience window ignored its slide changes or went back to the first slide.
+- Fixed: the hotspot numbers sat in the wrong place after the window was resized with the overview open.
+- A key or a click in a frozen audience window lets it follow again, where the presenter went on to, should the presenter view have closed.
+- **I** (hide drawings) reaches every screen, as B does; drawing starts with the pen on a computer, and with the laser pointer on a touch screen only; the highlighter brightens the text under it on dark slides instead of muddying it.
+- The deck window's control-bar tooltips use the deck's language.
+- Fixed: undoing the first drawing on a slide, the one that gave it its `id:`, was not saved; the stroke came back after a reload and in PDFs, and redo failed.
+- Fixed: a drawing the server could not save disappeared without a word; a short notice over the slide says so now, and with `mdeck run` a batch refused part-way no longer leaves the earlier strokes unwritten.
+- A deck in several languages shows its drawings in every language, and strokes drawn in another language are saved with the slide at the same place; the drawings file stays with the file `mdeck run` was started with.
+- Fixed: Ctrl+C right after a stroke or an answer could lose it; `mdeck run` writes drawings and answers before it stops, also with `--server`.
+- Fixed: on an iPad that lost its Wi-Fi, saving drawings retried without pause; it waits longer after each failed attempt now. `mdeck run` refuses malformed or oversized drawing changes with 400 instead of failing.
+- Fixed: `mdeck check --render` reported a chart's labels as cut off at the edge on every bar chart.
+- Fixed: a deck file starting with a byte order mark lost its settings, which became the first slide's text.
+- Fixed: citation locators written out (`page 12`, `chapter 3`, `sections 2-3`) were read as `p. age 12`.
+- Pictures in `poster`, `srcset` and `url(…)` in a `style`, and links to files beside the deck, are checked, copied by builds and embedded by `--single-file`; `mdeck check` warns when an included file's picture lies outside the deck's folder, names the line where a missing picture is written, and warns of `:::notes` inside another block.
+- `mdeck build -o dist/` writes `dist/index.html`; `mdeck check <folder>`, a missing deck named to `list` or `starter`, an unknown command and an unknown layout say what is wrong (the last lists the layouts); `--port` on a busy port says so instead of a stack trace.
+- `mdeck new` no longer sets a logo that does not exist, and Ctrl+D ends it cleanly; `mdeck --help` lists `migrate`; `mdeck results` refuses `--summary --json` and a `.csv` file with `--json`.
+- A deck's `time:` may be `1h`, `1h30` or `1h30m`; the presenter view tells a poll server apart by its patch version too.
+- Fixed: on a right-to-left slide, chart labels anchored at an axis landed on the wrong side.
+- Fixed: on a phone, the reader's top bar ran off the screen; the buttons show their icons alone.
+- A line chart with dates across puts its ticks on years, quarters, months or days, as a scatter chart does; a row without a number or date across is left out and the line joins.
+- Fixed: a column with no values could become the row labels; it is left out, and `mdeck check` names it.
+- A bar chart's `max` ends the axis exactly there; a taller bar is cut off at the top, and `mdeck check` warns; a chart with many bars labels every second or third, and `mdeck check` warns past 20 bars.
+- Fixed: `mdeck check` reported `<data>` problems at the wrong line in a deck that also used HTML's `<data value>`.
+- `live` on a code block that is not JavaScript or Python shows no Run button; `<videoplayer url>` takes YouTube Shorts, embed and live links.
+- Fixed: a full-bleed-image slide without a picture had a white title on white in dark mode; its text is light on a dark ground in every theme.
+- Fixed: in the plain theme, a list item with bold words in its middle was set as a title with a description; only an item that begins in bold is.
+- Fixed: on a neue focus slide, code colours, the third accent and the logo did not follow the inverted colours.
+- Fixed: a paragraph of drawings (inline SVG) did not shrink to its room and ran over what followed.
+- Fixed: the reader did not fit code blocks to their place, the glass theme's light kept drifting in Read mode, and polls showed their live dot and controls there.
+- `stat` writes its figures as the deck's language does; the image-text layout's placeholder is in the deck's language.
+- Bars always start at 0: a bar chart's `min` above 0 is ignored, and `mdeck check` warns of it (to start an axis higher, use `show="line"`).
+- A line chart's `min` and `max` start and end its axis exactly there; lines beyond are cut off at the edge.
+- Line and scatter charts with dates across put their ticks on years, quarters, months or days, labelled in the deck's language.
+- A line or scatter row without a number or date in `x` is left out, and `mdeck check` names it; before, it was drawn at the edge.
+- HTML's own `<data value="…">` is left as HTML, not read as a dataview.
+- `<data src="…"></data>`, with nothing between the tags, shows the file; `show=""` shows the table.
+- A `<data>` tag's `class`, `style`, `id` and `data-hotspot` go to its figure.
+- A `y` column with no values says so, instead of naming an empty cell.
+- A `<data>` table without `y` shows every column, text columns too; before, it left out those that were neither the row labels nor numbers.
+- In `<data>`, a comma in a number is always its decimal comma, and numbers have no thousands separators: `7,1` and `7.1` are the same in every file and deck, whatever its language or separator.
+- **Z** (freeze) in the presenter view, or its snowflake button, freezes the slide the audience sees: the audience window and the phones keep it while you go on.
 
 ## 3.14.0 — 2026-10-14
 
-- On an iPad without full screen, the presenter view fits the part of the window Safari shows: its bar no longer slips under Safari's, and no white strip shows below the drawing toolbar.
-- Fixed: two language switches in quick succession (L, L) could leave a slide with a component on it, such as a code block, in the language before, and the windows showing it stopped updating their slides. The components on a slide are now mounted as it is drawn.
-- An iPad that is no longer paired, after a restart of `mdeck run` or **Unpair**, says so over the slide and in its connections panel. Before, it went on showing what the laptop did while its own slide changes, drawings and polls stayed on it, without a word.
-- Fixed: after a restart of `mdeck run`, a presenter view opened or reloaded took the audience window on the projector back to the first slide, while it showed the slide the talk was on itself. A window that just opened no longer moves another, and the windows still open say where they are when they connect again, so a presenter view opened then takes up the projector's slide.
-- Fixed (since 3.13.0): opening the presenter view on an iPad, or reloading it, took the laptop back to the first slide when nobody had changed slides for 15 s. A screen that went quiet holds the phones no longer, but the stage room hears of a slide once and not again, so there a presenter who stays on a slide kept it from no one; it keeps it now.
-- Fixed: after the laptop moved to another network while `mdeck run --network` ran, the code that pairs an iPad, and the join link for phones, still led to the address it had when it started, which no one reached. The addresses are now read each time a code is shown; the pairing panel says which address a code leads to, and when the laptop is in no network another device can reach (only a link-local or an IPv6-only network's address), it says so instead of showing a code.
-- A bin beside a selection of strokes deletes it: off the top right corner of its box, or beside the middle of a straight line, away from its handles. It keeps its size when the slide is zoomed, stays inside the window, and only shows on the screen that draws. On an iPad the folded toolbar no longer has to be opened to delete a stroke tapped with a finger.
+- On an iPad without full screen, the presenter view fits the part of the window Safari shows.
+- Fixed: two quick language switches (L, L) could leave a slide's components in the earlier language and stop the windows updating.
+- An iPad that is no longer paired, after a restart of `mdeck run` or **Unpair**, says so over the slide and in its connections panel.
+- Fixed: after a restart of `mdeck run`, a newly opened presenter view sent the projector back to the first slide.
+- Fixed (since 3.13.0): opening or reloading the presenter view on an iPad sent the laptop back to the first slide after 15 s on one slide.
+- Fixed: after the laptop changed networks during `mdeck run --network`, pairing codes and join links led to its old address; the pairing panel names the address now.
+- A bin beside a selection of strokes deletes it; on an iPad a stroke tapped with a finger can be deleted without opening the folded toolbar.
 - On an iPad the presenter view starts with the drawing toolbar open, in its strip below the slide.
-- On an iPad, the presenter view's bar and the open drawing toolbar no longer cover the slide: it sits below the bar and above the toolbar, as large as fits, and takes the toolbar's strip back while the toolbar is folded. Both bars, and the timer in the bar, are a little smaller there. The audience window and the laptop's presenter view still show the whole slide as before.
-- `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`, and the guides say `npm install -g mdeck` where they did.
-- The launch page drops answers and drawings at once, without asking and without a backup.
-- Fixed: the join code shown with **J** on a paired iPad did not show in the audience window on the laptop, nor on phones following the talk. Screens in another browser hear of the presenter's position through the server's stage room, which carried the black screen but not the join code; it now carries both.
-- Fixed: two things circled with the laser one after the other were joined by a line, on the screen they were drawn on, from what was left of the first trail to the second, until the first had gone. A lifted trail retracts from its start; when the second's first points went while the first still showed, the second no longer said where it began. Other screens were not affected.
+- On an iPad, the presenter view's bar and the open drawing toolbar no longer cover the slide.
+- `mdeck --help` lists the commands, one line each; `mdeck <command> --help` shows a command's options. The help no longer suggests `npm link`.
+- The launch page asks before dropping answers or drawings; dropped answers are gone for good, while the drawings file as it was at the start of the session stays in `.mdeck-backups/`.
+- Fixed: the join code shown with **J** on a paired iPad did not show in the laptop's audience window or on phones following the talk.
+- Fixed: two things circled with the laser one after the other were briefly joined by a line on the screen they were drawn on.
 
 ## 3.13.0 — 2026-10-13
 
-- The slide-writing skill says what to do when nothing fits, in order: another layout or block, a palette or theme, a deck-local layout, a component; never scripts or styles in the slides. The layout manifest and `mdeck/layout` are marked experimental; themes, palettes and `mdeck/component` are stable.
-- Data on slides: `<data>` holds a table of numbers as CSV, between its tags or in a file beside the deck (`src="yields.csv"`), and shows it as a table, or with `show="…"` as a `bar` chart, a `line` chart, a `scatter` plot, key figures (`stat`), a `heatmap` or a `dumbbell` chart. Commas, semicolons or tabs separate the cells; decimal commas, thousands separators, percentages and dates are understood, and numbers are written as the deck's language writes them. Every view reads `title`, `x`, `y`, `rows`, `sort`, `highlight`, `steps` (`rows` or `series`), `unit`, `height` and `caption`; the others are its own options. Charts take the palette's colours (its three accents, then mixes of them), work light and dark, are hotspots, and carry a table of their data for screen readers; tables are drawn as the theme draws tables. A data file travels in builds, files sent and PDFs, and redraws its slides under `mdeck run` when it changes. When the data cannot be shown, the slide says why in its place, and `mdeck check` says so at the tag's line: a missing file, columns the data does not have, cells that are not numbers, options a view does not take, more value columns than the palette has accents.
-- Ways to show data are extensions of a new kind, `dataview`: built in, installed, or a folder beside the deck with an `extension.toml` and a `view.jsx` that imports its helpers from `mdeck/dataview` (scales, ticks, the palette's colours, numbers in the deck's language, steps). `mdeck list dataviews` lists them with their options. The guides have a page on showing data and one on writing a dataview; the tour has a slide on it, and the slide-writing skill puts numbers in `<data>` tags.
-- The launch page can drop kept answers, one question at a time or all at once. A new **Drawings** section lists the slides drawn on and how many strokes each has, including slides the deck no longer has, and drops them one slide at a time or all at once, keeping a copy in `.mdeck-backups/`. Open windows clear right away. The header lists the deck's languages and marks the one running.
-- Fixed: a new presenter view said "Phones follow another screen" whenever an earlier talk had used the same server, until you changed slides. A screen that has stopped repeating its slide (for 15 s) no longer holds the phones. Update your poll server for this one.
-- The default reactions leave out 🐢, which read as both "too slow" and "too fast". A deck can still list it: `reactions: [👍, 🤔, 🐢]`.
+- The slide-writing skill says what to try when nothing fits, and never to put scripts or styles in slides. The layout manifest and `mdeck/layout` are marked experimental; themes, palettes and `mdeck/component` are stable.
+- Data on slides: `<data>` shows a table of numbers (CSV in the tag or a file beside the deck) as a table, chart, key figures or heatmap in the palette's colours.
+- Ways to show data are a new kind of extension, `dataview`, with helpers from `mdeck/dataview`; `mdeck list dataviews` lists them.
+- The launch page can drop kept answers and, in a new **Drawings** section, drawings per slide or all at once, with a backup in `.mdeck-backups/`; its header lists the deck's languages.
+- Fixed: a new presenter view said "Phones follow another screen" after an earlier talk on the same server. Update your poll server for this one.
+- The default reactions leave out 🐢; a deck can still list it in `reactions:`.
 
 ## 3.12.1 — 2026-10-12
 
-- Fixed: on an iPhone the reaction buttons sat below the visible part of the phones' page, behind Safari's bar. The page now fits the visible height. Update your poll server for this one.
+- Fixed: on an iPhone the reaction buttons sat behind Safari's bar. Update your poll server for this one.
 - `mdeck --version` (or `-v`) shows which mdeck this is.
-- Fixed: with polls on your own server, the presenter view counted no phones: they join that server, while the presenter view's room stays on your computer. `mdeck run` now asks the server how many phones joined.
-- Shorter status lines in the presenter view: "Poll server needs an update to 3.12.1.", "Phones follow another screen. Change slide to take them back."
+- Fixed: with polls on your own server, the presenter view counted no phones.
+- Shorter status lines in the presenter view.
 
 ## 3.12.0 — 2026-10-12
 
-- In a word cloud each phone counts with one word: a new one replaces its earlier word, and the phone says which it sent. Before, one phone could fill the cloud.
-- The poll server says which mdeck it runs (`/info`), and the presenter view warns in amber when your server runs an older mdeck than your computer, whose phones may then miss what is new, such as reactions.
-- With `MDECK_SERVER` and `MDECK_SERVER_KEY` set in your shell, `mdeck run` uses your server without `--server` whenever it answers, and presents from this computer when it does not. `--no-server` leaves it out.
-- The presenter view, redesigned: one toolbar of icons under the slide (each says what it does and its key; **?** lists all keys), with **This slide** for what can be done on the slide shown: a poll's lock, results and right answer, a video's play, the hotspots' numbers. Beside the slide: the slide number, the timer, the next slide small, and the notes in most of the room. Who is connected sits behind the icons that show it, with the audience window and the codes that pair an iPad or a phone; theme, palette, language, layout, rehearsal and the size of the notes are in the settings. The iPad's bar and the phone clicker use the same buttons.
-- A phone becomes a clicker: in the presenter view's connections, **Phone clicker** shows its code. The phone gets the slide small, the time, the notes in large print, big Previous and Next buttons and the slide's own controls, and nothing to draw with. Every layout, the clicker too, switches to the others in the settings. Pairing moved from the launch page into the presenter view.
-- Questions no longer show a QR code of their own: **J**, or the join button in the presenter view, shows the join code large over the slide on every screen, also in a deck window. `qr` on a question still puts the code beside it, and `qr="false"` is no longer needed.
-- **J** shows the join code large over the slide on every screen, so a deck needs no extra join slide. The join link, the session code and whether phones can reach the poll server moved from the launch page into the presenter view's connections.
-- Components can offer their own buttons in the toolbar and on the clicker with `data-presenter-control` (see the authoring reference).
-- The laser has a laser-pointer icon instead of a crosshair, and the presenter view shows mdeck's icon in its tab.
-- **B** makes the audience's screen black: the audience window, a paired iPad's audience window and phones following the talk go black, while the presenter view keeps the slide under a veil and says so. **B** again, the next key or a click on the black screen shows the slide again without moving on. A presentation clicker's blank button, which sends a full stop, works the same. The presenter view has a button for it.
-- **O** shows every slide in a grid, to find one: arrows move between the slides, Enter or a click goes there, **O** or Escape go back. The slides show all their points. In the presenter view the grid opens in the presenter's own slide, so the audience keeps its slide until another is picked; the deck window's control bar has a button for it too.
-- Reactions: with `reactions: true` in the deck's settings, the phones' answer page has a row of buttons (👍 👏 ❤️ 😮 🤔 🐢, or a list of the deck's own, up to eight emoji or short words). A tap floats up in the corner of the presenter view, never on the projector, and a tally keeps the last minute's. The server passes reactions on without keeping them, with a limit of their own, so a room full of reactions behind one network address still gets its answers in. `mdeck check` reports a `reactions` setting it cannot use.
-- The answers kept in a talk can be saved from the launch page: **Answers from the talk** lists each question with how it came out, and saves every answer (CSV), a summary with one row per option, scale step, number or word and how many chose it (CSV), or everything (JSON). `mdeck results` now names each answer's slide, kind and question (`slide,room,kind,question,phone,at,answer`), and takes `--summary` and `--json`.
+- In a word cloud each phone counts with one word: a new word replaces its earlier one.
+- The poll server reports its version (`/info`), and the presenter view warns when your server runs an older mdeck than your computer.
+- With `MDECK_SERVER` and `MDECK_SERVER_KEY` set, `mdeck run` uses your server without `--server` when it answers; `--no-server` leaves it out.
+- The presenter view is redesigned: one toolbar of icons under the slide, **This slide** for the slide's own controls, and theme, palette, language and layout in the settings.
+- A phone can be a clicker (**Phone clicker** in the presenter view's connections). Pairing moved from the launch page into the presenter view.
+- Questions no longer show their own QR code; **J** shows the join code instead. `qr` still adds one, and `qr="false"` is no longer needed.
+- **J** shows the join code large over the slide on every screen. The join link and session code moved from the launch page into the presenter view's connections.
+- Components can add buttons to the toolbar and the clicker with `data-presenter-control`.
+- The laser has a laser-pointer icon, and the presenter view shows mdeck's icon in its tab.
+- **B** blacks out the audience's screens, phones included; **B** again, the next key or a click brings the slide back. A clicker's blank button works too.
+- **O** shows every slide in a grid to jump to one; in the presenter view the audience keeps its slide until one is picked.
+- Reactions: with `reactions: true`, phones get a row of emoji buttons whose taps show in the presenter view, never on the projector.
+- The launch page saves a talk's answers as CSV, summary CSV or JSON. `mdeck results` has new columns (`slide,room,kind,question,phone,at,answer`) and takes `--summary` and `--json`.
 
 - `<bibliography keys="smith2020 doe2019" />` lists only these works.
-- A deck can be made of other decks. A slide with nothing but `:::include ./lectures/02-graphs.md` stands for all the slides of that file, and `slides=3-7` keeps some of them. The included file stays a deck of its own, presented alone with its own settings. Included, its slides bring what they need: its references (`bibliography`, `nocite`, `csl` where the deck has none), its components, its own callout names (its `<bibliography />` lists the works it cites, as when it is shown alone), and its `hotspots` and `time`, which become its slides' own, shared out as when it is shown alone; the look stays the including deck's. Its pictures and drawings are found from its own folder, a deck in another language takes the file's twin in that language, and includes may nest. `mdeck run` shows a change to an included file straight away, rehearsal times are saved into the file a slide is written in, drawings stay with included slides however the deck around them changes, and `mdeck check` checks every file and names the file and line of a problem. The editor shows an include as a card naming the file; its slides are edited in that file.
-- The number keys are for hotspots only. Without hotspots on the slide shown, they no longer jump to slides 1–10; they do nothing. To go to a slide, type its number into the presenter view's slide number.
-- **?** shows the keys that work at this moment, over the slide in a see-through layer, in the presenter view and in a deck window: the number keys only while the slide shown has hotspots, the drawing keys while drawing, **L** only for a talk in several languages, **N** only in the slide-only layout, **F** only where the browser can go full screen. The list follows along while it is open (press **H** and it changes); **?** again, Escape or a click closes it. In the presenter view, **?** works while the slide has the keyboard too.
+- A deck can include other decks: `:::include ./lectures/02-graphs.md` stands for that file's slides (`slides=3-7` keeps some), with their references, components, times and drawings.
+- The number keys are for hotspots only and no longer jump to slides 1–10; type a number into the presenter view's slide number instead.
+- **?** shows the keys that work at that moment, over the slide, in the presenter view and a deck window.
 
 ## 3.11.0 — 2026-10-12
 
-- Time your talk. `time: 2m` in a slide's settings is how long to spend on it, `time: 20m` in the deck's the length of the talk; slides without a time share what is left. The presenter view counts down the time left on the slide and shows whether you are ahead of or behind the plan. `mdeck rehearse` (or **Rehearse** in the presenter view and on the launch page) times each slide as you go through the talk; at the end a table offers the times rounded to 15 seconds, to change in 15-second steps, and **Save to deck** writes them into the slides' settings without reloading the open windows. The editor has a Time field for each slide and a Length for the deck, and `mdeck check` reports a time it cannot read.
+- Time your talk with `time:` per slide and for the deck; the presenter view counts down. `mdeck rehearse` (or **Rehearse**) times each slide and saves the times into the deck.
 - Under `mdeck run`, the presenter view has a button back to the launch page.
-- The presenter view's timer reads the clock instead of counting seconds, so it no longer falls behind, and carries on through a reload. **T** starts and pauses it.
-- mdeck's own words come in Arabic too: with `lang: ar`, or a file named `talk.ar.md`, the reader view, the control bar, polls, the phones' answer page and callout titles are Arabic.
-- Fixed on slides set from right to left: a palette-coloured drawing (an SVG mdeck places in the page) had its text run out of its box, and a citation in Latin script, such as (Roediger & Karpicke, 2006), was jumbled where it met Arabic text. Drawings now keep their own direction, and citations and references read in theirs.
-- The tour comes in English, German and Arabic (`examples/showcase/slides.en.md`, `.de.md`, `.ar.md`), each with its drawings in place; `mdeck run slides.en.md` switches between them with **L**. It now also shows citations and a word cloud for the room; the poll and citations examples it replaces are gone.
-- Fixed: on a slide with several areas (`:::slot`), a code block in one area turned the next area into code: its citations and footnotes showed as written, while those inside the code block were filled in. Citations and footnotes now leave code blocks and `inline code` alone, and the areas after one are prose again.
-- Deck components can share state across slides and windows: `import { useShared, useView } from 'mdeck/component'`. `useShared('count', 0)` works like `useState`, but every slide, the presenter's slide, the audience window, other windows in the browser and a paired iPad see the same value, and a window opened later gets it. `useView()` says which window a component is in. `mdeck/component` is the first part of mdeck that components may rely on; the authoring reference says what it promises and what stays mdeck's own.
-- A drawing that uses the palette (an SVG with `var(--…)`) builds up in the order its parts are numbered: `data-step="1"`, `data-step="2"` … reveal one press at a time, parts with the same number together, whatever their order in the file, which is also the order they are drawn in. Bare `data-step` parts still appear in document order. With hotspots on, `data-hotspot` on a part makes it a hotspot once it is shown.
-- Fixed: a drawing on two slides lost its arrowheads, gradients and `<use>` copies on the second, because `url(#…)` found the copy on the hidden first slide. Each copy in the page now gets ids of its own.
-- `mdeck check` looks at the deck's SVG drawings: palette names without a fallback, fixed colours that stay the same in every palette and in dark mode, style rules that reach the rest of the page, numbered and bare steps in one drawing, and `data-step` or `data-hotspot` in a drawing that uses no palette colour and so is shown as a picture.
-- The slide-writing skill draws diagrams as SVG in the palette's colours, builds them up with numbered steps and checks them in light and dark.
-- A deck shared in part, with `--slide` or `--no-polls`, keeps the time its slides were planned to take as its `time:`, so the presenter view's countdown fits the part. The note that slides with polls were left out now appears only when one of the chosen slides had a poll.
-- Fixed: a YouTube video in `<videoplayer>` showed "This video is unavailable" on a device that opened the deck through a server, such as a paired iPad. Such pages send no referrer, which YouTube requires of embedded players; the player now sends the deck's origin (never its path).
-- Fixed: in a deck with polls, every slide change in the presenter view read the whole deck several times over to find out whether it has any. On an iPad presenting a large deck, slides changed noticeably slower than in the audience window. The answer is now kept until the deck changes.
-- `--slide 3,5-7` for `mdeck send`, `mdeck build` and `mdeck pdf` keeps only these slides, for example the part of a deck shown in one lecture, with their drawings. The numbers count the slides as written, like `mdeck snapshot --slide` and `mdeck check --render`. A `<style>` written on a slide that is left out moves to the first slide kept, since it styles the whole deck; the same now holds for slides left out with `--no-polls`.
-- Fixed: a stroke or laser trail drawn on a paired iPad could stop short in the audience window. Two batches of ink could be on their way at once and arrive in the other order, and a batch lost to the network was gone; the window then dropped that piece and everything after it. Batches now go one after another, a lost one is sent again, and a piece that arrives early waits for the one before it. While the network or the server is gone, the iPad tries again less and less often, up to every five seconds, and keeps only the laser's and the zoom's last position.
-- Ink and the laser drawn on a paired iPad reach the audience window sooner: about 60 ms after the pen instead of 100 to 150 ms.
-- The laser's trail stays on the screen as long as the pen is down, also in the audience window and on paired devices, so a circle or an underline can be shown while you talk about it. Lifted, it retracts as before.
-- The presenter view's slide number is a field: type a number and press Enter (Go on an iPad) to jump to that slide, in the iPad's slide-only layout beside the arrows and in the speaker layout. The audience window and paired devices follow.
+- The presenter view's timer reads the clock, so it no longer falls behind and survives a reload. **T** starts and pauses it.
+- mdeck's own words come in Arabic too (`lang: ar` or `talk.ar.md`).
+- Fixed on right-to-left slides: text in palette-coloured drawings ran out of its box, and Latin-script citations were jumbled next to Arabic text.
+- The tour comes in English, German and Arabic (`examples/showcase/slides.en.md`, `.de.md`, `.ar.md`); the poll and citations examples are gone.
+- Fixed: on a slide with several `:::slot` areas, a code block in one turned the following areas into code.
+- Deck components can share state across slides and windows with `useShared` and `useView` from `mdeck/component`, the first stable API for components.
+- Palette-coloured SVG drawings build up by numbered steps (`data-step="1"`, `"2"` …); `data-hotspot` makes a part a hotspot.
+- Fixed: a drawing on two slides lost its arrowheads, gradients and `<use>` copies on the second.
+- `mdeck check` checks the deck's SVG drawings for missing fallbacks, fixed colours, leaking styles and mixed steps.
+- The slide-writing skill draws diagrams as SVG in the palette's colours, built up step by step.
+- A deck shared in part (`--slide`, `--no-polls`) keeps its slides' planned time as its `time:`.
+- Fixed: a YouTube video in `<videoplayer>` was "unavailable" on a device that opened the deck through a server, such as a paired iPad.
+- Fixed: in a deck with polls, slide changes in the presenter view were slow on an iPad with a large deck.
+- `--slide 3,5-7` for `mdeck send`, `mdeck build` and `mdeck pdf` keeps only these slides. A `<style>` on a left-out slide moves to the first slide kept.
+- Fixed: a stroke or laser trail drawn on a paired iPad could stop short in the audience window.
+- Ink and the laser from a paired iPad reach the audience window sooner: about 60 ms instead of 100 to 150 ms.
+- The laser's trail stays on every screen while the pen is down, and retracts when lifted.
+- The presenter view's slide number is a field: type a number and press Enter to jump there.
 
 ## 3.10.1 — 2026-10-11
 
-- Theme settings can be text: `type = "text"` for words a theme shows, such as Terminal's prompt. Authors write them as they should appear (`prompt: "~/demo $ "`), spaces included, and mdeck quotes them for the stylesheet; the editor shows a text box with the theme's own words. Before, such words could only be fixed in the theme.
+- Theme settings can be text (`type = "text"`), such as Terminal's prompt; mdeck quotes them for the stylesheet.
 
 ## 3.10.0 — 2026-10-11
 
-- Glass has a `motion` setting: `motion: 0` holds its light still, for recordings and calm rooms. The guide for theme authors names the settings themes share: `motion` for what moves while presenting and `texture` for grain, paper and scanlines.
+- Glass has a `motion` setting: `motion: 0` holds its light still. The theme authors' guide names the shared settings `motion` and `texture`.
 
 ## 3.9.0 — 2026-10-11
 
-- Theme parameters say what kind of value they take: `type = "size"` (pixels, with `min`, `max` and `step`), `"number"`, `"switch"` (1 or 0), `"choice"` (one of `choices`) or `"font"`. The deck settings show a slider, a box to tick or a list instead of a text box; a deck value that does not fit is left out, so the theme's own value stays, and `mdeck check` says why; a value outside the range is used, with a warning. `mdeck list themes` shows each theme's settings and what they take, and the design page lets a theme's author set the kind. `mdeck themes build` writes each theme's settings into the gallery's `looks.json`. A parameter without a type takes any text, as before. The built-in themes give every parameter a type and a description with its default and range. A theme that uses `type` needs this version of mdeck.
+- Theme parameters can declare a `type` (`size`, `number`, `switch`, `choice`, `font`), shown as fitting controls and checked by `mdeck check`. A theme that uses `type` needs this version of mdeck.
 
 ## 3.8.0 — 2026-10-11
 
-- Hotspots: with `hotspots: auto` in the deck's settings, the presenter view puts a numbered key on each picture, code block, table, formula, video, callout, column and poll of the slide, and **1**–**9** zoom smoothly until that part fills the screen, keeping the slide around a part of another shape in view. The audience window, a paired iPad and phones zoom along; only the presenter view shows the keys, which can also be tapped. The same number, **0**, **Escape**, a tap on the slide or the next point or slide show the whole slide again. `hotspots: marked` keys only parts marked `data-hotspot`; a slide can set its own (`hotspots: false`), and **H** or the presenter view's new button turns hotspots on or off during the talk. Without hotspots, the default, **1**–**9** still go to slides 1–9. The editor has a **Hotspots** choice in the deck's settings and in each slide's details, and the tour deck a slide to try it on.
-- A talk in several languages is one file per language, side by side and named for it: `talk.en.md`, `talk.de.md`, `talk.hi.md`. `mdeck run` finds them and the presenter view gets a **Language** switch (**L** for the next language): the slides, the notes and mdeck's own words change in every window, the audience window, a paired iPad and phones following the talk, at the same slide and step. A file named this way needs no `lang`. A deck in one language shows no switch.
-- A deck in a language written from right to left (`lang: fa`, `ar`, `he` …) runs its slides and notes from right to left in every theme; code, maths and mdeck's controls stay left to right. The Python example comes in German, Hindi and Farsi too.
+- Hotspots: with `hotspots: auto` or `marked`, the presenter view numbers a slide's parts and **1**–**9** zoom into one on every screen. **H** toggles them during the talk.
+- A talk in several languages is one file per language (`talk.en.md`, `talk.de.md`); the presenter view switches between them with **L**.
+- Decks in right-to-left languages (`lang: fa`, `ar`, `he` …) run slides and notes right to left in every theme.
 - The presenter view calls the light and dark switch **Mode**.
-- The presenter view's next-slide preview keeps the language shown after the last slide or a reload, instead of going back to the file's.
-- The presenter view shows a palette as the theme gallery does: one chip of its background and two accents, in front of its name.
+- The presenter view's next-slide preview keeps the language shown after the last slide or a reload.
+- The presenter view shows a palette as a chip of its background and two accents, as the theme gallery does.
 
 ## 3.7.1 — 2026-10-09
 
-- A video file on a slide (`<videoplayer src="…" />`) follows the presenter view, on the laptop or a paired iPad: play, pause and a jump there do the same in the audience window, which plays the sound while the presenter view's copy stays silent. This works without a server too, in a built folder. An audience window that nobody has clicked yet plays silently and offers **Click for sound** (German: **Klicken für Ton**). Online videos from YouTube, Vimeo or SwitchTube still play only where they are started; the iPad guide says so.
+- A video file in `<videoplayer>` follows the presenter view: play, pause and jumps carry to the audience window, which plays the sound. Online videos do not.
 
 ## 3.7.0 — 2026-10-09
 
-- Palettes have a third accent, `--accent-3`, and the three accents mean something: `--accent` is emphasis, `--accent-2` its companion (gradients, a contrast to the accent), `--accent-3` attention, used sparingly. `--accent-3` marks things and need not be readable as text, so it may be a yellow; `mdeck check` asks only that it can be seen (1.5:1 against the background). A palette without `--accent-3` keeps working and gets an amber (`#d99a00`, at night `#f5c542`); `mdeck check` suggests giving it its own. All built-in palettes and those in the theme repository set it (the repository requires it); `mdeck palettes update` brings installed ones up to date.
-- Callouts take their colours from the palette: note, tip and important the accent, warning and caution the third accent. The five callout colours (`--callout-note` … `--callout-caution`) are gone, and with them the green, purple and blue that matched no palette. The built-in themes follow.
+- Palettes have a third accent, `--accent-3`, for attention. Palettes without it get an amber, and `mdeck palettes update` updates installed ones.
+- Callouts take their colours from the palette; the `--callout-note` … `--callout-caution` colours are gone.
 
 ## 3.6.2 — 2026-10-09
 
-- The docs home page and the README start with what mdeck does: drawing from an iPad, polls from phones, citations, themes, running code and sending one file, each with a picture (`npm run feature-images` renders them). The docs' example deck is now a short tour of mdeck, with its own control bar and drawing, and a picker of every built-in theme as a picture, with light or dark.
+- The docs home page and the README start with what mdeck does, with a picture per feature; the docs' example deck is a short tour.
 - An embedded deck (`?embedded=1`) shows its control bar with `?controls=1`.
-- The reader view has a **Drawings** button when the deck has drawings: it hides and shows them on the slides, in Read and in **Save as PDF**, and the browser remembers the choice. A file made with `mdeck send` opens there, so whoever gets it can see the slides clean.
+- The reader view has a **Drawings** button to hide or show drawings; files from `mdeck send` open there.
 
 ## 3.6.1 — 2026-10-09
 
-- `mdeck snapshot --sheet` saves one picture of the slides in a grid, each under its number and heading (`my-talk-sheet.png`): a whole deck at a glance, for you or an assistant. It works with `--slide` and `--dark`.
-- Fixed: pictures and PDFs could show a slide in its fallback font. mdeck now waits for the theme's font stylesheets and for every face the slides use before it takes a picture, renders a PDF or measures a slide, so `mdeck snapshot`, `mdeck pdf`, `mdeck check --render`, the theme check and the theme repository's previews show the theme's own fonts. Without a network it does not wait.
+- `mdeck snapshot --sheet` saves one picture of all slides in a grid (`my-talk-sheet.png`).
+- Fixed: pictures and PDFs could show a slide in its fallback font; mdeck now waits for the theme's fonts.
 
 ## 3.6.0 — 2026-10-09
 
-- A theme can say what it is for and how to write for it: a `[guide]` in its `extension.toml` with `suits` and `avoid` (short phrases) and `writing` (a few sentences). `mdeck list` and `mdeck themes search` show what each theme suits, search finds themes by it (`mdeck themes search photo`), and `mdeck list themes --json` and the theme repository's catalogue carry the whole guide. The slide-writing skill chooses a theme by its guide and follows its writing advice, as the theme author's advice and never as instructions. The six built-in themes have guides. A theme with a guide needs this version of mdeck.
+- A theme can say what it suits and how to write for it (`[guide]` in `extension.toml`), shown by `mdeck list` and `mdeck themes search`. A theme with a guide needs this version.
 
 ## 3.5.0 — 2026-10-09
 
-- mdeck now comes with six themes: `neue` (still the default), `academic` and `minimal` as before, and new among them `plain` (black on white, the heading in a column beside the content), `work` (an everyday company template with an accent band, the logo and numbered sections) and `glass` (liquid glass, dark by default). The palettes `greyscale` (`plain`'s) and `cobalt` (`work`'s) come with it too. `aurora` and its palette `neon` moved to the theme repository: a deck that uses them is told to run `mdeck themes install aurora`; files made with `mdeck send` or `mdeck build` keep working, because they carry their theme. The tour example now uses `glass`.
-- Tags in a deck are found the way the slide finds them, everywhere mdeck looks for them: the phones, `--no-polls`, the pictures and videos a build takes along. A `>` in a quoted value no longer cuts a tag short there either (`<qrcode label="a > b" join />`, `<img alt="a > b" src="…">`), and a tag that a blank line cuts in two is no activity for the phones when the slide does not show it.
-- Fixed: a bar inside `code`, a [link](…) or a picture in a poll's options split the option in two. Only bars outside them, and outside formulas, separate options.
-- A poll's options may be a list inside the tag, one item each, with `[x]` for a right answer: `<poll room="d">` then `- [x] $2x$`, `- [ ] $x^2$` and `</poll>`. Nothing needs escaping, and long options read better than in one attribute.
-- Fixed: text after an activity written `<poll … />` (or any component closed with `/>`) went missing from the slide, as did another activity right after it. What follows an activity or a join code now has room above it in every theme.
+- Six built-in themes: `neue` (default), `academic`, `minimal`, and new `plain`, `work` and `glass`. `aurora` and `neon` moved to the theme repository: run `mdeck themes install aurora`.
+- Tags are found the same way everywhere mdeck looks for them; a `>` in a quoted value no longer cuts a tag short.
+- Fixed: a bar inside `code`, a link or a picture in a poll's options split the option in two.
+- A poll's options may be a list inside the tag, with `- [x]` marking right answers.
+- Fixed: text after a self-closing activity such as `<poll … />` went missing from the slide.
 
 ## 3.4.0 — 2026-10-08
 
-- What follows a list has room above it in every theme, so a sentence after a list no longer sits right against its last item.
-- Fixed: a bullet list inside a numbered list took numbers too, and in some themes the number sat on top of the bullet; it also pushed the numbering of the items after it. Every built-in theme now styles only a list's own items.
-- A list inside a list item has room above it, as much as between its own items and less than between the outer ones, instead of sitting right against its item. Themes with their own spacing for nested lists keep it.
-- Links and quotations look the part in every theme: links take the palette's accent colour instead of the browser's blue, and a `> quotation` is set in each theme's own way instead of as a bare indent: academic as an indented serif quotation, aurora with a quotation mark in its gradient, minimal and neue with a bar at its side (grey and red). A quotation's paragraphs now take the quotation's type, which themes that set every paragraph's font used to undo.
-- The sample deck, on which `mdeck design`, the theme gallery and the theme checks show every theme, now also has a link, a quotation, a bullet list inside a numbered list, citations with their references at the foot of the slide, and a reference list.
-- A poll's question and options may use Markdown and `$…$` maths, as on a slide: `options="$2x$|$x^2$|$\frac{x^3}{3}$"`. The slide draws them with KaTeX, the phones' answer page as MathML, which needs no fonts or scripts there; it keeps only text, emphasis and MathML from what the presenter's screen sends. A `|` inside a formula belongs to it (`$|x|$`), and `\|` is a bar in the text. Votes and `answer` still use the text as written. The same goes for the `question` of every activity (`<scale>`, `<question>`, `<wordcloud>`) and the scale's `low` and `high` labels. An answer page from an older `mdeck server` shows the source text.
-- Fixed: the phones' answer page showed the word “null” below the question when there was no link for following the slides.
-- Every activity has a lock button that closes it: answers after that do not count, and the phones say it is closed until it opens again. Together with the eye (`results="hidden"`) and the tick this makes a peer-instruction round: vote, close, show the bars, discuss, show the answer.
-- Showing a poll's right answer also tells each phone whether its vote was right, or what the right answer is. The lock, the eye and the tick are kept in the activity room's state on the server, so every screen of the talk and the phones follow them, also after a reload.
-- Polls, scales and numbers count “12 of 31 answered” while phones are connected.
-- `multiple` lets each phone pick several options of a poll; the slide and the phones say so. `buttons="letters"` (or `"numbers"`) puts A, B, C before the options on the slide and shows only those on the phones, for options that are pictures or long formulas.
-- New activity `<numeric>`: phones type a number (`0.5`, `0,5`, `1/2`), the slide shows the most frequent answers as bars. `answer` and `tolerance` mark the right ones and tell each phone whether it was right.
-- The answers of a talk are kept beside the deck in `<slides>.results.json` while `mdeck run` runs: anonymous, phones numbered per question. Builds, `mdeck send` and `mdeck pdf` show them as the record of the talk (`--no-results` leaves them out), and `mdeck results` prints them as CSV.
-- Fixed: a `>` or `<` in an activity's attributes (`question="Is $x > 0$?"`) cut its tag short, and the phones lost the options. Pictures in a tag's attributes, such as a poll's options, are now copied into folder builds.
+- What follows a list has room above it in every theme.
+- Fixed: a bullet list inside a numbered list took numbers too and shifted the numbering after it.
+- A nested list has room above it instead of sitting against its item.
+- Links take the palette's accent colour, and each theme styles `> quotations` its own way.
+- The sample deck for `mdeck design`, the gallery and the theme checks adds a link, quotation, nested list and citations.
+- Poll questions and options, and every activity's `question`, may use Markdown and `$…$` maths. An older `mdeck server` shows the source text.
+- Fixed: the phones' answer page showed "null" below the question when there was no follow link.
+- Every activity has a lock button that closes it to further answers.
+- Showing a poll's right answer also tells each phone whether its vote was right; lock, results and answer state are kept on the server.
+- Polls, scales and numbers count "12 of 31 answered" while phones are connected.
+- `multiple` allows several options per phone; `buttons="letters"` (or `"numbers"`) labels the options.
+- New activity `<numeric>`: phones type a number; `answer` and `tolerance` mark the right ones.
+- A talk's answers are kept anonymously in `<slides>.results.json`; exports show them (`--no-results` leaves them out), and `mdeck results` prints them as CSV.
+- Fixed: a `>` or `<` in an activity's attributes cut its tag short. Pictures in a tag's attributes are now copied into folder builds.
 
 ## 3.3.0 — 2026-10-08
 
-- Citations and references: `bibliography: refs.bib` in the deck settings, then cite in Pandoc's syntax, `[@smith2020, p. 12]`, `[see @a; @b]`, `[-@a]` or `@smith2020` in a sentence. Each citation shows in the style's short form, each slide lists the full references of the works it cites above its footer (`show.citations: false` leaves them out), and `<bibliography />` lists them all on a slide (`part="1/2"` splits a long list). Reference files may be BibTeX (`.bib`), CSL-JSON (`.json`) or Hayagriva (`.yml`, Typst's format), several at once. `csl:` picks the style, `apa` by default, `vancouver`, `harvard1` or any `.csl` file; the style's words follow `lang`. `nocite:` lists works without citing them. Formatting happens at build time, so a deck carries only the finished text. Unknown keys are marked on the slide and reported by `mdeck check`.
-- `mdeck check --render` looks at the deck in Chrome: it builds it, shows every slide with all steps revealed, and reports content that does not fit, text cut off at the slide's edge or hard to read on what is behind it, and errors the page reports, each with the slide's number, heading and line. `mdeck snapshot` saves slides as PNG files (`--slide 3,5-7`, `--dark`, `--light`, `-o`; by default in `.mdeck-snapshots/`), so a person or an assistant can look at them. The slide-writing skill uses both.
-- New view `?view=follow`: people in the room follow the talk on their phone or laptop. It shows the slide the presenter shows, step by step, and their drawing, read from the stage room without sending anything; people can page back and return with **Back to live**, and never see a slide or step before the presenter shows it. `<qrcode follow />` shows its link on a slide, the phones' answer page links to it (**Follow the slides**), and `mdeck run --network` prints it. It works on the same network with `mdeck run --network`, and anywhere for a deck hosted with a `server` setting. Followers count as phones in the presenter's overview of who is connected.
-- Fixed: a web video (YouTube, Vimeo, SwitchTube) in `<videoplayer>`'s click mode went on playing, with sound, after leaving its slide. Leaving the slide now stops it; coming back shows it ready to play.
-- Straight lines snap to steps of 15° (horizontal, vertical, 45° …) when they are within 4° of one, both when a held stroke straightens and when an end point is dragged; further off they stay as drawn.
-- Polls have a button with an eye that shows or hides the results (bars and counts), also in the audience window and on paired devices. `results="hidden"` starts with them hidden, e.g. for peer instruction; the audience then sees no bars, the presenter's own screens show them faint.
-- `--no-polls` leaves slides with a poll, question, word cloud, scale or join code (`<qrcode join />`) out of `mdeck send`, `mdeck build --reader` and `mdeck pdf`. By default they stay as a record of the talk. Drawings stay on their slides.
+- Citations and references: `bibliography: refs.bib` and Pandoc-style citations (`[@smith2020, p. 12]`); slides list the works they cite, `<bibliography />` all of them.
+- `mdeck check --render` checks the deck in Chrome for overflow, unreadable text and page errors. `mdeck snapshot` saves slides as PNG files.
+- New view `?view=follow`: the audience follows the talk on their own devices, never ahead of the presenter. `<qrcode follow />` shows its link.
+- Fixed: a web video in `<videoplayer>`'s click mode kept playing, with sound, after leaving its slide.
+- Straight lines snap to 15° steps when within 4° of one.
+- Polls have an eye button to show or hide results; `results="hidden"` starts hidden.
+- `--no-polls` leaves slides with polls, questions or join codes out of `mdeck send`, `mdeck build --reader` and `mdeck pdf`.
 
 ## 3.2.0 — 2026-10-07
 
-- Pictures written in the text fit on the slide in every theme: a paragraph of nothing but pictures shrinks into the room below the heading instead of running off the slide, keeping its proportions (small pictures keep their size), and several pictures in one paragraph sit side by side. Such paragraphs have the class `pictures`, for themes that set them their own way; a picture in a sentence is left alone.
-- Tables have room below them in every theme, so a sentence after a table no longer sits right against it.
-- `mdeck themes build` also renders an icon for each theme: its title slide at 96×54 (drawn at twice that, about 3 KB), listed as `icon` in `catalogue.json` and `looks.json`. The theme repository's gallery shows it in its list instead of the palette's colours, which said little about a theme.
+- A paragraph of only pictures fits below the heading in every theme, with several pictures side by side (class `pictures`).
+- Tables have room below them in every theme.
+- `mdeck themes build` renders an icon for each theme (`icon` in `catalogue.json` and `looks.json`).
 
 ## 3.1.0 — 2026-10-07
 
-- Packs are gone: every theme and palette is installed on its own. `mdeck themes install duet` installs the theme with its default palette (`cobalt`), and `mdeck palettes install solarized` a palette; both have `search`, `remove`, `update` and `list`. A palette made for one theme (FHNW's `brand`) brings that theme along and goes with it. A palette an installed theme uses by default is not removed while that theme is there. Installs go into `themes/<id>/` and `palettes/<id>/` of the extensions folder, so a theme and a palette may share a name.
-- A theme or palette carries its version, author, licence and the oldest mdeck it needs in its own `extension.toml` (`version`, `author`, `license`, `homepage`, `mdeck`); `pack.toml` is gone. The built-in ones are back in `assets/extensions/themes` and `assets/extensions/palettes`, and are removed and installed again one by one (`theme:aurora` in `~/.mdeck/removed.json`).
-- The theme repository has a folder per theme and per palette (`themes/<id>`, `palettes/<id>`) and serves `catalogue.json`; mdeck 3.0 cannot read it. The design page lists themes and palettes to install one by one.
-- The palette `candy` works with every theme: raspberry and blue accents that can be read as text; `pop` takes its pastel fills from the palette (`--pop-fill-1`, `--pop-fill-2`, `--pop-line`, `--pop-shadow`, `--pop-ink`), with black shadows in the dark.
-- The palettes `graphite` and `ember` are gone from the theme repository: they looked almost the same as the built-in `nordic` and `paper`. A deck that names one is told which to use instead.
-- A deck that names a theme or palette that left mdeck in 3.0 is told the command for it, `mdeck themes install duet` or `mdeck palettes install forest`, not "beside the deck".
-- Tests run with an empty `MDECK_HOME`, so what is installed on the computer does not change their results.
+- Packs are gone: themes and palettes are installed one by one (`mdeck themes install duet`, `mdeck palettes install solarized`).
+- A theme or palette carries its version, author, licence and minimum mdeck in `extension.toml`; `pack.toml` is gone.
+- The theme repository has a folder per theme and palette and serves `catalogue.json`, which mdeck 3.0 cannot read.
+- The palette `candy` works with every theme; `pop` takes its pastel fills from the palette (`--pop-fill-1` …).
+- The palettes `graphite` and `ember` are gone from the theme repository; a deck naming one is told what to use instead.
+- A deck naming a theme or palette removed in 3.0 is told the install command, such as `mdeck themes install duet`.
+- Tests run with an empty `MDECK_HOME`, so installed extensions do not affect them.
 
 ## 3.0.0 — 2026-10-07
 
-- Every theme and palette now comes in a pack, also those that come with mdeck: `neue`, `academic`, `aurora` and `minimal` (each a theme with its palette) and the palette `lagoon`. `graphite`, close to `nordic`, moved to the theme repository as a pack of its own. They work right away and offline, and can be removed: `mdeck themes remove aurora` hides it from every deck, `mdeck themes install aurora` brings it back without the internet. A newer version from the theme repository replaces the bundled one. A deck without a theme still uses `neue`, and says so when it was removed; the last theme cannot be removed.
-- `mdeck themes install <pack>` installs for every deck by default; a slide file, a folder or `--local` installs beside that deck. Packs can require other packs (`requires = ["lagoon"]` in `pack.toml`) for palettes their themes use: installing one installs those too, and removing a pack another one needs is refused. The design page lists the packs you can install, including removed bundled ones, and removes a pack for every deck.
+- Every theme and palette comes in a pack, the built-in ones too, which can now be removed (`mdeck themes remove aurora`) and installed again offline.
+- `mdeck themes install <pack>` installs for every deck by default; `--local` installs beside the deck. Packs can require other packs.
 - `mdeck check` no longer warns about themes installed for every deck.
-- Fewer built-in looks: the themes `duet` (with `cobalt`), `editorial` (with `terra`), `fhnw` (with `brand`), `terminal` (with `phosphor`) and `sketch` (with `pastel`), and the palettes `ember` and `forest` (as `earth`) and `graphite`, moved to the theme repository as packs. A deck that uses one gets an error that names the command to run, for example `mdeck themes install duet`; files made with `mdeck send` or `mdeck build` keep working, because they carry their theme.
-- New theme `minimal`: nothing but the content, in the computer's own fonts (no web fonts, so it works offline), with medium weights, space instead of rules and boxes, and "Chapter 2" as a quiet label above chapter titles. Its default palette is the new `paper`: off-white and near-black with one orange accent, charcoal and a softer orange in the dark.
-- The sample deck's picture is a drawing in the palette's colours, and an SVG data URL that uses theme colours is drawn inline like an SVG file. A drawing in a picture's place now takes the space the layout gives it, like a photo, instead of pushing headings aside.
-- The launch page of `mdeck run` has a Theme editor tile under Write and learn; it opens the design page of the deck's editor.
-- The examples use built-in themes: the Python lesson `academic`, the poll and custom-layout examples `neue`, the docs home page talk `academic`.
+- The themes `duet`, `editorial`, `fhnw`, `terminal` and `sketch` and the palettes `ember`, `forest` (as `earth`) and `graphite` moved to the theme repository; install them with e.g. `mdeck themes install duet`.
+- New theme `minimal`, in system fonts, with the new palette `paper`.
+- An SVG data URL using theme colours is drawn inline, and takes the layout's space like a photo.
+- The launch page of `mdeck run` has a Theme editor tile.
+- The examples use built-in themes.
 
 ## 2.3.0 — 2026-10-07
 
-- mdeck moved to GitHub (<https://github.com/tilman-schieber/mdeck>) and is published on npmjs.com as `mdeck`: install it with `npm install -g mdeck`. The docs are at <https://gh.tschieber.de/mdeck/>. The GitLab project is archived; remove the old package with `npm uninstall -g @tilman.schieber/mdeck`.
-- New `mdeck themes`: themes and palettes from the theme repository (<https://github.com/tilman-schieber/mdeck-themes>). `search` lists the packs, `install <pack> [slides.md]` copies one into the deck's `extensions/`, or with `--global` into `~/.mdeck/extensions` for every deck; `update`, `remove` and `list` work on what is installed, and refuse to overwrite files changed by hand without `--force`. Packs hold only `extension.toml` and `styles.css`, fonts only from Google Fonts or Bunny Fonts, and are checked against the checksum the repository lists. The design page lists the repository's packs with pictures and an Install button.
-- Extensions installed for every deck are found by every deck; a deck's own extension with the same id replaces one installed for every deck. `mdeck check` warns when a deck uses one, since the slide file then works only on that computer.
-- `mdeck themes build <packs> -o <out> --check` builds the repository: it checks each pack, runs the theme check on every theme and palette in it (light and dark, every kind of slide) and renders a picture of each. The theme check behind `npm run test:themes` moved into mdeck for this (`src/build/themeCheck.js`).
+- mdeck moved to GitHub and npmjs.com: install with `npm install -g mdeck`, remove the old package with `npm uninstall -g @tilman.schieber/mdeck`. Docs: <https://gh.tschieber.de/mdeck/>.
+- New `mdeck themes`: search, install, update and remove packs from the theme repository (<https://github.com/tilman-schieber/mdeck-themes>).
+- Extensions installed for every deck are found by every deck; a deck's own one with the same id wins. `mdeck check` warns about such use.
+- `mdeck themes build <packs> -o <out> --check` builds and checks the theme repository; the theme check moved to `src/build/themeCheck.js`.
 - The `write-slides` skill looks in the theme repository before making a theme from scratch.
-- New `mdeck design [slides.md | folder]`: a page for looking at themes and palettes and fine-tuning them, instead of the editor's second mode, which both chose and edited them. Its preview shows a sample deck with one slide of every kind, light or dark, in a theme and palette chosen above it, or the deck itself. The pictures in its list show the sample deck too. Without a deck it works on a folder and saves into that folder's `extensions/`, where any deck kept there finds them; no slide file is read or written. In `mdeck edit` it is **Design themes**.
-- The design page lists the deck's own themes and palettes first. A built-in one shows what it is and **Copy to customise**, instead of a form that could not be changed; new themes always start as such a copy, new palettes may also start from plain colours. **Use in my deck** puts a theme or palette in the slide file. The theme form groups its tokens into fonts, sizes and spacing, chooses the default palette from a list with its colours, offers palettes with tick boxes, and keeps `styles.css` under *Advanced*. Layouts are no longer edited in the browser; ask the assistant for one, or write it by hand.
-- Editor: the deck's look is chosen only in the Deck tab, where themes are pictures of the first slide. **Customise theme** and **Customise palette** open the design page on a copy of the deck's, or on the deck's own.
-- The `write-slides` skill also makes themes and palettes: as an extension beside the deck, copied from the closest built-in theme, checked with `mdeck check`, and handed over with `mdeck design` to look at and fine-tune.
+- New `mdeck design [slides.md | folder]` for looking at and fine-tuning themes and palettes, replacing the editor's second mode.
+- The design page lists the deck's own looks first and copies built-ins with **Copy to customise**. Layouts are no longer edited in the browser.
+- Editor: the deck's look is chosen in the Deck tab; **Customise theme** and **Customise palette** open the design page.
+- The `write-slides` skill also makes themes and palettes as extensions beside the deck.
 - `npm run test:themes` and the design page use the same sample deck (`src/editor/sampleDeck.js`).
 
 ## 2.2.0 — 2026-10-07
 
-- Lecture blocks look different from each other in every theme, not only academic and sketch: theorems, lemmas and corollaries in the accent with the statement in italics, definitions in the second accent, and a proof without a box, opening with “Proof.” and ending with ∎ right after its last word (terminal writes `[proof]`, like its other log lines). Aurora's callout titles are readable on light glass too.
-- `npm run test:themes` (also in CI) shows every theme, light and dark, on a deck with every built-in layout and kind of content, and fails when content does not fit, text is cut off at the slide's edge or is hard to read on what is behind it, or the page reports an error.
-- Callout titles are readable on light and dark slides: their colour is the signal colour mixed with the text colour (warnings were yellow on white in neue, editorial and FHNW).
-- Fixed: terminal's chapter slide with a picture was 4 px too tall and cut off at the bottom; sketch's sticky notes are a little more compact, so three fit on a slide.
-- Chapter slides say “Kapitel” in German decks (the label `slide.chapter`); layouts get the deck's words with `t` from `mdeck/layout`.
+- Lecture blocks (theorems, definitions, proofs …) look distinct in every theme.
+- `npm run test:themes` (also in CI) checks every theme, light and dark, for overflow, unreadable text and page errors.
+- Callout titles are readable on light and dark slides.
+- Fixed: terminal's chapter slide with a picture was cut off at the bottom; sketch's sticky notes are more compact.
+- Chapter slides say "Kapitel" in German decks; layouts get the deck's words with `t` from `mdeck/layout`.
 - Fixed: callout titles were English in decks with a regional language code such as `lang: de-CH`.
-- `mdeck check` warns about an unknown callout type such as `::: warnign` and suggests the nearest one; types named under `callouts:` count as the deck's own.
-- Editor: the deck's palette is chosen from a list that shows each palette's colours in the current light or dark, the theme's own first; light or dark is a sun/moon switch. A palette written out that is also the theme's default shows as chosen instead of an empty field, and switching to a theme that does not offer the deck's palette removes it from the file instead of leaving an error.
-- Editor: palettes, themes and layouts are tabs on the left, in a wider column. Like the presenter view, the view tries one look at a time: choosing a theme keeps the palette where the theme offers it, choosing a palette keeps the theme, and the thumbnails show palettes in that theme and themes with that palette. A bar above the preview names the look and applies it to the deck with “Use for this deck”. Palettes the theme does not offer (FHNW offers only its own) are dimmed.
-- The presenter view shows the theme, palette and light/dark row by default. Its fold button folds it, like the drawing toolbar, into a round button beside Draw that shows the palette's accent; the choice is remembered.
-- The reader view keeps the sender's theme and palette: instead of the Look menu it has one button to switch between light and dark (`reader.themes: false` removes it). Files from `mdeck send` and `mdeck build --reader`, and the page `mdeck pdf` prints, carry only the deck's theme and palette. Other themes in a sent file used to show in fallback fonts, because only the deck theme's fonts are embedded. The labels `reader.look`, `reader.theme`, `reader.colors`, `reader.themeColors`, `reader.resetLook`, `reader.resetLookHint` and `reader.senderLook` are gone.
-- New theme `academic`, for lectures: Source Sans with Source Serif for statements, smaller type so a slide holds a definition, a formula and a few points, the heading in the same place on every slide with the rest centred below it, a running head with the section (§), chapter slides with the number beside a rule, booktabs tables, a short rule above footnotes, and key-idea statement slides set like a theorem. Its default palette is `nordic`.
-- New theme `sketch`, a sketchbook: Caveat headings and Patrick Hand text on dotted paper (a chalkboard in dark), a marker scribble under headings, arrows as bullets, circled numbers and chapter numbers, highlighter on bold, sticky-note callouts with tape, photos taped in like polaroids, statement slides as speech bubbles and code in a hand-drawn box. The drawn marks take the palette's colours. Its default palette is `pastel`.
-- New palette `pastel`: soft pastels in the style of Catppuccin, Latte in light and Mocha in dark, with mauve and peach.
-- New callout types for lectures: `definition`, `theorem`, `lemma`, `corollary`, `proof`, `example` and `remark`, labelled in English or German (`Satz`, `Beweis`, `Beispiel` …). Every theme shows them; academic sets theorems in italics and ends a proof with ∎.
-- Polls, scales, word clouds and questions in a PDF, an `mdeck send` file or a build without a poll server show their question and options with “Answered live during the talk”, instead of “Phones cannot reach this computer”, empty counts and “0 answers”. A `<qrcode join />` slide says that phones joined there. Printing hides join codes and the presenter's buttons. Results still show whenever a poll server answers.
-- Fixed: SVG pictures referenced only in speaker notes are excluded from exports without notes; `--notes` keeps them. Adding or removing themed SVG pictures while previewing refreshes the inline pictures without restarting the server.
-- Fixed: with three or more presenter and audience windows, tied navigation changes keep the last winning sender, including forwarded positions, so a late lower-priority change does not take a window back.
-- The “Change the look” guide shows every theme: a large preview in its default look, and, in a tab for each theme, its chapter slide in every palette, light and dark (`npm run theme-images` renders them).
-- SVG pictures can use the palette's colours (`var(--accent)` …): they are drawn inline and follow the theme, palette and light or dark, in slide text and as the picture of the title, chapter, image-text and full-bleed layouts. Local layouts get the same with `Picture` from `mdeck/layout`. The tour's title picture is such a drawing.
-- Fixed: on duet's title slide, emphasis in the subtitle took the background colour and disappeared; it now keeps the slide's text colour, underlined in the second accent, like the headline.
-- Fixed: a picture path shown inside a code example (`image: ./img/photo.jpg`, `![…](./img/photo.jpg)`) was replaced by the embedded picture in PDFs, `mdeck send` files and `--single-file` builds, and a large picture could make the PDF time out. Code examples now stay text.
+- `mdeck check` warns about an unknown callout type such as `::: warnign` and suggests the nearest.
+- Editor: the deck's palette is chosen from a list showing each palette's colours; light or dark is a sun/moon switch.
+- Editor: palettes, themes and layouts are tabs; one look is tried at a time and applied with "Use for this deck".
+- The presenter view shows the theme, palette and light/dark row by default, and can fold it into a button.
+- The reader view keeps the sender's theme and palette, offering only light or dark. The labels `reader.look`, `reader.theme`, `reader.colors`, `reader.themeColors`, `reader.resetLook`, `reader.resetLookHint` and `reader.senderLook` are gone.
+- New theme `academic`, for lectures, with the palette `nordic`.
+- New theme `sketch`, a sketchbook, with the palette `pastel`.
+- New palette `pastel`, in the style of Catppuccin.
+- New callout types for lectures: `definition`, `theorem`, `lemma`, `corollary`, `proof`, `example` and `remark`.
+- Questions in PDFs, sent files and builds without a poll server say "Answered live during the talk" instead of showing empty results.
+- Fixed: SVG pictures referenced only in speaker notes are left out of exports without notes.
+- Fixed: with three or more presenter and audience windows, a late change could take a window back.
+- The "Change the look" guide shows every theme in every palette, light and dark.
+- SVG pictures can use the palette's colours (`var(--accent)` …) and follow theme, palette and light or dark.
+- Fixed: on duet's title slide, emphasis in the subtitle disappeared.
+- Fixed: picture paths inside code examples were replaced by embedded pictures in PDFs and single-file outputs.
 - Fixed: the editorial theme showed two dashes before a statement slide's attribution.
-- The guides start from handing your own slides, documents or notes to an AI assistant, and explain the file format so you can read and adjust what it writes. The `write-slides` skill works from source material: it keeps its content and pictures, and says what it left out, moved to the notes or added.
+- The guides start from handing your material to an AI assistant; the `write-slides` skill works from source material.
 - The browser editor is no longer marked experimental.
-- The examples are reworked: the tour has four chapters, more varied layouts and exports to PDF again; the Python lesson gives code more room and something to try on every code slide; each example uses a different theme; the docs home page shows a short talk about lab notebooks. The FHNW example is removed.
+- The examples are reworked, each with a different theme; the FHNW example is removed.
 
 ## 2.1.0 — 2026-10-06
 
 - Aurora: code blocks no longer have a line of light along their top edge.
-- The terminal theme is redesigned as a terminal session: headings are typed at a `~/talk $` prompt, the title waits at a blinking block cursor (still in print and with reduced motion), chapter slides start like a command (`$ ./chapter 2`, the part as a comment), statement slides are printed by `cat`, callouts are log lines (`[tip]`, `[warning]`), lists use `>` and `[1]`, split slides are divided like tmux panes, the footer is a tmux status bar with the deck's title, and code sits in a window with a title bar. Its default palette is the new `phosphor`: green text on near-black with amber, like an old terminal screen, and a printout on paper in light. A faint scanline shows on chapter slides on screen only.
-- Aurora: a title slide with an image shows it on the right at full height, with the title at the lower left, instead of a banner below the title that pushed it up into the brightest light.
-- Output of run code stays on the slide: when it appears, the code first gets smaller type and then scrolls to make room, and output that is still too long scrolls as well, in the code's type size and with a fade at the lower edge while there is more.
-- Fixed: Python code that imports a package Pyodide provides (`numpy`, `pandas` …) failed with `ModuleNotFoundError`; the package now loads before the code runs.
-- The duet theme is redesigned as two voices: its two accents take turns on every slide. The footer rule changes colour halfway, list markers and poll bars alternate between the accents, split slides become a dialogue of two tinted colour fields, title slides are the boldest, all in the first accent with a slanted band of the second, chapter slides are cut diagonally (the number on a field of the first accent, a seam of the second, the title beside it), statement slides stand beside a bar in each accent, and callouts carry their title as a tab (tips in the first accent, warnings in the second). Headings are heavier and tighter Zilla Slab. Its default palette is now `cobalt` instead of `neon`, whose second accent is now a vivid orange (`#e8590c`, dark `#ff922b`) instead of a brownish amber.
-- The neue theme is redesigned in a Swiss style: large, tight, flush-left type, a rule across the top instead of floating labels, square accent markers, and callouts and code marked by a coloured rule instead of a grey box. Chapter slides set their title in the accent colour at the bottom left, with a large chapter number as a tint on the right, sharing its baseline and clear of the page number; statement slides are inverted. Its default palette is `swiss`: signal red on white. Palettes keep working, using their text-on-accent colour on chapter slides.
-- PDFs, `mdeck send` files and `--single-file` builds carry the theme's own fonts (Latin character sets, embedded once even for variable fonts) instead of falling back to system fonts, so they look like the slides on screen, offline too. Fonts are fetched once and cached in `~/.cache/mdeck/fonts` (`MDECK_CACHE_DIR`); without network and cache the build goes on with the fallback fonts and says so.
-- The aurora theme is redesigned as northern lights: slanted curtains of light in the palette's accents, strong on title slides and as a faint shimmer on content slides; chapter and statement slides are night skies in the palette's other variant, with the chapter number glowing in the accent gradient. Tips, code and the section label are frosted glass with a gradient edge. The light drifts slowly while presenting, never in print or with reduced motion.
-- The editorial theme is redesigned as a magazine spread: a double masthead rule, a centred cover with an ornament, headlines in Newsreader (in place of Playfair Display, calmer and easier to read) with italic emphasis, a drop cap opening the text after a heading, em-dash bullets and italic numerals, callouts as margin notes, code set like a figure between hairlines, and statement slides as pull quotes with a large quotation mark, the key words in the accent within the same italic. Chapter slides open like a new section with the number as a Roman numeral (`number: 2` shows II). The chapter layout passes a whole chapter number to themes as `--chapter-number`, for a counter in another style.
-- Drawings follow light and dark: on dark slides the pen's red, blue and green are lighter and its black is the palette's text colour (white), also for drawings saved before. The toolbar calls that colour "Text colour".
-- Fixed: in the presenter view on a touch screen the draw button could stay off although drawing had started, when the slide frame started it before the presenter view listened.
-- Chapter numbers show as written, without a leading zero: `number: 2` shows 2 (write `"02"` for the old look).
-- Code that is too tall for its place first gets smaller type, down to 22 px, before it scrolls; most examples now fit whole.
+- The terminal theme is redesigned as a terminal session, with the new default palette `phosphor`.
+- Aurora: a title slide's image shows on the right at full height instead of as a banner.
+- Output of run code stays on the slide: the code shrinks and scrolls to make room.
+- Fixed: Python code importing a Pyodide package (`numpy`, `pandas` …) failed with `ModuleNotFoundError`.
+- The duet theme is redesigned as two voices in its two accents; its default palette is now `cobalt` instead of `neon`, and that palette's second accent is a vivid orange.
+- The neue theme is redesigned in a Swiss style, with the default palette `swiss`.
+- PDFs, `mdeck send` files and `--single-file` builds embed the theme's fonts, cached in `~/.cache/mdeck/fonts` (`MDECK_CACHE_DIR`).
+- The aurora theme is redesigned as northern lights.
+- The editorial theme is redesigned as a magazine spread. Themes get the chapter number as `--chapter-number`.
+- Drawings follow light and dark: pen colours lighten on dark slides, and black becomes "Text colour".
+- Fixed: in the presenter view on a touch screen, the draw button could stay off although drawing had started.
+- Chapter numbers show without a leading zero: `number: 2` shows 2 (write `"02"` for the old look).
+- Code too tall for its place first gets smaller type, down to 22 px, before it scrolls.
 - The presenter view and the reader view switch light and dark with sun and moon icons.
-- Code that is taller than its place on a slide no longer runs under the heading: it gets a smaller height and scrolls, with a fade at the lower edge while there is more; editable code scrolls together with its highlighting. Centred columns start at the top when their content is too tall. A slide that is still too full is marked (`data-overflow`) and named in the browser console.
-- Colours come only from palettes, and palettes are new: nine families with a light and a dark variant each: `lagoon`, `swiss`, `cobalt`, `nordic`, `graphite`, `terra`, `forest`, `ember` and `neon`. `appearance: light` or `dark` picks the variant; the presenter view and the reader view switch both. Themes use the other variant for inverted slides, so neue's statement slides stay readable in every palette. Each theme names a default palette (neue `swiss`, editorial `terra`, duet and aurora `neon`, terminal `forest`, dark); the FHNW theme uses its own palette `brand` and offers no other.
-- Removed: `accent` and `accent2` in decks, the accent colour fields in the presenter view and the editor, colour parameters of themes, and the old palettes `paper`, `sage`, `mono`, `dark-slate`, `dark-ember`, `dark-neon` and `dark-mono`. `mdeck check` says so and lists the palettes to use instead.
-- Extension format: a palette has `[light]` and `[dark]` tables with all nine colours (and may be private to a theme with `theme = "…"`); a theme names its default `palette`, may limit `palettes`, sets `appearance` instead of `dark`, and may not set colours in `[tokens]`. `mdeck check` warns when a deck's own palette has colours too close to read.
-- Fingers keep operating the deck while drawing: the pencil and the mouse draw, a finger's swipe to the left or right moves the slides, a finger's tap on a stroke selects it, and buttons, polls and other controls on a slide keep working. Fingers draw only with the toolbar's hand button. Gestures are read from pointer events instead of the tap zones, so they work on every touch screen, including iPads whose pencil can hover, and no longer cover controls at the sides of a slide.
-- The laser pointer replaces the fading marker: a red dot with a white core and a trail that retracts within a second. It follows a hovering pencil without touching, is shown live in the audience window and on other devices, and is never saved.
-- Select and move: a loop around strokes, or a tap on one (a finger's tap with any tool), selects them; the pen drags inside the selection's box to move them, saved in their new place and undone with undo. Delete (or the toolbar's bin) removes the selection. A selection takes the pen with any tool; elsewhere the pen draws.
-- Straight lines: holding the pen still for half a second at the end of a stroke makes it a straight line, whose end follows the pen until it lifts. A selected straight line shows handles at its ends; the pen moves them.
-- The highlighter has its own colours (yellow, green, pink, blue, orange) and remembers its colour and size apart from the pen's; its strokes are drawn below the pen's.
-- The drawing toolbar folds into one button in the bottom right corner (↘), which shows the current tool; drawing goes on while it is folded. Colours and sizes show only for the pen and the highlighter.
-- Drawing starts with the laser pointer, and on a touch screen (an iPad) it is on as soon as the presenter view opens, and in the deck as soon as the pencil touches it, with the toolbar folded. A phone or tablet only browsing the deck keeps tapping through it: a tap on the right or left third moves the slides while not drawing. While drawing, the page no longer pans or bounces under the pencil (in the presenter view neither the page around the slide).
-- Zoom into a slide: two fingers zoom and move the slide itself, one finger moves a zoomed slide, Ctrl + scroll (a trackpad pinch) zooms at the pointer. Bars, the toolbar and the presenter's controls keep their size, drawings and the laser stay exact, and the audience window and paired devices show the same part. **1:1** or the next slide shows the whole slide again. Safari's page zoom is turned off on the stage and around it.
-- `<poll answer="…">`: a button with a tick outlines the right answer's row in green; the audience window and paired devices show it too. Activities show **Reset** all the time (greyed out while there are no answers), also on a touch screen without hover; the audience window shows neither.
-- With a standalone server and its key (`MDECK_SERVER_KEY`), `mdeck run` keeps the stage room (position and live drawing between a paired iPad and the audience window) on the local network; only polls and phones go to the server.
-- Finished strokes reach the point where the pen lifted (perfect-freehand's `last`, and the final position is kept); strokes trail the pen less while drawn.
-- Fixed: when a slide got its id with its first drawing, the audience window and other devices kept the old id, so they showed only that first stroke, and later the laser and the zoom did not match. The new id now reaches every window.
-- Fixed: a live stroke could stay on the live layer of a window that was hidden while it ended, showing on every slide. It is now removed by a timer as well, and the live layer is cleared on every slide change.
+- Code taller than its place scrolls instead of running under the heading; a slide still too full is marked `data-overflow`.
+- Colours come only from palettes: nine new palettes, each light and dark (`appearance: light` or `dark`), and each theme names a default.
+- Removed: `accent` and `accent2` in decks, colour fields and theme colour parameters, and the palettes `paper`, `sage`, `mono`, `dark-slate`, `dark-ember`, `dark-neon` and `dark-mono`. `mdeck check` names replacements.
+- Extension format: palettes have `[light]` and `[dark]` tables; themes name a default `palette`, set `appearance` instead of `dark`, and set no colours in `[tokens]`.
+- Fingers operate the deck while drawing; pencil and mouse draw. Fingers draw only with the toolbar's hand button.
+- The laser pointer replaces the fading marker; it shows live on other screens and is never saved.
+- Select strokes with a loop or a tap, drag to move them, and Delete to remove them.
+- Holding the pen still for half a second turns a stroke into a straight line, with handles at its ends.
+- The highlighter has its own colours and remembers its colour and size; its strokes sit below the pen's.
+- The drawing toolbar folds into one button in the bottom right corner.
+- Drawing starts with the laser pointer, and is on at once on an iPad. While drawing, the page no longer pans or bounces.
+- Zoom into a slide with two fingers or Ctrl + scroll; other screens show the same part, and **1:1** shows the whole slide.
+- `<poll answer="…">`: a tick button outlines the right answer in green on every screen. **Reset** is always shown.
+- With a standalone server and `MDECK_SERVER_KEY`, `mdeck run` keeps the stage room on the local network; only polls and phones use the server.
+- Finished strokes reach the point where the pen lifted, and strokes trail the pen less.
+- Fixed: after a slide got its id with its first drawing, other windows showed only that first stroke.
+- Fixed: a live stroke could stay on every slide in a window that was hidden while it ended.
 
 ## 2.0.1 — 2026-10-06
 
-- The split layout's shared heading is styled like every other slide heading; it used the browser's default font and size, outside the slide body that themes style.
-- A numbered list right after a bullet list (or the other way round) gets the usual space between them.
-- The examples follow the current way of writing: `:::meta` settings and named `:::slot` sides. The showcase is now a tour that shows each feature's Markdown beside its result, from headings to live code, notes, drawing, a poll and sharing. The Python lesson asks a poll to check understanding and invites drawing on the loop; the FHNW deck sets `lang: de`, describes its pictures and no longer uses a removed layout.
+- The split layout's shared heading is styled like other slide headings.
+- A numbered list right after a bullet list (or the other way round) gets the usual space.
+- The examples use `:::meta` settings and named `:::slot` sides; the showcase is now a feature tour.
 - The drawing guide names the buttons as they now look.
-- The drawing toolbar fits on one line: its previous/next arrows and the white colour are gone (the deck and the presenter view turn slides as before), amber is replaced by **Accent**, the theme's accent colour, which a drawing keeps following when the palette changes, and the button that stops drawing is an ×.
-- The full-screen button shows whether it will enter or leave full screen, and leaves it reliably on older iPad Safari too.
-- Polls, scales and the other questions have room above the line with the number of answers; themes' paragraph spacing no longer removes it.
-- A presenter or audience window could be pulled back to an earlier slide when both were used quickly one after the other: a reset was reported twice, and the late copy won. Positions between the windows are now ordered.
-- Chrome, used for `mdeck pdf` and the checks, gets a time limit per step instead of one for the whole run, so a long deck or check no longer fails at an arbitrary step once the total ran out; a step that hangs names itself.
+- The drawing toolbar fits on one line: arrows and white are gone, amber becomes **Accent**, and the stop button is an ×.
+- The full-screen button shows whether it enters or leaves full screen, and works on older iPad Safari.
+- Polls and other questions have room above their answer count.
+- A presenter or audience window could be pulled back to an earlier slide when both were used quickly; positions are now ordered.
+- Chrome gets a time limit per step instead of per run, so long decks and checks no longer time out.
 
 ## 2.0.0 — 2026-10-05
 
-A cleaner interface, and presenting from an iPad on any network. This release renames commands, options, settings and files so that each word means one thing. Everything old stops with a message that names its replacement, so nothing changes silently. Decks, extensions and room servers need the changes in the tables below.
+A cleaner interface, and presenting from an iPad on any network. Commands, options, settings and files are renamed; every old name stops with a message naming its replacement.
 
 ### Presenting from an iPad on any network
 
-`mdeck run --server` presents from an iPad on any network without opening a port on your computer and without hosting the deck. The computer connects out to your server (`mdeck server`), which passes the iPad's requests to it. The slides are never stored there. The pairing code on the launch page then points at your server; drawings are still saved beside the deck, edits reload the iPad, and polls and the audience window use the same server.
-
-Slide and reveal navigation works in both directions between the audience window and the iPad, including the presenter's notes and next-slide preview. Received positions do not echo back. The launch page offers Presenter, Audience and Reader; fullscreen is a control within a view, replacing the separate full-screen deck button.
-
-The address is the option's value, else the deck's `server` setting, else `MDECK_SERVER`; the key is `MDECK_SERVER_KEY`. Only what the presenter and audience pages need is passed on; the launch page, the editor and the rest of your folder are not reachable. The server needs this version, a key, and a web server that passes WebSocket connections on (see the audience guide). New dependency: `ws`. Check it with `npm run test:server`.
+`mdeck run --server` presents from an iPad on any network through your own `mdeck server`, without opening a port or hosting the deck. The server needs this version, a key (`MDECK_SERVER_KEY`) and WebSocket forwarding.
 
 ### Breaking changes
 
@@ -331,74 +400,72 @@ Names in files, addresses and code:
 | `import … from 'mdeck/template-api'` | `'mdeck/layout'` |
 | `examples/custom-templates` | `examples/custom-layouts` |
 
-`mdeck migrate [slides.md] --dry-run` previews updates to deck settings, local extension manifests and imports, and drawings filenames. Applying it preserves unrelated text and creates backups. Conflicts stop it before writing. Metadata notes have been removed and are not migrated. `mdeck check` also reports old settings with their replacements.
-
-The package is version 2.0.0; the serialized registry envelope is schema 2. Extension TOML manifests and drawings remain schema/version 1. Old URL parameters produce an explicit correction, and `MDECK_LIVE_KEY` stops startup with its replacement.
+`mdeck migrate [slides.md] --dry-run` previews the updates to a deck, its extensions and its drawings file; `mdeck check` reports old settings with their replacements.
 
 ### Also new
 
-- `mdeck build --reader` makes a hosted reader folder with separate media and speaker notes removed; `--notes` keeps them. The launch page’s folder-to-host button uses this mode.
-- CLI commands reject unknown flags, missing values and surplus filenames before starting a server or changing outputs.
-- Relay access follows the deck’s module graph and referenced assets. Pairing URLs keep the master server key on the laptop; tokens are scoped to a tunnel and its session, and unpairing revokes them.
+- `mdeck build --reader` makes a hosted reader folder without speaker notes; `--notes` keeps them.
+- CLI commands reject unknown flags, missing values and surplus filenames before doing anything.
+- The relay serves only the deck's modules and assets; pairing tokens are scoped to a session and revoked on unpairing.
 
-- Drawing: the icons of the toolbar and the presenter view are redrawn as line icons; the colours have names instead of hex codes; clearing a slide asks in a small popover over the button instead of the browser's confirm dialog.
+- Drawing: toolbar icons are redrawn as line icons, colours have names, and clearing a slide asks in a small popover.
 - The launch page and the guides call the server a server, drawings drawings and layouts layouts.
 
 ## 1.4.0 — 2026-10-05
 
-Draw on your slides, also from an iPad, and ask the audience more than polls. A room server started with `mdeck live` needs 1.4 to pass live drawings to other devices; polls keep working with older ones.
+Draw on your slides, also from an iPad, and ask the audience more than polls. A room server (`mdeck live`) needs 1.4 to pass live drawings on.
 
-- Slides can carry drawings (ink) from `<deck>.ink.json` beside the deck: pen strokes with pressure and highlighter, drawn above the slide in the deck, the reader view, builds and PDFs. `I` hides them; `mdeck build` and `mdeck pdf` leave them out with `--no-ink`; `mdeck check` reports a broken ink file and drawings for slides that no longer exist.
-- Drawing in the full-screen deck: `D` starts it. Pen (with pressure) and highlighter are kept, a marker fades after a few seconds, the eraser removes whole strokes; undo/redo (also Cmd/Ctrl+Z), clear slide, colours and sizes are on a floating toolbar. Once a pen is used, fingers no longer draw unless switched on; tap zones are off while drawing. Until a server saves the ink, it is kept in the browser and can be downloaded as the ink file.
-- `mdeck dev` saves drawings in `<deck>.ink.json` as they are made, without reloading the open windows. A slide that gets its first drawing and has no `id:` gets one from its heading, so the drawing stays with it when slides are added or moved; when an id is changed in the editor, the drawing moves along. Drawings from several windows or devices are merged stroke by stroke, and the ink file is backed up once per session in `.mdeck-backups`.
-- Drawing in the presenter view: **✎ Draw** (or `D`) turns it on for the current slide, with the toolbar on the slide. The audience window, the next-slide preview and other deck windows in the same browser show strokes while they are drawn, the marker fading there too.
-- For an iPad: the presenter view has a layout where the slide fills the screen, with a small bar (timer, previous/next, draw, notes, full screen) and the notes and next slide in a drawer (`N`). It is the default on touch screens and is remembered. `F` and a button go full screen where the browser allows it, in the presenter view and the deck. The deck's controls gain a draw button, the ink toolbar has previous/next, and buttons are larger on touch screens. Added to the Home Screen, a deck opens without Safari's bars.
-- Present from an iPad while the laptop drives the projector: with `mdeck dev --host`, the launch page shows a one-time QR code ("Present from an iPad") that opens the presenter view on the iPad, paired with the dev server so it may save drawings and steer the phones; "Unpair" ends it. The audience window follows a presenter view on another device, slide, step and drawings as they are drawn, through the room server (the one in `mdeck dev` or `mdeck live`, with its presenter code). A window that opens later gets the drawings made so far.
-- The room server orders the presenter's announcements by when it heard them, so two devices with clocks that disagree no longer take the phones back to an older slide. New route `POST /rooms/<id>/ink` (presenter only) for live drawings.
-- More kinds of audience questions: `<scale>` (a number from `min` to `max`, with counts and the average), `<wordcloud>` (a real word cloud of short answers, packed around the middle and sized by how often they came in) and `<question>` (open answers as cards). Phones answer them on the same page as polls.
-- `<qrcode join />` shows the deck's join code, large and with its link, for a slide at the start; `qr="false"` on a poll or another question leaves out its own code.
-- QR codes (`<qrcode>` and the questions) are drawn as SVG in the slide's own colours instead of black on white, so they fit dark themes too; `--qr-ink` and `--qr-bg` override them.
+- Slides can carry drawings from `<deck>.ink.json`, shown in the deck, reader view, builds and PDFs. `I` hides them; `--no-ink` leaves them out.
+- Drawing in the full-screen deck: `D` starts it, with pen, highlighter, fading marker, eraser, undo and a floating toolbar.
+- `mdeck dev` saves drawings in `<deck>.ink.json` as they are made, and gives slides an `id:` so drawings stay with them.
+- Drawing in the presenter view: **✎ Draw** (or `D`); other windows show the strokes live.
+- For an iPad: a presenter layout with the slide full screen and notes in a drawer (`N`); `F` goes full screen.
+- Present from an iPad while the laptop drives the projector: with `mdeck dev --host`, the launch page shows a pairing QR code.
+- The room server orders the presenter's announcements by arrival, so devices with disagreeing clocks no longer move phones back. New route `POST /rooms/<id>/ink`.
+- New audience questions: `<scale>`, `<wordcloud>` and `<question>`.
+- `<qrcode join />` shows the deck's join code; `qr="false"` on a question leaves out its own code.
+- QR codes are drawn as SVG in the slide's colours; `--qr-ink` and `--qr-bg` override them.
 
 ## 1.3.2 — 2026-10-01
 
-- Fixed: on plain `http://` network addresses, as with `mdeck dev --host`, browsers offer no `crypto.randomUUID`. A phone on the answer page then got a new identity with every reload, so a changed vote could count twice, and the presenter view did not open at all. Both now use a fallback that works everywhere.
+- Fixed: on plain `http://` network addresses a phone's changed vote could count twice, and the presenter view did not open.
 
 ## 1.3.1 — 2026-09-30
 
-- Phones no longer flip between two screens showing the same presentation: the room server follows the screen where the slides were changed last, a screen that only opened does not take over, and the presenter view says when another screen has the phones. A screen that cannot read its theme yet no longer sends an empty look, which made the phones' fonts jump.
+- Phones no longer flip between two screens showing the same presentation; the presenter view says when another screen has the phones.
 
 ## 1.3.0 — 2026-09-30
 
 Polls work without hosting the slides. This changes how phones join; see *Removed*.
 
-- Polls use relay mode: phones no longer load the slides. They open the room server's own answer page at `<server>/<code>`, and the presenter's screen sends it the activity on screen, what the phones should show, the deck's look and the words in its language. You present from your own computer with the slides as they are; only the room server has to be reachable, and it works the same inside `mdeck dev` on localhost. The session code comes from the deck (`live.id`, `live.code`).
-- Components describe their phone side with a static `phone` function returning a `choice`, `text` or `scale` form; answers arrive as `data.value`.
-- The poll guide shows how to keep `mdeck live` running with systemd, and the nginx settings live connections need.
-- Removed: `?view=respond` and the `live.audience` setting, which `mdeck check` now reports. Custom activities that drew their own phone page with `respond` now describe it with `phone`.
+- Polls use relay mode: phones open the room server's answer page at `<server>/<code>` instead of loading the slides. The session code comes from `live.id` and `live.code`.
+- Components describe their phone side with a static `phone` function; answers arrive as `data.value`.
+- The poll guide shows how to run `mdeck live` with systemd and nginx.
+- Removed: `?view=respond` and the `live.audience` setting. Custom activities that used `respond` must describe their phone page with `phone`.
 
 ## 1.2.0 — 2026-09-30
 
 ### Launch page
 
-- `mdeck dev` opens a launch page at the dev server's plain address; the slides are at `?view=deck`. It has a live preview of the deck; links to the presenter view and an audience window that belong together, the full-screen deck and the reader view; the visual editor and the guides, started on first click; buttons that build the folder, the file to send and the PDF; and the `mdeck check` results. It uses the same dark styling as the presenter view and the editor, and answers only on this computer.
+- `mdeck dev` opens a launch page with a live preview, links to every view, the editor, build buttons and `mdeck check` results. The slides are at `?view=deck`.
 - `mdeck dev` and `mdeck present` accept `--host` (reachable from phones in the same network), `--port` and `--no-open`.
 
 ### Audience polls
 
-- `<poll room=… options=…>` shows live results and a QR code; people vote on their phones and can change their vote. Every poll in a deck shares one answer link, `?view=respond`, and phones follow the presenter to whichever poll is on screen, including a theme picked in the presenter view.
-- Rooms run inside `mdeck dev`, or on a room server started with `mdeck live` for hosted decks, set with the `live:` deck setting. Only the presenter moves the phones along and resets polls; on a room server this takes the `MDECK_LIVE_KEY` presenter code, which the launch page shows along with the server's health and the viewers' link. The presenter view says whether phones follow it.
+- `<poll room=… options=…>` shows live results and a QR code; phones vote at `?view=respond` and follow the presenter.
+- Rooms run inside `mdeck dev` or on a room server (`mdeck live`, `live:` setting) that takes the `MDECK_LIVE_KEY` presenter code.
 - Answers are anonymous and kept in memory only, with size and rate limits.
 - Components can build their own activities with `useRoom` and `QrCode` from `mdeck/live`.
 - New example deck `examples/poll` and the guide "Ask your audience".
 
 ### Language
 
-- `lang` is the deck's language: built pages are marked with it, and the reader view, the deck controls, polls and the answer page use German or English words to match. The `labels:` setting replaces single words.
+- `lang` is the deck's language; mdeck's own words follow it in German or English. The `labels:` setting replaces single words.
 
 ### Components
 
-- Decks can share components: the `components:` setting lists extra folders, searched after the deck's own `components/` folder. The dev server watches them and follows changes to the list without a restart.
-- PDFs, printouts and the reader's Read mode show interactive slides in their finished state: every step is revealed and slides sit inside `[data-deck-static]`; the stage dispatches `printchange` when printing starts or ends.
+- Decks can share components from extra folders listed in `components:`.
+- PDFs, printouts and Read mode show interactive slides finished, every step revealed (`[data-deck-static]`, `printchange` event).
 
 ### Editing, slides and docs
 
@@ -406,9 +473,9 @@ Polls work without hosting the slides. This changes how phones join; see *Remove
 - A slide's `title:` setting names it in the outline for slides without a heading.
 - Code blocks stay left-aligned in centred layouts. Step lists have the same spacing as ordinary lists.
 - New guide "Views, commands and servers".
-- The presenter view and the launch page show what is connected to the deck: presenter views, audience windows and phones, and on which devices, such as a paired iPad. Windows say what they are when they connect to the room server; the launch page asks `GET /rooms/<id>/presence`. A standalone `mdeck server` needs this version for it.
-- The launch page explains that the iPad runs the same presenter view, and that pairing is what lets it save drawings and steer.
-- One icon set everywhere: the launch page, presenter, reader, deck controls, drawing toolbar, code blocks and editor use the same line icons ([Lucide](https://lucide.dev), ISC license) instead of a mix of drawings and text symbols.
+- The presenter view and the launch page show what is connected to the deck. A standalone `mdeck server` needs this version for it.
+- The launch page explains that the iPad runs the same presenter view, and that pairing lets it save drawings and steer.
+- One icon set everywhere: [Lucide](https://lucide.dev) line icons (ISC license).
 
 ### Fixes and maintenance
 
@@ -419,17 +486,17 @@ Polls work without hosting the slides. This changes how phones join; see *Remove
 
 ## 1.1.0 — 2026-09-17
 
-- One address parameter selects the view: `?view=deck`, `?view=share`, `?view=presenter`, `?view=audience`, with the short forms `?v=d`, `?v=s`, `?v=p`, `?v=a`. The former `?presenter=1`, `?audience=1` and `?share=1` are gone; launchers, the presenter command and the editor use the new form.
+- One address parameter selects the view: `?view=deck`, `share`, `presenter` or `audience` (short `?v=d` …). `?presenter=1`, `?audience=1` and `?share=1` are gone.
 - The reader's Look menu always offers "Reset to default", and every reader button has an icon and the same style.
 
 ## 1.0.2 — 2026-09-17
 
-- The reader view no longer shows speaker notes just because the file contains them. Notes appear in Read mode only when the deck sets `share.notes: true`, so one build can serve both the presenter and the people you send the link to.
+- The reader view shows speaker notes only when the deck sets `share.notes: true`, not just because the file contains them.
 
 ## 1.0.1 — 2026-09-16
 
-- The slide-writing skill follows the Agent Skills format and works with any assistant; `mdeck skill` installs it for Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, or prints it for other tools.
-- The skill finds the reference docs in the installed package, asks `mdeck templates` and `mdeck extensions` for the deck's real layouts and looks, and checks its result with `mdeck check`.
+- The slide-writing skill follows the Agent Skills format; `mdeck skill` installs it for Claude Code, Codex, Cursor, GitHub Copilot and Gemini CLI, or prints it.
+- The skill finds the reference docs in the installed package, asks mdeck for the deck's real layouts and looks, and checks its result with `mdeck check`.
 - README with rendered example slides and a theme GIF; corrected theme descriptions in the authoring reference; package homepage points at the docs site.
 
 ## 1.0.0 — 2026-09-16
@@ -439,9 +506,9 @@ The first release. Everything below is included.
 - Slides written in Markdown with YAML settings, named content areas and speaker notes.
 - Seven built-in layouts, six themes and eight colour palettes; deck-local templates, themes and palettes described by one `extension.toml` format.
 - Presenter view with notes, timer and a synchronised audience window.
-- Reader view for shared decks: outline, Read mode for phones, look picker, deep links, PDF download; `mdeck build --share` strips speaker notes and renders the PDF with a local Chrome.
+- Reader view for shared decks: outline, Read mode for phones, look picker, deep links, PDF download; `mdeck build --share` strips speaker notes.
 - `mdeck pdf` renders a PDF on its own, one page per slide with real text.
 - Builds as a folder or as one self-contained HTML file, with optional presenter launchers.
-- Browser editor (`mdeck edit`, experimental): outline, live preview, form-based slide and deck settings, autosave with undo, and editors for palettes, themes and templates.
+- Browser editor (`mdeck edit`, experimental): outline, live preview, form-based settings, autosave with undo, and editors for palettes, themes and templates.
 - Validation (`mdeck check`), listings (`mdeck templates`, `mdeck extensions`), a scaffolding wizard (`mdeck new`) and offline documentation (`mdeck docs`).
 - A slide-writing skill for Claude Code.

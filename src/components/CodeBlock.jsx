@@ -75,10 +75,11 @@ async function execPython(code) {
 // ─── Component ─────────────────────────────────────────────────────────────
 
 export default function CodeBlock({ lang = 'text', children = '', live, copy, editable }) {
-  const isLive     = live     != null
   const isCopy     = copy     != null
   const isEditable = editable != null
   const isPython   = lang === 'python' || lang === 'py'
+  // Only JavaScript and Python can be run; `live` on another fence shows no Run.
+  const isLive     = live     != null && (isPython || lang === 'js' || lang === 'javascript')
 
   const [code, setCode]       = useState(() => String(children).trim())
   const [output, setOutput]   = useState(null)

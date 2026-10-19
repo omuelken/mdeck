@@ -159,6 +159,16 @@
   object-fit: contain;
   filter: var(--logo-filter, none);
 }
+/* On the other slides (show.organization: all) it stands in the header's
+   line, before the section, instead of in the corner. */
+.slide:not(.slide--title) .slide-logo {
+  position: static;
+  height: 44px;
+  max-width: 240px;
+  margin-inline-start: auto;
+  transform: none;
+}
+.slide:not(.slide--title) .slide-logo + span:not(:empty) { margin-inline-start: 16px; }
 
 /* ─────────────────────────────────────────────
    TYPOGRAPHY
@@ -534,7 +544,8 @@ strong { font-weight: 650; color: var(--ink); }
   from { --dx: -24px; --dy: 10px; }
   to { --dx: 28px; --dy: -14px; }
 }
-deck-stage[data-deck-static] .slide { animation: none; }
+/* Also the reader's Read mode, which puts the attribute on its own box. */
+[data-deck-static] .slide { animation: none; }
 
 /* ─────────────────────────────────────────────
    LAYOUT: IMAGE + TEXT — a picture in a bezel, the words beside it
@@ -652,7 +663,6 @@ deck-stage[data-deck-static] .slide { animation: none; }
 .code-block {
   --code-bg: light-dark(color-mix(in oklab, var(--surface) 82%, transparent), color-mix(in oklab, var(--bg) 74%, transparent));
   --code-radius: 26px;
-  --code-size: 26px;
   background: var(--code-bg);
   border-radius: var(--code-radius);
   padding: 32px 40px;
@@ -663,6 +673,9 @@ deck-stage[data-deck-static] .slide { animation: none; }
   line-height: 1.6;
   box-shadow: inset 0 1px 0 0 color-mix(in oklab, var(--hi) 22%, transparent), inset 0 0 0 1px var(--edge);
 }
+/* The size is set on the slide, so the split layout's smaller code (on its
+   columns) reaches the block. */
+.slide { --code-size: 26px; }
 .code-block code { font-family: inherit; font-size: inherit; background: none; padding: 0; box-shadow: none; }
 .slide-body .code-block-wrapper { margin: 28px 0; }
 

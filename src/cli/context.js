@@ -1,7 +1,7 @@
 // What every command gets from its command line (args.js parsed it): the
 // options, and helpers that find the deck and stop with a message when
 // something is missing.
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, readFileSync, statSync } from 'fs'
 import { resolve } from 'path'
 import { loadRegistry } from '../extensions/discover.js'
 import { ManifestError } from '../extensions/manifest.js'
@@ -38,14 +38,29 @@ export function commandContext(command, parsed) {
       err(`File not found: ${input}`)
       process.exit(1)
     }
+    if (statSync(input).isDirectory()) {
+      err(`${input} is a folder, not a slides file.`)
+      tip(existsSync(resolve(input, 'slides.md')) ? `Usage: mdeck ${cmd} ${resolve(input, 'slides.md')}` : `Usage: mdeck ${cmd} <slides.md>`)
+      process.exit(1)
+    }
     return input
   }
 
   return {
-    command, options, positionals, hasFlag, slideOption, requireInput, registryFor,
+    command, options, positionals, hasFlag, slideOption, requireInput, registryFor, onPort,
     outputOption: () => options['--output'] ?? null,
     serverOption: () => options['--server'],
     portOption: () => options['--port'] ?? null,
+  }
+}
+
+// Runs `start`, which opens a server on `port` (--port): when something else
+// has the port, says so instead of showing a stack trace.
+async function onPort(port, start) {
+  try { return await start() } catch (error) {
+    if (error.code !== 'EADDRINUSE' && !/EADDRINUSE|already in use/.test(error.message)) throw error
+    err(`Port ${port} is in use. Choose another with --port, or stop what listens there.`)
+    process.exit(1)
   }
 }
 

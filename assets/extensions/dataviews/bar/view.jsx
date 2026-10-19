@@ -1,13 +1,18 @@
 import { h } from 'preact'
-import { stepOf, format, formatTick, color, markColor, niceTicks, linear, bands, barPath, extent, textWidth, Legend } from 'mdeck/dataview'
+import { useMemo } from 'preact/hooks'
+import { stepOf, format, formatTick, color, markColor, axisTicks, linear, bands, barPath, extent, textWidth, Legend } from 'mdeck/dataview'
 
 // Bars grow from one baseline at 0, with the data end rounded. One series
 // takes the first colour; several sit side by side (or stacked) in the
 // palette's order, with a legend. Values are labelled sparingly: every bar
-// of a short single series, else the highlighted ones.
+// of a short single series, else the highlighted ones. An axis the author
+// ends with `max` ends there; a bar beyond it is cut off at the edge. Labels
+// that would not fit under every bar go under every second, third …
 
 const GAP = 4
 const MAX_THICKNESS = 120
+
+let clips = 0
 
 const fit = (text, room, size) => {
   if (textWidth(text, size) <= room) return text
@@ -20,7 +25,9 @@ export default function Bar({ data, props, width, height, font }) {
   const n = data.rows.length, k = data.series.length
   const stacked = props.stacked && k > 1
   const [low, high] = extent(data, { props, stacked })
-  const scale = niceTicks(low, high)
+  // Bars start at 0: a `min` above it is ignored (mdeck check says so).
+  const scale = axisTicks(low, high, { min: props.min > 0 ? undefined : props.min, max: props.max })
+  const clip = useMemo(() => `dataview-bar-${++clips}`, [])
   const compact = Math.max(Math.abs(scale.min), Math.abs(scale.max)) >= 100000
   const fmt = (value, series = 0) => format(data, value, series, { compact })
   const valuesShown = props.values === 'all' || (props.values === 'auto' && k === 1 && n <= 12)
@@ -42,6 +49,11 @@ export default function Bar({ data, props, width, height, font }) {
   const thickness = Math.max(2, Math.min(MAX_THICKNESS, (slots.size - GAP * (perGroup - 1)) / perGroup))
   const groupSize = thickness * perGroup + GAP * (perGroup - 1)
   const zero = value(Math.min(Math.max(0, scale.min), scale.max))
+  const inRange = v => v >= scale.min - 1e-9 && v <= scale.max + 1e-9
+  // A label under every bar that fits, else every second, third …
+  const every = horizontal
+    ? Math.max(1, Math.ceil(small * 1.2 / Math.max(1, slots.slot)))
+    : Math.max(1, Math.ceil(longest * n / Math.max(1, plot.x1 - plot.x0) * 1.3))
 
   const grid = scale.ticks.map(t => horizontal
     ? <g key={t}><line class="dataview-gridline" x1={value(t)} x2={value(t)} y1={plot.y0} y2={plot.y1} /><text x={value(t)} y={plot.y1 + small * 1.3} text-anchor="middle">{tick(t)}</text></g>
@@ -56,11 +68,12 @@ export default function Bar({ data, props, width, height, font }) {
       if (stacked) { from = v >= 0 ? up : down; if (v >= 0) up += v; else down += v }
       const across = stacked ? groupStart : groupStart + s * (thickness + GAP)
       const end = value(from + v), base = value(from)
-      const label = showValue(row) && (!stacked || s === k - 1)
+      // A bar beyond the axis is cut off, and has no value at its end.
+      const label = showValue(row) && (!stacked || s === k - 1) && inRange(stacked ? up + down : v)
       const shown = stacked ? fmt(up + down) : fmt(v, s)
       const tip = stacked ? value(v >= 0 ? up : down) : end
       return <g key={`${i}:${s}`} {...stepOf(data, i, s)}>
-        <path d={barPath({ base, end, across, thickness, vertical: !horizontal, radius: Math.min(8, thickness / 4) })} fill={markColor(data, row, s)} />
+        <path d={barPath({ base, end, across, thickness, vertical: !horizontal, radius: Math.min(8, thickness / 4) })} fill={markColor(data, row, s)} clip-path={`url(#${clip})`} />
         {label && (horizontal
           ? <text class="dataview-value" x={tip + (v < 0 ? -8 : 8)} y={across + thickness / 2} text-anchor={v < 0 ? 'end' : 'start'} dominant-baseline="middle">{shown}</text>
           : <text class="dataview-value" x={stacked ? slots.center(i) : across + thickness / 2} y={tip + (v < 0 ? small * 1.1 : -small * 0.45)} text-anchor="middle">{shown}</text>)}
@@ -68,14 +81,15 @@ export default function Bar({ data, props, width, height, font }) {
     })
   })
 
-  const labels = data.rows.map((row, i) => horizontal
+  const labels = data.rows.map((row, i) => i % every === 0 && (horizontal
     ? <text key={row.index} x={plot.x0 - 12} y={slots.center(i)} text-anchor="end" dominant-baseline="middle" class={row.highlight ? 'dataview-value' : null}>{fit(row.label, plot.x0 - 16, small)}</text>
-    : <text key={row.index} x={slots.center(i)} y={plot.y1 + small * 1.35} text-anchor="middle" class={row.highlight ? 'dataview-value' : null}>{fit(row.label, slots.slot, small)}</text>)
+    : <text key={row.index} x={slots.center(i)} y={plot.y1 + small * 1.35} text-anchor="middle" class={row.highlight ? 'dataview-value' : null}>{fit(row.label, slots.slot * every, small)}</text>))
 
   return <div class="dataview-chart">
     <Legend data={data} />
     <svg width={width} height={svgHeight} viewBox={`0 0 ${width} ${svgHeight}`} role="img" aria-label={data.title || undefined}>
       <g class="dataview-grid">{grid}</g>
+      <defs><clipPath id={clip}><rect x={plot.x0} y={plot.y0} width={plot.x1 - plot.x0} height={plot.y1 - plot.y0} /></clipPath></defs>
       {bars}
       {horizontal
         ? <line class="dataview-baseline" x1={zero} x2={zero} y1={plot.y0} y2={plot.y1} />

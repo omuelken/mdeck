@@ -20,6 +20,7 @@ export async function loadDeck() {
   return response.json()
 }
 
+// `keepalive` lets the request finish after its page has closed.
 export async function saveSource(source, base, { keepalive = false } = {}) {
   const response = await fetch('/__mdeck/source', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source, base }), keepalive })
   if (response.status === 409) throw new ConflictError(await response.json())

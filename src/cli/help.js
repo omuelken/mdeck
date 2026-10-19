@@ -72,7 +72,7 @@ export const COMMAND_HELP = {
     ${c.green}mdeck palettes${c.reset} search [words] | install <palette> | remove <palette> | update [palette] | list
       Like themes.`,
   build: `
-    ${c.green}mdeck build${c.reset} [slides.md] [-o dir/index.html]
+    ${c.green}mdeck build${c.reset} [slides.md] [-o dir/]
       --reader               the reader view: notes removed unless --notes, polls kept as a record
                              unless --no-polls
       --single-file          everything in one HTML file
@@ -98,7 +98,8 @@ export const COMMAND_HELP = {
       Pictures go to .mdeck-snapshots/ unless -o names a folder.
       --slide <numbers>      only these slides: 3, 3,5 or 2-4
       --sheet                one picture of them all in a grid, each under its number and heading
-      --dark | --light       in this appearance instead of the deck's own`,
+      --dark | --light       in this appearance instead of the deck's own
+      --no-drawings          without the drawings; --no-results without the answers kept in the talk`,
   results: `
     ${c.green}mdeck results${c.reset} [slides.md] [-o answers.csv]
       Every answer as CSV: slide, room, kind, question, phone, time, answer.
@@ -123,7 +124,4 @@ export const COMMAND_HELP = {
     ${c.green}mdeck server${c.reset} [--port 8787] [--host [address]]
       Rooms for polls and for presenting through it; MDECK_SERVER_KEY is the presenter's key.
       Put a web server with HTTPS in front.`,
-  migrate: `
-    ${c.green}mdeck migrate${c.reset} [slides.md] [--dry-run]
-      Updates settings, local layouts and drawings from before 2.0.`,
 }

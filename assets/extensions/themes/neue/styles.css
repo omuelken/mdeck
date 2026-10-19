@@ -37,6 +37,19 @@
   background: var(--bg);
   padding-inline-start: 32px;
 }
+/* On the other slides (show.organization: all) it stands in the header's
+   line, before the section, instead of in the corner. */
+.slide:not(.slide--title) .slide-logo {
+  position: static;
+  height: 40px;
+  max-width: 240px;
+  margin-inline-start: auto;
+  transform: none;
+  /* Not the title slide's field of white, the rule runs on above. */
+  background: none;
+  padding: 0;
+}
+.slide:not(.slide--title) .slide-logo + span:not(:empty) { margin-inline-start: 32px; }
 
 .slide-footer {
   font-family: var(--font-body);
@@ -243,7 +256,19 @@ strong { color: var(--ink); font-weight: 600; }
   --rule: var(--inverse-rule);
   --accent: var(--inverse-accent);
   --accent-2: var(--inverse-accent-2);
+  --accent-3: var(--inverse-accent-3);
   --on-accent: var(--inverse-on-accent);
+  /* Code and the logo follow the variant too (src/extensions/appearance.js). */
+  --logo-filter: var(--inverse-logo-filter, none);
+  --logo-light-display: var(--inverse-logo-light-display, block);
+  --logo-dark-display: var(--inverse-logo-dark-display, none);
+  --token-default: var(--inverse-token-default);
+  --token-comment: var(--inverse-token-comment);
+  --token-string: var(--inverse-token-string);
+  --token-number: var(--inverse-token-number);
+  --token-keyword: var(--inverse-token-keyword);
+  --token-function: var(--inverse-token-function);
+  --token-operator: var(--inverse-token-operator);
   --focus-bg: var(--bg);
   --focus-ink: var(--ink);
   background: var(--focus-bg);
@@ -449,7 +474,6 @@ strong { color: var(--ink); font-weight: 600; }
 .code-block {
   --code-bg: var(--surface, var(--rule));
   --code-radius: 0;
-  --code-size: 30px;
   background: var(--code-bg);
   border-radius: 0;
   border-top: 6px solid var(--accent);
@@ -460,6 +484,9 @@ strong { color: var(--ink); font-weight: 600; }
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   line-height: 1.6;
 }
+/* The size is set on the slide, so the split layout's smaller code (on its
+   columns) reaches the block. */
+.slide { --code-size: 30px; }
 .code-block code {
   font-family: inherit;
   font-size: inherit;
