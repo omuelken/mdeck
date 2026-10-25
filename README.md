@@ -17,7 +17,7 @@
 > [!NOTE]
 > **This is the `unterricht` branch of [omuelken/mdeck](https://github.com/omuelken/mdeck)**, a fork of
 > [tilman-schieber/mdeck](https://github.com/tilman-schieber/mdeck) used for teaching
-> (Mechanik & Wärme, FHNW). It follows Tilman's `main` (now 3.15.0) and adds:
+> (Mechanik & Wärme, FHNW). It follows Tilman's `main` (now 3.16.0) and adds:
 >
 > | Change | Status |
 > |---|---|

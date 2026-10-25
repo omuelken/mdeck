@@ -4,6 +4,10 @@
 
 - A paired iPad stays paired when `mdeck run` or the laptop restarts: reload its presenter view. The laptop keeps the pairing in `~/.mdeck/paired/` (one file per deck, readable only by you) and forgets an iPad unused for 30 days; **Unpair** still ends every pairing.
 
+## 3.16.0 — 2026-10-25
+
+- New activity `<pinpoint>`: phones show a picture and send where people tapped. The slide shows every tap as a dot on the picture; `answer="62% 31% 8%"` (or pixels, `answer="412 230 40"`) is the circle the tick draws, counting the taps inside it and telling each phone whether it hit. The presenter's screen sends the phones the picture through the room server, made smaller (at most 1000 px and 190 KB); the server keeps it in memory only while the `<pinpoint>` is on screen, and needs this version.
+
 ## 3.15.0 — 2026-10-17
 
 - A deck can bring a second logo for dark slides: `logo-dark: ./img/logo-white.png` in `meta` is shown as it is on dark slides, instead of the inverted `logo`.
