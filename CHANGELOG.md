@@ -4,6 +4,7 @@
 
 - Fixed: with `mdeck run --server`, an iPad stayed black when the deck used a theme installed in `~/.mdeck/extensions`; the laptop did not share files in a dot directory, not even the theme's stylesheet. Other dot paths (`.env`, `.git`) stay private.
 - Fixed: with `mdeck run --server`, the picture of a `<pinpoint>` could not reach the phones from a paired iPad.
+- `<pinpoint answer="…">` takes rectangles and polygons as well as a circle, and several shapes at once: `answer="rect 300 180 240 120"`, `answer="poly 300 180 540 200 480 360"`, `answer="circle 412 230 40 | rect 100 80 60 60"`. A tap in any of them is right; pixels are the default, `%` on every number of a shape gives percent. A single circle works as before. A standalone `mdeck server` needs this version to show the phones the shapes; an older one shows them the picture without the area drawn.
 
 ## 3.16.1 — 2026-10-27
 

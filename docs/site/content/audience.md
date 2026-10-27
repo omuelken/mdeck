@@ -103,10 +103,19 @@ All of them take `room`, `question` and `qr` like a poll, and `placeholder` for 
 ```markdown
 # Where is the left atrium?
 
-<pinpoint room="heart" src="img/heart.png" answer="62% 31% 8%" />
+<pinpoint room="heart" src="img/heart.png" answer="412 230 40" />
 ```
 
-`answer` is a circle: its middle across and down, and its radius, in percent of the picture (the radius as a share of its width). Pixels work too, as an image editor shows them: `answer="412 230 40"`. The tick draws the circle, colours the dots inside green, says how many hit, and tells each phone whether its tap did. Without `answer` the slide simply shows where people tapped. `height` sets the picture's height on the slide (520), and `results="hidden"` hides the dots until you show them, as for a poll.
+`answer` marks the right spot, in pixels of the picture as an image editor shows them. A circle is its middle across and down, and its radius: `answer="412 230 40"`. Other shapes start with their name:
+
+| `answer` | Shape |
+|---|---|
+| `412 230 40` or `circle 412 230 40` | a circle: middle x, y and radius |
+| `rect 300 180 240 120` | a rectangle: top left corner x, y, then width and height |
+| `poly 300 180  540 200  480 360` | a polygon: its corners x, y, three or more |
+| `circle 412 230 40 \| rect 100 80 60 60` | several shapes, separated by `\|`: a tap in any of them is right |
+
+Write each shape in pixels or, with a `%` on every number, in percent of the picture (`rect 25% 20% 30% 30%`); a circle's radius is then a share of the picture's width. The tick draws the shapes, colours the dots inside green, says how many hit, and tells each phone whether its tap did. Without `answer` the slide simply shows where people tapped. `height` sets the picture's height on the slide (520), and `results="hidden"` hides the dots until you show them, as for a poll.
 
 The phones get the picture from the server, made smaller (at most 1000 px), and the server keeps it only while the question is on screen: you need nothing else, but a server of your own must run this version of mdeck. `mdeck results` writes each tap as `62.1% 31.4%`, and the summary counts the taps on and off target.
 

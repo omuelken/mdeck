@@ -6,7 +6,7 @@
 //     "answers": [{ "phone": 1, "at": "…", "value": … }], "solution": … } } }
 //
 // `solution` is the right answer as the slide knows it, where it has one:
-// for a <pinpoint>, the circle measured on its picture.
+// for a <pinpoint>, its shapes measured on the picture.
 //
 // Phones are numbered per room in the order they first answered; their own
 // ids never leave the room server. `answers` are those that counted: once an

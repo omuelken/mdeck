@@ -14,7 +14,7 @@
       number: 'A number', invalid: 'Enter a number, such as 0.5 or 1/2.', numberSent: 'Sent: {value}. Send another to change.',
       react: 'React',
       pinPick: 'Tap the spot.', pinConfirm: 'Move the pin if needed, then send.', pinSent: 'Sent. Tap elsewhere and send again to change.', pinLoading: 'Loading the picture…',
-      pinWrong: 'Not quite: the circle shows the right spot.', pinSolution: 'The circle shows the right spot.',
+      pinWrong: 'Not quite: the marked area shows the right spot.', pinSolution: 'The marked area shows the right spot.',
     },
     de: {
       waiting: 'Die nächste Frage erscheint hier.', pick: 'Eine Antwort antippen.', thanks: 'Danke! Gewählt: „{choice}“. Zum Ändern eine andere antippen.', send: 'Senden', sent: 'Gesendet. Danke!', offline: 'Verbinde…',
@@ -23,7 +23,7 @@
       number: 'Eine Zahl', invalid: 'Eine Zahl eingeben, z. B. 0,5 oder 1/2.', numberSent: 'Gesendet: {value}. Zum Ändern eine andere senden.',
       react: 'Reagieren',
       pinPick: 'Auf die Stelle tippen.', pinConfirm: 'Pin bei Bedarf verschieben, dann senden.', pinSent: 'Gesendet. Zum Ändern woanders tippen und erneut senden.', pinLoading: 'Bild wird geladen…',
-      pinWrong: 'Leider nicht: Der Kreis zeigt die richtige Stelle.', pinSolution: 'Der Kreis zeigt die richtige Stelle.',
+      pinWrong: 'Leider nicht: Der markierte Bereich zeigt die richtige Stelle.', pinSolution: 'Der markierte Bereich zeigt die richtige Stelle.',
     },
   }
   let words = FALLBACK[navigator.language?.slice(0, 2) === 'de' ? 'de' : 'en']
@@ -162,14 +162,43 @@
   }
 
   // A tap on a <pinpoint> picture, as src/components/pinpoint.js reads it:
-  // { x, y } from 0 to 1. Whether it is inside the circle, measured in
-  // widths so the circle stays round (isInside there).
+  // { x, y } from 0 to 1. Whether it is inside the shapes, a circle measured
+  // in widths so it stays round (shapesOf and isInside there).
   const tapOf = value => {
     const x = Number(value?.x), y = Number(value?.y)
     return Number.isFinite(x) && Number.isFinite(y) && x >= 0 && x <= 1 && y >= 0 && y <= 1 ? { x: Math.round(x * 10000) / 10000, y: Math.round(y * 10000) / 10000 } : null
   }
-  const circleOf = value => ['x', 'y', 'r', 'ratio'].every(key => Number.isFinite(value?.[key])) ? value : null
-  const isInside = (tap, circle) => Math.hypot(tap.x - circle.x, (tap.y - circle.y) * circle.ratio) <= circle.r
+  const finite = (...values) => values.every(Number.isFinite)
+  const shapeOf = shape => shape?.type === 'rect' ? (finite(shape.x, shape.y, shape.w, shape.h) && shape.w > 0 && shape.h > 0 ? shape : null)
+    : shape?.type === 'poly' ? (Array.isArray(shape.points) && shape.points.length >= 3 && shape.points.every(point => finite(point?.x, point?.y)) ? shape : null)
+    : finite(shape?.x, shape?.y, shape?.r, shape?.ratio) && shape.r > 0 && shape.ratio > 0 ? { ...shape, type: 'circle' } : null
+  const shapesOf = value => {
+    const shapes = Array.isArray(value?.shapes) ? value.shapes.map(shapeOf) : [shapeOf(value)]
+    return shapes.length && shapes.every(Boolean) ? shapes : null
+  }
+  const isInside = (tap, shapes) => shapes.some(shape => {
+    if (shape.type === 'rect') return tap.x >= shape.x && tap.x <= shape.x + shape.w && tap.y >= shape.y && tap.y <= shape.y + shape.h
+    if (shape.type === 'poly') {
+      let inside = false
+      for (let i = 0, j = shape.points.length - 1; i < shape.points.length; j = i++) {
+        const a = shape.points[i], b = shape.points[j]
+        if ((a.y > tap.y) !== (b.y > tap.y) && tap.x < (b.x - a.x) * (tap.y - a.y) / (b.y - a.y) + a.x) inside = !inside
+      }
+      return inside
+    }
+    return Math.hypot(tap.x - shape.x, (tap.y - shape.y) * shape.ratio) <= shape.r
+  })
+  const outline = shape => {
+    if (shape.type !== 'poly') return el('span', { class: `answer-pin-target${shape.type === 'rect' ? ' is-rect' : ''}`, style: shape.type === 'rect' ? `${place(shape)} width: ${shape.w * 100}%; height: ${shape.h * 100}%;` : `${place(shape)} width: ${shape.r * 200}%; height: ${(shape.r * 200) / shape.ratio}%;` })
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    svg.setAttribute('class', 'answer-pin-target is-poly')
+    svg.setAttribute('viewBox', '0 0 100 100')
+    svg.setAttribute('preserveAspectRatio', 'none')
+    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
+    polygon.setAttribute('points', shape.points.map(({ x, y }) => `${x * 100},${y * 100}`).join(' '))
+    svg.append(polygon)
+    return svg
+  }
   const place = ({ x, y }) => `left: ${x * 100}%; top: ${y * 100}%;`
   // The picture comes from this server (rooms/<code>/image), or from another
   // site on https. One element, kept while the page redraws; a picture the
@@ -242,7 +271,7 @@
     },
     // { question, image: { url, ratio } }: a tap on the picture puts a pin
     // there, Send sends it; the latest one counts. Once the right answer
-    // shows, the circle (`solution`) is drawn and the phone says whether its
+    // shows, its shapes (`solution`) are drawn and the phone says whether its
     // pin was inside. Without the picture yet, the phone waits for it.
     pin(activity, room) {
       const url = pictureUrl(activity.image)
@@ -251,7 +280,7 @@
       try { sent = tapOf(JSON.parse(remembered(room) ?? 'null')) } catch {}
       const pin = pinDraft ?? sent
       const img = pictureFor(url)
-      const circle = controls.revealed ? circleOf(controls.solution) : null
+      const shapes = controls.revealed ? shapesOf(controls.solution) : null
       const ratio = Number(activity.image.ratio) > 0 ? Number(activity.image.ratio) : null
       const tap = event => {
         if (controls.closed) return
@@ -270,11 +299,11 @@
       return [
         el('div', { class: `answer-picture${controls.closed ? ' is-closed' : ''}`, style: ratio ? `aspect-ratio: 1 / ${ratio};` : null, onclick: tap },
           img,
-          circle && el('span', { class: 'answer-pin-target', style: `${place(circle)} width: ${circle.r * 200}%; height: ${(circle.r * 200) / circle.ratio}%;` }),
+          shapes && shapes.map(outline),
           pin && el('span', { class: `answer-pin${pinDraft ? ' is-draft' : ''}`, style: place(pin) })),
         el('button', { type: 'button', class: 'answer-send', disabled: !!controls.closed || !pinDraft, onclick: send }, words.send),
         statusLine(pinDraft ? words.pinConfirm : sent ? words.pinSent : words.pinPick),
-        circle ? el('p', { class: `answer-verdict${sent ? (isInside(sent, circle) ? ' is-right' : ' is-wrong') : ''}`, role: 'status' }, sent ? (isInside(sent, circle) ? words.right : words.pinWrong) : words.pinSolution) : null,
+        shapes ? el('p', { class: `answer-verdict${sent ? (isInside(sent, shapes) ? ' is-right' : ' is-wrong') : ''}`, role: 'status' }, sent ? (isInside(sent, shapes) ? words.right : words.pinWrong) : words.pinSolution) : null,
       ]
     },
     // { question, placeholder, maxLength, once }: short text, as often as
