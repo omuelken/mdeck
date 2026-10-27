@@ -1,7 +1,7 @@
 // The server for audience interaction, two ways: inside `mdeck run`
 // at /__mdeck/live, or on its own with `mdeck server` for hosted decks.
 import { createServer } from 'node:http'
-import { liveHandler, createRooms, keyMatches } from './rooms.js'
+import { liveHandler, createRooms, createKeyGuard, keyMatches } from './rooms.js'
 import { infoRoutes } from './infoPage.js'
 import { isAllowedRequest } from '../build/editorPlugin.js'
 import { createTunnels } from './tunnel.js'
@@ -62,9 +62,18 @@ function isStageRequest(url, code) {
 // is also the relay for `mdeck run --server` (src/live/tunnel.js), which needs
 // the web server to pass WebSocket upgrades on.
 export function startLiveServer({ port = 8787, host = '127.0.0.1', key = null } = {}) {
-  const tunnels = createTunnels({ key })
+  const guard = createKeyGuard()
+  const tunnels = createTunnels({ key, guard })
   const rooms = createRooms()
-  const handler = liveHandler({ rooms, canReset: (request, room) => keyMatches(request, key) || tunnels.allows(request, room) })
+  // /info only reports whether the sender may; it neither counts wrong keys nor is refused for them.
+  const canReset = (request, room) => {
+    const counted = !!request.headers.authorization && new URL(request.url, 'http://localhost').pathname !== '/info'
+    if (counted && guard.blocked(request)) return false
+    const allowed = keyMatches(request, key) || tunnels.allows(request, room)
+    if (counted && !allowed) guard.failed(request)
+    return allowed
+  }
+  const handler = liveHandler({ rooms, canReset })
   const pages = infoRoutes({ rooms, tunnels, key })
   const server = createServer((request, response) => { if (!tunnels.handleRequest(request, response) && !pages(request, response)) handler(request, response) })
   server.on('upgrade', (request, socket, head) => { if (!tunnels.handleUpgrade(request, socket, head)) socket.destroy() })

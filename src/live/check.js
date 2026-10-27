@@ -71,7 +71,8 @@ function upgrade(origin, key, timeoutMs) {
     socket.on('open', () => stop(ok(name, 'the key opened a presenter connection; mdeck run --server works through this address')))
     socket.on('unexpected-response', (request, response) => {
       const own = !response.headers['content-type']
-      if (response.statusCode === 401 && own) stop(key ? fail(name, 'the upgrade reaches the server, but it refuses the key: MDECK_SERVER_KEY here differs from the server\'s') : ok(name, 'the upgrade reaches the server (give the key in MDECK_SERVER_KEY to test it fully)'))
+      if (response.statusCode === 429 && own) stop(warn(name, 'the server refuses this address for a minute after too many wrong keys: wait, and check again with the right key'))
+      else if (response.statusCode === 401 && own) stop(key ? fail(name, 'the upgrade reaches the server, but it refuses the key: MDECK_SERVER_KEY here differs from the server\'s') : ok(name, 'the upgrade reaches the server (give the key in MDECK_SERVER_KEY to test it fully)'))
       else if (response.statusCode === 404 && own) stop(warn(name, 'the upgrade reaches the server, but it has no key set: presenting from an iPad through it is off until MDECK_SERVER_KEY is set'))
       else stop(fail(name, `the upgrade was answered ${response.statusCode} by the web server in front: it must pass WebSocket connections on. In nginx: proxy_http_version 1.1; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade";`))
     })

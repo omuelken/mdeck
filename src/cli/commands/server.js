@@ -1,6 +1,7 @@
 // mdeck server: rooms for polls and for presenting through it.
 import { startLiveServer } from '../../live/server.js'
 import { checkServer } from '../../live/check.js'
+import { weakKeyReason } from '../../live/rooms.js'
 import { validateServerOrigin } from '../args.js'
 import { c, ok, err, tip } from '../ui.js'
 
@@ -28,6 +29,8 @@ export default async function startServer({ options, portOption }) {
   try {
     const server = await startLiveServer({ port, host, key })
     ok(`Server: ${c.cyan}${server.url}${c.reset}`)
+    const weak = key && weakKeyReason(key)
+    if (weak) { warn(`MDECK_SERVER_KEY is easy to guess: ${weak}.`); tip('Anyone who guesses it can reset your rooms and use this server as a relay. Make a random one with  openssl rand -hex 24  and keep it: presenters need it too.') }
     tip(`Open ${server.url}/ for its status page; ${server.url}/health answers monitors.`)
     tip('Point decks at it with  server: https://your.host  behind a web server that passes WebSocket connections on,')
     tip('and test that from another computer with  mdeck server --check https://your.host')

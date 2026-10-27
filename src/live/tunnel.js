@@ -45,7 +45,7 @@ function head(response, status, headers) {
   try { response.writeHead(status, headers); return true } catch { text(response, 502, 'The presenter\'s computer sent a bad answer'); return false }
 }
 
-export function createTunnels({ key = null, bodyLimit = 2 * MB, maxTunnels = 50, maxPending = 128, requestTimeoutMs = 60000, pingMs = 25000 } = {}) {
+export function createTunnels({ key = null, guard = null, bodyLimit = 2 * MB, maxTunnels = 50, maxPending = 128, requestTimeoutMs = 60000, pingMs = 25000 } = {}) {
   const tunnels = new Map()
   const sockets = new WebSocketServer({ noServer: true, maxPayload: 16 * MB, handleProtocols: protocols => [...protocols][0] ?? false })
 
@@ -157,7 +157,8 @@ export function createTunnels({ key = null, bodyLimit = 2 * MB, maxTunnels = 50,
       const own = pathname.match(/^\/tunnel\/([A-Za-z0-9_-]{16,64})$/)
       if (own) {
         if (!key) { refuse(404, 'Not Found'); return true }
-        if (!keyMatches(request, key)) { refuse(401, 'Unauthorized'); return true }
+        if (guard?.blocked(request)) { refuse(429, 'Too Many Requests'); return true }
+        if (!keyMatches(request, key)) { guard?.failed(request); refuse(401, 'Unauthorized'); return true }
         if (!tunnels.has(own[1]) && tunnels.size >= maxTunnels) { refuse(503, 'Service Unavailable'); return true }
         sockets.handleUpgrade(request, socket, head, ws => open(own[1], ws))
         return true

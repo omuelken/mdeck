@@ -223,6 +223,38 @@ export function keyMatches(request, key) {
   return given.length === wanted.length && timingSafeEqual(given, wanted)
 }
 
+/**
+ * Wrong keys per address: after `burst` in a `perMs` window, the address is
+ * refused for the rest of the window, also with the right key. Only a request
+ * that brought a key counts; phones bring none. Paired devices' tokens travel
+ * the same way, so the limit leaves room for a tab that still sends a revoked one.
+ */
+export function createKeyGuard({ burst = 30, perMs = 60000, now = Date.now } = {}) {
+  const windows = new Map()
+  const live = request => {
+    const address = clientAddress(request)
+    let window = windows.get(address)
+    if (window && now() >= window.until) { windows.delete(address); window = undefined }
+    return { address, window }
+  }
+  return {
+    blocked: request => (live(request).window?.count ?? 0) >= burst,
+    failed(request) {
+      const { address, window } = live(request)
+      if (window) { window.count++; return }
+      if (windows.size > 10000) for (const [key, other] of windows) if (now() >= other.until) windows.delete(key)
+      windows.set(address, { count: 1, until: now() + perMs })
+    },
+  }
+}
+
+/** Why a key is easy to guess, or null: too short, or made of a few characters repeated. */
+export function weakKeyReason(key) {
+  if (String(key).length < 16) return `it has ${String(key).length} characters; 16 or more are hard to guess`
+  if (new Set(key).size <= 4) return 'it repeats a few characters'
+  return null
+}
+
 const MAX_BODY = 4096
 const MAX_STATE = 32768
 const MAX_INK = 65536

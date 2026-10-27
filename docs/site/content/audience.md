@@ -188,8 +188,11 @@ Some networks, often large Wi-Fi networks at universities, do not let devices re
 For a lecture hall, run your own server once on a web server; it can serve all your presentations, and it also lets an iPad present from any network (see [Draw on your slides](drawing.html#present-from-an-ipad)). On that machine, install mdeck and start it:
 
 ```sh
-MDECK_SERVER_KEY=choose-a-secret mdeck server
+openssl rand -hex 24                  # makes a key: keep it, your laptop needs it too
+MDECK_SERVER_KEY=<the key> mdeck server
 ```
+
+The key is a password for the server: use a random one of 16 or more characters, never a word. The server warns when its key is short or repetitive, and refuses an address for a minute after too many wrong keys.
 
 It listens on `127.0.0.1:8787`. Give it a host name of its own, such as `rooms.example.org`, and make your web server pass everything on that name to it, for example with nginx:
 
@@ -215,11 +218,11 @@ server {
 
 The slides and phones keep a connection open to receive answers live, which is why buffering is off and the timeout long. The `Upgrade` lines let WebSocket connections through, which presenting from an iPad needs; polls alone work without them. `X-Forwarded-For` lets the server limit each phone, not the web server as a whole. A server on a path of a shared host name, such as `example.org/rooms/`, works for polls too, but presenting from an iPad needs a name of its own.
 
-`MDECK_SERVER_KEY` is required for presenting from an iPad: a server without a key does not offer it, and a laptop that does not know the key cannot connect. The server only passes requests along: it keeps nothing of your slides, and a presentation shared through it disappears when the laptop disconnects or the server restarts.
-
-To keep the server running and start it with the machine, a systemd service works well. Put the key in a file only root can read, for example `/etc/mdeck-server.env` with the line `MDECK_SERVER_KEY=choose-a-secret`, and create `/etc/systemd/system/mdeck-server.service`:
 To see that everything works, run `mdeck server --check https://rooms.example.org` on your own computer, with `MDECK_SERVER_KEY` set to the server's key to test presenting too. It tests, from outside, that the address answers, that its version matches yours, that other sites may reach it, that live updates arrive at once and that WebSocket connections get through, and names the nginx setting to change when one does not. Opening `https://rooms.example.org/` in a browser shows the server's own page: its version, the line to put in a deck, a field for a join code, and under **Server status**, with the key typed in, the rooms it holds, the connections and the memory it uses, without any answers. `/health` answers `ok` for monitors and `HEALTHCHECK` lines.
 
+`MDECK_SERVER_KEY` is required for presenting from an iPad: a server without a key does not offer it, and a laptop that does not know the key cannot connect. The server only passes requests along: it keeps nothing of your slides, and a presentation shared through it disappears when the laptop disconnects or the server restarts.
+
+To keep the server running and start it with the machine, a systemd service works well. Put the key in a file only root can read, for example `/etc/mdeck-server.env` with the line `MDECK_SERVER_KEY=` and your key, and create `/etc/systemd/system/mdeck-server.service`:
 
 ```ini
 [Unit]
@@ -251,7 +254,7 @@ server: https://rooms.example.org
 
 To keep the address out of the deck, leave the setting out and set `MDECK_SERVER=https://rooms.example.org` in your shell instead. With `MDECK_SERVER_KEY` set as well, `mdeck run` then uses the server by itself, without `--server`; when the server does not answer, it says so and presents from your computer, and `--no-server` leaves it out on purpose. A built or sent presentation reads the address from the deck only, because it has to carry it to wherever it is opened.
 
-`MDECK_SERVER_KEY` is the server’s master key. `mdeck run` keeps it on your computer and lets your local browser, or an iPad with a revocable pairing token, move the phones along and reset polls for this deck. Pairing QR codes never include the master key. Start `mdeck run` with the same key (`MDECK_SERVER_KEY=choose-a-secret mdeck run my-talk.md`), and the launch page checks the server, shows the join link and opens the presenter view. Paired devices remember only their token, scoped to this presentation; it never appears in the address bar or in the slide file. A hosted presenter can still unlock the server by opening the presenter view once with `?serverkey=…` in its address. That browser remembers the master key. Without permission to control the server, phones wait. The presenter view says whether the phones follow it, and if not, why.
+`MDECK_SERVER_KEY` is the server’s master key. `mdeck run` keeps it on your computer and lets your local browser, or an iPad with a revocable pairing token, move the phones along and reset polls for this deck. Pairing QR codes never include the master key. Start `mdeck run` with the same key (`MDECK_SERVER_KEY=<the key> mdeck run my-talk.md`), and the launch page checks the server, shows the join link and opens the presenter view. Paired devices remember only their token, scoped to this presentation; it never appears in the address bar or in the slide file. A hosted presenter can still unlock the server by opening the presenter view once with `?serverkey=…` in its address. That browser remembers the master key. Without permission to control the server, phones wait. The presenter view says whether the phones follow it, and if not, why.
 
 The presenter's screen repeats the current poll every few seconds, so phones that join late, or a server that restarted, catch up. While a presenter view is open, other windows of the presentation in the same browser leave the phones alone. If the presentation is open on several screens, even in other browsers, the phones follow the one where the slides were changed last; just opening it elsewhere does not take them away. A presenter view that has lost the phones says so, and changing the slide there takes them back.
 

@@ -70,7 +70,7 @@ const PAGE = ({ origin, notice }) => `<!doctype html>
 
   <details id="status">
     <summary>Server status</summary>
-    <p class="muted">For whoever runs this server. The key is the value of <code>MDECK_SERVER_KEY</code> that it was started with: <code>MDECK_SERVER_KEY=… mdeck server</code>, or in the environment file of its service, such as <code>/etc/mdeck-server.env</code>. A server started without one has no status view; set one and restart it. The key is sent to this server only and not kept.</p>
+    <p class="muted">For whoever runs this server. The key is the value of <code>MDECK_SERVER_KEY</code> that it was started with: <code>MDECK_SERVER_KEY=… mdeck server</code>, or in the environment file of its service, such as <code>/etc/mdeck-server.env</code>. A server started without one has no status view; make one with <code>openssl rand -hex 24</code> and restart it. The key is sent to this server only and not kept.</p>
     <form id="unlock"><input id="key" type="password" autocomplete="off" placeholder="Key" aria-label="Key" required><button>Show</button></form>
     <p id="problem" class="error" role="status"></p>
     <div id="report" hidden></div>

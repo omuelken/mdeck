@@ -132,3 +132,48 @@ test('--check names a server by its address, and starts no server', () => {
   assert.equal(parseArgs('server', ['--check']).options['--check'], null)
   for (const args of [['--check', 'slides.example.org'], ['--check', 'https://x.org/path'], ['--check', 'https://x.org', '--port', '8000']]) assert.throws(() => parseArgs('server', args), /--check/, args.join(' '))
 })
+
+test('a key is easy to guess when it is short or repeats a few characters', async () => {
+  const { weakKeyReason } = await import('../src/live/rooms.js')
+  for (const weak of ['123', 'secret', 'choose-a-secret', 'aaaaaaaaaaaaaaaaaaaa', '1212121212121212']) assert.ok(weakKeyReason(weak), weak)
+  for (const fine of ['9f3a6c1e0b7d44c2a85e1f90', 'correct-horse-battery-staple']) assert.equal(weakKeyReason(fine), null, fine)
+})
+
+test('wrong keys are counted per address, and only where a key was sent', async () => {
+  const { createKeyGuard } = await import('../src/live/rooms.js')
+  let time = 0
+  const guard = createKeyGuard({ burst: 3, perMs: 1000, now: () => time })
+  const request = { socket: { remoteAddress: '10.0.0.1' }, headers: {} }
+  const other = { socket: { remoteAddress: '10.0.0.2' }, headers: {} }
+  for (let i = 0; i < 2; i++) guard.failed(request)
+  assert.equal(guard.blocked(request), false)
+  guard.failed(request)
+  assert.equal(guard.blocked(request), true)
+  assert.equal(guard.blocked(other), false, 'another address is not affected')
+  time = 1000
+  assert.equal(guard.blocked(request), false, 'the window is over')
+})
+
+test('after too many wrong keys an address is refused, also with the right one', async () => {
+  const live = await startLiveServer({ port: 0, key: 'a-long-random-key-for-this-test' })
+  const reset = key => fetch(`${live.url}/rooms/482113.poll/reset`, { method: 'POST', headers: { Authorization: `Bearer ${key}` } })
+  try {
+    assert.equal((await reset('a-long-random-key-for-this-test')).status, 200)
+    for (let i = 0; i < 30; i++) assert.equal((await reset('wrong')).status, 403)
+    assert.equal((await reset('a-long-random-key-for-this-test')).status, 403, 'blocked')
+    // /info only says whether the sender may; it does not count and is not refused.
+    assert.equal((await (await fetch(`${live.url}/info`, { headers: { Authorization: 'Bearer wrong' } })).json()).canReset, false)
+    // The tunnel is refused for the same address, and --check says why.
+    const results = await checkServer(live.url, { key: 'a-long-random-key-for-this-test' })
+    assert.equal(results.at(-1).status, 'warn')
+    assert.match(results.at(-1).detail, /too many wrong keys/)
+  } finally { await live.close() }
+})
+
+test('phones, which send no key, never count against an address', async () => {
+  const live = await startLiveServer({ port: 0, key: 'a-long-random-key-for-this-test' })
+  try {
+    for (let i = 0; i < 40; i++) assert.equal((await fetch(`${live.url}/rooms/482113.poll/reset`, { method: 'POST' })).status, 403)
+    assert.equal((await fetch(`${live.url}/rooms/482113.poll/reset`, { method: 'POST', headers: { Authorization: 'Bearer a-long-random-key-for-this-test' } })).status, 200)
+  } finally { await live.close() }
+})
