@@ -14,6 +14,19 @@ import { retryDelay, compactOutbox } from './outbox.js'
 // network sets the pace, so a short wait adds little load and little lag.
 const BATCH_MS = 25
 
+// A "not allowed" lasts until pairing may have changed: the page is shown
+// again or reconnects, or another tab pairs this device (its token appears).
+const recheck = new Set()
+let watching = false
+function watchPairing() {
+  if (watching || typeof window === 'undefined') return
+  watching = true
+  const again = () => { for (const check of recheck) check() }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') again() })
+  window.addEventListener('storage', event => { if (event.key?.startsWith('mdeck-pair:')) again() })
+  window.addEventListener('online', again)
+}
+
 /**
  * An ink bus transport through the stage room; `listen` only when `receive`.
  * `view` counts this window as connected; `onPresence` hears who else is.
@@ -21,6 +34,8 @@ const BATCH_MS = 25
 export function roomTransport({ receive = false, view = null, onPresence = null } = {}) {
   const room = stageRoom()
   let queue = [], timer = null, allowed = null, listeners = 1, source = null, sending = false, failures = 0
+  watchPairing()
+  recheck.add(() => { if (allowed === false) { allowed = null; room.forget() } })
 
   // One request at a time: two in flight could arrive in the other order.
   async function flush() {
@@ -83,6 +98,7 @@ export function roomTransport({ receive = false, view = null, onPresence = null 
       if (onPresence) source.addEventListener('presence', event => onPresence(JSON.parse(event.data)))
       source.addEventListener('ink', event => { for (const message of JSON.parse(event.data).messages) handler(message) })
       for (const listener of stateListeners) source.addEventListener('snapshot', event => listener(JSON.parse(event.data).state))
+      source.addEventListener('open', () => { if (allowed === false) { allowed = null; room.forget() } })
       // Connected again to an empty room: mdeck run restarted. The screens
       // still open say where they are, so that a presenter view opened now
       // takes up the slide on the projector.
@@ -135,6 +151,7 @@ export function onStagePosition(listener) {
 export function announceStagePosition(stage, { language = () => null } = {}) {
   const room = stageRoom()
   let allowed = null, last = null
+  watchPairing()
   async function post(event) {
     const { index, step, slideId, blank, join, freeze } = stage.state
     const lang = language() ?? undefined
@@ -149,8 +166,11 @@ export function announceStagePosition(stage, { language = () => null } = {}) {
       allowed = info.reachable && !!info.canReset
       if (!allowed) return
     }
-    fetch(`${room.url}/state`, { method: 'POST', headers: room.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state: { index, step, slideId, lang, blank, join, freeze, at, screen: room.screen } }) }).catch(() => {})
+    fetch(`${room.url}/state`, { method: 'POST', headers: room.headers({ 'Content-Type': 'application/json' }), body: JSON.stringify({ state: { index, step, slideId, lang, blank, join, freeze, at, screen: room.screen } }) })
+      .then(response => { if (response.status === 403) { allowed = false; room.forget() } }, () => {})
   }
+  // Asked again when pairing may have changed; a position kept back is then said.
+  recheck.add(() => { if (allowed === false) { allowed = null; room.forget(); last = null; post({ detail: { reason: 'reconnect' } }) } })
   stage.addEventListener('statechange', post)
   reannounce.add(() => { last = null; post({ detail: { reason: 'reconnect' } }) })
   post()

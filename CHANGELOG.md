@@ -6,6 +6,11 @@
 - Fixed: with `mdeck run --server`, the picture of a `<pinpoint>` could not reach the phones from a paired iPad.
 - A paired iPad stays paired when `mdeck run` or the laptop restarts: reload its presenter view. The laptop keeps the pairing in `~/.mdeck/paired/` (one file per deck, readable only by you) and forgets an iPad unused for 30 days; **Unpair** still ends every pairing.
 
+## 3.16.1 — 2026-10-27
+
+- Fixed: an iPad that opened the presenter view without pairing showed "connected" but steered nothing, without a word; it says "Not paired" now, and a device whose token has gone says "No longer paired" as before.
+- Fixed: a refusal to steer the projector lasted until the page was reloaded; the page asks again when it is shown again, reconnects, or another tab pairs the device, and then says where it is.
+
 ## 3.16.0 — 2026-10-25
 
 - New activity `<pinpoint>`: phones show a picture and send where people tapped. The slide shows every tap as a dot on the picture; `answer="62% 31% 8%"` (or pixels, `answer="412 230 40"`) is the circle the tick draws, counting the taps inside it and telling each phone whether it hit. The presenter's screen sends the phones the picture through the room server, made smaller (at most 1000 px and 190 KB); the server keeps it in memory only while the `<pinpoint>` is on screen, and needs this version.
