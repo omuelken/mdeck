@@ -10,7 +10,7 @@ import { livePlugin } from '../../live/server.js'
 import { inkPlugin } from '../../build/inkPlugin.js'
 import { resultsPlugin } from '../../build/resultsPlugin.js'
 import { timingPlugin } from '../../build/timingPlugin.js'
-import { createPairing, pairingPlugin, pairingStoreFor } from '../../build/pairing.js'
+import { createPairing, pairingPlugin } from '../../build/pairing.js'
 import { parseSlides } from '../../core/parseSlides.js'
 import { validateServerOrigin } from '../args.js'
 import { assertDrawings } from '../../build/drawings.js'
@@ -49,7 +49,7 @@ export default async function run({ command, hasFlag, portOption, serverOption, 
   try { assertDrawings(abs) } catch (error) { err(error.message); process.exit(1) }
   const port = portOption()
   const exposed = hasFlag('--network')
-  const pairing = createPairing({ store: pairingStoreFor(abs) })
+  const pairing = createPairing()
 
   // --server: the server relays an iPad's requests to this computer
   // (src/build/tunnelClient.js). The dev server then serves under /t/<id>/, the

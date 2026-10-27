@@ -22,7 +22,8 @@
 > | Change | Status |
 > |---|---|
 > | A countdown for the room, set in the presenter view, with a sound at the end (`<countdown />`, in [`contrib/countdown`](contrib/countdown/Countdown.jsx)) | only here |
-> | A paired iPad stays paired when `mdeck run` restarts (same laptop address) | only here; Tilman wants it as an option for mdeck as a whole ([issue #17](https://github.com/tilman-schieber/mdeck/issues/17)) |
+> | `mdeck run --server`: an iPad gets a theme from `~/.mdeck/extensions` and sends the picture of a `<pinpoint>` | only here |
+> | iPad tips: switch Scribble off ([drawing.md](docs/site/content/drawing.md)) | only here |
 >
 > To use it: clone, `git switch unterricht`, `npm install`, `npm link` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 > Everything below is Tilman's README.

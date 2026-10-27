@@ -1,9 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, statSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { createPairing, pairingMiddleware, pairingStoreFor } from '../src/build/pairing.js'
+import { createPairing, pairingMiddleware } from '../src/build/pairing.js'
 import { homeMiddleware } from '../src/build/homePlugin.js'
 import { createInkFile, inkMiddleware } from '../src/build/inkPlugin.js'
 import { isAllowedRequest } from '../src/build/editorPlugin.js'
@@ -28,35 +28,6 @@ test('a pairing code works once, for ten minutes, and unpairing ends every pairi
   assert.equal(pairing.devices, 1)
   pairing.revoke()
   assert.equal(pairing.allows(bearer(device)), false)
-})
-
-test('with a store, a pairing outlasts a restart of mdeck run until unpaired or unused for 30 days', () => {
-  let t = 0
-  const store = resolve(mkdtempSync(resolve(tmpdir(), 'mdeck-paired-')), 'mdeck', 'paired', 'deck.json')
-  const first = createPairing({ now: () => t, store })
-  const device = first.claim(first.offer())
-  if (process.platform !== 'win32') assert.equal(statSync(store).mode & 0o777, 0o600, 'only this user may read the tokens')
-  assert.equal(readFileSync(store, 'utf8').includes(first.offer()), false, 'codes not yet used are not kept')
-  t += 5 * 24 * 60 * 60 * 1000
-  const again = createPairing({ now: () => t, store })
-  assert.equal(again.allows(bearer(device)), true, 'the iPad stays paired after a restart')
-  assert.equal(again.devices, 1)
-  t += 29 * 24 * 60 * 60 * 1000
-  assert.equal(createPairing({ now: () => t, store }).allows(bearer(device)), true, 'its use counted')
-  t += 31 * 24 * 60 * 60 * 1000
-  assert.equal(createPairing({ now: () => t, store }).allows(bearer(device)), false, 'unused for 30 days: forgotten')
-  const later = createPairing({ now: () => t, store })
-  later.claim(later.offer())
-  later.revoke()
-  assert.equal(existsSync(store), false, 'unpairing removes the file')
-  assert.equal(createPairing({ now: () => t, store }).devices, 0)
-})
-
-test('each deck keeps its paired devices in mdeck\'s own folder', () => {
-  const a = pairingStoreFor('/talks/a.md', { home: '/home/me/.mdeck' }), b = pairingStoreFor('/talks/b.md', { home: '/home/me/.mdeck' })
-  assert.ok(a.startsWith(resolve('/home/me/.mdeck/paired')) && a.endsWith('.json'))
-  assert.notEqual(a, b)
-  assert.ok(pairingStoreFor('/talks/a.md').startsWith(resolve(process.env.MDECK_HOME, 'paired')))
 })
 
 const call = (handler, request) => new Promise(done => {
