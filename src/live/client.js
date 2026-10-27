@@ -462,8 +462,17 @@ function stageInfo() {
   return stageRequest
 }
 
+/** Whether this page was told it may not steer the deck's stage: a device without a valid pairing. */
+export async function stageDenied() {
+  if (!proxyControls) return false
+  stageRequest = null
+  const info = await stageInfo()
+  return info.reachable && !info.canReset
+}
+
 export function stageRoom() {
-  return { url: `${controlSessionPath()}.stage`, headers: withKey, info: stageInfo, screen: SCREEN }
+  // `forget` drops what `info` kept, for when pairing may have changed.
+  return { url: `${controlSessionPath()}.stage`, headers: withKey, info: stageInfo, forget: () => { stageRequest = null }, screen: SCREEN }
 }
 
 /** For the presenter view: null before the first announcement, else { ok, reason }. */

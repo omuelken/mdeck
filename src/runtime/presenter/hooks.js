@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'preact/hooks'
 import { devPath } from '../../core/devPath.js'
 import { pairingLost } from '../../live/pairing.js'
+import { stageDenied } from '../../live/client.js'
 import { fullscreenAvailable, fullscreenElement, toggleFullscreen, onFullscreenChange } from '../stage/fullscreen.js'
 
 // Who is connected, as the presenter's main frame hears it from the server.
@@ -39,18 +40,25 @@ export function useLaunchPage() {
   return url
 }
 
-// A paired iPad that the computer no longer knows (mdeck run restarted,
-// or Unpair) says so, instead of keeping what it does to itself.
+// A device that the computer does not know says so, instead of keeping what
+// it does to itself: 'lost' for one that was paired (mdeck run restarted, or
+// Unpair), 'missing' for one that never was, or has no token in this tab.
 export function useUnpaired() {
   const [unpaired, setUnpaired] = useState(false)
   useEffect(() => {
     if (!import.meta.env.DEV) return
     let gone = false
-    const check = () => { if (document.visibilityState === 'visible') pairingLost().then(lost => { if (!gone) setUnpaired(lost) }) }
+    const check = async () => {
+      if (document.visibilityState !== 'visible') return
+      const state = (await pairingLost()) ? 'lost' : (await stageDenied()) ? 'missing' : false
+      if (!gone) setUnpaired(state)
+    }
+    const onStorage = event => { if (event.key?.startsWith('mdeck-pair:')) check() }
     check()
     const timer = setInterval(check, 10000)
     document.addEventListener('visibilitychange', check)
-    return () => { gone = true; clearInterval(timer); document.removeEventListener('visibilitychange', check) }
+    window.addEventListener('storage', onStorage)
+    return () => { gone = true; clearInterval(timer); document.removeEventListener('visibilitychange', check); window.removeEventListener('storage', onStorage) }
   }, [])
   return unpaired
 }

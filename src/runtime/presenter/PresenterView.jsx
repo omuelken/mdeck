@@ -44,8 +44,11 @@ const STEERING = {
   unreachable: 'Phones don’t follow: server not answering.',
   'other-screen': 'Phones follow another screen. Change slide to take them back.',
 }
-// A paired device the computer no longer knows (src/live/pairing.js).
-const UNPAIRED = 'No longer paired: slide changes, drawings and polls stay on this device. Show a new pairing code on the computer and scan it.'
+// A device the computer does not know (src/live/pairing.js).
+const UNPAIRED = {
+  lost: 'No longer paired: slide changes, drawings and polls stay on this device. Show a new pairing code on the computer and scan it.',
+  missing: 'Not paired: slide changes and drawings do not reach the projector. Show a pairing code on the computer and scan it.',
+}
 
 // The iPad's bar, smaller than the computer's buttons (inline styles, hence
 // !important); the timer with them. The page never scrolls, and is dark
@@ -439,7 +442,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   // The controls, the same in every layout (PresenterChrome.jsx); the layouts
   // differ in where they put them.
   const frame = () => iframeRef.current?.contentWindow
-  const problem = unpaired ? UNPAIRED : hasActivities() && steering && !steering.ok ? STEERING[steering.reason] : null
+  const problem = unpaired ? UNPAIRED[unpaired] : hasActivities() && steering && !steering.ok ? STEERING[steering.reason] : null
   const slideBar = big => <SlideControls controls={slideControls} press={i => sendTo(frame(), 'slideControl', i)} zoom={key => sendTo(frame(), 'hotspotKey', key)} big={big} />
   // The audience window, one click away (not on a phone: it would open there).
   const audienceButton = <ToolButton class="presenter-audience" icon="projector" label={audienceConnected ? 'Open the audience window again' : 'Open the audience window, for the projector'} onClick={openAudienceWindow} />
@@ -487,7 +490,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     <PresenterIcon name="freeze" size={16} />{freeze.index === index ? 'Frozen: the audience keeps this slide' : `Frozen: the audience sees slide ${freeze.index + 1}`}
   </div>
   const unpairedNote = unpaired && <div class="presenter-unpaired" role="alert" style={{ position: 'fixed', left: layout === 'speaker' ? 'calc(100% / 3)' : '50%', top: slideLayout && pillBottom ? `${pillBottom + 8}px` : '12px', transform: 'translateX(-50%)', zIndex: 18, maxWidth: 'calc(100vw - 32px)', boxSizing: 'border-box', padding: '8px 14px', borderRadius: '12px', background: 'rgba(17,17,17,0.94)', border: '1px solid #5c2b28', color: '#f28b82', fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '14px', pointerEvents: 'none' }}>
-    {UNPAIRED}
+    {UNPAIRED[unpaired]}
   </div>
   const font = { fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: '13px', color: '#ccc' }
   const extras = <>
