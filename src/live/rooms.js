@@ -13,7 +13,7 @@ import { CODE_RE } from './code.js'
 
 // This mdeck's version, in /info: a presenter on a newer mdeck can tell that
 // this server lacks what its deck uses (src/build/homePlugin.js).
-const VERSION = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version
+export const VERSION = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version
 
 // The phones' answer page, served by the server itself at /<code>.
 const ANSWER_FILES = Object.fromEntries(['answer.html', 'answer.js', 'answer.css'].map(name => [name, readFileSync(new URL(`./answer/${name}`, import.meta.url))]))
@@ -174,6 +174,19 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
       }
     },
     get size() { return rooms.size },
+    /** What the server holds, for its operator: totals, its limits and the busiest rooms, never an answer. */
+    stats() {
+      const t = now()
+      const list = [...rooms].map(([room, { messages, listeners, touched, state, image }]) => ({ room, messages: messages.length, listeners: listeners.size, idleSeconds: Math.round((t - touched) / 1000), state: state !== null, picture: !!image }))
+      return {
+        rooms: rooms.size,
+        messages: list.reduce((sum, room) => sum + room.messages, 0),
+        listeners: list.reduce((sum, room) => sum + room.listeners, 0),
+        pictures: list.filter(room => room.picture).length,
+        limits: { rooms: maxRooms, messagesPerRoom: maxMessages, idleHours: idleMs / HOUR },
+        list: list.sort((a, b) => a.idleSeconds - b.idleSeconds).slice(0, 100),
+      }
+    },
   }
 }
 

@@ -122,6 +122,9 @@ export const COMMAND_HELP = {
       --print writes the skill to the terminal.`,
   server: `
     ${c.green}mdeck server${c.reset} [--port 8787] [--host [address]]
-      Rooms for polls and for presenting through it; MDECK_SERVER_KEY is the presenter's key.
+      --check [address]      test a running server from here instead of starting one: reachable,
+                             version, CORS, live updates and WebSocket upgrades through your web
+                             server; with its key in MDECK_SERVER_KEY, also presenting through it
+      Open / on the server for its status page; /health answers monitors.
       Put a web server with HTTPS in front.`,
 }

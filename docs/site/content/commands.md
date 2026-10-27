@@ -23,6 +23,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck pdf my-talk.md` | Make a PDF |
 | `mdeck preview` | Open the last build from the current folder |
 | `mdeck server` | Run the server for polls and for presenting from an iPad on any network ([details](audience.html#use-it-in-a-real-session)) |
+| `mdeck server --check https://rooms.example.org` | Test a running server from this computer: it answers, its version, CORS, live updates and WebSocket upgrades through your web server (with `MDECK_SERVER_KEY`, presenting through it as well) |
 | `mdeck list`, `mdeck starter` | Look up layouts, themes and palettes |
 | `mdeck docs` | Open this documentation |
 | `mdeck --help` | Show a short list of commands; `mdeck <command> --help` shows a command's options |

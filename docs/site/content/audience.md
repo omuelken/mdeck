@@ -218,6 +218,8 @@ The slides and phones keep a connection open to receive answers live, which is w
 `MDECK_SERVER_KEY` is required for presenting from an iPad: a server without a key does not offer it, and a laptop that does not know the key cannot connect. The server only passes requests along: it keeps nothing of your slides, and a presentation shared through it disappears when the laptop disconnects or the server restarts.
 
 To keep the server running and start it with the machine, a systemd service works well. Put the key in a file only root can read, for example `/etc/mdeck-server.env` with the line `MDECK_SERVER_KEY=choose-a-secret`, and create `/etc/systemd/system/mdeck-server.service`:
+To see that everything works, run `mdeck server --check https://rooms.example.org` on your own computer, with `MDECK_SERVER_KEY` set to the server's key to test presenting too. It tests, from outside, that the address answers, that its version matches yours, that other sites may reach it, that live updates arrive at once and that WebSocket connections get through, and names the nginx setting to change when one does not. Opening `https://rooms.example.org/` in a browser shows the server's own page: its version, the line to put in a deck, a field for a join code, and under **Server status**, with the key typed in, the rooms it holds, the connections and the memory it uses, without any answers. `/health` answers `ok` for monitors and `HEALTHCHECK` lines.
+
 
 ```ini
 [Unit]
