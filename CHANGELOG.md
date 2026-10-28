@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+- Fixed (#34): inline maths next to other characters, such as `$x$-Achse`, `$(1,0)$;` or `($120^\circ$)`, stayed raw text without a word, and its stray `$` spoiled formulas beside it. A formula is now found wherever `$…$` closes on its line; it does not close before a digit, so `$5 and $10` stay prices, and `\$` is a dollar sign. This also holds for the questions and options of polls.
+- `mdeck check` warns about maths that would not show, in the slides and in `:::notes`: a formula KaTeX cannot read and a `$` that starts no formula, with the line.
 - Fixed: with `mdeck run --server`, an iPad stayed black when the deck used a theme installed in `~/.mdeck/extensions`; the laptop did not share files in a dot directory, not even the theme's stylesheet. Other dot paths (`.env`, `.git`) stay private.
 - A deck's own copy of a theme or palette installed for every deck warns only when its files differ, and names both versions; an identical copy no longer fails `mdeck check --strict`.
 - Fixed: with `mdeck run --server`, the picture of a `<pinpoint>` could not reach the phones from a paired iPad.
+- `<pinpoint answer="…">` takes rectangles and polygons as well as a circle, and several shapes at once: `answer="rect 300 180 240 120"`, `answer="poly 300 180 540 200 480 360"`, `answer="circle 412 230 40 | rect 100 80 60 60"`. A tap in any of them is right; pixels are the default, `%` on every number of a shape gives percent. A single circle works as before. A standalone `mdeck server` needs this version to show the phones the shapes; an older one shows them the picture without the area drawn.
+- `mdeck server` has a page at `/`: its version, the `server:` line for a deck, a field for a join code and, with the key typed in, a status view of its rooms, connections and memory (never the answers). `/status` gives the same as JSON to whoever sends the key, `/health` answers `ok` for monitors, and the server says where they are when it starts.
+- `mdeck server --check https://rooms.example.org` tests a running server from outside: that it answers, its version, CORS, that live updates are not held back and that WebSocket upgrades pass, with the nginx setting to change when one does not; with `MDECK_SERVER_KEY` it opens a presenter connection too.
+- `mdeck server` warns when its `MDECK_SERVER_KEY` is easy to guess (under 16 characters, or a few characters repeated) and says how to make a random one; it still starts. After 30 wrong keys in a minute from one address, the server refuses that address for the rest of the minute, also with the right key; before, only `/status` limited wrong keys. The docs make the key with `openssl rand -hex 24` instead of suggesting a word.
 
 ## 3.16.1 — 2026-10-27
 

@@ -107,7 +107,7 @@ deck-stage[data-follower] .poll.is-results-hidden .poll-fill, deck-stage[data-fo
 .poll .numeric-answer { margin: 24px 0 0; font-weight: 600; color: var(--poll-correct, #16a34a); }
 
 /* <pinpoint>: the picture with a dot for each phone's tap; with the right
-   answer shown, its circle and the dots inside and outside it. The picture
+   answer shown, its shapes and the dots inside and outside it. The picture
    box shrinks to the picture, so dots placed in percent land where tapped. */
 .pinpoint-picture { position: relative; display: block; width: fit-content; max-width: 100%; margin: 0 auto; line-height: 0; }
 .pinpoint-picture img { display: block; max-width: 100%; max-height: var(--pinpoint-height, 520px); width: auto; height: auto; user-select: none; }
@@ -115,5 +115,8 @@ deck-stage[data-follower] .poll.is-results-hidden .poll-fill, deck-stage[data-fo
 .pinpoint-dot.is-in { background: var(--poll-correct, #16a34a); }
 .pinpoint-dot.is-out { background: color-mix(in srgb, var(--muted, #666) 70%, transparent); }
 .pinpoint-target { position: absolute; transform: translate(-50%, -50%); border: 4px solid var(--poll-correct, #16a34a); border-radius: 50%; box-sizing: border-box; pointer-events: none; }
+.pinpoint-target.is-rect { transform: none; border-radius: 0; }
+.pinpoint-target.is-poly { inset: 0; width: 100%; height: 100%; transform: none; border: 0; border-radius: 0; overflow: visible; }
+.pinpoint-target polygon { fill: none; stroke: var(--poll-correct, #16a34a); stroke-width: 4; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .poll.is-results-hidden .pinpoint-dot { opacity: .3; }
 deck-stage[data-follower] .poll.is-results-hidden .pinpoint-dot { visibility: hidden; }

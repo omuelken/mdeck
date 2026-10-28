@@ -1,5 +1,5 @@
 import { marked } from 'marked'
-import markedKatex from 'marked-katex-extension'
+import { mathExtensions } from '../core/katexOptions.js'
 import 'katex/dist/katex.min.css'
 import '../components/callout.css'
 import '../components/columns.css'
@@ -37,7 +37,7 @@ function escapeHtml(text) {
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-marked.use(markedKatex({ throwOnError: false, output: 'html' }))
+marked.use(...mathExtensions('html'))
 // A poll's options written as a list inside the tag (src/core/pollList.js).
 marked.use({ hooks: { preprocess: markdown => expandDataTags(expandPollLists(markdown)) } })
 

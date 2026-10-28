@@ -11,7 +11,7 @@ import { tagsIn } from './tags.js'
 import { expandPollLists, pollChoices } from './pollList.js'
 import { choicesOf } from '../components/inlineText.js'
 import { parseNumber, groupNumbers } from '../components/numbers.js'
-import { tapOf, tapText, circleOf, isInside } from '../components/pinpoint.js'
+import { tapOf, tapText, shapesOf, isInside } from '../components/pinpoint.js'
 
 const KINDS = { poll: 'poll', scale: 'scale', numeric: 'number', wordcloud: 'words', question: 'question', pinpoint: 'spot' }
 
@@ -74,7 +74,7 @@ function stats(values) {
 
 /**
  * How one activity came out: { phones, answers, counts: [{ answer, count }], average?, median?, lowest?, highest? }.
- * `solution` is the right answer the slide kept: a <pinpoint>'s circle,
+ * `solution` is the right answer the slide kept: a <pinpoint>'s shapes,
  * which says how many taps were on target.
  */
 export function summarize(activity, answers = [], solution = null) {
@@ -96,9 +96,9 @@ export function summarize(activity, answers = [], solution = null) {
   }
   if (tag === 'pinpoint') {
     const taps = latestPerPhone(answers).map(answer => tapOf(answer.value)).filter(Boolean)
-    const circle = circleOf(solution)
-    const inside = circle ? taps.filter(tap => isInside(tap, circle)).length : 0
-    return { ...base, voted: taps.length, counts: circle ? [{ answer: 'on target', count: inside }, { answer: 'off target', count: taps.length - inside }] : [] }
+    const shapes = shapesOf(solution)
+    const inside = shapes ? taps.filter(tap => isInside(tap, shapes)).length : 0
+    return { ...base, voted: taps.length, counts: shapes ? [{ answer: 'on target', count: inside }, { answer: 'off target', count: taps.length - inside }] : [] }
   }
   if (tag === 'numeric') {
     const texts = latestPerPhone(answers).map(answer => answer.value).filter(value => parseNumber(value) != null)

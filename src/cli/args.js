@@ -19,15 +19,15 @@ const commands = {
   list: { '--json': flag, max: 2 },
   starter: { max: 2 },
   docs: { ...common, '--build': flag, max: 1 },
-  server: { '--port': value, '--host': optional, max: 0 },
+  server: { '--port': value, '--host': optional, '--check': optional, max: 0 },
   skill: { '--print': flag, '--install': 'list', '--project': flag, max: 0 },
   results: { '--output': value, '-o': '--output', '--summary': flag, '--json': flag, max: 1 },
 }
 
-export function validateServerOrigin(address) {
+export function validateServerOrigin(address, option = '--server') {
   let url
   try { url = new URL(address) } catch {}
-  if (!url || !['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error('--server needs an http:// or https:// server origin, for example https://slides.example.org')
+  if (!url || !['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error(`${option} needs an http:// or https:// server origin, for example https://slides.example.org`)
 }
 
 // Slide numbers from "3", "3,5" or "2-4": in order, each once.
@@ -83,6 +83,10 @@ export function parseArgs(command, argv) {
   }
   if (typeof options['--server'] === 'string') {
     validateServerOrigin(options['--server'])
+  }
+  if (command === 'server' && options['--check'] !== undefined) {
+    if (options['--port'] !== undefined || options['--host'] !== undefined) throw new Error('--check tests a running server and starts none: leave out --port and --host')
+    if (typeof options['--check'] === 'string') validateServerOrigin(options['--check'], '--check')
   }
   if (command === 'build' && options['--notes'] && !options['--reader']) throw new Error('--notes requires --reader for mdeck build')
   if (command === 'build' && options['--no-polls'] && !options['--reader']) throw new Error('--no-polls requires --reader for mdeck build')

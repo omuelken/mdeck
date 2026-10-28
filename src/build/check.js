@@ -14,6 +14,7 @@ import { resolveBibliography } from './bibliography.js'
 import { svgProblems } from './svgCheck.js'
 import { expandDeck, withoutSettings } from './include.js'
 import { dataDiagnostics } from './dataCheck.js'
+import { mathDiagnostics } from './mathCheck.js'
 
 // A deck that includes others (include.js) is checked file by file, each
 // message naming its file; `deck` is the deck as shown, every slide in place.
@@ -28,6 +29,7 @@ export function checkDeck(slidesPath, registry, source = readFileSync(slidesPath
     for (const problem of svgProblems(readFileSync(file, 'utf8'))) diagnostics.push({ severity: 'warning', code: problem.code, message: `${ref} ${problem.message}`, line, column: 1 })
   }
   diagnostics.push(...dataDiagnostics(slidesPath, registry, source))
+  diagnostics.push(...mathDiagnostics(deck, source))
   for (const folder of componentFolders(slidesPath, source).filter(folder => folder.source === 'shared')) {
     if (!isFolder(folder.dir)) diagnostics.push({ severity: 'error', code: 'missing-components', message: `Components folder not found: ${folder.path} (${folder.dir})`, line: 1, column: 1 })
   }

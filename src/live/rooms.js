@@ -13,7 +13,7 @@ import { CODE_RE } from './code.js'
 
 // This mdeck's version, in /info: a presenter on a newer mdeck can tell that
 // this server lacks what its deck uses (src/build/homePlugin.js).
-const VERSION = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version
+export const VERSION = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version
 
 // The phones' answer page, served by the server itself at /<code>.
 const ANSWER_FILES = Object.fromEntries(['answer.html', 'answer.js', 'answer.css'].map(name => [name, readFileSync(new URL(`./answer/${name}`, import.meta.url))]))
@@ -174,6 +174,19 @@ export function createRooms({ maxMessages = 5000, maxInk = 5000, maxRooms = 500,
       }
     },
     get size() { return rooms.size },
+    /** What the server holds, for its operator: totals, its limits and the busiest rooms, never an answer. */
+    stats() {
+      const t = now()
+      const list = [...rooms].map(([room, { messages, listeners, touched, state, image }]) => ({ room, messages: messages.length, listeners: listeners.size, idleSeconds: Math.round((t - touched) / 1000), state: state !== null, picture: !!image }))
+      return {
+        rooms: rooms.size,
+        messages: list.reduce((sum, room) => sum + room.messages, 0),
+        listeners: list.reduce((sum, room) => sum + room.listeners, 0),
+        pictures: list.filter(room => room.picture).length,
+        limits: { rooms: maxRooms, messagesPerRoom: maxMessages, idleHours: idleMs / HOUR },
+        list: list.sort((a, b) => a.idleSeconds - b.idleSeconds).slice(0, 100),
+      }
+    },
   }
 }
 
@@ -208,6 +221,38 @@ export function keyMatches(request, key) {
   const given = Buffer.from((request.headers.authorization ?? '').replace(/^Bearer\s+/i, ''))
   const wanted = Buffer.from(key)
   return given.length === wanted.length && timingSafeEqual(given, wanted)
+}
+
+/**
+ * Wrong keys per address: after `burst` in a `perMs` window, the address is
+ * refused for the rest of the window, also with the right key. Only a request
+ * that brought a key counts; phones bring none. Paired devices' tokens travel
+ * the same way, so the limit leaves room for a tab that still sends a revoked one.
+ */
+export function createKeyGuard({ burst = 30, perMs = 60000, now = Date.now } = {}) {
+  const windows = new Map()
+  const live = request => {
+    const address = clientAddress(request)
+    let window = windows.get(address)
+    if (window && now() >= window.until) { windows.delete(address); window = undefined }
+    return { address, window }
+  }
+  return {
+    blocked: request => (live(request).window?.count ?? 0) >= burst,
+    failed(request) {
+      const { address, window } = live(request)
+      if (window) { window.count++; return }
+      if (windows.size > 10000) for (const [key, other] of windows) if (now() >= other.until) windows.delete(key)
+      windows.set(address, { count: 1, until: now() + perMs })
+    },
+  }
+}
+
+/** Why a key is easy to guess, or null: too short, or made of a few characters repeated. */
+export function weakKeyReason(key) {
+  if (String(key).length < 16) return `it has ${String(key).length} characters; 16 or more are hard to guess`
+  if (new Set(key).size <= 4) return 'it repeats a few characters'
+  return null
 }
 
 const MAX_BODY = 4096

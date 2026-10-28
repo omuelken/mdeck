@@ -836,7 +836,7 @@ try {
   assert.deepEqual(rooms.half.answers.map(answer => answer.value), ['0,5'], 'the number kept')
   assert.deepEqual(rooms.deriv.answers.map(answer => answer.value), ['$2x$'], 'a list option kept as written')
   assert.ok(rooms.spot.answers.length === 1 && Math.abs(rooms.spot.answers[0].value.x - 0.66) < 0.01 && Math.abs(rooms.spot.answers[0].value.y - 0.24) < 0.01, 'the tap kept')
-  assert.deepEqual(rooms.spot.solution, { x: 0.65, y: 0.25, r: 0.0875, ratio: 0.5 }, 'with the circle measured on the picture')
+  assert.deepEqual(rooms.spot.solution, { type: 'circle', x: 0.65, y: 0.25, r: 0.0875, ratio: 0.5 }, 'with the circle measured on the picture')
   execFileSync(process.execPath, ['bin/mdeck.js', 'build', pollDeck, '-o', resolve(temp, 'poll-built.html')], { cwd: root, stdio: 'pipe' })
   const record = await open('poll-built.html')
   await until(record, "document.querySelectorAll('[data-deck-active] .poll-count').length === 2")

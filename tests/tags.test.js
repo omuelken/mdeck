@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { Marked } from 'marked'
-import markedKatex from 'marked-katex-extension'
+import { mathExtensions } from '../src/core/katexOptions.js'
 import { parseFragment } from 'parse5'
 import { scanTags, openTagsIn, replaceTagsIn, withAttribute } from '../src/core/tags.js'
 import { roomsIn, findRoomTag } from '../src/live/roomTag.js'
@@ -10,7 +10,7 @@ import { choicesOf } from '../src/components/inlineText.js'
 
 // What the slide sees: marked's HTML, read by a browser's parser (parse5
 // follows the HTML standard). The components are the elements in it.
-const slideMarked = new Marked().use(markedKatex({ throwOnError: false, output: 'html' }))
+const slideMarked = new Marked().use(...mathExtensions('html'))
 function elementsOf(html) {
   const found = []
   const walk = node => {

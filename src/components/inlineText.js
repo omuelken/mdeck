@@ -1,12 +1,12 @@
 import { Marked } from 'marked'
-import markedKatex from 'marked-katex-extension'
+import { mathExtensions } from '../core/katexOptions.js'
 
 // Short texts in a tag's attributes (a poll's question and options) as one
 // line of Markdown with $…$ maths, like the text on a slide. The slide gets
 // KaTeX's HTML; the phones' answer page has no KaTeX, so it gets MathML,
 // which browsers draw themselves (src/live/answer/answer.js).
-const slide = new Marked().use(markedKatex({ throwOnError: false, output: 'html' }))
-const phone = new Marked().use(markedKatex({ throwOnError: false, output: 'mathml' }))
+const slide = new Marked().use(...mathExtensions('html'))
+const phone = new Marked().use(...mathExtensions('mathml'))
 
 export const slideHtml = text => slide.parseInline(String(text ?? ''))
 export const phoneHtml = text => phone.parseInline(String(text ?? ''))
@@ -14,9 +14,9 @@ export const phoneHtml = text => phone.parseInline(String(text ?? ''))
 /** An activity's question for the phones: the text, and drawn when the tag has one (else the slide's heading, as text). */
 export const phoneQuestion = (question, slideTitle) => question ? { question, questionHtml: phoneHtml(question) } : { question: slideTitle }
 
-// A formula, as KaTeX's inline rule finds it: $…$ or $$…$$, not starting
-// with a space, and ending before a space, punctuation, a bar or the end.
-const MATH = /^(\${1,2})(?!\$|\s)(?:\\.|[^\\\n$])*?\1(?=[\s?!.,:|]|$)/
+// A formula, as the inline rule finds it (src/core/katexOptions.js): $…$ or $$…$$
+// on one line, not starting with a space, and not closing before a digit.
+const MATH = /^(\${1,2})(?!\$|\s)(?:\\.|[^\\\n$])*?\1(?!\d)/
 
 // Reads options as Markdown, with formulas as one piece each, to find the
 // bars between them.
