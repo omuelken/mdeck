@@ -160,6 +160,24 @@ test('a folder of the deck\'s own is never overwritten', async () => {
   assert.match(readFileSync(resolve(other, 'extensions/palettes/solar-light/extension.toml'), 'utf8'), /#000000/)
 })
 
+test('a deck\'s copy of a theme installed for every deck warns only when it differs', async () => {
+  await mdeck('themes', 'install', 'sunny')
+  await mdeck('themes', 'install', 'sunny', deck)
+  assert.equal(registryOf(deck).themes.sunny.source, 'local')
+  assert.deepEqual(registryOf(deck).warnings, [])
+  mkdirSync(resolve(deckDir, 'extensions/themes/sunny/fonts'))
+  writeFileSync(resolve(deckDir, 'extensions/themes/sunny/fonts/extra.woff2'), 'font')
+  assert.equal(registryOf(deck).warnings.length, 1)
+  rmSync(resolve(deckDir, 'extensions/themes/sunny/fonts'), { recursive: true })
+  assert.deepEqual(registryOf(deck).warnings, [])
+  writeFileSync(resolve(deckDir, 'extensions/themes/sunny/styles.css'), '.slide { color: red; }\n')
+  assert.deepEqual(registryOf(deck).warnings, [`The theme "sunny" 1.0.0 in this deck's extensions replaces the one 1.0.0 installed in ${resolve(userRoot, 'themes')}`])
+  await mdeck('themes', 'remove', 'sunny', deck, '--force')
+  await mdeck('palettes', 'remove', 'solar-warm', deck)
+  await mdeck('themes', 'remove', 'sunny')
+  await mdeck('palettes', 'remove', 'solar-warm')
+})
+
 test('update installs a newer version in place, and keeps files changed by hand unless forced', async () => {
   await mdeck('palettes', 'install', 'solar-light')
   write('palette', 'solar-light', { 'extension.toml': palette('solar-light', '#2aa198') }, '1.1.0')
