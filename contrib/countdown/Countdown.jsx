@@ -65,6 +65,10 @@ const ROLES = new Set(['presenter', 'audience', 'deck'])
 // An iPad says it is a Mac, but has a touch screen.
 const onIpad = () => /iPad/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
 
+// The phone clicker's slide: a frame a third of the phone high, too low for
+// the whole panel.
+const inPhoneFrame = () => new URLSearchParams(location.search).get('remote') === '1'
+
 // --- The countdown --------------------------------------------------------
 // { running, endsAt, remaining, duration, visible, position, sound, volume,
 //   quiet, test }: `endsAt` (this window's clock) only while running,
@@ -345,7 +349,7 @@ function Countdown({ role }) {
     {timer?.visible && role !== 'presenter' && <div class={`countdown-clock countdown-clock--${left === 0 ? 'center' : timer.position}`} role="timer" aria-live="off"
       data-ending={left > 0 && left <= MINUTE ? '' : undefined} data-done={left === 0 ? '' : undefined}>{formatTime(left)}</div>}
     {sound.blocked && <button type="button" class="countdown-sound" onClick={() => { sound.allow(); activated(n => n + 1) }}>Click for sound</button>}
-    {controls && <div class="countdown-controls" onPointerDown={keep} onClick={keep} onKeyDown={keep} onTouchStart={keep}>
+    {controls && <div class={`countdown-controls${inPhoneFrame() ? ' countdown-controls--small' : ''}`} onPointerDown={keep} onClick={keep} onKeyDown={keep} onTouchStart={keep}>
       {open && <Panel timer={timer} change={change} />}
       <div class="countdown-fab">
         <button class={`countdown-toggle${open ? ' is-on' : ''}${timer.visible ? ' is-shown' : ''}${showing ? ' is-time' : ''}`} title="Countdown for the room" aria-label="Countdown for the room" aria-expanded={open} onClick={() => setOpen(o => !o)}
@@ -434,6 +438,20 @@ const STYLES = `
 .countdown-controls input[type=text] { width: 56px; cursor: text; }
 .countdown-controls select { flex: 1; min-width: 0; }
 .countdown-controls input[type=range] { width: 80px; }
+/* The phone clicker's slide: smaller, and the panel scrolls within the frame.
+   Its rows turn round, so the time with Start sits just above the button,
+   where the scrolling begins. */
+.countdown-controls--small { left: 6px; bottom: 6px; gap: 6px; font-size: 12px; }
+.countdown-controls--small .countdown-fab { padding: 3px; }
+.countdown-controls.countdown-controls--small .countdown-toggle { min-width: 32px; height: 32px; font-size: 13px; }
+.countdown-controls.countdown-controls--small .countdown-toggle.is-time { padding: 0 10px; }
+.countdown-controls--small .countdown-panel {
+  flex-direction: column-reverse; gap: 5px; padding: 6px; border-radius: 10px;
+  max-height: calc(100vh - 56px); max-width: calc(100vw - 12px); box-sizing: border-box;
+  overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
+}
+.countdown-controls--small button, .countdown-controls--small select, .countdown-controls--small input[type=text] { padding: 4px 7px; min-width: 30px; min-height: 30px; }
+.countdown-controls--small .countdown-panel-time { font-size: 18px; }
 @media print { .countdown-host { display: none !important; } }
 `
 
