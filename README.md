@@ -22,7 +22,7 @@
 > | Change | Status |
 > |---|---|
 > | A countdown for the room, set in the presenter view, with a sound at the end (`<countdown />`, in [`contrib/countdown`](contrib/countdown/Countdown.jsx)) | only here |
-> | `mdeck run --server`: an iPad gets a theme from `~/.mdeck/extensions` and sends the picture of a `<pinpoint>` | only here |
+> | A deck's own copy of an installed theme warns only when its files differ, so `mdeck check --strict` passes | [PR #33](https://github.com/tilman-schieber/mdeck/pull/33) |
 > | iPad tips: switch Scribble off ([drawing.md](docs/site/content/drawing.md)) | only here |
 >
 > To use it: clone, `git switch unterricht`, `npm install`, `npm link` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
