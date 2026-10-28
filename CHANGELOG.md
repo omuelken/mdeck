@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.17.0 — 2026-10-28
 
 - Fixed (#34): inline maths next to other characters, such as `$x$-Achse`, `$(1,0)$;` or `($120^\circ$)`, stayed raw text without a word, and its stray `$` spoiled formulas beside it. A formula is now found wherever `$…$` closes on its line; it does not close before a digit, so `$5 and $10` stay prices, and `\$` is a dollar sign. This also holds for the questions and options of polls.
 - `mdeck check` warns about maths that would not show, in the slides and in `:::notes`: a formula KaTeX cannot read and a `$` that starts no formula, with the line.
