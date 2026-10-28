@@ -252,7 +252,8 @@ with `mdeck themes remove` or `mdeck palettes remove`, listed in
 folder beside the deck. For themes and palettes a later place replaces an
 earlier one with the same id: an installed newer version replaces the built-in
 one, and a deck's own copy replaces both (with a warning when it replaces one
-installed for every deck). Layouts are built in and may not be replaced;
+installed for every deck with other files, such as an older version; an
+identical copy, kept so the deck folder carries its theme, is no warning). Layouts are built in and may not be replaced;
 within one place an id may appear only once per kind.
 
 A theme or palette meant to be installed carries a few more settings in its

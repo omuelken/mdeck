@@ -78,6 +78,19 @@ function loadManifest({ dir, file, folderName }) {
   return record.kind === 'layout' ? readLayout(record) : record
 }
 
+// A deck's own copy of a theme or palette installed for every deck is no news
+// while both folders hold the same files; only a copy that differs is worth a
+// warning, such as one left behind by an update.
+function sameFiles(a, b) {
+  const files = (dir, sub = '') => readdirSync(resolve(dir, sub), { withFileTypes: true }).filter(entry => !SKIP(entry.name)).flatMap(entry => {
+    const name = sub ? `${sub}/${entry.name}` : entry.name
+    return entry.isDirectory() ? files(dir, name) : entry.isFile() ? [name] : []
+  })
+  const names = files(a).sort()
+  return names.join('\0') === files(b).sort().join('\0') && names.every(name => readFileSync(resolve(a, name)).equals(readFileSync(resolve(b, name))))
+}
+const versionOf = record => record.package?.version ? ` ${record.package.version}` : ''
+
 export function discoverExtensions(roots) {
   const registry = { layouts: {}, themes: {}, palettes: {}, dataviews: {}, records: [], warnings: [] }
   const byKey = new Map()
@@ -91,7 +104,7 @@ export function discoverExtensions(roots) {
     // same place, may not.
     const replaces = existing && ['theme', 'palette'].includes(record.kind) && RANK[source] > RANK[existing.source]
     if (replaces) {
-      if (existing.source === 'user') registry.warnings.push(`The ${record.kind} "${record.id}" in this deck's extensions replaces the one installed in ${dirname(existing.dir)}`)
+      if (existing.source === 'user' && !sameFiles(record.dir, existing.dir)) registry.warnings.push(`The ${record.kind} "${record.id}"${versionOf(record)} in this deck's extensions replaces the one${versionOf(existing)} installed in ${dirname(existing.dir)}`)
       registry.records.splice(registry.records.indexOf(existing), 1)
     } else if (existing) throw new ManifestError(`Duplicate ${record.kind} "${record.id}" is also defined in ${existing.file}. Extension IDs must be unique within their kind.`, { file: record.file })
     byKey.set(key, entry)
