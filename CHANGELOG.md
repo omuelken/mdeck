@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fixed: with `mdeck run --server`, an iPad stayed black when the deck used a theme installed in `~/.mdeck/extensions`; the laptop did not share files in a dot directory, not even the theme's stylesheet. Other dot paths (`.env`, `.git`) stay private.
+- A deck's own copy of a theme or palette installed for every deck warns only when its files differ, and names both versions; an identical copy no longer fails `mdeck check --strict`.
 - Fixed: with `mdeck run --server`, the picture of a `<pinpoint>` could not reach the phones from a paired iPad.
 
 ## 3.16.1 — 2026-10-27
