@@ -22,6 +22,7 @@ For how the commands, the views and the servers fit together, see [Views, comman
 | `mdeck build my-talk.md` | Make a folder to host in `dist` |
 | `mdeck pdf my-talk.md` | Make a PDF |
 | `mdeck preview` | Open the last build from the current folder |
+| `mdeck publish talk.md` | Put the deck on your server as one reader file, without speaker notes, and print its link (`--name`, `--server`, `--notes`, `--replace`, `--remove`; needs `mdeck server --decks <folder>`) |
 | `mdeck server` | Run the server for polls and for presenting from an iPad on any network ([details](audience.html#use-it-in-a-real-session)) |
 | `mdeck server --check https://rooms.example.org` | Test a running server from this computer: it answers, its version, CORS, live updates and WebSocket upgrades through your web server (with `MDECK_SERVER_KEY`, presenting through it as well) |
 | `mdeck list`, `mdeck starter` | Look up layouts, themes and palettes |

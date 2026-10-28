@@ -20,6 +20,7 @@ ${cmd('palettes', '<action>', 'The same for palettes')}
   ${c.dim}Hand out${c.reset}
 ${cmd('build', '[slides.md]', 'A folder to host')}
 ${cmd('send', '[slides.md]', 'One HTML file to send, without notes, with a PDF inside')}
+${cmd('publish', '[slides.md]', 'Put the deck on your server, to open with a link')}
 ${cmd('pdf', '[slides.md]', 'A PDF, one page per slide')}
 ${cmd('preview', '[folder]', 'Preview a built folder')}
 
@@ -120,8 +121,20 @@ export const COMMAND_HELP = {
     ${c.green}mdeck skill${c.reset} [--install <assistant>...] [--project] [--print]
       Assistants: claude, codex, cursor, copilot, gemini. --project installs into this folder,
       --print writes the skill to the terminal.`,
+  publish: `
+    ${c.green}mdeck publish${c.reset} [slides.md] [--server https://…] [--name talk]
+      Uploads the deck as one reader file, without speaker notes, to a server started with
+      mdeck server --decks, and prints its link. The key is in MDECK_SERVER_KEY; the address
+      is --server, the deck's server setting or MDECK_SERVER. A name that is taken is refused.
+      --replace              overwrite the deck already published under this name
+      --notes                keep the speaker notes (anyone with the link can read them)
+      --no-polls             leave out slides with polls
+      --remove               take the deck down
+      --slide 3,5-7          only these slides, numbered as in the deck`,
   server: `
-    ${c.green}mdeck server${c.reset} [--port 8787] [--host [address]]
+    ${c.green}mdeck server${c.reset} [--port 8787] [--host [address]] [--decks <folder>]
+      --decks <folder>       keep decks published with mdeck publish there and show them at /d/<name>
+                             (needs MDECK_SERVER_KEY)
       --check [address]      test a running server from here instead of starting one: reachable,
                              version, CORS, live updates and WebSocket upgrades through your web
                              server; with its key in MDECK_SERVER_KEY, also presenting through it
