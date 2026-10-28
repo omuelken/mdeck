@@ -129,8 +129,10 @@ export const COMMAND_HELP = {
       --replace              overwrite the deck already published under this name
       --notes                keep the speaker notes (anyone with the link can read them)
       --no-polls             leave out slides with polls
-      --remove               take the deck down
-      --slide 3,5-7          only these slides, numbered as in the deck`,
+      --remove               take the deck down (with --name, no slides file is needed)
+      --slide 3,5-7          only these slides, numbered as in the deck
+      --no-drawings          leave out the drawings made on the slides
+      --no-results           leave out the saved poll results`,
   server: `
     ${c.green}mdeck server${c.reset} [--port 8787] [--host [address]] [--decks <folder>]
       --decks <folder>       keep decks published with mdeck publish there and show them at /d/<name>

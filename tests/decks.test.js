@@ -1,6 +1,8 @@
 import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, readdirSync } from 'node:fs'
+import { mkdtempSync, rmSync, readdirSync, writeFileSync } from 'node:fs'
+import { execFile } from 'node:child_process'
+import { request as httpRequest } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { startLiveServer } from '../src/live/server.js'
@@ -82,4 +84,57 @@ test('mdeck publish takes its options', () => {
   assert.throws(() => parseArgs('publish', ['--server', 'https://a.example.org/path']), /origin/)
   assert.throws(() => parseArgs('publish', ['--replace', '--remove']), /Choose/)
   assert.equal(parseArgs('server', ['--decks', 'decks']).options['--decks'], 'decks')
+})
+
+test('a streamed upload over the limit is answered with 413, not a reset', async () => {
+  const { deckRoutes } = await import('../src/live/decks.js')
+  const { createServer } = await import('node:http')
+  const routes = deckRoutes({ dir, key: 'secret', maxBytes: 10 })
+  const server = createServer((request, response) => { if (!routes(request, response)) response.end() }).listen(0)
+  after(() => server.close())
+  const status = await new Promise((done, fail) => {
+    const upload = httpRequest({ port: server.address().port, path: '/decks/chunked', method: 'PUT', headers: auth }, response => { done(response.statusCode); response.resume() })
+    upload.on('error', fail)
+    upload.write('<html>'); upload.write('x'.repeat(100))
+  })
+  assert.equal(status, 413)
+})
+
+test('two uploads of one name without --replace: one wins, the other gets 409', async () => {
+  const results = await Promise.all([put('race', page.replace('hello', 'one')), put('race', page.replace('hello', 'two'))])
+  assert.deepEqual(results.map(result => result.status).sort(), [200, 409])
+})
+
+test('a decks folder keeps no stale temporary files after a start', async () => {
+  writeFileSync(join(dir, 'old.1234.tmp'), 'x')
+  const again = await startLiveServer({ port: 0, key: 'secret', decks: dir })
+  after(() => again.close())
+  assert.ok(!readdirSync(dir).some(file => file.endsWith('.tmp')))
+})
+
+const cli = join(import.meta.dirname, '..', 'bin', 'mdeck.js')
+const run = (args, env = {}, cwd = dir) => new Promise(done => execFile(process.execPath, [cli, ...args], { cwd, env: { ...process.env, MDECK_SERVER_KEY: 'secret', ...env }, encoding: 'utf8' }, (error, stdout, stderr) => done({ code: error?.code ?? 0, out: stdout + stderr })))
+
+test('mdeck publish: a taken name is refused before the build, --replace updates, --remove needs no slides file', async () => {
+  const work = mkdtempSync(join(tmpdir(), 'mdeck-publish-cli-'))
+  after(() => rmSync(work, { recursive: true, force: true }))
+  writeFileSync(join(work, 'Übung 1.md'), '# Hello\n')
+  const before = readdirSync(tmpdir()).filter(file => file.startsWith('mdeck-publish-')).length
+  const first = await run(['publish', join(work, 'Übung 1.md'), '--server', live.url], {}, work)
+  assert.equal(first.code, 0, first.out)
+  assert.match(first.out, /\/d\/ubung-1/)
+  assert.match(await (await fetch(`${live.url}/d/ubung-1`)).text(), /<html/i)
+  const again = await run(['publish', join(work, 'Übung 1.md'), '--server', live.url], {}, work)
+  assert.equal(again.code, 1)
+  assert.match(again.out, /already exists/)
+  assert.doesNotMatch(again.out, /Built|Made/, 'no build ran')
+  const replaced = await run(['publish', join(work, 'Übung 1.md'), '--server', live.url, '--replace'], {}, work)
+  assert.match(replaced.out, /Replaced/)
+  assert.equal(readdirSync(tmpdir()).filter(file => file.startsWith('mdeck-publish-')).length, before, 'no temporary folders are left')
+  const removed = await run(['publish', '--name', 'ubung-1', '--remove', '--server', live.url], {}, work)
+  assert.equal(removed.code, 0, removed.out)
+  assert.equal((await fetch(`${live.url}/d/ubung-1`)).status, 404)
+  const wrong = await run(['publish', join(work, 'Übung 1.md'), '--server', live.url], { MDECK_SERVER_KEY: 'nope' }, work)
+  assert.equal(wrong.code, 1)
+  assert.match(wrong.out, /key is wrong/)
 })
