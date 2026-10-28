@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed (#34): inline maths next to other characters, such as `$x$-Achse`, `$(1,0)$;` or `($120^\circ$)`, stayed raw text without a word, and its stray `$` spoiled formulas beside it. A formula is now found wherever `$…$` closes on its line; it does not close before a digit, so `$5 and $10` stay prices, and `\$` is a dollar sign. This also holds for the questions and options of polls.
+- `mdeck check` warns about maths that would not show, in the slides and in `:::notes`: a formula KaTeX cannot read and a `$` that starts no formula, with the line.
 - Fixed: with `mdeck run --server`, an iPad stayed black when the deck used a theme installed in `~/.mdeck/extensions`; the laptop did not share files in a dot directory, not even the theme's stylesheet. Other dot paths (`.env`, `.git`) stay private.
 - A deck's own copy of a theme or palette installed for every deck warns only when its files differ, and names both versions; an identical copy no longer fails `mdeck check --strict`.
 - Fixed: with `mdeck run --server`, the picture of a `<pinpoint>` could not reach the phones from a paired iPad.

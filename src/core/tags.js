@@ -1,5 +1,5 @@
 import { Marked } from 'marked'
-import markedKatex from 'marked-katex-extension'
+import { mathExtensions } from './katexOptions.js'
 
 // The HTML tags in a deck's Markdown, found the way the slide finds them:
 // marked decides what is HTML (not code, not a tag a blank line cut in two),
@@ -7,7 +7,7 @@ import markedKatex from 'marked-katex-extension'
 // in a quoted value (question="Is $x > 0$?") does not end its tag. Every
 // part of mdeck that looks for tags in a deck's text goes through here.
 
-const lexer = new Marked().use(markedKatex({ throwOnError: false, output: 'html' }))
+const lexer = new Marked().use(...mathExtensions('html'))
 
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }
 const decode = value => value.replace(/&(?:#(\d+)|#x([0-9a-f]+)|([a-z]+));/gi, (entity, dec, hex, name) =>

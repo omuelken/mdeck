@@ -125,6 +125,8 @@ Formulas use a notation called LaTeX. For a formula in a sentence, put it betwee
 The area is $A = \pi r^2$.
 ```
 
+A formula may stand right against other characters, as in `$x$-axis` or `($a$)`, but not before a digit, so `$5 and $10` stay two prices. For a dollar sign inside a sentence, write `\$`. `mdeck check` warns about a formula that cannot be drawn and about a `$` that starts none, also in speaker notes.
+
 For a formula on its own line, use two dollar signs above and below it:
 
 ```markdown
