@@ -124,6 +124,7 @@ id = "comparison"
 title = "Side-by-side comparison"
 description = "Two options next to each other."
 frame = "standard"          # standard, title, chapter or none
+numbered = true             # false: no page number, the others count on without it
 
 [files]
 layout = "layout.jsx"       # default; may be omitted

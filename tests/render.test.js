@@ -16,7 +16,7 @@ const server = await createServer({ configFile: false, plugins: [preact(), slide
 after(() => server.close())
 const { setCalloutLabels } = await server.ssrLoadModule('/src/runtime/markedSetup.js')
 const { setDeckLanguage } = await server.ssrLoadModule('/src/core/labels.js')
-const { SlideRenderer, manifests } = await server.ssrLoadModule('/src/layouts/renderSlide.jsx')
+const { SlideRenderer, manifests, pageNumbers } = await server.ssrLoadModule('/src/layouts/renderSlide.jsx')
 
 function htmlFragments(node) {
   if (!node || typeof node !== 'object') return ''
@@ -47,7 +47,7 @@ test('nested directives render correctly and preserve code delimiters', () => {
 })
 
 test('deck-local layouts load through the real plugin and share the frame', () => {
-  assert.equal(Object.keys(manifests).length, 8)
+  assert.equal(Object.keys(manifests).length, 9)
   assert.equal(manifests.comparison.title, 'Side-by-side comparison')
   const slide = parseSlides(':::meta\nlayout: comparison\nid: local\n:::\n# Shared\n:::slot left\nLeft[^a]\n:::\n:::slot right\nRight[^b]\n\n[^a]: First source\n[^b]: Second source\n:::').slides[0]
   const node = SlideRenderer({ ...slide, deckConfig: {}, index: 0 })
@@ -116,4 +116,16 @@ test('a list item that begins in bold is marked as a lead item; bold later in it
   assert.match(html, /<li class="lead"><strong>Title<\/strong> and its text<\/li>/)
   assert.match(html, /<li>some <strong>bold<\/strong> text<\/li>/)
   assert.match(html, /<ol>\n<li class="lead"><strong>One<\/strong><\/li>/)
+})
+
+test('a blank page has no page number and the slides after it keep theirs', () => {
+  const deck = parseSlides('# One\n\n---\n:::meta\nlayout: blank\n:::\n\n---\n# Two\n')
+  assert.deepEqual(pageNumbers(deck.slides), [1, null, 2])
+  const pageShown = page => {
+    const node = SlideRenderer({ ...deck.slides[1], deckConfig: {}, index: 1, page })
+    const footer = node.type(node.props).props.children.at(-2)
+    return footer.type(footer.props).props.children[1]
+  }
+  assert.equal(pageShown(null), false)
+  assert.equal(pageShown(2).props.children, '02')
 })

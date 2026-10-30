@@ -4,6 +4,7 @@
 //
 //   GET  /__mdeck/ink        { ink, deckHash }
 //   POST /__mdeck/ink/ops    { deckHash, ops } → { deckHash, renamed }
+//   POST /__mdeck/ink/blank  { deckHash, after } → { deckHash, index }
 //
 // A slide that gets ink but has no `id:` of its own gets one, written into
 // its settings, so the ink stays with it when slides are inserted. Ids by
@@ -11,10 +12,14 @@
 // (deckHash); otherwise the answer is 409 and the device reloads. The server's
 // own writes do not reload the open windows (ownWrites.js); instead it sends
 // `mdeck:ink`, and the pages fetch the ink again.
+//
+// A blank page (layout: blank) goes in after the slide shown, for what does
+// not fit on it any more. That write is a change to the deck like the
+// author's, so the windows reload and show it.
 import { existsSync, readFileSync, writeFileSync, renameSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs'
 import { resolve, dirname, basename } from 'node:path'
 import { parseSlides } from '../core/parseSlides.js'
-import { setSlideMeta } from '../core/editDeck.js'
+import { setSlideMeta, insertSlide } from '../core/editDeck.js'
 import { slideTitle } from '../core/outline.js'
 import { slug } from '../live/code.js'
 import { inkFileFor, normalizeInk, emptyInk, applyOp, serializeInk, isSlideId } from '../core/ink.js'
@@ -191,6 +196,17 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
       onChange({ renamed })
       return { status: 200, deckHash: hash, renamed }
     },
+    insertBlank(after, deckHash) {
+      if (!isSlideId(after)) return { status: 400, error: 'Not a slide id' }
+      const { deck, hash } = readDeck()
+      const index = deck.slides.findIndex(slide => slide.id === after)
+      if (index < 0) return { status: 409, error: `No slide "${after}" in the deck file`, deckHash: hash }
+      // An id by position: only trusted for the deck the device saw.
+      if (deck.slides[index].meta.id == null && deckHash !== hash) return { status: 409, error: 'The deck changed; reload', deckHash: hash }
+      const { source } = insertSlide(deck, index + 1, ':::meta\nlayout: blank\n:::\n')
+      writeAtomic(abs, source)
+      return { status: 200, deckHash: hashSource(source), index: index + 1 }
+    },
     // Drops one slide's drawings, or all of them, from the launch page; the
     // open windows fetch the ink again. Like any write, it keeps the
     // session's backup first.
@@ -213,13 +229,18 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
 export function inkMiddleware(file, { authorize = isAllowedRequest } = {}) {
   return async (request, response, next) => {
     const { pathname } = new URL(request.url, 'http://localhost')
-    if (pathname !== '/' && pathname !== '/ops') return next()
+    if (pathname !== '/' && pathname !== '/ops' && pathname !== '/blank') return next()
     if (!authorize(request)) return send(response, 403, { error: 'Only the presenter can change the ink' })
     try {
       if (pathname === '/' && request.method === 'GET') return send(response, 200, file.read())
       if (pathname === '/ops' && request.method === 'POST') {
         const { deckHash, ops } = await readJson(request)
         const result = file.apply(ops, deckHash)
+        return send(response, result.status, result)
+      }
+      if (pathname === '/blank' && request.method === 'POST') {
+        const { deckHash, after } = await readJson(request)
+        const result = file.insertBlank(after, deckHash)
         return send(response, result.status, result)
       }
       response.setHeader('Allow', pathname === '/' ? 'GET' : 'POST')

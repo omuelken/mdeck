@@ -23,7 +23,7 @@ import { reactionsOf } from '../../core/reactions.js'
 import mdeckMark from '../../../assets/logo/mark.svg'
 import { slidesContent, deckLang, LANGUAGES, chooseLanguage, withFileLanguage } from '../deckSource.js'
 import { hasActivities, announceSlide } from '../phones.js'
-import { controlUrl, DECK_CHANNEL, sendTo } from '../deckChannel.js'
+import { controlUrl, DECK_CHANNEL, POSITION_KEY, sendTo } from '../deckChannel.js'
 import { ToolButton, SlideControls, Connections, tool } from './PresenterChrome.jsx'
 import { RehearsalSummary } from './RehearsalSummary.jsx'
 import { useTalkTimer } from './useTalkTimer.js'
@@ -78,9 +78,8 @@ function slideTitleOf(slide) {
 }
 
 // The position this view was at, kept across a reload (sessionStorage, as
-// the timer's state is): its frame opens there, instead of sending the
-// audience window back to the first slide.
-const POSITION_KEY = `mdeck-position:${DECK_CHANNEL}`
+// the timer's state is, POSITION_KEY): its frame opens there, instead of
+// sending the audience window back to the first slide.
 function keptPosition() {
   try {
     const kept = JSON.parse(sessionStorage.getItem(POSITION_KEY))
