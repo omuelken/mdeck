@@ -3,6 +3,7 @@
 import { createServer } from 'node:http'
 import { liveHandler, createRooms, createKeyGuard, keyMatches } from './rooms.js'
 import { infoRoutes } from './infoPage.js'
+import { deckRoutes } from './decks.js'
 import { isAllowedRequest } from '../build/editorPlugin.js'
 import { createTunnels } from './tunnel.js'
 import { currentUrls } from '../build/networkUrls.js'
@@ -61,7 +62,7 @@ function isStageRequest(url, code) {
 // `server: https://…`. Resetting a room needs the key. With a key it
 // is also the relay for `mdeck run --server` (src/live/tunnel.js), which needs
 // the web server to pass WebSocket upgrades on.
-export function startLiveServer({ port = 8787, host = '127.0.0.1', key = null } = {}) {
+export function startLiveServer({ port = 8787, host = '127.0.0.1', key = null, decks = null } = {}) {
   const guard = createKeyGuard()
   const tunnels = createTunnels({ key, guard })
   const rooms = createRooms()
@@ -75,7 +76,9 @@ export function startLiveServer({ port = 8787, host = '127.0.0.1', key = null } 
   }
   const handler = liveHandler({ rooms, canReset })
   const pages = infoRoutes({ rooms, tunnels, key })
-  const server = createServer((request, response) => { if (!tunnels.handleRequest(request, response) && !pages(request, response)) handler(request, response) })
+  // Published decks need a folder to keep them in and the key to publish with.
+  const published = decks ? deckRoutes({ dir: decks, key, guard }) : () => false
+  const server = createServer((request, response) => { if (!tunnels.handleRequest(request, response) && !pages(request, response) && !published(request, response)) handler(request, response) })
   server.on('upgrade', (request, socket, head) => { if (!tunnels.handleUpgrade(request, socket, head)) socket.destroy() })
   return new Promise((done, fail) => {
     server.once('error', fail)

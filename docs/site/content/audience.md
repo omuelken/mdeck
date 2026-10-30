@@ -283,3 +283,16 @@ A PDF, a file made with `mdeck send` and a folder hosted without a poll server k
 ## Make your own activity
 
 Polls, scales, word clouds and questions are ordinary components. The [interactive content](components.html#audience-interaction) guide shows how to write your own, such as a quiz, or ask your assistant to write one.
+
+## Host the slides on the same server
+
+A server started with a folder for decks also shows them:
+
+```bash
+MDECK_SERVER_KEY=<key> mdeck server --decks /var/lib/mdeck/decks
+MDECK_SERVER_KEY=<key> mdeck publish talk.md --server https://slides.example.org
+```
+
+The second command builds the deck as one reader file, without speaker notes, uploads it and prints its link, `https://slides.example.org/d/talk`. `--name` chooses the name. A name that is taken is refused, with when it was published; `--replace` overwrites it, which is how you update a deck. `mdeck publish talk.md --remove` takes it down, and `mdeck publish --name talk --remove` does so without the slides file. The check for a taken name happens before the build, and a name with accents is written without them (`Übung 1.md` becomes `ubung-1`). With `server:` in the deck's settings, `--server` can be left out.
+
+Anyone with the link can open the deck, and nothing lists the decks, so a name that is hard to guess is a private link. Publishing needs the key, so give it only to people you trust with the server: a published deck is a web page with its own scripts, opened on the server's own address, so whoever can publish is trusted like the server's owner. Use an `https://` address; with `http://` the key travels unencrypted. `--notes` keeps the speaker notes in the file: everyone with the link can then read them.

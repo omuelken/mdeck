@@ -27,7 +27,9 @@ export default async function startServer({ options, portOption }) {
   const host = options['--host'] === null ? '0.0.0.0' : options['--host'] ?? '127.0.0.1'
   const key = process.env.MDECK_SERVER_KEY || null
   try {
-    const server = await startLiveServer({ port, host, key })
+    const decks = options['--decks'] ?? null
+    if (decks && !key) { err('--decks needs MDECK_SERVER_KEY: publishing is protected by the key.'); process.exit(1) }
+    const server = await startLiveServer({ port, host, key, decks })
     ok(`Server: ${c.cyan}${server.url}${c.reset}`)
     const weak = key && weakKeyReason(key)
     if (weak) { warn(`MDECK_SERVER_KEY is easy to guess: ${weak}.`); tip('Anyone who guesses it can reset your rooms and use this server as a relay. Make a random one with  openssl rand -hex 24  and keep it: presenters need it too.') }
@@ -35,6 +37,7 @@ export default async function startServer({ options, portOption }) {
     tip('Point decks at it with  server: https://your.host  behind a web server that passes WebSocket connections on,')
     tip('and test that from another computer with  mdeck server --check https://your.host')
     tip(key ? 'Presenters reset rooms after opening the deck once with ?serverkey=<MDECK_SERVER_KEY>, and mdeck run --server can present through it.' : 'Set MDECK_SERVER_KEY to let presenters reset rooms and to allow mdeck run --server.')
+    if (decks) tip(`Decks published with  mdeck publish  are kept in ${decks} and shown at ${server.url}/d/<name>.`)
     tip('Rooms live in memory only. Press Ctrl+C to stop.\n')
     const stop = async () => { await server.close(); process.exit(0) }
     process.once('SIGINT', stop)

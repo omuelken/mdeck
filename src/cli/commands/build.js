@@ -41,7 +41,7 @@ async function copyLocalAssets(slidesPath, outDir, { stripNotes = false, stripAc
 
 export default async function buildDeck({ command, options, hasFlag, outputOption, slideOption, requireInput }) {
   const input = requireInput(command)
-  const sending = command === 'send'
+  const sending = command === 'send' || command === 'publish'
   // build: a folder to host, or one file with --single-file. send: one file for
   // readers, in the reader view, without speaker notes unless asked, with a PDF.
   const selfContained = sending || hasFlag('--single-file')
@@ -50,7 +50,7 @@ export default async function buildDeck({ command, options, hasFlag, outputOptio
   const stripNotes = reader && !hasFlag('--notes')
   // Polls show as a record of the talk; --no-polls leaves their slides and join codes out.
   const stripActivities = reader && hasFlag('--no-polls')
-  const wantPdf = sending && !hasFlag('--no-pdf')
+  const wantPdf = command === 'send' && !hasFlag('--no-pdf')
   const slides = slideOption(input)
 
   if (!hasFlag('--no-drawings')) { try { assertDrawings(input) } catch (error) { err(error.message); process.exit(1) } }
@@ -116,5 +116,5 @@ export default async function buildDeck({ command, options, hasFlag, outputOptio
     if (shareSlides(raw, { activities: true, slides }).removed.length > (slides ? shareSlides(raw, { slides }).removed.length : 0)) tip('Slides with polls were left out (--no-polls).')
   }
   if (slides) tip(`Only slides ${options['--slide']} (--slide).`)
-  ok(`${sending ? 'Made' : 'Built'}: ${c.cyan}${htmlFile}${c.reset}${reader ? ' — opens in the reader view' : ''}${selfContained ? ' (single file)' : ' + local assets'}\n`)
+  if (command !== 'publish') ok(`${sending ? 'Made' : 'Built'}: ${c.cyan}${htmlFile}${c.reset}${reader ? ' — opens in the reader view' : ''}${selfContained ? ' (single file)' : ' + local assets'}\n`)
 }

@@ -9,7 +9,7 @@ import { commandContext } from './context.js'
 // The module of each command; some share one.
 const COMMANDS = {
   new: 'new', run: 'run', rehearse: 'run', edit: 'edit', design: 'design', themes: 'packages', palettes: 'packages',
-  build: 'build', send: 'build', pdf: 'pdf', preview: 'preview',
+  build: 'build', send: 'build', publish: 'publish', pdf: 'pdf', preview: 'preview',
   check: 'check', snapshot: 'snapshot', results: 'results', list: 'list', starter: 'starter', docs: 'docs', skill: 'skill', server: 'server',
 }
 

@@ -19,7 +19,8 @@ const commands = {
   list: { '--json': flag, max: 2 },
   starter: { max: 2 },
   docs: { ...common, '--build': flag, max: 1 },
-  server: { '--port': value, '--host': optional, '--check': optional, max: 0 },
+  server: { '--port': value, '--host': optional, '--check': optional, '--decks': value, max: 0 },
+  publish: { '--no-drawings': flag, '--no-results': flag, '--slide': value, '--server': value, '--name': value, '--notes': flag, '--no-polls': flag, '--remove': flag, '--replace': flag, max: 1 },
   skill: { '--print': flag, '--install': 'list', '--project': flag, max: 0 },
   results: { '--output': value, '-o': '--output', '--summary': flag, '--json': flag, max: 1 },
 }
@@ -88,6 +89,7 @@ export function parseArgs(command, argv) {
     if (options['--port'] !== undefined || options['--host'] !== undefined) throw new Error('--check tests a running server and starts none: leave out --port and --host')
     if (typeof options['--check'] === 'string') validateServerOrigin(options['--check'], '--check')
   }
+  if (command === 'publish' && options['--replace'] && options['--remove']) throw new Error('Choose --replace or --remove')
   if (command === 'build' && options['--notes'] && !options['--reader']) throw new Error('--notes requires --reader for mdeck build')
   if (command === 'build' && options['--no-polls'] && !options['--reader']) throw new Error('--no-polls requires --reader for mdeck build')
   if (command === 'build' && options['--launchers'] && options['--single-file']) throw new Error('--launchers is only available for folders, not with --single-file.')
