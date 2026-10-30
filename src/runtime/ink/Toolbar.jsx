@@ -6,7 +6,8 @@ import './toolbar.css'
 
 // The floating ink toolbar: tools, colours and sizes of the pen and the
 // highlighter (each keeps its own; one pen colour is the theme's accent),
-// deleting a selection, undo/redo, clear slide, hide saved ink, drawing with a
+// deleting a selection, undo/redo, clear slide, a blank page after this one
+// (where `mdeck run` can write the deck), hide saved ink, drawing with a
 // finger, and the drawings file. Swipes and the deck's own controls and keys
 // turn the slides. It folds into one button in the bottom right corner,
 // showing the current tool, and drawing goes on while it is folded. It drives
@@ -148,6 +149,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
           onConfirm={() => { controller.clearSlide(clearing); setClearing(null) }}
         />}
       </span>
+      {history.canBlank && button('Blank page after this slide', 'blank-page', () => { const id = slideId(); if (id) controller.insertBlank(id, stage.index) })}
     </div>
     <div class="ink-group">
       {button(hidden ? 'Show saved ink' : 'Hide saved ink', hidden ? 'eye-off' : 'eye', () => setHidden(!hidden), { active: hidden })}

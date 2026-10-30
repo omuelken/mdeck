@@ -7,7 +7,7 @@ import { createInkController, readLog } from './controller.js'
 import { changeInk, renameSlide } from './store.js'
 import { createInkBus, broadcastTransport } from './bus.js'
 import { InkToolbar } from './Toolbar.jsx'
-import { connectInkServer } from './server.js'
+import { connectInkServer, goToBlankPage } from './server.js'
 import { createInkSelection } from './select.js'
 
 const typing = target => target?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"]')
@@ -29,6 +29,7 @@ export function attachInk(stage, { storageKey, save = null, keys = true, transpo
   const controller = createInkController({ storageKey, save, publish: op => bus.op(op) })
   // Saving through `mdeck run` when it lets this page; otherwise in this browser.
   if (!save) connectInkServer(controller)
+  goToBlankPage(stage)
   stage.addEventListener('inkstroke', event => { controller.addStroke(event.detail); bus.strokeDone(event.detail) })
   stage.addEventListener('inklaser', event => bus.laserDone(event.detail))
   stage.addEventListener('inkerase', event => controller.erase(event.detail))

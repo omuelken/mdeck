@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { marked } from 'marked'
 import { renderCitations } from './citations.js'
 import { deckOutline } from '../core/outline.js'
-import { manifests, SlideRenderer } from '../layouts/renderSlide'
+import { manifests, SlideRenderer, pageNumbers } from '../layouts/renderSlide'
 import { loadTheme, THEME_METAS } from './themeLoader'
 import './reader.css'
 import { t, stageLabels } from '../core/labels.js'
@@ -45,12 +45,12 @@ function initialIndex(slides) {
   return Number.isInteger(n) && n >= 1 && n <= slides.length ? n - 1 : 0
 }
 
-function ReadPage({ slide, index, total, deckConfig, width, height, scale, showNotes }) {
+function ReadPage({ slide, index, page, total, deckConfig, width, height, scale, showNotes }) {
   const notes = slide.meta.notes ?? ''
   return <article class="reader-page" id={`reader-page-${index}`}>
     <div class="reader-page-frame" style={{ aspectRatio: `${width} / ${height}` }}>
       <div class="reader-page-scale" style={{ width: `${width}px`, height: `${height}px`, transform: `scale(${scale})` }}>
-        <SlideRenderer id={slide.id} regions={slide.regions} meta={slide.meta} content={slide.content} deckConfig={deckConfig} index={index} total={total} />
+        <SlideRenderer id={slide.id} regions={slide.regions} meta={slide.meta} content={slide.content} deckConfig={deckConfig} index={index} page={page} total={total} />
       </div>
     </div>
     {showNotes && notes && <div class="reader-page-notes" dangerouslySetInnerHTML={{ __html: marked.parse(renderCitations(notes).markdown) }} />}
@@ -59,6 +59,7 @@ function ReadPage({ slide, index, total, deckConfig, width, height, scale, showN
 
 export function ReaderView({ deck, deckConfig }) {
   const { slides } = deck
+  const pages = pageNumbers(slides)
   const width = deckConfig.width ?? 1920, height = deckConfig.height ?? 1080
   const [appearance, setAppearance] = useState(() => restoreLook(deckConfig).appearance)
   // Drawings come with the file; a reader may hide them, also for printing.
@@ -190,7 +191,7 @@ export function ReaderView({ deck, deckConfig }) {
           ? <>
             <div class="reader-stage-wrap">
               <deck-stage ref={stageRef} width={width} height={height}>
-                {slides.map((slide, i) => <SlideRenderer key={slide.id} id={slide.id} regions={slide.regions} meta={slide.meta} content={slide.content} deckConfig={deckConfig} index={i} total={slides.length} />)}
+                {slides.map((slide, i) => <SlideRenderer key={slide.id} id={slide.id} regions={slide.regions} meta={slide.meta} content={slide.content} deckConfig={deckConfig} index={i} page={pages[i]} total={slides.length} />)}
               </deck-stage>
             </div>
             <div class="reader-bottom">
@@ -201,7 +202,7 @@ export function ReaderView({ deck, deckConfig }) {
             </div>
           </>
           : <div class="reader-read" ref={readRef} data-deck-static>
-            {slides.map((slide, i) => <ReadPage key={slide.id} slide={slide} index={i} total={slides.length} deckConfig={deckConfig} width={width} height={height} scale={readScale} showNotes={showNotes} />)}
+            {slides.map((slide, i) => <ReadPage key={slide.id} slide={slide} index={i} page={pages[i]} total={slides.length} deckConfig={deckConfig} width={width} height={height} scale={readScale} showNotes={showNotes} />)}
           </div>}
       </section>
     </div>

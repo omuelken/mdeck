@@ -365,6 +365,20 @@ The code block goes left. This heading and text go right.
 
 ---
 
+### `blank` — A page to draw on
+
+An empty page with the header and footer of a content slide but no page
+number; the slides after it count on as if it were not there. The drawing
+toolbar's **Blank page after this slide** adds one during the talk.
+
+```markdown
+---
+layout: blank
+---
+```
+
+---
+
 ### Generic (no layout) — Content slide
 
 No `layout:` field renders a standard content slide. `h1` is the heading; everything below is body content. Frontmatter is optional — omit it entirely for slides that need no metadata:

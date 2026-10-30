@@ -22,7 +22,7 @@ const SHARED_KEYS = ['schema', 'kind', 'id', 'title', 'description']
 // who made it, its licence, a web page and the oldest mdeck it works with.
 const PACKAGE_KEYS = ['version', 'author', 'license', 'homepage', 'mdeck']
 const KEYS = {
-  layout: [...SHARED_KEYS, 'frame', 'files', 'regions', 'properties'],
+  layout: [...SHARED_KEYS, 'frame', 'numbered', 'files', 'regions', 'properties'],
   theme: [...SHARED_KEYS, ...PACKAGE_KEYS, 'palette', 'palettes', 'appearance', 'fonts', 'files', 'tokens', 'params', 'guide'],
   palette: [...SHARED_KEYS, ...PACKAGE_KEYS, 'theme', 'light', 'dark'],
   dataview: [...SHARED_KEYS, 'files', 'properties', 'needs', 'steps', 'size'],
@@ -137,6 +137,7 @@ function resolveFiles(section, kind, { dir, fail, fileExists }) {
 
 function validateLayout(raw, shared, fail) {
   if (raw.frame != null && !FRAMES.includes(raw.frame)) fail(`frame must be one of: ${FRAMES.join(', ')}`, 'frame')
+  if (raw.numbered != null && typeof raw.numbered !== 'boolean') fail('must be true or false', 'numbered')
   if (!isPlainObject(raw.regions) || !Object.hasOwn(raw.regions, 'body')) fail('regions must include a [regions.body] table', 'regions')
   const regions = {}
   for (const [name, region] of Object.entries(raw.regions)) {
@@ -155,7 +156,8 @@ function validateLayout(raw, shared, fail) {
     if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name) || RESERVED_NAMES.includes(name)) fail('property names use letters and digits and start with a letter', path)
     properties[name] = validatePropertySchema(schema, path, fail)
   }
-  return { ...shared, frame: raw.frame ?? 'standard', regions, properties }
+  // `numbered = false`: the slide shows no page number and the others count on without it.
+  return { ...shared, frame: raw.frame ?? 'standard', ...(raw.numbered === false ? { numbered: false } : {}), regions, properties }
 }
 
 // A dataview: a way to show the data of a <data> tag (src/core/dataset.js).

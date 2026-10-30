@@ -1,0 +1,9 @@
+schema = 1
+kind = "layout"
+id = "blank"
+title = "Blank page"
+description = "An empty page to draw on during the talk; it has no page number and leaves the numbers of the others alone."
+numbered = false
+
+[regions.body]
+description = "Usually nothing: the page is for drawing"

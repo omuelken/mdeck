@@ -20,6 +20,8 @@ On a touch screen such as an iPad, drawing is on as soon as the presenter view o
 
 **I** hides and shows what was drawn before, for example when a slide should look clean again. The toolbar has the same switch.
 
+**Blank page after this slide** (the page with a plus on the toolbar) puts an empty page after the slide shown, for an explanation that no longer fits on it, and goes there. It is a slide with `layout: blank` in your deck file: the header and section stay as on the slide before, the footer shows no page number, and the slides after it keep their numbers, in the audience window, the reader and the PDF. All windows reload to show it. Keep it after the talk with what you drew on it, or delete it in the file or the editor. The button is there while `mdeck run` saves the drawings.
+
 The audience window, and any other deck window in the same browser, shows every stroke as you draw it.
 
 ## Where drawings are kept

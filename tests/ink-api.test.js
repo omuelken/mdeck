@@ -139,3 +139,24 @@ test('flushPending writes only what waits: a deck that was only shown gets no dr
   file.flushPending()
   assert.equal(existsSync(inkFileFor(deck)), true, 'a stroke waiting for the debounce is written')
 })
+
+test('a blank page goes in after the slide shown, as a change the windows reload for', () => {
+  const { deck, file } = deckWith(SOURCE)
+  const { deckHash } = file.read()
+  const result = file.insertBlank('slide-1', deckHash)
+  assert.equal(result.status, 200)
+  assert.equal(result.index, 1)
+  const source = readFileSync(deck, 'utf8')
+  assert.equal(source, SOURCE.replace('# Second', ':::meta\nlayout: blank\n:::\n\n---\n# Second'))
+  assert.equal(result.deckHash, hashSource(source))
+  assert.ok(!isOwnWrite(deck, source), 'not marked as mdeck\'s own write, so the windows reload')
+})
+
+test('a blank page after a slide known by position is refused when the deck changed', () => {
+  const { deck, file } = deckWith(SOURCE)
+  const changed = SOURCE.replace('# Second', '# Inserted\n\n---\n# Second')
+  writeFileSync(deck, changed)
+  assert.equal(file.insertBlank('slide-1', 'an older view of the deck').status, 409)
+  assert.equal(file.insertBlank('nothing-here', hashSource(changed)).status, 409)
+  assert.equal(readFileSync(deck, 'utf8'), changed)
+})

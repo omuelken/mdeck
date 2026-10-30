@@ -270,7 +270,9 @@ export function MarkdownRegion({ region, content, class: className, ...attribute
 }
 
 // Layouts supply body content; every layout receives the same outer frame.
-export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, id, manifest, footnotesHtml, citationsHtml, children }) {
+// `page`: the number in the footer (pageNumbers in renderSlide.jsx), null for
+// none; without it, the slide's place.
+export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, page, id, manifest, footnotesHtml, citationsHtml, children }) {
   const layout = manifest.id === 'generic' ? meta.layout : manifest.id
   const frame = manifest.frame ?? 'standard'
   const title = frame === 'title'
@@ -288,7 +290,7 @@ export function SlideFrame({ meta = {}, props = {}, deckConfig = {}, index = 0, 
     {children}
     <SlideFootnotes html={footnotesHtml} />
     <SlideCitations html={citationsHtml} />
-    {frame !== 'none' && <SlideFooter deckConfig={deckConfig} right={slideNum(index)} isTitle={title} />}
+    {frame !== 'none' && <SlideFooter deckConfig={deckConfig} right={page === undefined ? slideNum(index) : page && slideNum(page - 1)} isTitle={title} />}
     <InkLayer slideId={id} />
   </section>
 }

@@ -1,6 +1,6 @@
 import { h, render } from 'preact'
 import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
-import { SlideRenderer } from '../layouts/renderSlide'
+import { SlideRenderer, pageNumbers } from '../layouts/renderSlide'
 import { stageLabels } from '../core/labels.js'
 import { strokePath } from '../core/ink.js'
 import { followActiveRooms } from '../live/follow.js'
@@ -27,13 +27,14 @@ export function mountDeck({ deck, deckConfig, selection = null, editor = false }
   const { slides } = deck
   injectSpeakerNotes(slides)
   const seen = new Map()
+  const pages = pageNumbers(slides)
   const app = (
     <deck-stage width={deckConfig.width ?? 1920} height={deckConfig.height ?? 1080} data-hotspots={String(deckConfig.hotspots ?? 'off')}>
       {slides.map((slide, i) => {
         const count = (seen.get(slide.id) ?? 0) + 1
         seen.set(slide.id, count)
         const key = count > 1 ? `${slide.id}#${i}` : slide.id
-        const props = { id: slide.id, regions: slide.regions, meta: slide.meta, content: slide.content, deckConfig, index: i, total: slides.length }
+        const props = { id: slide.id, regions: slide.regions, meta: slide.meta, content: slide.content, deckConfig, index: i, page: pages[i], total: slides.length }
         if (!editor) return <SlideRenderer key={key} {...props} />
         return <SlideErrorBoundary key={key} id={slide.id} source={deck.source.slice(slide.source.start, slide.source.end)}><SlideRenderer {...props} /></SlideErrorBoundary>
       })}

@@ -23,6 +23,7 @@
 > |---|---|
 > | A countdown for the room, set in the presenter view, with a sound at the end (`<countdown />`, in [`contrib/countdown`](contrib/countdown/Countdown.jsx)) | only here |
 > | iPad tips: switch Scribble off ([drawing.md](docs/site/content/drawing.md)) | only here |
+> | A blank page after the slide shown, from the drawing toolbar (`layout: blank`: no page number, the others keep theirs) | only here, being tried |
 >
 > To use it: clone, `git switch unterricht`, `npm install`, `npm link` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 > Everything below is Tilman's README.

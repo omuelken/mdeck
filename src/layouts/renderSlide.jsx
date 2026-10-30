@@ -18,6 +18,17 @@ function includeCard(slide) {
   return { ...slide, content, regions: { ...slide.regions, body: { ...slide.regions?.body, name: 'body', content, explicit: false } } }
 }
 
+// The page number each slide shows: a layout with `numbered = false` (a blank
+// page added during the talk) shows none, and the others count on as if it
+// were not there.
+export function pageNumbers(slides) {
+  let page = 0
+  return slides.map(slide => {
+    const id = slide.meta?.layout ?? 'generic'
+    return (Object.hasOwn(layouts, id) ? layouts[id] : layouts.generic).manifest.numbered === false ? null : ++page
+  })
+}
+
 export function SlideRenderer(given) {
   const slide = includeCard(given)
   const id = slide.meta.layout ?? 'generic'

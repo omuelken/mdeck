@@ -14,6 +14,10 @@ if (requestedView(controlUrl) === 'presenter' && !controlUrl.searchParams.has('s
 }
 export const DECK_CHANNEL = `deck-control:${controlUrl.pathname}:${controlUrl.searchParams.get('session') ?? 'default'}`
 
+// Where the presenter view was, kept across a reload (sessionStorage). Its
+// slide frame, at the same address and session, shares the key.
+export const POSITION_KEY = `mdeck-position:${DECK_CHANNEL}`
+
 export function sendTo(win, command, value) {
   if (!win || win.closed) return
   win.postMessage({ deckControl: { command, value } }, '*')

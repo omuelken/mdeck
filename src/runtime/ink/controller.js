@@ -25,12 +25,13 @@ export function createInkController({ storageKey, save = null, publish = () => {
   const listeners = new Set()
   const notify = () => { for (const listener of listeners) listener(state()) }
   let saving = save
+  let insertBlank = null
 
   // Changes made in this browser without a server, from earlier visits too.
   let log = saving ? [] : readLog(storageKey)
   for (const op of log) changeInk(op)
 
-  const state = () => ({ canUndo: undoStack.length > 0, canRedo: redoStack.length > 0, unsaved: !saving && log.length > 0, saving: !!saving })
+  const state = () => ({ canUndo: undoStack.length > 0, canRedo: redoStack.length > 0, unsaved: !saving && log.length > 0, saving: !!saving, canBlank: !!insertBlank })
 
   function send(ops) {
     // Another window of this deck may have added to the log meanwhile.
@@ -70,9 +71,13 @@ export function createInkController({ storageKey, save = null, publish = () => {
     share(op) { publish(op) },
     /** Sends a change without adding it to the undo history. */
     replay(op) { send([op]) },
-    /** From here on, changes go to `save(op)` and the local copy is dropped. */
-    useServer(saveOp) {
+    /**
+     * From here on, changes go to `save(op)` and the local copy is dropped;
+     * `blank(slideId, index)` puts a blank page after a slide (server.js).
+     */
+    useServer(saveOp, { blank = null } = {}) {
       saving = saveOp
+      insertBlank = blank
       log = []
       try { localStorage.removeItem(storageKey) } catch {}
       notify()
@@ -121,6 +126,9 @@ export function createInkController({ storageKey, save = null, publish = () => {
       undoStack.push(entry)
       notify()
     },
+
+    /** A blank page after the slide at `index`, in the deck file; resolves to whether it went in. */
+    async insertBlank(slideId, index) { return insertBlank ? insertBlank(slideId, index) : false },
 
     /** Saves the ink as its file, for putting it next to the deck. */
     download() {

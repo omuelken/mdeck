@@ -3,13 +3,16 @@
 // there, batched, and changes from other windows arrive as `mdeck:ink`.
 // Anywhere else (a built deck, a device that may not save) this returns false
 // and the ink stays in this browser.
-import { replaceInk, renameSlide } from './store.js'
+import { replaceInk, renameSlide, resolveSlideId } from './store.js'
 import { retryDelay } from './outbox.js'
 import { pairHeaders } from '../../live/pairing.js'
 import { devPath } from '../../core/devPath.js'
+import { POSITION_KEY } from '../deckChannel.js'
 
 const BASE = devPath('__mdeck/ink')
 const NOTICE_MS = 6000
+// The page a window goes to once the deck has reloaded with a blank page in it.
+const BLANK_KEY = 'mdeck-blank-page'
 
 // A short line over the slide, as the presenter view shows its problems.
 function notice(text) {
@@ -83,7 +86,33 @@ export async function connectInkServer(controller, { headers = () => pairHeaders
     queue.push(op)
     queueMicrotask(flush)
   }
-  controller.useServer(save)
+  // The deck file changes, so every window reloads; this one remembers to go
+  // on to the new page (goToBlankPage), before the reload can overtake the
+  // answer. The presenter view around this frame reloads too, and opens its
+  // new frame where it was kept (POSITION_KEY): at the new page as well.
+  async function insertBlank(slideId, index) {
+    const kept = (() => { try { return sessionStorage.getItem(POSITION_KEY) } catch { return null } })()
+    const remember = (blank, position) => {
+      try {
+        if (blank == null) sessionStorage.removeItem(BLANK_KEY)
+        else sessionStorage.setItem(BLANK_KEY, blank)
+        if (position == null) sessionStorage.removeItem(POSITION_KEY)
+        else sessionStorage.setItem(POSITION_KEY, position)
+      } catch {}
+    }
+    remember(String(index + 1), JSON.stringify({ index: index + 1, step: -1 }))
+    let error
+    try {
+      const reply = await fetch(`${BASE}/blank`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers() }, body: JSON.stringify({ deckHash, after: resolveSlideId(slideId) }) })
+      const body = await reply.json().catch(() => ({}))
+      if (reply.ok) return true
+      error = body.error ?? reply.status
+    } catch (failure) { error = failure.message }
+    remember(null, kept)
+    notice(`No blank page: ${error}`)
+    return false
+  }
+  controller.useServer(save, { blank: insertBlank })
   for (const op of earlier) controller.replay(op)
 
   import.meta.hot?.on('mdeck:ink', ({ renamed = [] } = {}) => {
@@ -91,4 +120,27 @@ export async function connectInkServer(controller, { headers = () => pairHeaders
     refresh()
   })
   return true
+}
+
+// For a moment after the reload, the other windows still say where they were
+// before (the presenter view, the stage room), by an id that may now name the
+// slide before the new page; this window holds the page meanwhile, until the
+// presenter moves on.
+const HOLD_MS = 3000
+
+/** After a blank page went in from this window, the reloaded deck goes to it. */
+export function goToBlankPage(stage) {
+  let index
+  try { index = Number(sessionStorage.getItem(BLANK_KEY)); sessionStorage.removeItem(BLANK_KEY) } catch { return }
+  if (!Number.isInteger(index) || index < 1) return
+  const until = Date.now() + HOLD_MS
+  let moved = false
+  const onMove = event => { if (!['init', 'sync', 'api'].includes(event.detail.reason)) moved = true }
+  stage.addEventListener('statechange', onMove)
+  const hold = () => {
+    if (moved || Date.now() > until) { stage.removeEventListener('statechange', onMove); return }
+    if (stage.length > index && stage.index !== index) stage.goTo(index)
+    setTimeout(hold, 100)
+  }
+  setTimeout(hold, 0)
 }
