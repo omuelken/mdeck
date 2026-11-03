@@ -2,8 +2,13 @@ import { inkPaint, snapAngle } from '../../core/ink.js';
 
 const CLICK_AFTER_INK_MS = 400;
 // Holding the pen still this long turns the stroke into a straight line.
-const STRAIGHTEN_MS = 500;
+// Long enough that a pause while writing (the pen resting before a letter,
+// or at its corner) does not count.
+const STRAIGHTEN_MS = 900;
 const STRAIGHTEN_SLOP = 6;  // CSS px the pen may tremble while held
+// Only a pen this far (design px) from where the stroke began straightens
+// it: a short stroke or a closed one (a 0, an o) is a letter, not a line.
+const STRAIGHTEN_MIN_LENGTH = 40;
 
 // Ink input ---------------------------------------------------------------
 //
@@ -114,6 +119,9 @@ export const Ink = (Base) => class extends Base {
 
   _straighten(drawing) {
     if (this._inkDrawing !== drawing || drawing.straight || drawing.points.length < 3) return;
+    const [x0, y0] = drawing.points[0];
+    const [x, y] = drawing.points[drawing.points.length - 1];
+    if (Math.hypot(x - x0, y - y0) < STRAIGHTEN_MIN_LENGTH) return;
     const pressures = drawing.points.map(p => p[2]);
     drawing.straight = Math.round(pressures.reduce((a, b) => a + b, 0) / pressures.length * 100) / 100;
     this._drawStraight(drawing, drawing.points[drawing.points.length - 1]);
