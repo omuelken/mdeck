@@ -14,7 +14,7 @@ const STRAIGHTEN_SLOP = 6;  // CSS px the pen may tremble while held
 // points }), in design pixels with pressure; the eraser sends `inkerase`
 // ({ slideId, point, radius }) while it moves, all with the same
 // `gesture` number for one stroke of the eraser. The laser is never kept:
-// its trail retracts within a second (`inklaser` when it ends) and its dot
+// its trail fades within about a second (`inklaser` when it ends) and its dot
 // follows a hovering pen (`inklaserdot`, { slideId, point | null }). The
 // select tool sends `inkselect` ({ phase: 'down' | 'move' | 'up', slideId,
 // point }) and shows what it is given with `showSelection`. `inkTool` is
