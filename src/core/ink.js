@@ -93,12 +93,17 @@ export function applyOp(ink, op) {
   if (op?.type === 'add') {
     const stroke = cleanStroke(op.stroke)
     if (!stroke || !stroke.id || !isSlideId(op.slideId)) return ink
+    // The same stroke heard again (from the other windows, then the server)
+    // changes nothing: its slide need not be drawn again.
+    const known = next.slides[op.slideId]?.find(s => s.id === stroke.id)
+    if (known && JSON.stringify(known) === JSON.stringify(stroke)) return ink
     const list = (next.slides[op.slideId] ?? []).filter(s => s.id !== stroke.id)
     next.slides[op.slideId] = [...list, stroke]
   } else if (op?.type === 'remove' || op?.type === 'clear') {
     if (!isSlideId(op.slideId)) return ink
     const gone = new Set(op.ids ?? [])
-    const list = (next.slides[op.slideId] ?? []).filter(stroke => !gone.has(stroke.id))
+    if (!next.slides[op.slideId]?.some(stroke => gone.has(stroke.id))) return ink
+    const list = next.slides[op.slideId].filter(stroke => !gone.has(stroke.id))
     if (list.length) next.slides[op.slideId] = list
     else delete next.slides[op.slideId]
   } else if (op?.type === 'rename') {

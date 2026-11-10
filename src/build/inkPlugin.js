@@ -11,7 +11,8 @@
 // position (slide-3) are only trusted when the device saw the current deck
 // (deckHash); otherwise the answer is 409 and the device reloads. The server's
 // own writes do not reload the open windows (ownWrites.js); instead it sends
-// `mdeck:ink`, and the pages fetch the ink again.
+// `mdeck:ink`: with `ops` the pages apply just those changes, without them
+// (the file was replaced, a change was refused) they fetch the ink again.
 //
 // A blank page (layout: blank) goes in after the slide shown, for what does
 // not fit on it any more. That write is a change to the deck like the
@@ -149,6 +150,7 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
       const renamed = []
       // The changes before a refused one stay applied and get written.
       let applied = false
+      const done = []
       const schedule = () => { clearTimeout(timer); timer = setTimeout(flush, debounceMs) }
       const refuse = error => {
         if (applied) { knownIds = deck.slides.map(slide => slide.id); schedule(); onChange({ renamed }) }
@@ -190,10 +192,11 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
         }
         ink = applyOp(ink, op)
         applied = true
+        done.push(op)
       }
       knownIds = deck.slides.map(slide => slide.id)
       schedule()
-      onChange({ renamed })
+      onChange({ renamed, ops: done, deckHash: hash })
       return { status: 200, deckHash: hash, renamed }
     },
     insertBlank(after, deckHash) {
@@ -254,7 +257,7 @@ export function inkMiddleware(file, { authorize = isAllowedRequest } = {}) {
 // `api.file` lets the launch page drop drawings through the same file.
 export function inkPlugin(slidesPath, { authorize } = {}) {
   let ws = null
-  const file = createInkFile(slidesPath, { onChange: ({ renamed }) => ws?.send('mdeck:ink', { renamed }) })
+  const file = createInkFile(slidesPath, { onChange: change => ws?.send('mdeck:ink', change) })
   return {
     name: 'vite-plugin-mdeck-ink',
     api: { file },

@@ -3,7 +3,7 @@
 // there, batched, and changes from other windows arrive as `mdeck:ink`.
 // Anywhere else (a built deck, a device that may not save) this returns false
 // and the ink stays in this browser.
-import { replaceInk, renameSlide, resolveSlideId } from './store.js'
+import { replaceInk, changeInk, renameSlide, resolveSlideId } from './store.js'
 import { retryDelay } from './outbox.js'
 import { pairHeaders } from '../../live/pairing.js'
 import { devPath } from '../../core/devPath.js'
@@ -25,7 +25,7 @@ function notice(text) {
 }
 
 // A paired iPad sends its token; this computer needs none.
-export async function connectInkServer(controller, { headers = () => pairHeaders() } = {}) {
+export async function connectInkServer(controller, { headers = () => pairHeaders(), hot = import.meta.hot } = {}) {
   let response
   try { response = await fetch(BASE, { cache: 'no-store', headers: headers() }) } catch { return false }
   if (!response.ok) return false
@@ -115,9 +115,13 @@ export async function connectInkServer(controller, { headers = () => pairHeaders
   controller.useServer(save, { blank: insertBlank })
   for (const op of earlier) controller.replay(op)
 
-  import.meta.hot?.on('mdeck:ink', ({ renamed = [] } = {}) => {
+  hot?.on('mdeck:ink', ({ renamed = [], ops = null, deckHash: hash = null } = {}) => {
     for (const { from, to } of renamed) renameSlide(from, to)
-    refresh()
+    if (!ops) { refresh(); return }
+    // Just the changes: fetching all the ink after every stroke made writing
+    // stutter on an iPad, the more the longer a talk's drawings file got.
+    if (hash) deckHash = hash
+    for (const op of ops) changeInk(op)
   })
   return true
 }
