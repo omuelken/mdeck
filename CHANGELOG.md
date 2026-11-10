@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.17.1 — 2026-10-30
+
+- Fixed: a stroke moved a little when the pen lifted, most visibly in handwriting on an iPad; the saved stroke was simplified and rounded, and drew differently from the one just drawn. Strokes now keep every point, to a tenth of a pixel.
+- A stroke keeps only points at least 0.3 pixels apart, already while it is drawn: a slow mouse or pencil no longer fills the drawings file with points at the same spot, and long strokes stay within what can be saved and sent to other screens.
+
 ## 3.17.0 — 2026-10-28
 
 - Fixed (#34): inline maths next to other characters, such as `$x$-Achse`, `$(1,0)$;` or `($120^\circ$)`, stayed raw text without a word, and its stray `$` spoiled formulas beside it. A formula is now found wherever `$…$` closes on its line; it does not close before a digit, so `$5 and $10` stay prices, and `\$` is a dollar sign. This also holds for the questions and options of polls.
