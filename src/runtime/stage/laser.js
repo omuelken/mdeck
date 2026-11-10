@@ -1,5 +1,5 @@
 // Laser: a red glow with a white core. The trail stays while the pen is
-// down; lifted, it retracts from its tail within LASER_MS.
+// down; lifted, it fades away as a whole within LASER_MS.
 const LASER_GLOW = '#ff2a2a';
 const LASER_CORE = '#ffffff';
 const LASER_MS = 1200;
@@ -11,9 +11,9 @@ const LASER_STEP = 4;  // design px between the points of a held trail
 //
 // Trails and dots by key ('local' for this window, others from the ink
 // bus), in design pixels. While the pen is down a trail's points stay
-// (time Infinity); lifted, they are stamped so that they expire one after
-// the other within LASER_MS, and the trail retracts from its tail. Frames
-// run only while some trail is shown or retracting.
+// (time Infinity); lifted, they are all stamped with that moment, and the
+// trail fades evenly until they expire together after LASER_MS. Frames run
+// only while some trail is shown or fading.
 export const Laser = (Base) => class extends Base {
   constructor() {
     super();
@@ -45,13 +45,13 @@ export const Laser = (Base) => class extends Base {
     this._kickLaser();
   }
 
-  /** The pen is lifted: the held trail retracts from its tail. */
+  /** The pen is lifted: the held trail starts to fade. */
   laserRelease(key) {
     const entry = this._lasers.get(key);
     if (!entry) return;
     const held = entry.points.filter(p => p[2] === Infinity);
     const now = performance.now();
-    held.forEach((p, i) => { p[2] = now - LASER_MS + LASER_MS * (i + 1) / held.length; });
+    held.forEach(p => { p[2] = now; });
     clearTimeout(entry.heldTimer);
     this._kickLaser();
   }
@@ -91,33 +91,35 @@ export const Laser = (Base) => class extends Base {
     ctx.lineJoin = 'round';
     ctx.shadowColor = LASER_GLOW;
     for (const [key, entry] of this._lasers) {
-      // A lifted trail retracts from its start, so the first point of a
-      // newer trail can go while an older one still shows: its mark that a
-      // trail begins there passes to the next point, or the two would join.
-      let begins = false;
-      entry.points = entry.points.filter(p => {
-        if (now - p[2] >= LASER_MS) { begins ||= !!p[3]; return false; }
-        if (begins) { p[3] = true; begins = false; }
-        return true;
-      });
+      entry.points = entry.points.filter(p => now - p[2] < LASER_MS);
       if (!entry.points.length && !entry.dot) { this._lasers.delete(key); continue; }
       // A held trail needs frames too: a zoom, a new size or another slide
       // must move it while the pen stays still.
       if (entry.points.length) running = true;
       if (entry.slideId && slideId && entry.slideId !== slideId) continue;
-      // A red glow with a white core, the core drawn second.
-      for (const [color, lineWidth, blur] of [[LASER_GLOW, 8, 14], [LASER_CORE, 3, 0]]) {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = lineWidth;
-        ctx.shadowBlur = blur;
-        ctx.beginPath();
-        entry.points.forEach((p, i) => {
-          const [x, y] = at(p);
-          if (i === 0 || p[3]) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
+      // Each trail fades on its own: a new one can start while the last still shows.
+      const trails = [];
+      entry.points.forEach((p, i, all) => {
+        if (i === 0 || p[3] || p[2] !== all[i - 1][2]) trails.push([]);
+        trails[trails.length - 1].push(p);
+      });
+      for (const trail of trails) {
+        ctx.globalAlpha = Math.min(1, 1 - (now - trail[0][2]) / LASER_MS);
+        // A red glow with a white core, the core drawn second.
+        for (const [color, lineWidth, blur] of [[LASER_GLOW, 8, 14], [LASER_CORE, 3, 0]]) {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = lineWidth;
+          ctx.shadowBlur = blur;
+          ctx.beginPath();
+          trail.forEach((p, i) => {
+            const [x, y] = at(p);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+        }
       }
+      ctx.globalAlpha = 1;
       if (entry.dot) {
         const [x, y] = at(entry.dot);
         for (const [color, radius, blur] of [[LASER_GLOW, 8, 20], [LASER_CORE, 4, 0]]) {

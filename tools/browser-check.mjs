@@ -256,7 +256,7 @@ try {
   await until(tablet, `document.querySelectorAll('.slide-ink path').length === ${before3}`)
 
   // The laser: a trail on its own layer that stays while the pen is down and
-  // retracts once it is lifted, never saved. Frames only run in the visible tab.
+  // fades as a whole once it is lifted, never saved. Frames only run in the visible tab.
   await tablet.send('Page.bringToFront')
   await tablet.evaluate("document.querySelector('.ink-btn[title=\"Laser pointer\"]').click()")
   await until(tablet, `${tabletStage}.inkTool.tool === 'laser'`)
@@ -266,11 +266,17 @@ try {
   await until(tablet, `${laserPixels} > 0`)
   await delay(1600)
   assert.ok(await tablet.evaluate(`${laserPixels} > 0`), 'the laser trail stays while the pen is down')
+  const laserShape = `(() => { const c = ${tabletStage}.shadowRoot.querySelector('.ink-laser'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let left = c.width, right = 0, peak = 0; for (let i = 3; i < d.length; i += 4) { if (d[i] < 8) continue; const x = ((i - 3) / 4) % c.width; left = Math.min(left, x); right = Math.max(right, x); peak = Math.max(peak, d[i]) } return { extent: right - left, peak } })()`
+  const held = await tablet.evaluate(laserShape)
   await tabletPen('mouseReleased', 540, 200)
+  await delay(600)
+  const fading = await tablet.evaluate(laserShape)
+  assert.ok(fading.extent > held.extent * 0.85, `the lifted laser trail keeps its length (${fading.extent} of ${held.extent})`)
+  assert.ok(fading.peak < 220, `the lifted laser trail fades (peak alpha ${fading.peak})`)
   await until(tablet, `${laserPixels} === 0`)
   assert.equal(await tablet.evaluate("document.querySelectorAll('.slide-ink path').length"), 3, 'the laser is not saved')
   // Two trails one after the other: the second, lifted while the first still
-  // retracts, loses its first points first, and is never joined to the first.
+  // fades, is never joined to the first.
   const laserJump = `Math.max(0, ...[...${tabletStage}._lasers.values()].flatMap(e => e.points.map((p, i, a) => i && !p[3] ? Math.hypot(p[0] - a[i - 1][0], p[1] - a[i - 1][1]) : 0)))`
   for (const x of [200, 600]) {
     await tabletPen('mousePressed', x, 300)

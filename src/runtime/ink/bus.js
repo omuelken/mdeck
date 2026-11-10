@@ -7,7 +7,7 @@
 //   { type: 'segment', key, slideId, tool, color, size, from, points }
 //       points `from` index on, every ~25 ms while drawing
 //   { type: 'end', key, fade, stroke? }  the stroke is finished; a laser
-//       trail (tool 'laser', never saved) retracts on its own
+//       trail (tool 'laser', never saved) fades on its own
 //   { type: 'dot', key, slideId, point } the laser's dot (null: hidden), as
 //       a hovering pen moves, at most every ~50 ms
 //   { type: 'zoom', key, slideId, scale, x, y }  the part of the slide this
@@ -148,7 +148,7 @@ export function createInkBus(stage, transports) {
     op(op) { send({ type: 'op', key: `${me}:op`, op }) },
     /** The stroke with this key became saved ink (its op was sent first). */
     strokeDone(detail) { finish(detail) },
-    /** A laser trail ended: the others let it retract, like this window. */
+    /** A laser trail ended: the others let it fade, like this window. */
     laserDone(detail) { finish(detail) },
     close() { for (const transport of transports) transport.close?.() },
   }
