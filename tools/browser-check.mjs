@@ -211,7 +211,7 @@ try {
   const lastPathHeight = "Math.round([...document.querySelectorAll('.slide-ink path')].at(-1).getBoundingClientRect().height)"
   await tabletPen('mousePressed', 300, 120)
   for (let i = 1; i <= 12; i++) await tabletPen('mouseMoved', 300 + i * 20, 120 + (i % 2 ? 30 : -30))
-  await delay(800)
+  await delay(1100)  // longer than STRAIGHTEN_MS (stage/ink.js)
   // Released 3.6° below horizontal: the line snaps to 0°, a 15° step.
   await tabletPen('mouseReleased', 540, 135)
   await until(tablet, "document.querySelectorAll('.slide-ink path').length === 4")
