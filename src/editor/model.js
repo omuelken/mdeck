@@ -36,3 +36,10 @@ export function deckDiagnostics(diagnostics, deck) {
 }
 
 export { marked }
+
+// Where a slide dragged from `from` lands when dropped in `gap`, the slot
+// before slide `gap` (the slide count: after the last). Null when it stays put.
+export function dropTarget(from, gap) {
+  const to = gap > from ? gap - 1 : gap
+  return to === from ? null : to
+}

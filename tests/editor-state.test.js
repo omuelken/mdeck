@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { reduce, initialState, selectedSlide } from '../src/editor/state.js'
 import { createSaveQueue } from '../src/editor/saveQueue.js'
 import { fieldKind, parseFieldValue, formatFieldValue } from '../src/editor/schema.js'
-import { slideTitle, regionsFor, propSource, slideDiagnostics } from '../src/editor/model.js'
+import { slideTitle, regionsFor, propSource, slideDiagnostics, dropTarget } from '../src/editor/model.js'
 import { setRegion, insertSlide, removeSlide } from '../src/core/editDeck.js'
 import { loadRegistry, serializeRegistry } from '../src/extensions/discover.js'
 
@@ -173,4 +173,15 @@ test('schema and model helpers', () => {
   const broken = reduce(loaded, { type: 'edit', apply: () => source.replace('# Two', ':::meta\nlayout: split\nprops:\n  ratio: [0]\n:::\n# Two') })
   assert.ok(slideDiagnostics(broken.diagnostics, broken.deck.slides[1]).length)
   assert.equal(slideDiagnostics(broken.diagnostics, broken.deck.slides[0]).length, 0)
+})
+
+test('dragging a slide into a gap gives its new index, or none beside itself', () => {
+  assert.equal(dropTarget(0, 0), null)
+  assert.equal(dropTarget(0, 1), null)
+  assert.equal(dropTarget(0, 2), 1)
+  assert.equal(dropTarget(0, 3), 2)
+  assert.equal(dropTarget(2, 0), 0)
+  assert.equal(dropTarget(2, 2), null)
+  assert.equal(dropTarget(2, 3), null)
+  assert.equal(dropTarget(1, 3), 2)
 })

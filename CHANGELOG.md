@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The editor's slide list reorders by drag and drop: drag a slide to its new place; a line shows where it lands. ⌘Z undoes the move.
+
 ## 3.17.1 — 2026-10-30
 
 - Fixed: a stroke moved a little when the pen lifted, most visibly in handwriting on an iPad; the saved stroke was simplified and rounded, and drew differently from the one just drawn. Strokes now keep every point, to a tenth of a pixel.
