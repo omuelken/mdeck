@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.17.2 — 2026-11-11
 
 - The editor's slide list reorders by drag and drop: drag a slide to its new place; a line shows where it lands. ⌘Z undoes the move.
 
