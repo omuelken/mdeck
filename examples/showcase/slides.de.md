@@ -267,6 +267,8 @@ time: 45s
 | Worte    | Dir            |
 | Aussehen | Dem Theme      |
 
+Die $x$-Achse endet bei $(1,0)$, und der Winkel beträgt ($90^\circ$).
+
 $$
 A = \pi r^2
 $$
@@ -278,13 +280,15 @@ $$
 | Worte    | Dir            |
 | Aussehen | Dem Theme      |
 
+Die $x$-Achse endet bei $(1,0)$, und der Winkel beträgt ($90^\circ$).
+
 $$
 A = \pi r^2
 $$
 :::
 
 :::notes
-Formeln werden in LaTeX geschrieben. Einfache Dollarzeichen setzen eine Formel in einen Satz; doppelte Dollarzeichen darüber und darunter stellen sie auf eine eigene Zeile.
+Formeln werden in LaTeX geschrieben. Einfache Dollarzeichen setzen eine Formel in einen Satz, auch direkt neben anderen Zeichen wie in $x$-Achse; doppelte Dollarzeichen darüber und darunter stellen sie auf eine eigene Zeile.
 :::
 
 ---
@@ -527,7 +531,19 @@ time: 1m
 :::notes
 Handys, die bei der Umfrage beigetreten sind, bleiben dabei; **J** zeigt den Beitrittscode für Nachzügler noch einmal. Antworten erscheinen, sobald sie eintreffen. Diese Tour setzt `reactions: true`, darum haben die Handys auch Knöpfe 👍 👏 ❤️ 😮 🤔: Antippen lässt sie in deiner Referentenansicht aufsteigen, nie auf dem Beamer.
 
-Neben Umfragen und Wortwolken gibt es Bewertungen (`<scale>`), Zahlen mit richtiger Antwort (`<numeric>`) und offene Fragen (`<question>`). Bei mehreren davon zeigt `<qrcode join />` auf einer frühen Folie den Code einmal. `mdeck run` speichert die Antworten in `slides.results.json` neben dem Deck.
+Neben Umfragen und Wortwolken gibt es Bewertungen (`<scale>`), Zahlen mit richtiger Antwort (`<numeric>`), offene Fragen (`<question>`) und Tipps auf ein Bild (`<pinpoint>`, nächste Folie). Bei mehreren davon zeigt `<qrcode join />` auf einer frühen Folie den Code einmal. `mdeck run` speichert die Antworten in `slides.results.json` neben dem Deck.
+:::
+
+---
+:::meta
+time: 1m
+:::
+# Tippe auf den Gipfel mit dem leuchtenden Punkt
+
+<pinpoint room="peak" src="img/image.jpg" answer="circle 88% 3% 6%" />
+
+:::notes
+`<pinpoint>` zeigt den Handys ein Bild; man tippt auf die Stelle, und die Folie zeigt jeden Tipp als Punkt. `answer` markiert die richtige Stelle: hier ein Kreis in Prozent des Bildes, `answer="circle 88% 3% 6%"`. Möglich sind auch `rect 300 180 240 120` und `poly 300 180 540 200 480 360`, und mehrere Formen, getrennt durch `|`. Der Haken zählt die Tipps darin und sagt jedem Handy, ob es getroffen hat.
 :::
 
 ---
@@ -575,12 +591,15 @@ time: 45s
 mdeck send slides.md
 mdeck pdf slides.md
 mdeck build slides.md
+mdeck publish slides.md
 ```
 :::
 :::slot right
 `send` erzeugt eine HTML-Datei ohne deine Notizen, mit einem PDF darin. Man öffnet sie im Browser.
 
 `pdf` erzeugt eine Seite pro Folie. `build` erzeugt einen Ordner für einen Webserver.
+
+`publish` stellt das Deck auf deinen eigenen mdeck-Server und nennt den Link.
 :::
 
 ---

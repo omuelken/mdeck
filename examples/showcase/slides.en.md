@@ -267,6 +267,8 @@ time: 45s
 | Words | You         |
 | Look  | The theme   |
 
+The $x$-axis ends at $(1,0)$, and the angle is ($90^\circ$).
+
 $$
 A = \pi r^2
 $$
@@ -278,13 +280,15 @@ $$
 | Words | You         |
 | Look  | The theme   |
 
+The $x$-axis ends at $(1,0)$, and the angle is ($90^\circ$).
+
 $$
 A = \pi r^2
 $$
 :::
 
 :::notes
-Formulas use LaTeX. Single dollar signs put a formula inside a sentence; two dollar signs above and below put it on its own line.
+Formulas use LaTeX. Single dollar signs put a formula inside a sentence, even next to other characters, as in $x$-axis; two dollar signs above and below put it on its own line.
 :::
 
 ---
@@ -527,7 +531,19 @@ time: 1m
 :::notes
 Phones that joined at the poll stay in; **J** shows the join code again for latecomers. Answers appear as they come in. This tour sets `reactions: true`, so the phones also have 👍 👏 ❤️ 😮 🤔 buttons: taps float up in your presenter view, never on the projector.
 
-Besides polls and word clouds there are ratings (`<scale>`), numbers with a right answer (`<numeric>`) and open questions (`<question>`). With several of them, `<qrcode join />` on an early slide shows the code once. `mdeck run` keeps the answers in `slides.results.json` beside the deck.
+Besides polls and word clouds there are ratings (`<scale>`), numbers with a right answer (`<numeric>`), open questions (`<question>`) and taps on a picture (`<pinpoint>`, next slide). With several of them, `<qrcode join />` on an early slide shows the code once. `mdeck run` keeps the answers in `slides.results.json` beside the deck.
+:::
+
+---
+:::meta
+time: 1m
+:::
+# Tap the summit with the glowing dot
+
+<pinpoint room="peak" src="img/image.jpg" answer="circle 88% 3% 6%" />
+
+:::notes
+`<pinpoint>` shows a picture on the phones; people tap the spot and the slide shows every tap as a dot. `answer` marks the right place: here a circle given in percent of the picture, `answer="circle 88% 3% 6%"`. It also takes `rect 300 180 240 120` and `poly 300 180 540 200 480 360`, and several shapes separated by `|`. The tick counts the taps inside and tells each phone whether it hit.
 :::
 
 ---
@@ -575,12 +591,15 @@ time: 45s
 mdeck send slides.md
 mdeck pdf slides.md
 mdeck build slides.md
+mdeck publish slides.md
 ```
 :::
 :::slot right
 `send` makes one HTML file without your notes, with a PDF inside. People open it in a browser.
 
 `pdf` makes one page per slide. `build` makes a folder for a web server.
+
+`publish` puts the deck on your own mdeck server and prints its link.
 :::
 
 ---
