@@ -3,7 +3,7 @@ import { sourceLines, fenceState, scanDirectives, diagnostic, isIncludeLine } fr
 export { sourceLines, fenceState } from './source.js'
 
 export const DECK_KEYS = new Set('theme palette appearance params meta width height show lang labels callouts reader components server session bibliography csl nocite hotspots time reactions'.split(' '))
-export const SLIDE_KEYS = new Set('layout id title section number part description label image alt overlay eyebrow attribution props hotspots time'.split(' '))
+export const SLIDE_KEYS = new Set('layout id title section number part description label image alt overlay eyebrow attribution props hotspots time hidden'.split(' '))
 
 // Names from before 2.0. They are still recognised, so that an old deck gets a
 // message naming the new setting (see validateDeck) instead of being read as
@@ -181,4 +181,12 @@ export function parseSlides(source) {
     else if (currentSection) slide.meta.section = currentSection
   }
   return { source, configSource, deckConfig, slides, diagnostics }
+}
+
+// The slides a talk shows: all but those with `hidden: true`. They keep their
+// ids and sections, so drawings and timings stay with them; the editor shows
+// them all.
+export function shownSlides(deck) {
+  if (!deck.slides.some(slide => slide.meta.hidden === true)) return deck
+  return { ...deck, slides: deck.slides.filter(slide => slide.meta.hidden !== true) }
 }

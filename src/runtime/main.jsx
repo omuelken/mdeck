@@ -2,7 +2,7 @@
 // address asks for, the presenter view (presenter/) or one that shows the
 // deck (deckWindow.jsx).
 import { validatePageUrl } from '../core/urls.js'
-import { parseSlides } from '../core/parseSlides'
+import { parseSlides, shownSlides } from '../core/parseSlides'
 import { validateDeck } from '../core/validateDeck'
 import { configureLive, setSavedResults } from '../live/client.js'
 import { claimPairing } from '../live/pairing.js'
@@ -28,17 +28,19 @@ async function init() {
     const { sampleDeck, sampleDataUrl } = await import('../editor/sampleDeck.js')
     showSampleDeck(sampleDeck(sampleDataUrl()))
   } else chooseLanguage(url.searchParams.get('lang'))
-  const parsed = parseSlides(slidesContent)
+  const whole = parseSlides(slidesContent)
   const editorMode = url.searchParams.get('editor') === '1'
   // One switch selects the view: deck, reader, presenter or audience.
   const defaultView = typeof __MDECK_DEFAULT_VIEW__ !== 'undefined' ? __MDECK_DEFAULT_VIEW__ : 'deck'
   const view = requestedView(url, defaultView)
-  const errors = validateDeck(parsed, { layouts: manifests }).filter(d => d.severity === 'error')
+  const errors = validateDeck(whole, { layouts: manifests }).filter(d => d.severity === 'error')
   if (errors.length && !editorMode) {
     document.body.textContent = errors.map(d => `Line ${d.line}: ${d.message}`).join('\n')
     document.body.style.whiteSpace = 'pre-wrap'
     return
   }
+  // Hidden slides stay in the file and the editor, not in the talk.
+  const parsed = editorMode ? whole : shownSlides(whole)
   const deckConfig = withConfigOverrides(withFileLanguage(parsed.deckConfig))
   setCalloutLabels(deckConfig)
   setDeckLanguage(deckConfig)

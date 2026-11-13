@@ -3,7 +3,7 @@ import { useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon.jsx'
 import { slideTitle, slideDiagnostics, dropTarget } from '../model.js'
 
-export function Outline({ deck, manifests, diagnostics, selectedIndex, onSelect, onAdd, onDuplicate, onRemove, onMove, onReorder }) {
+export function Outline({ deck, manifests, diagnostics, selectedIndex, onSelect, onAdd, onDuplicate, onRemove, onMove, onReorder, onToggleHidden }) {
   const count = deck.slides.length
   const [drag, setDrag] = useState(null) // { from, gap }
   const end = () => setDrag(null)
@@ -31,13 +31,20 @@ export function Outline({ deck, manifests, diagnostics, selectedIndex, onSelect,
         const gapClass = drag && drag.gap != null && dropTarget(drag.from, drag.gap) != null
           ? drag.gap === index ? ' is-drop-before' : drag.gap === index + 1 && index === count - 1 ? ' is-drop-after' : ''
           : ''
-        return <li key={index} class={`outline-item${index === selectedIndex ? ' is-selected' : ''}${drag?.from === index ? ' is-dragging' : ''}${gapClass}`}
+        const hidden = slide.meta.hidden === true
+        return <li key={index} class={`outline-item${index === selectedIndex ? ' is-selected' : ''}${hidden ? ' is-hidden' : ''}${drag?.from === index ? ' is-dragging' : ''}${gapClass}`}
           draggable={count > 1} title={count > 1 ? 'Drag to reorder' : undefined} onClick={() => onSelect(index)}
           onDragStart={event => { event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', String(index)); setDrag({ from: index, gap: null }) }}
           onDragOver={event => over(event, index)} onDrop={drop} onDragEnd={end}>
           <span class="num">{String(index + 1).padStart(2, '0')}</span>
           <span><span class="title" style={{ display: 'block' }}>{slideTitle(slide, index, manifest)}</span><span class="layout">{manifest?.title ?? slide.meta.layout ?? 'content'}</span></span>
-          {errors ? <span class="dot" title="This slide has errors" /> : <span />}
+          <span class="outline-marks">
+            {errors && <span class="dot" title="This slide has errors" />}
+            <button class="outline-hide" onClick={event => { event.stopPropagation(); onToggleHidden(index) }}
+              title={hidden ? 'Hidden in the talk; click to show it again' : 'Hide in the talk (the slide stays in the deck)'} aria-label={hidden ? 'Show in the talk' : 'Hide in the talk'} aria-pressed={hidden}>
+              <Icon name={hidden ? 'eye-off' : 'eye'} size={14} />
+            </button>
+          </span>
         </li>
       })}
     </ol>

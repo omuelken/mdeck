@@ -8,7 +8,7 @@ mdeck edit my-talk.md
 
 This opens a page on your own computer with three parts:
 
-- **Slides**, on the left: the list of slides. Select one, add a new one from a list of layouts, duplicate it, remove it, or move it up and down, with the arrow buttons or by dragging it to its new place in the list.
+- **Slides**, on the left: the list of slides. Select one, add a new one from a list of layouts, duplicate it, remove it, or move it up and down, with the arrow buttons or by dragging it to its new place in the list. The eye beside a slide hides it in the talk: it stays in the deck, greyed out here, and the deck, presenter view, reader and PDF skip it (`hidden: true` in its settings).
 - **Preview**, in the middle: your presentation, always showing the selected slide. Use the buttons underneath to step through points and slides.
 - **Details**, on the right: what the selected slide contains. Every layout has one or more text areas for its content, and some have settings such as a picture or the width of two columns. Speaker notes and the slide's name are here too. The **Markdown** tab shows the same slide as plain text, if you prefer that.
 
