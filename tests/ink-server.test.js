@@ -18,7 +18,7 @@ register('data:text/javascript,' + encodeURIComponent(`
 globalThis.window = { location: { href: 'http://localhost/' } }
 globalThis.document = { querySelectorAll: () => [] }
 globalThis.CSS = { escape: s => s }
-const { connectInkServer } = await import('../src/runtime/ink/server.js')
+const { connectInkServer, followInkFile } = await import('../src/runtime/ink/server.js')
 const { createInkController } = await import('../src/runtime/ink/controller.js')
 const { slideStrokes } = await import('../src/runtime/ink/store.js')
 
@@ -82,4 +82,27 @@ test('the ink file names the changes it applied and the hash, but not when it wa
   file.drop()
   assert.deepEqual(changes.at(-1), { renamed: [] })
   file.flush()
+})
+
+test('a window that only shows ink follows the saved changes, and a move it missed live is put right', async () => {
+  const handlers = {}
+  let saved = applyOp(emptyInk(), { type: 'add', slideId: 'w', stroke: stroke('c:1', 10) })
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ ink: saved, deckHash: 'first' }) })
+  followInkFile({ headers: () => ({}), hot: { on: (name, handler) => { handlers[name] = handler } } })
+  await new Promise(done => setImmediate(done))
+  assert.equal(slideStrokes('w')[0].points[0][0], 10, 'what was saved before the window opened')
+  handlers['mdeck:ink']({ renamed: [], ops: [{ type: 'add', slideId: 'w', stroke: stroke('c:1', 300) }] })
+  assert.equal(slideStrokes('w')[0].points[0][0], 300, 'the stroke moved, as saved')
+  saved = applyOp(saved, { type: 'add', slideId: 'w', stroke: stroke('c:2') })
+  handlers['mdeck:ink']({ renamed: [] })
+  await new Promise(done => setImmediate(done))
+  assert.deepEqual(slideStrokes('w').map(s => s.id), ['c:1', 'c:2'], 'without the changes it reads the file')
+})
+
+test('a page the server does not let read the ink keeps what it has', async () => {
+  const before = slideStrokes('w')
+  globalThis.fetch = async () => ({ ok: false, status: 403, json: async () => ({ error: 'no' }) })
+  followInkFile({ headers: () => ({}), hot: { on: () => {} } })
+  await new Promise(done => setImmediate(done))
+  assert.equal(slideStrokes('w'), before)
 })
