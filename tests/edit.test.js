@@ -154,3 +154,16 @@ test('hiding a slide writes hidden: true, showing it removes the key again', asy
   assert.equal(parseSlides(hidden).slides[1].meta.hidden, true)
   assert.equal(setSlideMeta(parseSlides(hidden), 'slide-2', { hidden: undefined }), source)
 })
+
+test('a built file keeps of a hidden slide only its place: its id and the section it starts', async () => {
+  const { parseSlides } = await import('../src/core/parseSlides.js')
+  const { emptyHiddenSlides } = await import('../src/core/editDeck.js')
+  const source = '# One\n---\n:::meta\nhidden: true\nid: pricing\nsection: Money\n:::\n# Margin 42%\n\n:::notes\nDo not say\n:::\n---\nhidden: true\nlayout: chapter\npart: Later\n---\n# Draft\n---\n# Four'
+  const { source: built, ids } = emptyHiddenSlides(source)
+  assert.deepEqual(ids, ['pricing', 'slide-3'])
+  assert.doesNotMatch(built, /Margin|Do not say|Draft/)
+  const view = text => parseSlides(text).slides.map(slide => [slide.id, slide.meta.section ?? null, slide.meta.hidden === true])
+  assert.deepEqual(view(built), view(source))
+  assert.equal(parseSlides(built).slides[3].content.trim(), '# Four')
+  assert.equal(emptyHiddenSlides('# A\n---\n# B\n').source, '# A\n---\n# B\n', 'a deck without hidden slides stays as it is')
+})

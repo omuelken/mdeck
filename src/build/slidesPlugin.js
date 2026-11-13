@@ -1,11 +1,12 @@
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { resolve, dirname, basename, sep } from 'path'
-import { parseSlides } from '../core/parseSlides.js'
+import { parseSlides, shownSlides } from '../core/parseSlides.js'
 import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, extensionRoots, manifestsOf } from '../extensions/discover.js'
 import { resolvePalette } from '../extensions/appearance.js'
 import { embedFonts } from './fonts.js'
-import { stripNotes as stripNotesFrom, shareSlides } from '../core/editDeck.js'
+import { stripNotes as stripNotesFrom, shareSlides, emptyHiddenSlides } from '../core/editDeck.js'
+import { activitiesIn } from '../core/resultsReport.js'
 import { componentFolders, componentFiles } from './components.js'
 import { inkFileFor, normalizeInk, emptyInk } from '../core/ink.js'
 import { resultsFileFor, normalizeResults } from '../core/results.js'
@@ -335,7 +336,7 @@ export function deckLanguages(abs) {
 // the deck's text where there is no file (`mdeck design`, on the sample deck);
 // `slidesPath` then only says where its folder is. `languages` also brings
 // the deck's other languages along, for `mdeck run`; a built file has one.
-export function slidesPlugin(slidesPath, { languages = false, inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, stripActivities = false, slides = null, ink = true, results = true, embedFonts: embedThemeFonts = false, deckLook = false, source: given = null } = {}) {
+export function slidesPlugin(slidesPath, { languages = false, inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, stripActivities = false, stripHidden = false, slides = null, ink = true, results = true, embedFonts: embedThemeFonts = false, deckLook = false, source: given = null } = {}) {
   const abs = resolve(slidesPath)
   // The deck as shown: other files it includes in place (include.js).
   const readRaw = () => given ?? readFileSync(abs, 'utf-8')
@@ -349,8 +350,11 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
     if (allow) for (const dir of included.map(file => dirname(file))) if (!allow.includes(dir)) allow.push(dir)
   }
   const watchDeck = context => { if (given === null) context.addWatchFile(abs) }
+  // `stripHidden`: a built file keeps of a hidden slide only its place.
+  const withoutHidden = raw => stripHidden ? emptyHiddenSlides(raw).source : raw
   const sourceFor = raw => {
-    const shared = stripNotes ? stripNotesFrom(raw) : raw
+    const shown = withoutHidden(raw)
+    const shared = stripNotes ? stripNotesFrom(shown) : shown
     return stripActivities || slides ? shareSlides(shared, { activities: stripActivities, slides }).source : shared
   }
   const inkPath = inkFileFor(abs)
@@ -473,10 +477,15 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
         if (ink && existsSync(inkPath)) {
           try { data = normalizeInk(JSON.parse(readFileSync(inkPath, 'utf-8')), size) } catch (error) { this.warn(`${inkPath}: ${error.message}; showing no ink`) }
         }
+        // Drawings on hidden slides stay on this computer, as the slides do.
+        if (stripHidden) {
+          const gone = new Set(emptyHiddenSlides(readDeck()).ids)
+          if (gone.size) data = { ...data, slides: Object.fromEntries(Object.entries(data.slides).filter(([id]) => !gone.has(id))) }
+        }
         // Without the activity slides or those not chosen, drawings follow their slides to their new ids.
         if (stripActivities || slides) {
           try {
-            const { ids, removed } = shareSlides(readDeck(), { activities: stripActivities, slides })
+            const { ids, removed } = shareSlides(withoutHidden(readDeck()), { activities: stripActivities, slides })
             const gone = new Set(removed)
             data = { ...data, slides: Object.fromEntries(Object.entries(data.slides).filter(([id]) => !gone.has(id)).map(([id, strokes]) => [ids[id] ?? id, strokes])) }
           } catch {}
@@ -490,6 +499,13 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
         let data = normalizeResults({})
         if (results && !serving && existsSync(resultsPath)) {
           try { data = normalizeResults(JSON.parse(readFileSync(resultsPath, 'utf-8'))) } catch (error) { this.warn(`${resultsPath}: ${error.message}; showing no results`) }
+          // The answers to what only hidden slides ask stay here too.
+          if (stripHidden) {
+            const deck = parseSlides(readDeck())
+            const shown = new Set(activitiesIn(shownSlides(deck)).map(activity => activity.room))
+            const gone = new Set(activitiesIn({ slides: deck.slides.filter(slide => slide.meta.hidden === true) }).map(activity => activity.room).filter(room => !shown.has(room)))
+            if (gone.size) data = { ...data, rooms: Object.fromEntries(Object.entries(data.rooms).filter(([room]) => !gone.has(room))) }
+          }
         }
         return `export default ${JSON.stringify(data)}`
       }

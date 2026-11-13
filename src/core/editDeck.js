@@ -223,6 +223,30 @@ export function replaceSlideSource(deck, slideId, text) {
   return edit(deck, [{ ...slide.source, text: body + (body ? trailing : ''), expected: current }])
 }
 
+// For built files (mdeck build, send, pdf): each slide with `hidden: true`
+// keeps only that, its id and the section it starts, so every slide keeps
+// its id and section as in the talk, and the hidden slide's words, pictures,
+// notes and activities are not in the file. Returns { source, ids }, `ids`
+// those of the hidden slides.
+export function emptyHiddenSlides(source) {
+  const deck = parseSlides(source)
+  const hidden = deck.slides.filter(slide => slide.meta.hidden === true)
+  if (!hidden.length) return { source, ids: [] }
+  const nl = detectNewline(source)
+  const edits = hidden.map(slide => {
+    const meta = slide.authoredMeta
+    const kept = { hidden: true }
+    if (meta.id != null) kept.id = meta.id
+    // The section the slides after it inherit (parseSlides).
+    if (meta.layout === 'chapter' && meta.part) Object.assign(kept, { layout: 'chapter', part: meta.part })
+    else if (Object.hasOwn(meta, 'section')) kept.section = meta.section
+    const current = expectedText(deck, slide.source)
+    const trailing = current.match(/(\r?\n)*$/)[0] || (slide.source.end < source.length ? nl : '')
+    return { ...slide.source, text: `:::meta${nl}${patchYamlMapping('', kept, { newline: nl })}:::${trailing}`, expected: current }
+  })
+  return { source: edit(deck, edits), ids: hidden.map(slide => slide.id) }
+}
+
 // Removes every speaker notes block for shared builds.
 export function stripNotes(source) {
   const deck = parseSlides(source)

@@ -204,7 +204,7 @@ description: A short description shown under the title.
 | `title` | Name in the outline and reader navigation, for slides without a heading (not shown on the slide) |
 | `hotspots` | This slide's own hotspots: `auto`, `marked`, `off` or `false` (see the deck field) |
 | `time` | How long to spend on the slide: `90s`, `2m`, `1m30s`, `1.5m` or `1h30`. The presenter view counts it down; `mdeck rehearse` measures and saves it |
-| `hidden` | `true` leaves the slide out of the talk: the deck, presenter view, reader and PDF skip it, and the page numbers count without it. It stays in the file and in the editor, where the eye in the slide list hides or shows it |
+| `hidden` | `true` leaves the slide out of the talk: the deck, presenter view, reader and PDF skip it, and the page numbers count without it. It stays in the file and in the editor, where the eye in the slide list hides or shows it. Built files and PDFs keep nothing of it |
 
 ### Section labels
 
