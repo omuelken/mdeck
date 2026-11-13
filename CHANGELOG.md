@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.18.0 — 2026-11-13
 
 - `hidden: true` in a slide's settings leaves the slide out of the talk: the deck, the presenter view, the reader and PDFs skip it, and the page numbers count without it; it stays in the file and in the editor. The eye beside a slide in the editor's slide list hides it or shows it again. A built file, a file from `mdeck send` and a PDF keep nothing of a hidden slide: not its words, pictures, drawings or answers.
 
