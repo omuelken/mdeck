@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `hidden: true` in a slide's settings leaves the slide out of the talk: the deck, the presenter view, the reader and PDFs skip it, and the page numbers count without it; it stays in the file and in the editor. The eye beside a slide in the editor's slide list hides it or shows it again.
+
 ## 3.17.2 — 2026-11-11
 
 - The editor's slide list reorders by drag and drop: drag a slide to its new place; a line shows where it lands. ⌘Z undoes the move.

@@ -13,7 +13,7 @@
 // gets its time in that file, as that file's own slide.
 import { readFileSync, writeFileSync, renameSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { parseSlides } from '../core/parseSlides.js'
+import { parseSlides, shownSlides } from '../core/parseSlides.js'
 import { setSlideMeta } from '../core/editDeck.js'
 import { parseTime, formatTime } from '../core/timing.js'
 import { isAllowedRequest, send, readJson, backupDeck } from './editorPlugin.js'
@@ -26,7 +26,7 @@ export function createTimingFile(deckPath) {
   // The deck as shown, and for each slide the file it is written in.
   const shown = () => {
     const { source, origins } = expandDeck(abs)
-    return { deck: parseSlides(source), origins }
+    return { deck: shownSlides(parseSlides(source)), origins }
   }
 
   return {

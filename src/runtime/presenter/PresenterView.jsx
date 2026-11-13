@@ -6,7 +6,7 @@ import { h, render } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { marked } from 'marked'
 import { renderCitations } from '../citations.js'
-import { parseSlides } from '../../core/parseSlides'
+import { parseSlides, shownSlides } from '../../core/parseSlides'
 import { THEME_METAS, PALETTES } from '../themeLoader'
 import { resolvePalette } from '../../extensions/appearance.js'
 import { palettesFor } from '../../extensions/tokens.js'
@@ -95,7 +95,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
   const [lang, setLang] = useState(deckLang)
   const { slides, deckConfig } = useMemo(() => {
     if (!chooseLanguage(lang)) return { slides: firstSlides, deckConfig: firstConfig }
-    const parsed = parseSlides(slidesContent)
+    const parsed = shownSlides(parseSlides(slidesContent))
     return { slides: parsed.slides, deckConfig: { ...firstConfig, ...withFileLanguage(parsed.deckConfig) } }
   }, [lang])
   const [theme, setTheme] = useState(deckConfig.theme ?? 'neue')

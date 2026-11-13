@@ -68,3 +68,13 @@ test(':::notes inside another block is not read as notes, and says so', () => {
   assert.equal(deck.slides[0].meta.notes, undefined)
   assert.deepEqual(deck.diagnostics.map(d => [d.code, d.severity, d.line]), [['nested-notes', 'warning', 5]])
 })
+
+test('hidden slides keep their ids and sections, and the talk leaves them out', async () => {
+  const { shownSlides } = await import('../src/core/parseSlides.js')
+  const deck = parseSlides('---\nsection: Intro\n---\n# One\n---\n:::meta\nhidden: true\n:::\n# Two\n---\n# Three')
+  assert.equal(deck.slides.length, 3)
+  const shown = shownSlides(deck)
+  assert.deepEqual(shown.slides.map(slide => slide.id), ['slide-1', 'slide-3'])
+  assert.equal(shown.slides[1].meta.section, 'Intro')
+  assert.equal(shownSlides(parseSlides('# A\n---\n# B')).slides.length, 2)
+})

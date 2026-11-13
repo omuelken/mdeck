@@ -3,7 +3,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { useDeckDocument } from '../useDeckDocument.js'
 import { installShortcuts } from '../keyboard.js'
 import { STATUS } from '../state.js'
-import { insertSlide, removeSlide, moveSlide, slideSourceText } from '../../core/editDeck.js'
+import { insertSlide, removeSlide, moveSlide, slideSourceText, setSlideMeta } from '../../core/editDeck.js'
 import { Outline } from './Outline.jsx'
 import { Preview } from './Preview.jsx'
 import { Inspector } from './Inspector.jsx'
@@ -31,6 +31,7 @@ export function App() {
     remove: () => { const s = stateRef.current; const slide = s.deck?.slides[s.selectedIndex]; if (slide) edit(d => removeSlide(d, d.slides[s.selectedIndex].id)) },
     duplicate: () => { const s = stateRef.current; if (s.deck?.slides[s.selectedIndex]) edit(d => insertSlide(d, s.selectedIndex + 1, slideSourceText(d, d.slides[s.selectedIndex].id))) },
     move: delta => { const s = stateRef.current; if (s.deck?.slides[s.selectedIndex]) edit(d => moveSlide(d, d.slides[s.selectedIndex].id, s.selectedIndex + delta)) },
+    toggleHidden: index => { const slide = stateRef.current.deck?.slides[index]; if (slide) edit(d => setSlideMeta(d, d.slides[index].id, { hidden: slide.meta.hidden === true ? undefined : true })) },
     reorder: (from, to) => { if (stateRef.current.deck?.slides[from]) edit(d => moveSlide(d, d.slides[from].id, to)) },
     pick: layout => { const s = stateRef.current; edit(d => insertSlide(d, s.deck.slides.length ? s.selectedIndex + 1 : 0, layout.starter)); setPicker(false) },
     resolve,
@@ -63,7 +64,7 @@ export function App() {
     {state.status === 'conflict' && <ConflictBanner onReload={() => actions.resolve('reload')} onOverwrite={() => actions.resolve('overwrite')} />}
     <div class="editor-main" style={{ gridTemplateColumns: `240px minmax(0, 1fr) ${inspectorWidth}px` }}>
       <Outline deck={deck} manifests={state.manifests} diagnostics={state.diagnostics} selectedIndex={selectedIndex}
-        onSelect={select} onAdd={actions.add} onDuplicate={actions.duplicate} onRemove={actions.remove} onMove={actions.move} onReorder={actions.reorder} />
+        onSelect={select} onAdd={actions.add} onDuplicate={actions.duplicate} onRemove={actions.remove} onMove={actions.move} onReorder={actions.reorder} onToggleHidden={actions.toggleHidden} />
       <Preview source={state.source} selection={selection} reloadKey={previewKey} total={deck.slides.length} width={deck.deckConfig.width ?? 1920} height={deck.deckConfig.height ?? 1080}
         onState={index => { if (index !== stateRef.current.selectedIndex) select(index) }}
         onRendered={info => dispatch({ type: 'previewRendered', ...info })} />
