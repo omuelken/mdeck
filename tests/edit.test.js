@@ -145,3 +145,12 @@ test('every helper keeps the example decks valid', () => {
   assert.equal(deck.slides[1].regions.left.content, '## Left\n\nChanged')
   assert.deepEqual(deck.deckConfig, { theme: 'neue', meta: { title: 'Deck-local layouts' }, palette: 'paper', appearance: 'dark' })
 })
+
+test('hiding a slide writes hidden: true, showing it removes the key again', async () => {
+  const { parseSlides } = await import('../src/core/parseSlides.js')
+  const { setSlideMeta } = await import('../src/core/editDeck.js')
+  const source = '# One\n---\n# Two\n'
+  const hidden = setSlideMeta(parseSlides(source), 'slide-2', { hidden: true })
+  assert.equal(parseSlides(hidden).slides[1].meta.hidden, true)
+  assert.equal(setSlideMeta(parseSlides(hidden), 'slide-2', { hidden: undefined }), source)
+})

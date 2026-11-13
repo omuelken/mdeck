@@ -39,6 +39,12 @@ fieldset:disabled input, fieldset:disabled select, fieldset:disabled textarea, f
 .outline-item.is-drop-before { box-shadow: inset 0 2px 0 #8ab4f8; }
 .outline-item.is-drop-after { box-shadow: inset 0 -2px 0 #8ab4f8; }
 .outline-item .dot { width: 8px; height: 8px; border-radius: 50%; background: #f28b82; }
+.outline-marks { display: flex; align-items: center; gap: 6px; }
+.outline-hide { display: grid; place-items: center; padding: 2px; border: 0; border-radius: 4px; background: none; color: #9a9a9a; cursor: pointer; opacity: 0; }
+.outline-item:hover .outline-hide, .outline-hide:focus-visible, .outline-item.is-hidden .outline-hide { opacity: 1; }
+.outline-hide:hover { background: #2c2c2c; color: #ffffff; }
+.outline-item.is-hidden .num, .outline-item.is-hidden .title, .outline-item.is-hidden .layout { opacity: 0.45; }
+.outline-item.is-hidden .title { text-decoration: line-through; }
 .outline-item.has-thumb { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: auto auto; gap: 6px; }
 .thumb { aspect-ratio: 16 / 9; overflow: hidden; border-radius: 4px; border: 1px solid #2a2a2a; background: #000; pointer-events: none; }
 .thumb iframe { width: 100%; height: 100%; border: 0; display: block; }

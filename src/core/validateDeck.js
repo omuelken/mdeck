@@ -101,6 +101,7 @@ export function validateDeck(deck, { layouts = null, themes = null, palettes = n
     }
     if (slide.meta.props != null && !isPlainObject(slide.meta.props)) add('invalid-props', 'props must be a mapping', offset)
     if (slide.meta.overlay != null && typeof slide.meta.overlay !== 'boolean') add('invalid-metadata', 'overlay must be true or false', offset)
+    if (slide.meta.hidden != null && typeof slide.meta.hidden !== 'boolean') add('invalid-metadata', 'hidden must be true or false', offset)
     if (slide.meta.hotspots != null && !HOTSPOT_SETTINGS.includes(slide.meta.hotspots)) add('invalid-metadata', 'hotspots must be auto, marked, off, true or false', offset)
     if (slide.meta.time != null && parseTime(slide.meta.time) == null) add('invalid-metadata', TIME_HINT(slide.meta.time), offset)
     for (const node of directivesIn(deck.source.slice(slide.source.start, slide.source.end))) {

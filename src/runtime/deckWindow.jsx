@@ -4,7 +4,7 @@
 // the address (main.jsx).
 import { h, render } from 'preact'
 import { onBibliography } from './citations.js'
-import { parseSlides } from '../core/parseSlides'
+import { parseSlides, shownSlides } from '../core/parseSlides'
 import { validateDeck } from '../core/validateDeck'
 import { loadTheme, setExtensionOverrides } from './themeLoader'
 import { createEditorBridge } from './editorBridge.js'
@@ -202,7 +202,7 @@ export async function startDeck({ url, parsed, deckConfig, editorMode, audienceM
     if (lang === deckLang || !chooseLanguage(lang)) return false
     const stage = document.querySelector('deck-stage')
     const before = parsed.slides.map(slide => slide.id)
-    parsed = parseSlides(slidesContent)
+    parsed = shownSlides(parseSlides(slidesContent))
     const config = withConfigOverrides(withFileLanguage(parsed.deckConfig))
     setCalloutLabels(config)
     setDeckLanguage(config)
