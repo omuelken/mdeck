@@ -663,6 +663,8 @@ A language written from right to left, such as Farsi (`fa`), Arabic or Hebrew, s
 
 Each file is a complete deck: `mdeck check`, `mdeck edit` and `mdeck send` work on one language at a time, and drawings and results are kept beside the file you run.
 
+`mdeck publish talk.en.md` publishes every language in one file, under the name the files share (`/d/talk`). The reader view opens in the language of the reader's browser when the deck has it, otherwise in the language of the file you named, and offers the others in its top bar; `?lang=de` at the end of the link opens one of them. The slide stays when a reader switches. The drawings, the poll results and the references are those of the file you named, and a picture that several languages show is in the file once.
+
 To change single words, name them under `labels`:
 
 ```yaml
@@ -692,6 +694,7 @@ labels:
 | `reader.copyLink` | Copy link to this slide | Link zu dieser Folie kopieren |
 | `reader.linkCopied` | Link copied | Link kopiert |
 | `reader.slide` | Slide {n} | Folie {n} |
+| `reader.language` | Language | Sprache |
 | `deck.overview` | Overview | Übersicht |
 | `slide.chapter` | Chapter (above a chapter slide's title; `label:` on the slide replaces it) | Kapitel |
 | `deck.controls` | Deck controls | Foliensteuerung |

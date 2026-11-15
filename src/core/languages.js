@@ -35,6 +35,26 @@ export function languageFiles(fileName, fileNames) {
   return found.length > 1 ? found : []
 }
 
+/** A language's name in that language (Deutsch, English), or its code. */
+export function languageName(lang) {
+  try { return new Intl.DisplayNames([lang], { type: 'language' }).of(lang) ?? lang } catch { return lang }
+}
+
+/**
+ * The one of `available` a reader who asks for `wanted` (the browser's
+ * languages, the dearest first) reads best: the same code, else the same
+ * language of another region (de-AT reads de, de reads de-CH); or null.
+ */
+export function preferredLanguage(wanted, available) {
+  const base = code => String(code).toLowerCase().split('-')[0]
+  for (const want of wanted ?? []) {
+    if (typeof want !== 'string' || !want) continue
+    const found = available.find(code => code.toLowerCase() === want.toLowerCase()) ?? available.find(code => base(code) === base(want))
+    if (found) return found
+  }
+  return null
+}
+
 // Scripts written from right to left, by language; Intl knows it where the
 // browser offers getTextInfo (not Firefox).
 const RIGHT_TO_LEFT = new Set(['ar', 'arc', 'ckb', 'dv', 'fa', 'he', 'iw', 'ks', 'ku', 'nqo', 'ps', 'sd', 'syr', 'ug', 'ur', 'yi'])

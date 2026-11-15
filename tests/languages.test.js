@@ -5,8 +5,8 @@ import { createServer as createHttpServer } from 'node:http'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { languageOfFile, languageFiles, textDirection } from '../src/core/languages.js'
-import { slidesPlugin } from '../src/build/slidesPlugin.js'
+import { languageOfFile, languageFiles, textDirection, preferredLanguage, languageName } from '../src/core/languages.js'
+import { slidesPlugin, slidesModuleCode } from '../src/build/slidesPlugin.js'
 
 test('a file name names its language with a language code', () => {
   assert.deepEqual(languageOfFile('talk.de.md'), { name: 'talk', lang: 'de' })
@@ -52,4 +52,31 @@ test('mdeck run brings the other languages; a build has one', async () => {
 test('Farsi, Arabic and Hebrew run from right to left', () => {
   for (const lang of ['fa', 'ar', 'he', 'ur-PK']) assert.equal(textDirection(lang), 'rtl', lang)
   for (const lang of ['en', 'de-CH', 'hi', '', undefined]) assert.equal(textDirection(lang), 'ltr', String(lang))
+})
+
+test('a reader gets the language of their browser, else none', () => {
+  const deck = ['ar', 'de-CH', 'en']
+  assert.equal(preferredLanguage(['de-CH', 'en'], deck), 'de-CH')
+  assert.equal(preferredLanguage(['de-AT', 'en'], deck), 'de-CH', 'the same language of another region')
+  assert.equal(preferredLanguage(['fr', 'EN-us'], deck), 'en', 'the dearest language the deck has')
+  assert.equal(preferredLanguage(['fr', 'hi'], deck), null)
+  assert.equal(preferredLanguage(undefined, deck), null)
+  assert.equal(languageName('de'), 'Deutsch')
+})
+
+const evaluate = code => import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
+
+test('a picture several languages show travels once in the file', async () => {
+  const picture = `data:image/png;base64,${'iVBORw0KGgo'.repeat(40)}`
+  const own = `data:image/png;base64,${'R0lGODlhAQAB'.repeat(40)}`
+  const en = `# Kinetics\n\n![](${picture})\n\n![](${own})\n`, de = `# Kinetik\n\n![](${picture})\n\n![](${picture})\n`
+  const code = slidesModuleCode(en, 'en', { en, de })
+  assert.equal(code.split(picture).length - 1, 1, 'the shared picture is written once')
+  const built = await evaluate(code)
+  assert.equal(built.default, en)
+  assert.equal(built.language, 'en')
+  assert.deepEqual({ ...built.languages }, { en, de })
+  const single = await evaluate(slidesModuleCode(en, null))
+  assert.equal(single.default, en)
+  assert.deepEqual(single.languages, {})
 })

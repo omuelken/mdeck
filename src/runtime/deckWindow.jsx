@@ -85,7 +85,8 @@ async function startEditorPreview(control) {
 function addReaderEntry() {
   const entry = document.createElement('a')
   entry.className = 'reader-entry'
-  entry.href = '?view=reader'
+  // A deck in several languages keeps the one that shows.
+  entry.href = `?view=reader${LANGUAGES.length && deckLang ? `&lang=${encodeURIComponent(deckLang)}` : ''}`
   entry.textContent = t('deck.overview')
   document.body.appendChild(entry)
 }
@@ -198,9 +199,10 @@ export async function startDeck({ url, parsed, deckConfig, editorMode, audienceM
   // or `state`, where the screen that switched is: that screen tells the
   // others, not the ones that follow it. Says whether it switched.
   let announceLanguage = null
-  function switchLanguage(lang, { state = document.querySelector('deck-stage')?.state, announce = true } = {}) {
-    if (lang === deckLang || !chooseLanguage(lang)) return false
-    const stage = document.querySelector('deck-stage')
+  // The deck in another language, its words and mdeck's own: its settings,
+  // or null where it is not one of the deck's or shows already.
+  function readLanguage(lang) {
+    if (lang === deckLang || !chooseLanguage(lang)) return null
     const before = parsed.slides.map(slide => slide.id)
     parsed = shownSlides(parseSlides(slidesContent))
     const config = withConfigOverrides(withFileLanguage(parsed.deckConfig))
@@ -210,6 +212,12 @@ export async function startDeck({ url, parsed, deckConfig, editorMode, audienceM
     // Explicit slide ids may differ between the files; the place does not,
     // and the drawings are kept under the ids of the file `mdeck run` started.
     parsed.slides.forEach((slide, i) => { if (before[i]) aliasSlide(slide.id, resolveSlideId(before[i])) })
+    return config
+  }
+  function switchLanguage(lang, { state = document.querySelector('deck-stage')?.state, announce = true } = {}) {
+    const stage = document.querySelector('deck-stage')
+    const config = readLanguage(lang)
+    if (!config) return false
     mountDeck({ deck: parsed, deckConfig: config })
     if (state) setTimeout(() => document.querySelector('deck-stage')?.setState({ ...state, slideId: undefined }), 0)
     if (!embedded && !followMode && stage) announceSlide(parsed, stage.index)
@@ -224,7 +232,18 @@ export async function startDeck({ url, parsed, deckConfig, editorMode, audienceM
   if (readerMode) {
     document.body.style.margin = '0'
     await loadTheme(deckConfig)
-    render(<ReaderView deck={parsed} deckConfig={deckConfig} />, document.body)
+    // A deck in several languages offers them; the reader stays on the slide
+    // and in the way of reading, and the address names the language.
+    const show = (config, mode) => render(<ReaderView key={deckLang ?? ''} deck={parsed} deckConfig={config} mode={mode} languages={LANGUAGES} language={deckLang} onLanguage={(lang, at) => {
+      const config = readLanguage(lang)
+      if (!config) return
+      const address = new URL(location.href)
+      address.searchParams.set('lang', lang)
+      address.hash = encodeURIComponent(parsed.slides[at.index]?.id ?? String(at.index + 1))
+      history.replaceState(null, '', address)
+      show(config, at.mode)
+    }} />, document.body)
+    show(deckConfig)
     return
   }
 

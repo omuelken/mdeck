@@ -288,6 +288,33 @@ export function maybeInlineAssets(markdown, abs, { inlineImages, inlineMedia }) 
   })
 }
 
+// The deck's text as a module: the file's, and with other languages each
+// one's under its code. A picture set into the text (a data: URL) that
+// several languages show travels once.
+const DATA_URL = /data:[a-z0-9.+-]+\/[a-z0-9.+-]+(?:;[a-z0-9=.+-]+)*;base64,[A-Za-z0-9+/=]+/gi
+export function slidesModuleCode(source, language, translations = {}) {
+  const tail = `export const language = ${JSON.stringify(language)}`
+  const codes = Object.keys(translations)
+  if (!codes.length) return `export default ${JSON.stringify(source)}\n${tail}\nexport const languages = {}`
+  const texts = Object.values(translations)
+  const seen = new Map()
+  if (!texts.some(text => text.includes('\u0000'))) {
+    for (const text of texts) for (const url of new Set(text.match(DATA_URL) ?? [])) seen.set(url, (seen.get(url) ?? 0) + 1)
+  }
+  const shared = [...seen].filter(([url, times]) => times > 1 && url.length > 256).map(([url]) => url)
+  const place = new Map(shared.map((url, i) => [url, i]))
+  const short = text => shared.length ? text.replace(DATA_URL, url => place.has(url) ? `\u0000${place.get(url)}\u0000` : url) : text
+  const entries = codes.map(code => `${JSON.stringify(code)}: fill(${JSON.stringify(short(translations[code]))})`)
+  return [
+    `const shared = ${JSON.stringify(shared)}`,
+    shared.length ? 'const fill = text => text.replace(/\\u0000(\\d+)\\u0000/g, (_, n) => shared[n])' : 'const fill = text => text',
+    `const texts = {\n${entries.join(',\n')}\n}`,
+    `export default texts[${JSON.stringify(language)}]`,
+    tail,
+    'export const languages = texts',
+  ].join('\n')
+}
+
 // ─── Extension registry module ────────────────────────────────────────────
 // Layouts, themes and palettes are discovered in Node and handed to the
 // browser as one generated module. Layout code and styles are imported
@@ -362,6 +389,11 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
   const fileLanguage = given === null ? languageOfFile(basename(abs))?.lang ?? null : null
   const otherLanguages = () => languages && given === null ? deckLanguages(abs).filter(({ file }) => file !== abs) : []
   let languageWatch = []
+  // The settings of the deck and of its other languages: a file for readers
+  // carries the look of each.
+  const languageConfigs = () => [readRaw(), ...otherLanguages().map(({ file }) => readFileSync(file, 'utf-8'))].map(text => {
+    try { return parseSlides(text).deckConfig ?? {} } catch { return {} }
+  })
   const resultsPath = resultsFileFor(abs)
   const extensionDirs = extensionRoots(abs).map(root => root.dir)
   let componentDirs = componentFolders(abs, readDeck()).map(folder => folder.dir)
@@ -457,12 +489,15 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
         allowIncluded()
         for (const { file } of others) {
           const found = validateDeck(parseSlides(readFileSync(file, 'utf-8')), manifests)
+          // A built file would show its readers the errors instead of the slides.
+          const failing = found.filter(d => d.severity === 'error')
+          if (failing.length && !serving) throw new Error(formatDiagnostics(failing, file))
           if (found.length) this.warn(formatDiagnostics(found, file))
         }
         const translations = others.length && fileLanguage
           ? { [fileLanguage]: source, ...Object.fromEntries(otherSources.map(({ lang, file, source: text }) => [lang, maybeInlineAssets(sourceFor(text), file, { inlineImages, inlineMedia })])) }
           : {}
-        return `export default ${JSON.stringify(source)}\nexport const language = ${JSON.stringify(fileLanguage)}\nexport const languages = ${JSON.stringify(translations)}`
+        return slidesModuleCode(source, fileLanguage, translations)
       }
       // The deck's saved ink (<deck>.drawings.json), scaled to its design size.
       // Builds bundle it, so the reader view and PDFs show it too.
@@ -520,7 +555,7 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
       }
       if (id === RESOLVED_SVGS_ID) {
         watchDeck(this)
-        const svgs = themedSvgs(abs, sourceFor(readDeck()))
+        const svgs = Object.assign({}, ...otherLanguages().map(({ file }) => themedSvgs(abs, sourceFor(expand(file, readFileSync(file, 'utf-8')).source))), themedSvgs(abs, sourceFor(readDeck())))
         for (const { file } of Object.values(svgs)) this.addWatchFile(file)
         return `export default ${JSON.stringify(Object.fromEntries(Object.entries(svgs).map(([ref, { markup }]) => [ref, markup])))}`
       }
@@ -540,9 +575,8 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
         const registry = loadRegistry(abs)
         for (const record of registry.records) this.addWatchFile(record.file)
         if (!deckLook) return generateExtensionsModule(registry)
-        let config = {}
-        try { config = parseSlides(readRaw()).deckConfig ?? {} } catch {}
-        return generateExtensionsModule(deckLookOnly(registry, config))
+        const looks = languageConfigs().map(config => deckLookOnly(registry, config))
+        return generateExtensionsModule({ ...looks[0], themes: Object.assign({}, ...looks.map(look => look.themes)), palettes: Object.assign({}, ...looks.map(look => look.palettes)) })
       }
       if (id === RESOLVED_COMPONENTS_ID) {
         const files = componentFiles(abs, componentFolders(abs, readDeck()))
@@ -565,8 +599,9 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
       const lang = config.lang ?? fileLanguage
       if (typeof lang === 'string' && /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(lang)) html = html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`)
       if (embedThemeFonts) {
-        const theme = loadRegistry(abs).themes[config.theme ?? 'neue']?.manifest
-        const { css, warnings } = await embedFonts(theme?.fonts ?? [])
+        const themes = loadRegistry(abs).themes
+        const fonts = languageConfigs().flatMap(each => themes[each.theme ?? 'neue']?.manifest?.fonts ?? [])
+        const { css, warnings } = await embedFonts([...new Set(fonts)])
         for (const warning of warnings) console.warn(`  ! ${warning}`)
         if (css) html = html.replace('</head>', `<style data-mdeck-fonts>\n${css}\n</style>\n</head>`)
       }

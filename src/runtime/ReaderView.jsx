@@ -12,6 +12,7 @@ import { followActiveRooms } from '../live/follow.js'
 import { Icon } from '../components/Icon.jsx'
 import { currentInk, onInkChange } from './ink/store.js'
 import { fitDeck, fitSlide } from './fit.js'
+import { languageName } from '../core/languages.js'
 
 // The reader view for decks sent around by email: outline, the slides at a
 // comfortable size or stacked for reading, light or dark, the drawings shown
@@ -57,14 +58,17 @@ function ReadPage({ slide, index, total, deckConfig, width, height, scale, showN
   </article>
 }
 
-export function ReaderView({ deck, deckConfig }) {
+// `languages` are the deck's (none for a deck in one language), `language`
+// the one that shows; `onLanguage(code, { index, mode })` asks for another,
+// which arrives as a new view starting in `mode` on the address's slide.
+export function ReaderView({ deck, deckConfig, mode: startMode = 'slides', languages = [], language = null, onLanguage }) {
   const { slides } = deck
   const width = deckConfig.width ?? 1920, height = deckConfig.height ?? 1080
   const [appearance, setAppearance] = useState(() => restoreLook(deckConfig).appearance)
   // Drawings come with the file; a reader may hide them, also for printing.
   const [drawings, setDrawings] = useState(() => restoreLook(deckConfig).drawings)
   const [inked, setInked] = useState(hasInk)
-  const [mode, setMode] = useState('slides')
+  const [mode, setMode] = useState(startMode)
   const [index, setIndex] = useState(() => initialIndex(slides))
   const [navOpen, setNavOpen] = useState(false)
   const [toast, setToast] = useState('')
@@ -86,6 +90,8 @@ export function ReaderView({ deck, deckConfig }) {
     try { localStorage.setItem(lookKey(deckConfig), JSON.stringify({ appearance, drawings })) } catch {}
   }, [appearance, drawings])
   useEffect(() => onInkChange(() => setInked(hasInk())), [])
+  // Another language of a deck read as pages opens on the page that showed.
+  useEffect(() => { if (startMode === 'read') document.getElementById(`reader-page-${index}`)?.scrollIntoView({ block: 'start' }) }, [])
 
   useEffect(() => {
     const stage = stageRef.current
@@ -169,12 +175,15 @@ export function ReaderView({ deck, deckConfig }) {
       <span class="reader-count">{index + 1} / {slides.length}</span>
       <button class={`reader-btn${mode === 'slides' ? ' is-active' : ''}`} onClick={() => switchMode('slides')}><ReaderIcon name="slides" /><span class="label-text">{t('reader.slides')}</span></button>
       <button class={`reader-btn${mode === 'read' ? ' is-active' : ''}`} onClick={() => switchMode('read')}><ReaderIcon name="read" /><span class="label-text">{t('reader.read')}</span></button>
+      {languages.length > 1 && <select class="reader-btn reader-language" aria-label={t('reader.language')} title={t('reader.language')} value={language} onChange={event => onLanguage?.(event.currentTarget.value, { index, mode })}>
+        {languages.map(code => <option key={code} value={code} lang={code}>{languageName(code)}</option>)}
+      </select>}
       {toggleAllowed && <button class="reader-btn" onClick={() => setAppearance(other === ownAppearance ? '' : other)} title={t('reader.appearance')}><ReaderIcon name={other === 'dark' ? 'moon' : 'sun'} /><span class="label-text">{t(other === 'dark' ? 'reader.dark' : 'reader.light')}</span></button>}
       {inked && <button class="reader-btn" onClick={() => setDrawings(on => !on)} aria-pressed={drawings} title={t(drawings ? 'reader.hideDrawings' : 'reader.showDrawings')}><ReaderIcon name={drawings ? 'eye' : 'eye-off'} /><span class="label-text">{t('reader.drawings')}</span></button>}
       {pdf
         ? <a class="reader-btn" href={pdf} download={`${(meta.title ?? 'slides').replace(/[^\w.-]+/g, '-')}.pdf`}><ReaderIcon name="download" /><span class="label-text">{t('reader.downloadPdf')}</span></a>
         : <button class="reader-btn" onClick={savePdf} title={t('reader.savePdfHint')}><ReaderIcon name="download" /><span class="label-text">{t('reader.savePdf')}</span></button>}
-      <a class="reader-btn" href={`?view=deck#${encodeURIComponent(slides[index]?.id ?? String(index + 1))}`}><ReaderIcon name="present" /><span class="label-text">{t('reader.present')}</span></a>
+      <a class="reader-btn" href={`?view=deck${languages.length > 1 && language ? `&lang=${encodeURIComponent(language)}` : ''}#${encodeURIComponent(slides[index]?.id ?? String(index + 1))}`}><ReaderIcon name="present" /><span class="label-text">{t('reader.present')}</span></a>
     </header>
     <div class="reader-main">
       <nav class={`reader-nav${navOpen ? ' is-open' : ''}`} aria-label={t('reader.slides')}>
