@@ -2,17 +2,23 @@
 // built, plus changes made since. Components subscribe to one slide.
 import { useEffect, useState } from 'preact/hooks'
 import bundled from 'virtual:deck-ink'
-import { applyOp } from '../../core/ink.js'
+import { applyOp, baseSlideId } from '../../core/ink.js'
 
 let ink = bundled
 const listeners = new Set()
 // Slides that got an id while the page was open: the rendered slides still
 // know their old id (slide-3), the ink uses the new one.
 const aliases = new Map()
-export const resolveSlideId = slideId => aliases.get(slideId) ?? slideId
+// A notes sheet's id (slide-3#sheet) follows its slide's.
+export const resolveSlideId = slideId => {
+  const base = baseSlideId(slideId)
+  return base === slideId ? aliases.get(slideId) ?? slideId : (aliases.get(base) ?? base) + slideId.slice(base.length)
+}
 
 export const currentInk = () => ink
 export const slideStrokes = slideId => ink.slides[resolveSlideId(slideId)] ?? []
+/** The slide's notes sheet ({ size }), or null. */
+export const slideSheet = slideId => ink.sheets?.[resolveSlideId(slideId)] ?? null
 
 /** Replaces all ink, for example after the server sent the saved file. */
 export function replaceInk(next) {
@@ -47,6 +53,17 @@ export function renameSlide(from, to) {
 export function onInkChange(listener) {
   listeners.add(listener)
   return () => listeners.delete(listener)
+}
+
+export function useSlideSheet(slideId) {
+  const [sheet, setSheet] = useState(() => slideSheet(slideId))
+  useEffect(() => {
+    const listener = () => setSheet(slideSheet(slideId))
+    listeners.add(listener)
+    listener()
+    return () => listeners.delete(listener)
+  }, [slideId])
+  return sheet
 }
 
 export function useSlideInk(slideId) {

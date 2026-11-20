@@ -1,6 +1,6 @@
 import { h, render } from 'preact'
 import { SlideErrorBoundary } from './SlideErrorBoundary.jsx'
-import { SlideRenderer } from '../layouts/renderSlide'
+import { SlideRenderer, SlideSheetPage } from '../layouts/renderSlide'
 import { stageLabels } from '../core/labels.js'
 import { strokePath } from '../core/ink.js'
 import { followActiveRooms } from '../live/follow.js'
@@ -34,8 +34,10 @@ export function mountDeck({ deck, deckConfig, selection = null, editor = false }
         seen.set(slide.id, count)
         const key = count > 1 ? `${slide.id}#${i}` : slide.id
         const props = { id: slide.id, regions: slide.regions, meta: slide.meta, content: slide.content, deckConfig, index: i, total: slides.length }
-        if (!editor) return <SlideRenderer key={key} {...props} />
-        return <SlideErrorBoundary key={key} id={slide.id} source={deck.source.slice(slide.source.start, slide.source.end)}><SlideRenderer {...props} /></SlideErrorBoundary>
+        // Each slide's notes sheet page follows it; it shows only in print.
+        const sheet = <SlideSheetPage key={`${key}#sheet`} {...props} />
+        if (!editor) return [<SlideRenderer key={key} {...props} />, sheet]
+        return [<SlideErrorBoundary key={key} id={slide.id} source={deck.source.slice(slide.source.start, slide.source.end)}><SlideRenderer {...props} /></SlideErrorBoundary>, sheet]
       })}
     </deck-stage>
   )

@@ -3,8 +3,8 @@
 // change on to the other windows (bus.js). Every change goes to
 // `save(op)` when a server keeps the ink file; otherwise it is kept in this
 // browser (localStorage) and the file can be downloaded.
-import { currentInk, changeInk, slideStrokes, resolveSlideId } from './store.js'
-import { hitTest, serializeInk } from '../../core/ink.js'
+import { currentInk, changeInk, slideStrokes, slideSheet, resolveSlideId } from './store.js'
+import { hitTest, serializeInk, sheetLayer, SHEET_SIZES } from '../../core/ink.js'
 import { inkFileName } from 'virtual:deck-ink'
 
 function deviceId() {
@@ -109,6 +109,20 @@ export function createInkController({ storageKey, save = null, publish = () => {
       commit([{ type: 'clear', slideId, ids: strokes.map(stroke => stroke.id) }], strokes.map(stroke => ({ type: 'add', slideId, stroke })))
     },
 
+    /** Gives the slide a notes sheet (core/ink.js); undo takes it away. */
+    addSheet(slideId, size = SHEET_SIZES[0]) {
+      if (slideSheet(slideId)) return
+      commit([{ type: 'sheet', slideId, size }], [{ type: 'sheet', slideId, size: null }])
+    },
+    /** Takes the slide's notes sheet away, with what was written on it; undo brings both back. */
+    removeSheet(slideId) {
+      const sheet = slideSheet(slideId)
+      if (!sheet) return
+      const layer = sheetLayer(slideId)
+      const strokes = slideStrokes(layer)
+      commit([...strokes.length ? [{ type: 'clear', slideId: layer, ids: strokes.map(stroke => stroke.id) }] : [], { type: 'sheet', slideId, size: null }],
+        [{ type: 'sheet', slideId, size: sheet.size }, ...strokes.map(stroke => ({ type: 'add', slideId: layer, stroke }))])
+    },
     undo() {
       const entry = undoStack.pop()
       if (!entry) return

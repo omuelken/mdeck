@@ -139,3 +139,25 @@ test('flushPending writes only what waits: a deck that was only shown gets no dr
   file.flushPending()
   assert.equal(existsSync(inkFileFor(deck)), true, 'a stroke waiting for the debounce is written')
 })
+
+test('a notes sheet on a slide without an id gives it one, and the sheet and its strokes follow it', () => {
+  const { deck, file } = deckWith(SOURCE)
+  const { deckHash } = file.read()
+  const result = file.apply([
+    { type: 'sheet', slideId: 'slide-2', size: '2/3' },
+    { type: 'add', slideId: 'slide-2#sheet', stroke: stroke('ipad:1') },
+  ], deckHash)
+  assert.equal(result.status, 200)
+  assert.deepEqual(result.renamed, [{ from: 'slide-2', to: 'second' }])
+  file.flush()
+  const saved = JSON.parse(readFileSync(inkFileFor(deck), 'utf8'))
+  assert.deepEqual(saved.sheets, { second: { size: '2/3' } })
+  assert.deepEqual(Object.keys(saved.slides), ['second#sheet'])
+  // The device still says slide-2: it reaches the sheet under the new id.
+  assert.equal(file.apply([{ type: 'add', slideId: 'slide-2#sheet', stroke: stroke('ipad:2') }], deckHash).status, 200)
+  assert.equal(file.read().ink.slides['second#sheet'].length, 2)
+  assert.equal(file.apply([{ type: 'sheet', slideId: 'second', size: '3/4' }], result.deckHash).status, 400)
+  assert.equal(file.apply([{ type: 'sheet', slideId: 'second', size: null }], result.deckHash).status, 200)
+  assert.deepEqual(file.read().ink.sheets, {})
+})
+

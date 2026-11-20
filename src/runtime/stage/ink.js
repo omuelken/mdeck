@@ -1,4 +1,4 @@
-import { inkPaint, snapAngle, spacedPoints, INK_SPACING } from '../../core/ink.js';
+import { inkPaint, snapAngle, spacedPoints, INK_SPACING, sheetLayer } from '../../core/ink.js';
 
 const CLICK_AFTER_INK_MS = 400;
 // Holding the pen still this long turns the stroke into a straight line.
@@ -49,7 +49,16 @@ export const Ink = (Base) => class extends Base {
   get inkFinger() { return this.hasAttribute('data-ink-finger'); }
   set inkFinger(on) { this.toggleAttribute('data-ink-finger', !!on); }
 
-  _inkSlideId() { return this._slides[this._index]?.dataset.slideId ?? null; }
+  // The ink id drawn on: the slide's, or its notes sheet's while that shows.
+  _inkSlideId() {
+    const slide = this._slides[this._index];
+    const id = slide?.dataset.slideId ?? null;
+    return id && slide.querySelector(':scope > .slide-sheet[data-step-visible]') ? sheetLayer(id) : id;
+  }
+  /** The slide shown (not its notes sheet), for the toolbar. */
+  inkBaseSlideId() { return this._slides[this._index]?.dataset.slideId ?? null; }
+  /** Whether the slide shown has its notes sheet on the screen. */
+  get sheetShown() { return !!this._slides[this._index]?.querySelector(':scope > .slide-sheet[data-step-visible]'); }
 
   _inkPoint(e) {
     const rect = this._canvas.getBoundingClientRect();

@@ -2,6 +2,7 @@ import { h } from 'preact'
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon.jsx'
 import { inkPaint } from '../../core/ink.js'
+import { slideSheet } from './store.js'
 import './toolbar.css'
 
 // The floating ink toolbar: colours and sizes of the pen and the highlighter
@@ -79,6 +80,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   const [hidden, setHidden] = useState(stage.hasAttribute('data-ink-hidden'))
   const [finger, setFinger] = useState(!!stage.inkFinger)
   const [clearing, setClearing] = useState(null) // the slide id awaiting confirmation
+  const [unsheeting, setUnsheeting] = useState(null) // the slide whose notes sheet awaits removal
   // The pen or the highlighter whose colours and sizes the bar shows: the
   // one in use, or the last one used; a colour or size picks it again.
   const [writer, setWriter] = useState(COLORS[tool] ? tool : 'pen')
@@ -101,6 +103,23 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   useEffect(() => { stage.inkFinger = finger }, [finger])
 
   const slideId = () => stage._inkSlideId?.()
+
+  // The notes sheet (runtime/ink/Sheet.jsx) is the slide's last step: this
+  // goes on to it, past the steps still to come, once it is on the page.
+  const showSheet = (tries = 30) => {
+    const slide = stage._slides?.[stage.index]
+    if (!slide?.querySelector(':scope > .slide-sheet')) { if (tries > 0) setTimeout(() => showSheet(tries - 1), 20); return }
+    for (let guard = 50; guard > 0 && !stage.sheetShown; guard--) stage.next('click')
+  }
+  // Without a sheet: one is added and shown. With one: it is shown, and
+  // when it is shown already, the button asks to take it away.
+  const sheetButton = () => {
+    const id = stage.inkBaseSlideId?.()
+    if (!id) return
+    if (stage.sheetShown) { setUnsheeting(open => open ? null : id); return }
+    if (!slideSheet(id)) controller.addSheet(id)
+    showSheet()
+  }
   const button = (label, icon, action, { active = false, disabled = false } = {}) =>
     <button type="button" class={`ink-btn${active ? ' is-active' : ''}`} title={label} aria-label={label} aria-pressed={active} disabled={disabled} onClick={action}><Icon name={icon} size={20} /></button>
 
@@ -149,6 +168,15 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
           confirmLabel="Clear"
           onCancel={() => setClearing(null)}
           onConfirm={() => { controller.clearSlide(clearing); setClearing(null) }}
+        />}
+      </span>
+      <span class="ink-anchor">
+        {button('Notes sheet: the slide small, with room to write', 'sheet', sheetButton)}
+        {unsheeting && <ConfirmPopover
+          message="Remove this notes sheet and what is written on it?"
+          confirmLabel="Remove"
+          onCancel={() => setUnsheeting(null)}
+          onConfirm={() => { stage.prev('click'); controller.removeSheet(unsheeting); setUnsheeting(null) }}
         />}
       </span>
     </div>

@@ -28,6 +28,8 @@ export const ICONS = {
   down: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>', // arrow-down
   add: '<path d="M5 12h14"/><path d="M12 5v14"/>', // plus
   remove: '<path d="M5 12h14"/>', // minus
+  // Not from Lucide, on the same grid: a page with a small slide in its corner.
+  sheet: '<rect width="20" height="16" x="2" y="4" rx="2"/><rect width="9" height="6" x="5" y="7" rx="1"/><path d="M17 9h2"/><path d="M5 16h14"/>',
   close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', // x
   grid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>', // layout-grid
   menu: '<path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/>', // menu
