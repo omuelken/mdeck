@@ -1,0 +1,9 @@
+/* No edge around the small slide: it and the room to write share one page. */
+.slide--sheet .sheet-copy {
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  overflow: hidden;
+}
+.slide--sheet .sheet-scale { transform-origin: 0 0; }
+[dir=rtl] .slide--sheet .sheet-scale, .slide--sheet[dir=rtl] .sheet-scale { transform-origin: 100% 0; }

@@ -29,12 +29,26 @@ export function pageNumbers(slides) {
   })
 }
 
+// What SlideRenderer takes for each slide of a deck. `previous` is the slide
+// before, for a layout that shows it (the notes sheet).
+export function slideProps(slides, deckConfig) {
+  const pages = pageNumbers(slides)
+  const list = []
+  slides.forEach((slide, index) => list.push({ id: slide.id, regions: slide.regions, meta: slide.meta, content: slide.content, deckConfig, index, page: pages[index], total: slides.length, previous: list[index - 1] ?? null }))
+  return list
+}
+
+// A layout's `previous`: the slide before, as a still copy with every step
+// shown, its drawings, and no controls (data-deck-static); base.css hides its
+// page number. It is drawn only by a layout that places it.
+const slideCopy = previous => previous && <div class="slide-copy" data-slide-copy data-deck-static inert aria-hidden="true"><SlideRenderer {...previous} /></div>
+
 export function SlideRenderer(given) {
   const slide = includeCard(given)
   const id = slide.meta.layout ?? 'generic'
   const entry = Object.hasOwn(layouts, id) ? layouts[id] : layouts.generic
   const prepared = prepareSlide(slide)
   const props = resolveLayoutProps(entry.manifest, slide.meta)
-  const context = { ...prepared, props, manifest: entry.manifest }
+  const context = { ...prepared, previous: slideCopy(given.previous), props, manifest: entry.manifest }
   return <SlideFrame {...context}>{h(entry.render, context)}</SlideFrame>
 }
