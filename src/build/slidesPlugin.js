@@ -1,11 +1,12 @@
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { resolve, dirname, basename, sep } from 'path'
-import { parseSlides } from '../core/parseSlides.js'
+import { parseSlides, shownSlides } from '../core/parseSlides.js'
 import { validateDeck, formatDiagnostics } from '../core/validateDeck.js'
 import { loadRegistry, extensionRoots, manifestsOf } from '../extensions/discover.js'
 import { resolvePalette } from '../extensions/appearance.js'
 import { embedFonts } from './fonts.js'
-import { stripNotes as stripNotesFrom, shareSlides } from '../core/editDeck.js'
+import { stripNotes as stripNotesFrom, shareSlides, emptyHiddenSlides } from '../core/editDeck.js'
+import { activitiesIn } from '../core/resultsReport.js'
 import { componentFolders, componentFiles } from './components.js'
 import { inkFileFor, normalizeInk, emptyInk } from '../core/ink.js'
 import { resultsFileFor, normalizeResults } from '../core/results.js'
@@ -287,6 +288,33 @@ export function maybeInlineAssets(markdown, abs, { inlineImages, inlineMedia }) 
   })
 }
 
+// The deck's text as a module: the file's, and with other languages each
+// one's under its code. A picture set into the text (a data: URL) that
+// several languages show travels once.
+const DATA_URL = /data:[a-z0-9.+-]+\/[a-z0-9.+-]+(?:;[a-z0-9=.+-]+)*;base64,[A-Za-z0-9+/=]+/gi
+export function slidesModuleCode(source, language, translations = {}) {
+  const tail = `export const language = ${JSON.stringify(language)}`
+  const codes = Object.keys(translations)
+  if (!codes.length) return `export default ${JSON.stringify(source)}\n${tail}\nexport const languages = {}`
+  const texts = Object.values(translations)
+  const seen = new Map()
+  if (!texts.some(text => text.includes('\u0000'))) {
+    for (const text of texts) for (const url of new Set(text.match(DATA_URL) ?? [])) seen.set(url, (seen.get(url) ?? 0) + 1)
+  }
+  const shared = [...seen].filter(([url, times]) => times > 1 && url.length > 256).map(([url]) => url)
+  const place = new Map(shared.map((url, i) => [url, i]))
+  const short = text => shared.length ? text.replace(DATA_URL, url => place.has(url) ? `\u0000${place.get(url)}\u0000` : url) : text
+  const entries = codes.map(code => `${JSON.stringify(code)}: fill(${JSON.stringify(short(translations[code]))})`)
+  return [
+    `const shared = ${JSON.stringify(shared)}`,
+    shared.length ? 'const fill = text => text.replace(/\\u0000(\\d+)\\u0000/g, (_, n) => shared[n])' : 'const fill = text => text',
+    `const texts = {\n${entries.join(',\n')}\n}`,
+    `export default texts[${JSON.stringify(language)}]`,
+    tail,
+    'export const languages = texts',
+  ].join('\n')
+}
+
 // ─── Extension registry module ────────────────────────────────────────────
 // Layouts, themes and palettes are discovered in Node and handed to the
 // browser as one generated module. Layout code and styles are imported
@@ -335,7 +363,7 @@ export function deckLanguages(abs) {
 // the deck's text where there is no file (`mdeck design`, on the sample deck);
 // `slidesPath` then only says where its folder is. `languages` also brings
 // the deck's other languages along, for `mdeck run`; a built file has one.
-export function slidesPlugin(slidesPath, { languages = false, inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, stripActivities = false, slides = null, ink = true, results = true, embedFonts: embedThemeFonts = false, deckLook = false, source: given = null } = {}) {
+export function slidesPlugin(slidesPath, { languages = false, inlineImages = false, inlineMedia = false, editor = false, stripNotes = false, stripActivities = false, stripHidden = false, slides = null, ink = true, results = true, embedFonts: embedThemeFonts = false, deckLook = false, source: given = null } = {}) {
   const abs = resolve(slidesPath)
   // The deck as shown: other files it includes in place (include.js).
   const readRaw = () => given ?? readFileSync(abs, 'utf-8')
@@ -349,8 +377,11 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
     if (allow) for (const dir of included.map(file => dirname(file))) if (!allow.includes(dir)) allow.push(dir)
   }
   const watchDeck = context => { if (given === null) context.addWatchFile(abs) }
+  // `stripHidden`: a built file keeps of a hidden slide only its place.
+  const withoutHidden = raw => stripHidden ? emptyHiddenSlides(raw).source : raw
   const sourceFor = raw => {
-    const shared = stripNotes ? stripNotesFrom(raw) : raw
+    const shown = withoutHidden(raw)
+    const shared = stripNotes ? stripNotesFrom(shown) : shown
     return stripActivities || slides ? shareSlides(shared, { activities: stripActivities, slides }).source : shared
   }
   const inkPath = inkFileFor(abs)
@@ -358,6 +389,11 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
   const fileLanguage = given === null ? languageOfFile(basename(abs))?.lang ?? null : null
   const otherLanguages = () => languages && given === null ? deckLanguages(abs).filter(({ file }) => file !== abs) : []
   let languageWatch = []
+  // The settings of the deck and of its other languages: a file for readers
+  // carries the look of each.
+  const languageConfigs = () => [readRaw(), ...otherLanguages().map(({ file }) => readFileSync(file, 'utf-8'))].map(text => {
+    try { return parseSlides(text).deckConfig ?? {} } catch { return {} }
+  })
   const resultsPath = resultsFileFor(abs)
   const extensionDirs = extensionRoots(abs).map(root => root.dir)
   let componentDirs = componentFolders(abs, readDeck()).map(folder => folder.dir)
@@ -453,12 +489,15 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
         allowIncluded()
         for (const { file } of others) {
           const found = validateDeck(parseSlides(readFileSync(file, 'utf-8')), manifests)
+          // A built file would show its readers the errors instead of the slides.
+          const failing = found.filter(d => d.severity === 'error')
+          if (failing.length && !serving) throw new Error(formatDiagnostics(failing, file))
           if (found.length) this.warn(formatDiagnostics(found, file))
         }
         const translations = others.length && fileLanguage
           ? { [fileLanguage]: source, ...Object.fromEntries(otherSources.map(({ lang, file, source: text }) => [lang, maybeInlineAssets(sourceFor(text), file, { inlineImages, inlineMedia })])) }
           : {}
-        return `export default ${JSON.stringify(source)}\nexport const language = ${JSON.stringify(fileLanguage)}\nexport const languages = ${JSON.stringify(translations)}`
+        return slidesModuleCode(source, fileLanguage, translations)
       }
       // The deck's saved ink (<deck>.drawings.json), scaled to its design size.
       // Builds bundle it, so the reader view and PDFs show it too.
@@ -473,10 +512,15 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
         if (ink && existsSync(inkPath)) {
           try { data = normalizeInk(JSON.parse(readFileSync(inkPath, 'utf-8')), size) } catch (error) { this.warn(`${inkPath}: ${error.message}; showing no ink`) }
         }
+        // Drawings on hidden slides stay on this computer, as the slides do.
+        if (stripHidden) {
+          const gone = new Set(emptyHiddenSlides(readDeck()).ids)
+          if (gone.size) data = { ...data, slides: Object.fromEntries(Object.entries(data.slides).filter(([id]) => !gone.has(id))) }
+        }
         // Without the activity slides or those not chosen, drawings follow their slides to their new ids.
         if (stripActivities || slides) {
           try {
-            const { ids, removed } = shareSlides(readDeck(), { activities: stripActivities, slides })
+            const { ids, removed } = shareSlides(withoutHidden(readDeck()), { activities: stripActivities, slides })
             const gone = new Set(removed)
             data = { ...data, slides: Object.fromEntries(Object.entries(data.slides).filter(([id]) => !gone.has(id)).map(([id, strokes]) => [ids[id] ?? id, strokes])) }
           } catch {}
@@ -490,6 +534,13 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
         let data = normalizeResults({})
         if (results && !serving && existsSync(resultsPath)) {
           try { data = normalizeResults(JSON.parse(readFileSync(resultsPath, 'utf-8'))) } catch (error) { this.warn(`${resultsPath}: ${error.message}; showing no results`) }
+          // The answers to what only hidden slides ask stay here too.
+          if (stripHidden) {
+            const deck = parseSlides(readDeck())
+            const shown = new Set(activitiesIn(shownSlides(deck)).map(activity => activity.room))
+            const gone = new Set(activitiesIn({ slides: deck.slides.filter(slide => slide.meta.hidden === true) }).map(activity => activity.room).filter(room => !shown.has(room)))
+            if (gone.size) data = { ...data, rooms: Object.fromEntries(Object.entries(data.rooms).filter(([room]) => !gone.has(room))) }
+          }
         }
         return `export default ${JSON.stringify(data)}`
       }
@@ -504,7 +555,7 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
       }
       if (id === RESOLVED_SVGS_ID) {
         watchDeck(this)
-        const svgs = themedSvgs(abs, sourceFor(readDeck()))
+        const svgs = Object.assign({}, ...otherLanguages().map(({ file }) => themedSvgs(abs, sourceFor(expand(file, readFileSync(file, 'utf-8')).source))), themedSvgs(abs, sourceFor(readDeck())))
         for (const { file } of Object.values(svgs)) this.addWatchFile(file)
         return `export default ${JSON.stringify(Object.fromEntries(Object.entries(svgs).map(([ref, { markup }]) => [ref, markup])))}`
       }
@@ -524,9 +575,8 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
         const registry = loadRegistry(abs)
         for (const record of registry.records) this.addWatchFile(record.file)
         if (!deckLook) return generateExtensionsModule(registry)
-        let config = {}
-        try { config = parseSlides(readRaw()).deckConfig ?? {} } catch {}
-        return generateExtensionsModule(deckLookOnly(registry, config))
+        const looks = languageConfigs().map(config => deckLookOnly(registry, config))
+        return generateExtensionsModule({ ...looks[0], themes: Object.assign({}, ...looks.map(look => look.themes)), palettes: Object.assign({}, ...looks.map(look => look.palettes)) })
       }
       if (id === RESOLVED_COMPONENTS_ID) {
         const files = componentFiles(abs, componentFolders(abs, readDeck()))
@@ -549,8 +599,9 @@ export function slidesPlugin(slidesPath, { languages = false, inlineImages = fal
       const lang = config.lang ?? fileLanguage
       if (typeof lang === 'string' && /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(lang)) html = html.replace(/<html lang="[^"]*"/, `<html lang="${lang}"`)
       if (embedThemeFonts) {
-        const theme = loadRegistry(abs).themes[config.theme ?? 'neue']?.manifest
-        const { css, warnings } = await embedFonts(theme?.fonts ?? [])
+        const themes = loadRegistry(abs).themes
+        const fonts = languageConfigs().flatMap(each => themes[each.theme ?? 'neue']?.manifest?.fonts ?? [])
+        const { css, warnings } = await embedFonts([...new Set(fonts)])
         for (const warning of warnings) console.warn(`  ! ${warning}`)
         if (css) html = html.replace('</head>', `<style data-mdeck-fonts>\n${css}\n</style>\n</head>`)
       }

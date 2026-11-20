@@ -22,7 +22,7 @@ export default async function pdf({ hasFlag, outputOption, slideOption, requireI
   try {
     await build({
       ...baseConfig(input, { selfContained: true }),
-      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true, embedFonts: true, stripActivities: hasFlag('--no-polls'), slides, ink: !hasFlag('--no-drawings'), results: !hasFlag('--no-results'), deckLook: true }), viteSingleFile()],
+      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: true, inlineMedia: true, embedFonts: true, stripActivities: hasFlag('--no-polls'), stripHidden: true, slides, ink: !hasFlag('--no-drawings'), results: !hasFlag('--no-results'), deckLook: true }), viteSingleFile()],
       build: { outDir: tempDir, emptyOutDir: true, target: 'esnext', assetsInlineLimit: 100 * 1024 * 1024 },
       logLevel: 'warn',
     })

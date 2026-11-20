@@ -204,7 +204,7 @@ description: A short description shown under the title.
 | `title` | Name in the outline and reader navigation, for slides without a heading (not shown on the slide) |
 | `hotspots` | This slide's own hotspots: `auto`, `marked`, `off` or `false` (see the deck field) |
 | `time` | How long to spend on the slide: `90s`, `2m`, `1m30s`, `1.5m` or `1h30`. The presenter view counts it down; `mdeck rehearse` measures and saves it |
-| `hidden` | `true` leaves the slide out of the talk: the deck, presenter view, reader and PDF skip it, and the page numbers count without it. It stays in the file and in the editor, where the eye in the slide list hides or shows it |
+| `hidden` | `true` leaves the slide out of the talk: the deck, presenter view, reader and PDF skip it, and the page numbers count without it. It stays in the file and in the editor, where the eye in the slide list hides or shows it. Built files and PDFs keep nothing of it |
 
 ### Section labels
 
@@ -362,38 +362,6 @@ const fib = n => n < 2 ? n : fib(n - 1) + fib(n - 2)
 
 # Split layout.
 The code block goes left. This heading and text go right.
-```
-
----
-
-### `blank` — A page to draw on
-
-An empty page with the header and footer of a content slide but no page
-number; the slides after it count on as if it were not there. The drawing
-toolbar's plus (**Add a page after this slide** → **Blank page**) adds one
-during the talk.
-
-```markdown
----
-layout: blank
----
-```
-
----
-
-### `sheet` — The slide before, beside room to write
-
-The slide before at two thirds of its size in the top left corner (`size: 1/2`
-for half), finished, with its drawings and without its page number; the L
-around it is for writing during the talk. No page number of its own, like
-`blank`. The toolbar's plus (**Add a page after this slide** → **Notes
-sheet**) adds one during the talk.
-
-```markdown
----
-layout: sheet
-size: 1/2
----
 ```
 
 ---
@@ -695,6 +663,8 @@ A language written from right to left, such as Farsi (`fa`), Arabic or Hebrew, s
 
 Each file is a complete deck: `mdeck check`, `mdeck edit` and `mdeck send` work on one language at a time, and drawings and results are kept beside the file you run.
 
+`mdeck publish talk.en.md` publishes every language in one file, under the name the files share (`/d/talk`). The reader view opens in the language of the reader's browser when the deck has it, otherwise in the language of the file you named, and offers the others in its top bar; `?lang=de` at the end of the link opens one of them. The slide stays when a reader switches. The drawings, the poll results and the references are those of the file you named, and a picture that several languages show is in the file once.
+
 To change single words, name them under `labels`:
 
 ```yaml
@@ -724,6 +694,7 @@ labels:
 | `reader.copyLink` | Copy link to this slide | Link zu dieser Folie kopieren |
 | `reader.linkCopied` | Link copied | Link kopiert |
 | `reader.slide` | Slide {n} | Folie {n} |
+| `reader.language` | Language | Sprache |
 | `deck.overview` | Overview | Übersicht |
 | `slide.chapter` | Chapter (above a chapter slide's title; `label:` on the slide replaces it) | Kapitel |
 | `deck.controls` | Deck controls | Foliensteuerung |

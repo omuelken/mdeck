@@ -9,7 +9,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile'
 import { collectLocalAssetRefs, slidesPlugin } from '../../build/slidesPlugin.js'
 import { expandedSource } from '../../build/include.js'
 import { renderPdf, attachPdf } from '../../build/pdf.js'
-import { stripNotes as stripNotesFrom, shareSlides } from '../../core/editDeck.js'
+import { stripNotes as stripNotesFrom, shareSlides, emptyHiddenSlides } from '../../core/editDeck.js'
 import { assertDrawings } from '../../build/drawings.js'
 import { baseConfig } from '../../build/config.js'
 import { c, ok, err, tip } from '../ui.js'
@@ -20,7 +20,8 @@ async function copyLocalAssets(slidesPath, outDir, { stripNotes = false, stripAc
   const deckDir = dirname(absSlides)
   const absOutDir = resolve(outDir)
   // The deck as shown: pictures of included slides are copied too.
-  const raw = expandedSource(absSlides)
+  // Pictures only hidden slides show stay here.
+  const raw = emptyHiddenSlides(expandedSource(absSlides)).source
   let markdown = stripNotes ? stripNotesFrom(raw) : raw
   if (stripActivities || slides) markdown = shareSlides(markdown, { activities: stripActivities, slides }).source
 
@@ -48,6 +49,8 @@ export default async function buildDeck({ command, options, hasFlag, outputOptio
   const launchers = !sending && hasFlag('--launchers')
   const reader = sending || hasFlag('--reader')
   const stripNotes = reader && !hasFlag('--notes')
+  // mdeck publish puts every language of the deck (talk.en.md beside
+  // talk.de.md) into the one file; the reader view switches between them.
   // Polls show as a record of the talk; --no-polls leaves their slides and join codes out.
   const stripActivities = reader && hasFlag('--no-polls')
   const wantPdf = command === 'send' && !hasFlag('--no-pdf')
@@ -68,7 +71,7 @@ export default async function buildDeck({ command, options, hasFlag, outputOptio
   try {
     await build({
       ...baseConfig(input, { selfContained, defaultView: reader ? 'reader' : 'deck' }),
-      plugins: [preact(), slidesPlugin(resolve(input), { inlineImages: selfContained, inlineMedia: selfContained, embedFonts: selfContained, stripNotes, stripActivities, slides, ink: !hasFlag('--no-drawings'), results: !hasFlag('--no-results'), deckLook: reader }), viteSingleFile()],
+      plugins: [preact(), slidesPlugin(resolve(input), { languages: command === 'publish', inlineImages: selfContained, inlineMedia: selfContained, embedFonts: selfContained, stripNotes, stripActivities, stripHidden: true, slides, ink: !hasFlag('--no-drawings'), results: !hasFlag('--no-results'), deckLook: reader }), viteSingleFile()],
       build: {
         outDir,
         emptyOutDir: !tempDir,

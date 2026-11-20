@@ -126,6 +126,8 @@ export const COMMAND_HELP = {
       Uploads the deck as one reader file, without speaker notes, to a server started with
       mdeck server --decks, and prints its link. The key is in MDECK_SERVER_KEY; the address
       is --server, the deck's server setting or MDECK_SERVER. A name that is taken is refused.
+      A deck in several languages (talk.en.md beside talk.de.md) is published as one, as talk:
+      readers get the language of their browser and can switch.
       --replace              overwrite the deck already published under this name
       --notes                keep the speaker notes (anyone with the link can read them)
       --no-polls             leave out slides with polls

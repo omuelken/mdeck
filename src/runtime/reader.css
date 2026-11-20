@@ -10,6 +10,7 @@
 .reader-top .reader-count { color: #b8b8b8; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .reader-btn { appearance: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px !important; border-radius: 6px; border: 1px solid #3a3a3a !important; background: #222 !important; color: #e6e6e6; cursor: pointer; font: inherit; text-decoration: none; white-space: nowrap; }
 .reader-btn:hover { border-color: #5a5a5a; color: #fff; }
+select.reader-language { appearance: auto; color-scheme: dark; padding: 6px 6px !important; max-width: 11em; }
 .reader-btn:disabled { opacity: 0.45; cursor: default; }
 .reader-btn:disabled:hover { border-color: #3a3a3a; color: #e6e6e6; }
 .reader-icon { flex: 0 0 auto; opacity: 0.85; }

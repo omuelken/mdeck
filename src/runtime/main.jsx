@@ -13,7 +13,9 @@ import { setCalloutLabels } from './markedSetup'
 import { setDeckLanguage, deckLanguage } from '../core/labels.js'
 import { setView } from './shared.js'
 import { reactionsOf } from '../core/reactions.js'
-import { slidesContent, chooseLanguage, showSampleDeck, withFileLanguage, withConfigOverrides } from './deckSource.js'
+import { slidesContent, fileContent, LANGUAGES, chooseLanguage, showSampleDeck, withFileLanguage, withConfigOverrides } from './deckSource.js'
+import { preferredLanguage } from '../core/languages.js'
+import { aliasSlide } from './ink/store.js'
 import { wantReactions } from './phones.js'
 import { requestedView } from './deckChannel.js'
 import { injectSpeakerNotes } from './mountDeck.jsx'
@@ -27,12 +29,17 @@ async function init() {
   if (import.meta.env.DEV && url.searchParams.get('sample') === '1') {
     const { sampleDeck, sampleDataUrl } = await import('../editor/sampleDeck.js')
     showSampleDeck(sampleDeck(sampleDataUrl()))
-  } else chooseLanguage(url.searchParams.get('lang'))
-  const whole = parseSlides(slidesContent)
+  }
   const editorMode = url.searchParams.get('editor') === '1'
   // One switch selects the view: deck, reader, presenter or audience.
   const defaultView = typeof __MDECK_DEFAULT_VIEW__ !== 'undefined' ? __MDECK_DEFAULT_VIEW__ : 'deck'
   const view = requestedView(url, defaultView)
+  // The language the address names; a published deck in several languages
+  // otherwise opens for its readers in the language of their browser.
+  const sample = slidesContent !== fileContent
+  const translated = !sample && (chooseLanguage(url.searchParams.get('lang'))
+    || (import.meta.env.PROD && view === 'reader' && !url.searchParams.has('lang') && chooseLanguage(preferredLanguage(navigator.languages, LANGUAGES))))
+  const whole = parseSlides(slidesContent)
   const errors = validateDeck(whole, { layouts: manifests }).filter(d => d.severity === 'error')
   if (errors.length && !editorMode) {
     document.body.textContent = errors.map(d => `Line ${d.line}: ${d.message}`).join('\n')
@@ -49,6 +56,11 @@ async function init() {
   wantReactions(!!reactionsOf(deckConfig))
   setSavedResults(savedResults)
   const { slides } = parsed
+  // Explicit slide ids may differ between the languages; the place does not.
+  if (translated && !editorMode) {
+    const own = shownSlides(parseSlides(fileContent)).slides
+    slides.forEach((slide, i) => { if (own[i] && own[i].id !== slide.id) aliasSlide(slide.id, own[i].id) })
+  }
   const presenterMode = view === 'presenter'
   const audienceMode  = view === 'audience'
   // A phone or laptop in the room following the talk: shows, never sends.

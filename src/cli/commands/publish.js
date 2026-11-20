@@ -5,13 +5,16 @@ import { basename, resolve } from 'path'
 import { DECK_NAME_RE } from '../../live/decks.js'
 import { validateServerOrigin } from '../args.js'
 import { parseSlides } from '../../core/parseSlides.js'
+import { languageOfFile } from '../../core/languages.js'
+import { deckLanguages } from '../../build/slidesPlugin.js'
 import buildDeck from './build.js'
 import { c, ok, err, tip } from '../ui.js'
 
 const warn = message => console.log(`  ${c.yellow}!${c.reset}  ${message}`)
 
-// "Übung 1.md" becomes ubung-1.
-const nameFrom = file => basename(file).replace(/\.md$/i, '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 63)
+// "Übung 1.md" becomes ubung-1. A deck in several languages is published as
+// one: talk.en.md beside talk.de.md becomes talk.
+const nameFrom = (file, languages) => (languages.length ? languageOfFile(basename(file)).name : basename(file).replace(/\.md$/i, '')).normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 63)
 
 const ago = iso => {
   const minutes = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000))
@@ -36,7 +39,8 @@ async function publish(context) {
   try { validateServerOrigin(address, 'The server') } catch (error) { throw new Refused(error.message) }
   const key = process.env.MDECK_SERVER_KEY
   if (!key) throw new Refused('mdeck publish needs the server\'s key in MDECK_SERVER_KEY.')
-  const name = options['--name'] ?? nameFrom(input)
+  const languages = input ? deckLanguages(resolve(input)).map(({ lang }) => lang) : []
+  const name = options['--name'] ?? nameFrom(input, languages)
   if (!DECK_NAME_RE.test(name)) throw new Refused(`"${name}" cannot be a deck name: use lowercase letters, digits and hyphens (--name)`)
   const { protocol, hostname } = new URL(address)
   if (protocol === 'http:' && !['localhost', '127.0.0.1', '[::1]'].includes(hostname)) warn(`${address} is not https: the key travels unencrypted.`)
@@ -75,7 +79,8 @@ async function publish(context) {
   const response = await call(target, { method: 'PUT', headers: { ...headers, 'Content-Type': 'text/html; charset=utf-8', ...(hasFlag('--replace') ? { 'X-Mdeck-Replace': '1' } : {}) }, body: readFileSync(file) }, 120000)
   if (response.status === 409) throw takenMessage(name, address, await response.json().catch(() => ({ bytes: 0, updated: new Date().toISOString() })))
   if (!response.ok) throw new Refused(`The server refused it: ${await explain(response)}`, hostHint(response.status))
-  ok(`${(await response.json()).replaced ? 'Replaced' : 'Published'}: ${c.cyan}${address}d/${name}${c.reset}`)
+  ok(`${(await response.json()).replaced ? 'Replaced' : 'Published'}: ${c.cyan}${address}d/${name}${c.reset}${languages.length ? ` (${languages.join(', ')})` : ''}`)
+  if (languages.length) tip('Readers get the language of their browser and can switch; ?lang=de at the end of the link opens one of them.')
   tip('Anyone with this link can open the deck. mdeck publish --replace updates it, --remove takes it down.\n')
 }
 

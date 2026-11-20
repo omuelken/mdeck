@@ -12,6 +12,9 @@ export function showSampleDeck(content) { slidesContent = content }
 // presenter view switches every window, keeping the slide and step: slides
 // match by their place in the deck.
 export const LANGUAGES = Object.keys(deckLanguages)
+export { fileLanguage }
+// The text of the file that was run or built: drawings are kept under its slide ids.
+export const fileContent = deckFileContent
 export let deckLang = fileLanguage
 export function chooseLanguage(lang) {
   if (!LANGUAGES.includes(lang)) return false

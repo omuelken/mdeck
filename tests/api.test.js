@@ -40,6 +40,11 @@ test('render problems name the slide, its heading and the line it starts at', ()
   assert.deepEqual(labels.map(({ number, line, heading }) => [number, line, heading]), [[1, 5, 'First one'], [2, 10, 'Second'], [3, 16, null]])
 })
 
+test('render problems count slides as the deck shows them, without hidden ones', () => {
+  const labels = slideLabels('# One\n---\n:::meta\nhidden: true\n:::\n# Hidden\n---\n# Three\n')
+  assert.deepEqual(labels.map(({ number, line, heading }) => [number, line, heading]), [[1, 1, 'One'], [2, 8, 'Three']])
+})
+
 test('invalid arguments leave existing build output untouched', t => {
   const dir = fixture(t), cli = resolve('bin/mdeck.js')
   mkdirSync(resolve(dir, 'dist'))

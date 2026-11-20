@@ -6,13 +6,9 @@ import { S, PaletteSwatches } from '../chrome.jsx'
 import { Icon } from '../../components/Icon.jsx'
 import { Popover, PanelSection } from './PresenterChrome.jsx'
 import { LANGUAGES } from '../deckSource.js'
+import { languageName } from '../../core/languages.js'
 
 const LAYOUTS = [['speaker', 'speaker', 'Speaker', 'Slide, notes and next slide side by side (a computer)'], ['slide', 'tablet', 'Slide only', 'The slide fills the screen, notes in a drawer (an iPad)'], ['remote', 'phone', 'Clicker', 'Notes, time and big buttons (a phone)']]
-
-// A language's name in that language, for the switch's tooltip.
-function languageName(lang) {
-  try { return new Intl.DisplayNames([lang], { type: 'language' }).of(lang) } catch { return lang }
-}
 
 export function Settings({ layout, onLayout, duringTalk, theme, themeMeta, onThemes, offered, shown, setPalette, setAppearance, lang, setLang, timer, noteSize, setNoteSize, launchPage }) {
   return <Popover class="presenter-settings" label="Settings" trigger={<Icon name="settings" size={18} style={{ display: 'block' }} />}>

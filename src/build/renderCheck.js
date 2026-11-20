@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os'
 import { basename, dirname, resolve } from 'node:path'
 import { launchChrome } from './chrome.js'
 import { frameworkRoot } from '../paths.js'
-import { parseSlides } from '../core/parseSlides.js'
+import { parseSlides, shownSlides } from '../core/parseSlides.js'
 import { MEASURE, RECORDER, settle } from './themeCheck.js'
 import { expandDeck } from './include.js'
 
@@ -36,7 +36,8 @@ export function deckLabels(slidesPath) {
 }
 
 export function slideLabels(source) {
-  return parseSlides(source).slides.map((slide, index) => {
+  // Numbered as the deck shows them: hidden slides are not.
+  return shownSlides(parseSlides(source)).slides.map((slide, index) => {
     // The slide's first written line, past its settings and blank lines.
     const body = slide.bodySource ?? slide.source ?? { start: 0, end: 0 }
     let start = body.start

@@ -192,3 +192,21 @@ test('pen colours follow the palette and the appearance', () => {
   assert.ok(paletteTokens(palette, 'dark')['--pen-red'], 'dark slides get lighter pen colours')
   assert.equal(paletteTokens(palette, 'light')['--pen-red'], undefined)
 })
+
+test('built files leave out what is on hidden slides: its words, drawings and answers', () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'mdeck-hidden-build-'))
+  const deck = resolve(dir, 'talk.md')
+  writeFileSync(deck, '# A\n\n<poll room="shown" options="Yes, No"></poll>\n---\n:::meta\nhidden: true\n:::\n# Margin 42%\n\n<poll room="secret" options="Up, Down"></poll>\n---\n# C\n')
+  writeFileSync(inkFileFor(deck), JSON.stringify({ version: 1, width: 1920, height: 1080, slides: { 'slide-2': [stroke('a:1')], 'slide-3': [stroke('a:2')] } }))
+  writeFileSync(resolve(dir, 'talk.results.json'), JSON.stringify({ version: 1, rooms: { shown: { answers: [{ phone: 1, value: 'Yes' }] }, secret: { answers: [{ phone: 1, value: 'Up' }] } } }))
+  const load = (id, options) => {
+    const plugin = slidesPlugin(deck, options)
+    return plugin.load.call({ addWatchFile() {}, warn() {} }, plugin.resolveId(id))
+  }
+  const json = code => JSON.parse(code.split('\n')[0].replace(/^export default /, ''))
+  assert.match(load('virtual:slides', {}), /Margin 42%/, 'mdeck run and the editor keep the whole deck')
+  assert.doesNotMatch(load('virtual:slides', { stripHidden: true }), /Margin 42%/)
+  assert.deepEqual(Object.keys(json(load('virtual:deck-ink', { stripHidden: true })).slides), ['slide-3'])
+  assert.deepEqual(Object.keys(json(load('virtual:deck-results', { stripHidden: true })).rooms), ['shown'])
+  assert.deepEqual(Object.keys(json(load('virtual:deck-ink', {})).slides), ['slide-2', 'slide-3'])
+})
