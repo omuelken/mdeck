@@ -20,6 +20,15 @@ export const slideStrokes = slideId => ink.slides[resolveSlideId(slideId)] ?? []
 /** The slide's notes sheet ({ size }), or null. */
 export const slideSheet = slideId => ink.sheets?.[resolveSlideId(slideId)] ?? null
 
+// The reader's Drawings switch leaves the notes sheets out too: the slides
+// show no sheet, as a step or as a page, while it is off.
+let sheetsShown = true
+export function showSheets(on) {
+  if (sheetsShown === !!on) return
+  sheetsShown = !!on
+  for (const listener of listeners) listener(ink)
+}
+
 /** Replaces all ink, for example after the server sent the saved file. */
 export function replaceInk(next) {
   ink = next
@@ -56,9 +65,9 @@ export function onInkChange(listener) {
 }
 
 export function useSlideSheet(slideId) {
-  const [sheet, setSheet] = useState(() => slideSheet(slideId))
+  const [sheet, setSheet] = useState(() => sheetsShown ? slideSheet(slideId) : null)
   useEffect(() => {
-    const listener = () => setSheet(slideSheet(slideId))
+    const listener = () => setSheet(sheetsShown ? slideSheet(slideId) : null)
     listeners.add(listener)
     listener()
     return () => listeners.delete(listener)

@@ -10,7 +10,7 @@ import './reader.css'
 import { t, stageLabels } from '../core/labels.js'
 import { followActiveRooms } from '../live/follow.js'
 import { Icon } from '../components/Icon.jsx'
-import { currentInk, onInkChange, useSlideSheet } from './ink/store.js'
+import { currentInk, onInkChange, useSlideSheet, showSheets } from './ink/store.js'
 import { fitDeck, fitSlide } from './fit.js'
 import { languageName } from '../core/languages.js'
 
@@ -29,7 +29,7 @@ function restoreLook(deckConfig) {
   return { appearance: ['light', 'dark'].includes(stored?.appearance) ? stored.appearance : '', drawings: stored?.drawings !== false }
 }
 
-const hasInk = () => Object.values(currentInk()?.slides ?? {}).some(strokes => strokes?.length)
+const hasInk = () => Object.values(currentInk()?.slides ?? {}).some(strokes => strokes?.length) || Object.keys(currentInk()?.sheets ?? {}).length > 0
 
 // Every button carries an icon so the bar reads at a glance.
 const ReaderIcon = ({ name }) => <Icon name={name} class="reader-icon" />
@@ -97,6 +97,8 @@ export function ReaderView({ deck, deckConfig, mode: startMode = 'slides', langu
     try { localStorage.setItem(lookKey(deckConfig), JSON.stringify({ appearance, drawings })) } catch {}
   }, [appearance, drawings])
   useEffect(() => onInkChange(() => setInked(hasInk())), [])
+  // Without the drawings, no notes sheets either (runtime/ink/Sheet.jsx).
+  useEffect(() => { showSheets(drawings) }, [drawings])
   // Another language of a deck read as pages opens on the page that showed.
   useEffect(() => { if (startMode === 'read') document.getElementById(`reader-page-${index}`)?.scrollIntoView({ block: 'start' }) }, [])
 
