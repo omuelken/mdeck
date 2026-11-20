@@ -4,10 +4,11 @@ import { Icon } from '../../components/Icon.jsx'
 import { inkPaint } from '../../core/ink.js'
 import './toolbar.css'
 
-// The floating ink toolbar: tools, colours and sizes of the pen and the
-// highlighter (each keeps its own; one pen colour is the theme's accent),
-// deleting a selection, undo/redo, clear slide, hide saved ink, drawing with a
-// finger, and the drawings file. Swipes and the deck's own controls and keys
+// The floating ink toolbar: colours and sizes of the pen and the highlighter
+// (each keeps its own; one pen colour is the theme's accent), first, so the
+// tools after them stay in place; the tools; deleting a selection; undo/redo,
+// clear slide, hide saved ink, drawing with a finger, and the drawings file.
+// Every button is always there, so none moves when the tool changes. Swipes and the deck's own controls and keys
 // turn the slides. It folds into one button in the bottom right corner,
 // showing the current tool, and drawing goes on while it is folded. It drives
 // a <deck-stage> (inkTool, inkFinger, data-ink-hidden), an ink controller and
@@ -78,6 +79,10 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   const [hidden, setHidden] = useState(stage.hasAttribute('data-ink-hidden'))
   const [finger, setFinger] = useState(!!stage.inkFinger)
   const [clearing, setClearing] = useState(null) // the slide id awaiting confirmation
+  // The pen or the highlighter whose colours and sizes the bar shows: the
+  // one in use, or the last one used; a colour or size picks it again.
+  const [writer, setWriter] = useState(COLORS[tool] ? tool : 'pen')
+  useEffect(() => { if (COLORS[tool]) setWriter(tool) }, [tool])
   const [history, setHistory] = useState({ canUndo: false, canRedo: false, unsaved: false })
 
   useEffect(() => controller.subscribe(setHistory), [controller])
@@ -90,7 +95,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
     stage.setAttribute('data-ink-tool', tool)
     if (tool !== 'select') selection?.clear()
   }, [tool, style])
-  const setOwn = change => setStyle(all => ({ ...all, [tool]: { ...all[tool], ...change } }))
+  const setOwn = change => { setTool(writer); setStyle(all => ({ ...all, [writer]: { ...all[writer], ...change } })) }
   useEffect(() => { stage._inkCollapsed = collapsed }, [collapsed])
   useEffect(() => { stage.setInkHidden(hidden, 'toolbar') }, [hidden])
   useEffect(() => { stage.inkFinger = finger }, [finger])
@@ -124,18 +129,16 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
     </div>
   }
   return <div ref={barRef} class={`ink-toolbar${compact}`} role="toolbar" aria-label="Ink" data-ink-ui>
+    <div class={`ink-group${writing ? '' : ' is-idle'}`}>
+      {COLORS[writer].map(value => <button type="button" key={value} class={`ink-color${value === style[writer].color ? ' is-active' : ''}`} style={{ '--swatch': inkPaint(value) }} title={COLOR_NAMES[value] ?? value} aria-label={`Colour ${COLOR_NAMES[value] ?? value}`} aria-pressed={writing && value === style[writer].color} onClick={() => setOwn({ color: value })} />)}
+    </div>
+    <div class={`ink-group${writing ? '' : ' is-idle'}`}>
+      {[0, 1, 2].map(i => <button type="button" key={i} class={`ink-size${i === style[writer].sizeIndex ? ' is-active' : ''}`} title={['Thin', 'Medium', 'Thick'][i]} aria-label={['Thin', 'Medium', 'Thick'][i]} aria-pressed={writing && i === style[writer].sizeIndex} onClick={() => setOwn({ sizeIndex: i })}><span style={{ width: `${6 + i * 5}px`, height: `${6 + i * 5}px` }} /></button>)}
+    </div>
     <div class="ink-group">
       {TOOLS.map(([id, label]) => button(label, id, () => setTool(id), { active: tool === id }))}
+      {button('Delete selection (Delete)', 'trash', () => selection.remove(), { disabled: !selected })}
     </div>
-    {writing && <div class="ink-group">
-      {COLORS[tool].map(value => <button type="button" key={value} class={`ink-color${value === style[tool].color ? ' is-active' : ''}`} style={{ '--swatch': inkPaint(value) }} title={COLOR_NAMES[value] ?? value} aria-label={`Colour ${COLOR_NAMES[value] ?? value}`} aria-pressed={value === style[tool].color} onClick={() => setOwn({ color: value })} />)}
-    </div>}
-    {writing && <div class="ink-group">
-      {[0, 1, 2].map(i => <button type="button" key={i} class={`ink-size${i === style[tool].sizeIndex ? ' is-active' : ''}`} title={['Thin', 'Medium', 'Thick'][i]} aria-label={['Thin', 'Medium', 'Thick'][i]} aria-pressed={i === style[tool].sizeIndex} onClick={() => setOwn({ sizeIndex: i })}><span style={{ width: `${6 + i * 5}px`, height: `${6 + i * 5}px` }} /></button>)}
-    </div>}
-    {selected > 0 && <div class="ink-group">
-      {button('Delete selection (Delete)', 'trash', () => selection.remove())}
-    </div>}
     <div class="ink-group">
       {button('Undo', 'undo', () => controller.undo(), { disabled: !history.canUndo })}
       {button('Redo', 'redo', () => controller.redo(), { disabled: !history.canRedo })}
