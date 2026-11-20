@@ -20,7 +20,12 @@ On a touch screen such as an iPad, drawing is on as soon as the presenter view o
 
 **I** hides and shows what was drawn before, for example when a slide should look clean again. The toolbar has the same switch.
 
-**Notes sheet** (the page with a small slide on the toolbar) gives the slide shown a sheet to write on, and asks which: **Slide small, room to write**, the slide in the top left corner, as it looks with every step shown and what was drawn on it, and room around it, all one surface; or a **Blank page**, only room. The sheet is the slide's last step: the button goes there, and from then on the next press after the slide's own steps shows it, and the press back shows the slide again. Going back from the slide after it lands on the sheet. What you write there belongs to the sheet; the slide itself stays as it was. On the sheet, the button asks to remove it, with what is written on it; undo brings both back. The sheet is kept in the drawings file, not in your slides, so a sheet can be prepared before the talk the same way. The reader and PDFs show it as a page of its own after the slide.
+When a slide has no room left, the toolbar gives you more in two ways:
+
+- **Expand** (the small slide in the corner of a larger frame) moves the slide into the top left corner, at two thirds of its size, and leaves the room around it to write on. It is the same slide seen from further away: what you draw on it stays on it, and what you write around it belongs to it too. The button again shows the slide whole; what was written around it is kept and comes back with the next expand. The audience sees the same. Forward and back turn the slides as usual.
+- **Blank page** (the page with a plus) puts an empty page after the slide and goes there. On a blank page the button adds another one after it. Forward and back turn these pages like slides, and going back from the next slide lands on the last of them. On a page, the clear button also offers to remove it; undo brings it back with what was written on it.
+
+Both are kept in the drawings file, not in your slides, so they can be prepared before the talk the same way. The reader and PDFs show the expanded slide with what was written around it as a page of its own after the slide, and then its blank pages.
 
 The audience window, and any other deck window in the same browser, shows every stroke as you draw it.
 
@@ -36,7 +41,7 @@ Drawings live in a file next to your slides: `my-talk.drawings.json` for `my-tal
 - The first save of a session keeps a copy of the previous file in `.mdeck-backups`, next to your slides.
 - **Opened from a built folder or a single file**, the page has nowhere to save. Drawings are kept in that browser, and the toolbar's download button saves them as the drawings file, to put next to your slides. Safari may clear such browser data after a week without use, so download it after drawing.
 
-Builds and PDFs include the drawings. In the reader view, which a file from `mdeck send` opens in, a **Drawings** button hides and shows them, notes sheets included, also for **Save as PDF**; the browser remembers the choice. To leave them out of a build altogether, add `--no-drawings`:
+Builds and PDFs include the drawings. In the reader view, which a file from `mdeck send` opens in, a **Drawings** button hides and shows them, room and blank pages included, also for **Save as PDF**; the browser remembers the choice. To leave them out of a build altogether, add `--no-drawings`:
 
 ```sh
 mdeck pdf my-talk.md --no-drawings

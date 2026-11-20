@@ -2,13 +2,14 @@ import { h } from 'preact'
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from '../../components/Icon.jsx'
 import { inkPaint } from '../../core/ink.js'
-import { slideSheet } from './store.js'
+import { roomOpen, slidePages, slideStrokes, onInkChange } from './store.js'
 import './toolbar.css'
 
 // The floating ink toolbar: colours and sizes of the pen and the highlighter
 // (each keeps its own; one pen colour is the theme's accent), first, so the
 // tools after them stay in place; the tools; deleting a selection; undo/redo,
-// clear slide, hide saved ink, drawing with a finger, and the drawings file.
+// clear slide, room to write (expanding the slide, a blank page after it),
+// hide saved ink, drawing with a finger, and the drawings file.
 // Every button is always there, so none moves when the tool changes. Swipes and the deck's own controls and keys
 // turn the slides. It folds into one button in the bottom right corner,
 // showing the current tool, and drawing goes on while it is folded. It drives
@@ -82,9 +83,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   const [collapsed, setCollapsed] = useState(!!stage._inkCollapsed)
   const [hidden, setHidden] = useState(stage.hasAttribute('data-ink-hidden'))
   const [finger, setFinger] = useState(!!stage.inkFinger)
-  const [clearing, setClearing] = useState(null) // the slide id awaiting confirmation
-  const [unsheeting, setUnsheeting] = useState(null) // the slide whose notes sheet awaits removal
-  const [sheeting, setSheeting] = useState(null) // the slide getting a sheet, while choosing which
+  const [clearing, setClearing] = useState(null) // what awaits confirmation: { layer, id, page }
   // The pen or the highlighter whose colours and sizes the bar shows: the
   // one in use, or the last one used; a colour or size picks it again.
   const [writer, setWriter] = useState(COLORS[tool] ? tool : 'pen')
@@ -108,24 +107,27 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
 
   const slideId = () => stage._inkSlideId?.()
 
-  // The notes sheet (runtime/ink/Sheet.jsx) is the slide's last step: this
-  // goes on to it, past the steps still to come, once it is on the page.
-  const showSheet = (tries = 30) => {
-    const slide = stage._slides?.[stage.index]
-    if (!slide?.querySelector(':scope > .slide-sheet')) { if (tries > 0) setTimeout(() => showSheet(tries - 1), 20); return }
-    for (let guard = 50; guard > 0 && !stage.sheetShown; guard--) stage.next('click')
-  }
-  // Without a sheet: the button asks which (the slide small beside room to
-  // write, or a blank page), adds it and shows it. With one: it is shown,
-  // and when it is shown already, the button asks to take it away.
-  const sheetButton = () => {
-    const id = stage.inkBaseSlideId?.()
+  // Room to write (ink/Room.jsx). What the stage shows: the slide, the blank
+  // page of it on the screen if any, and whether the slide is expanded.
+  const where = () => { const id = stage.inkBaseSlideId?.() ?? null; return { id, page: stage.pageShown ?? null, open: !!id && roomOpen(id) } }
+  const [at, setAt] = useState(where)
+  useEffect(() => {
+    const update = () => setAt(was => { const now = where(); return was.id === now.id && was.page === now.page && was.open === now.open ? was : now })
+    const events = ['slidechange', 'statechange', 'stepschange']
+    for (const type of events) stage.addEventListener(type, update)
+    const off = onInkChange(update)
+    return () => { for (const type of events) stage.removeEventListener(type, update); off() }
+  }, [])
+  // The new page comes after what is on the screen: the slide, or one of its pages.
+  const addPage = () => {
+    const { id, page } = where()
     if (!id) return
-    if (stage.sheetShown) { setSheeting(null); setUnsheeting(open => open ? null : id); return }
-    if (!slideSheet(id)) { setUnsheeting(null); setSheeting(open => open ? null : id); return }
-    showSheet()
+    const added = controller.addPage(id, page ? slidePages(id).indexOf(page) + 1 : 0)
+    // It is on the slide once the slide has drawn it.
+    const show = (tries = 30) => { if (!stage.showPage(added, 'click') && tries > 0) setTimeout(() => show(tries - 1), 20) }
+    show()
   }
-  const addSheet = size => { controller.addSheet(sheeting, size); setSheeting(null); showSheet() }
+  const removePage = ({ id, page }) => { stage.prev('click'); controller.removePage(id, page) }
   const button = (label, icon, action, { active = false, disabled = false } = {}) =>
     <button type="button" class={`ink-btn${active ? ' is-active' : ''}`} title={label} aria-label={label} aria-pressed={active} disabled={disabled} onClick={action}><Icon name={icon} size={20} /></button>
 
@@ -168,27 +170,20 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
       {button('Undo', 'undo', () => controller.undo(), { disabled: !history.canUndo })}
       {button('Redo', 'redo', () => controller.redo(), { disabled: !history.canRedo })}
       <span class="ink-anchor">
-        {button('Clear this slide', 'clear', () => { const id = slideId(); setClearing(open => open || !id ? null : id) })}
+        {button(at.page ? 'Clear or remove this page' : 'Clear this slide', 'clear', () => { const id = slideId(); setClearing(open => open || !id ? null : { layer: id, ...where() }) })}
         {clearing && <Popover
-          message="Clear this slide?"
-          choices={[{ label: 'Clear', danger: true, onClick: () => { controller.clearSlide(clearing); setClearing(null) } }]}
+          message={!clearing.page ? 'Clear this slide?' : slideStrokes(clearing.layer).length ? 'This page and what is written on it:' : 'Remove this page?'}
+          choices={[
+            ...(!clearing.page || slideStrokes(clearing.layer).length ? [{ label: 'Clear', danger: true, onClick: () => { controller.clearSlide(clearing.layer); setClearing(null) } }] : []),
+            ...(clearing.page ? [{ label: 'Remove page', danger: true, onClick: () => { removePage(clearing); setClearing(null) } }] : []),
+          ]}
           onCancel={() => setClearing(null)}
         />}
       </span>
-      <span class="ink-anchor">
-        {button('Notes sheet: room to write after this slide', 'sheet', sheetButton)}
-        {sheeting && <Popover
-          message="After this slide:"
-          choices={[{ label: 'Slide small, room to write', onClick: () => addSheet('2/3') }, { label: 'Blank page', onClick: () => addSheet('blank') }]}
-          cancel={false}
-          onCancel={() => setSheeting(null)}
-        />}
-        {unsheeting && <Popover
-          message="Remove this notes sheet and what is written on it?"
-          choices={[{ label: 'Remove', danger: true, onClick: () => { stage.prev('click'); controller.removeSheet(unsheeting); setUnsheeting(null) } }]}
-          onCancel={() => setUnsheeting(null)}
-        />}
-      </span>
+    </div>
+    <div class="ink-group">
+      {button(at.open ? 'Show the slide whole again' : 'Expand: room to write around this slide', 'room', () => controller.setRoom(at.id, !at.open), { active: at.open && !at.page, disabled: !at.id || !!at.page })}
+      {button(at.page ? 'Blank page after this one' : 'Blank page after this slide', 'page', addPage, { disabled: !at.id })}
     </div>
     <div class="ink-group">
       {button(hidden ? 'Show saved ink' : 'Hide saved ink', hidden ? 'eye-off' : 'eye', () => setHidden(!hidden), { active: hidden })}

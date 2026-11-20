@@ -3,19 +3,22 @@
 //
 // A deck's ink (its drawings) lives in `<deck>.drawings.json` beside `<deck>.md`:
 //   { version: 1, width, height, slides: { <slideId>: [stroke, …] },
-//     sheets: { <slideId>: { size } } }
+//     rooms: { <slideId>: { open } }, pages: { <slideId>: [<pageId>, …] } }
 //   stroke = { id: '<device>:<n>', tool: 'pen' | 'highlighter', color, size,
 //              points: [[x, y, pressure], …] }
 // Points are in the deck's design pixels (width × height), to a tenth of a
 // pixel. Ink belongs to a slide, not to one of its steps.
 //
-// A notes sheet belongs to the ink too: a slide in `sheets` has a page of
-// its own after it, the slide small in its top left corner (`size` of it,
-// SHEET_SIZES) and room to write around it; `blank` is the page without the
-// slide. The sheet's strokes are kept
-// under the slide's id with SHEET_LAYER after it (`intro#sheet`), so drawing,
-// erasing and moving work there as on any slide. `sheets` is left out of the
-// file while no slide has one.
+// Room to write belongs to the ink too, in two kinds:
+// - A slide in `rooms` has been expanded: shown at ROOM_SCALE of its size in
+//   the top left corner, with room around it. The room is the same surface
+//   as the slide, only larger: its strokes are the slide's own, with points
+//   beyond the slide's width and height. `open` says whether the slide shows
+//   expanded now; closing it keeps what was written.
+// - `pages` lists a slide's blank pages, which follow it. A page's strokes
+//   are kept under the slide's id with the page's after it (`intro#p4k2`),
+//   so drawing, erasing and moving work there as on any slide.
+// Both are left out of the file while no slide has one.
 import { getStroke } from 'perfect-freehand'
 
 export const INK_VERSION = 1
@@ -31,20 +34,25 @@ export const inkFileFor = deckPath => String(deckPath).replace(/\.md$/i, '') + '
 /** Where drawings were kept before 2.0; nothing reads it any more. */
 export const oldInkFileFor = deckPath => String(deckPath).replace(/\.md$/i, '') + '.ink.json'
 
-export const SHEET_LAYER = '#sheet'
-export const SHEET_SIZES = ['2/3', '1/2', 'blank']
-/** The ink id of a slide's notes sheet. */
-export const sheetLayer = slideId => slideId + SHEET_LAYER
-/** The slide an ink id belongs to: itself, or the slide of a notes sheet. */
-export const baseSlideId = id => typeof id === 'string' && id.endsWith(SHEET_LAYER) ? id.slice(0, -SHEET_LAYER.length) : id
-/** The scale of the slide on its notes sheet. */
-export const sheetScale = sheet => sheet?.size === 'blank' ? 0 : sheet?.size === '1/2' ? 1 / 2 : 2 / 3
+/** An expanded slide shows at this scale, the room around it filling the rest. */
+export const ROOM_SCALE = 2 / 3
+const PAGE_ID = /^p[a-z0-9]{1,24}$/
+const PAGE_LAYER = /#(p[a-z0-9]{1,24})$/
+export const isPageId = id => typeof id === 'string' && PAGE_ID.test(id)
+/** The ink id of one of a slide's blank pages. */
+export const pageLayer = (slideId, pageId) => `${slideId}#${pageId}`
+/** The slide an ink id belongs to: itself, or the slide of a blank page. */
+export const baseSlideId = id => typeof id === 'string' ? id.replace(PAGE_LAYER, '') : id
+/** The page an ink id names (`intro#p4k2` gives p4k2), or null for a slide's own. */
+export const pageOf = id => (typeof id === 'string' && PAGE_LAYER.exec(id)?.[1]) || null
+/** Whether strokes reach the room around a slide: beyond its right or lower edge. */
+export const reachesRoom = (strokes, width, height) => (strokes ?? []).some(stroke => stroke.points.some(([x, y]) => x > width + 1 || y > height + 1))
+/** Whether the slide has a page for its room in print: it was expanded and written around. */
+export const hasRoomPage = (ink, slideId) => !!ink?.rooms?.[slideId] && reachesRoom(ink.slides?.[slideId], ink.width, ink.height)
 
 export function emptyInk({ width = 1920, height = 1080 } = {}) {
-  return { version: INK_VERSION, width, height, slides: {}, sheets: {} }
+  return { version: INK_VERSION, width, height, slides: {}, rooms: {}, pages: {} }
 }
-
-const cleanSheet = sheet => ({ size: SHEET_SIZES.includes(sheet?.size) ? sheet.size : SHEET_SIZES[0] })
 
 const round = (n, digits = 0) => { const f = 10 ** digits; return Math.round(n * f) / f }
 
@@ -78,8 +86,13 @@ export function normalizeInk(raw, { width = 1920, height = 1080 } = {}) {
     const clean = strokes.map(stroke => cleanStroke(stroke, scaleX, scaleY)).filter(Boolean)
     if (clean.length) ink.slides[slideId] = clean
   }
-  for (const [slideId, sheet] of Object.entries(raw.sheets ?? {})) {
-    if (isSlideId(slideId) && !slideId.endsWith(SHEET_LAYER) && sheet && typeof sheet === 'object') ink.sheets[slideId] = cleanSheet(sheet)
+  for (const [slideId, room] of Object.entries(raw.rooms ?? {})) {
+    if (isSlideId(slideId) && !pageOf(slideId) && room && typeof room === 'object') ink.rooms[slideId] = { open: room.open === true }
+  }
+  for (const [slideId, pages] of Object.entries(raw.pages ?? {})) {
+    if (!isSlideId(slideId) || pageOf(slideId) || !Array.isArray(pages)) continue
+    const clean = [...new Set(pages.filter(isPageId))]
+    if (clean.length) ink.pages[slideId] = clean
   }
   return ink
 }
@@ -97,11 +110,21 @@ export function validateInk(raw) {
   return problems
 }
 
-/** Slide ids that have ink or a notes sheet but are not in the deck any more. */
+/** Slide ids that have ink, room or pages but are not in the deck any more. */
 export function orphanIds(ink, slides) {
   const ids = new Set(slides.map(slide => slide.id))
-  const named = new Set([...Object.keys(ink?.slides ?? {}).map(baseSlideId), ...Object.keys(ink?.sheets ?? {})])
+  const named = new Set([...Object.keys(ink?.slides ?? {}).map(baseSlideId), ...Object.keys(ink?.rooms ?? {}), ...Object.keys(ink?.pages ?? {})])
   return [...named].filter(id => !ids.has(id))
+}
+
+/**
+ * The ink of the slides `keep(slideId)` says yes to, each under `rename(slideId)`:
+ * their strokes, rooms, pages and the pages' strokes.
+ */
+export function pickInk(ink, keep, rename = id => id) {
+  const moved = id => { const base = baseSlideId(id); return rename(base) + id.slice(base.length) }
+  const pick = map => Object.fromEntries(Object.entries(map ?? {}).filter(([id]) => keep(baseSlideId(id))).map(([id, value]) => [moved(id), value]))
+  return { ...ink, slides: pick(ink.slides), rooms: pick(ink.rooms), pages: pick(ink.pages) }
 }
 
 /**
@@ -110,12 +133,13 @@ export function orphanIds(ink, slides) {
  *   { type: 'add', slideId, stroke }       adds, or replaces the stroke with that id
  *   { type: 'remove', slideId, ids }       removes those strokes
  *   { type: 'clear', slideId, ids }        the same, for the strokes a device knew about
- *   { type: 'rename', from, to }           moves a slide's ink, notes sheet and its ink to a new id
- *   { type: 'sheet', slideId, size }       gives the slide a notes sheet; size null takes it away
- *                                          (its strokes are removed by their own change)
+ *   { type: 'rename', from, to }           moves a slide's ink, room and pages to a new id
+ *   { type: 'room', slideId, open }        expands the slide (room around it) or shows it whole again
+ *   { type: 'page', slideId, page, at }    adds a blank page after the slide, as its `at`-th (or last)
+ *   { type: 'page', slideId, page, remove: true }  takes it away (its strokes go by their own change)
  */
 export function applyOp(ink, op) {
-  const next = { ...ink, slides: { ...ink.slides }, sheets: { ...ink.sheets } }
+  const next = { ...ink, slides: { ...ink.slides }, rooms: { ...ink.rooms }, pages: { ...ink.pages } }
   if (op?.type === 'add') {
     const stroke = cleanStroke(op.stroke)
     if (!stroke || !stroke.id || !isSlideId(op.slideId)) return ink
@@ -129,30 +153,38 @@ export function applyOp(ink, op) {
     else delete next.slides[op.slideId]
   } else if (op?.type === 'rename') {
     if (!isSlideId(op.from) || !isSlideId(op.to) || op.from === op.to) return ink
-    const from = [op.from, sheetLayer(op.from)].filter(id => next.slides[id])
-    if (!from.length && !next.sheets[op.from]) return ink
+    const pages = next.pages[op.from] ?? []
+    const from = [op.from, ...pages.map(page => pageLayer(op.from, page))].filter(id => next.slides[id])
+    if (!from.length && !next.rooms[op.from] && !pages.length) return ink
     for (const id of from) {
-      const to = id === op.from ? op.to : sheetLayer(op.to)
+      const to = op.to + id.slice(op.from.length)
       // A stroke already under the new id (the same change heard twice, say
       // from a window that replays the room's history) is not doubled.
       const known = new Set((next.slides[to] ?? []).map(stroke => stroke.id))
       next.slides[to] = [...(next.slides[to] ?? []), ...next.slides[id].filter(stroke => !known.has(stroke.id))]
       delete next.slides[id]
     }
-    if (next.sheets[op.from]) {
-      next.sheets[op.to] ??= next.sheets[op.from]
-      delete next.sheets[op.from]
+    if (next.rooms[op.from]) {
+      next.rooms[op.to] ??= next.rooms[op.from]
+      delete next.rooms[op.from]
     }
-  } else if (op?.type === 'sheet') {
-    if (!isSlideId(op.slideId) || op.slideId.endsWith(SHEET_LAYER)) return ink
-    if (op.size == null) {
-      if (!next.sheets[op.slideId]) return ink
-      delete next.sheets[op.slideId]
-    } else {
-      const sheet = cleanSheet(op)
-      if (next.sheets[op.slideId]?.size === sheet.size) return ink
-      next.sheets[op.slideId] = sheet
+    if (pages.length) {
+      next.pages[op.to] = [...new Set([...(next.pages[op.to] ?? []), ...pages])]
+      delete next.pages[op.from]
     }
+  } else if (op?.type === 'room') {
+    if (!isSlideId(op.slideId) || pageOf(op.slideId)) return ink
+    const open = op.open === true
+    if (next.rooms[op.slideId] ? next.rooms[op.slideId].open === open : !open) return ink
+    next.rooms[op.slideId] = { open }
+  } else if (op?.type === 'page') {
+    if (!isSlideId(op.slideId) || pageOf(op.slideId) || !isPageId(op.page)) return ink
+    const pages = next.pages[op.slideId] ?? []
+    if (pages.includes(op.page) !== (op.remove === true)) return ink
+    const list = op.remove === true ? pages.filter(page => page !== op.page)
+      : pages.toSpliced(Number.isInteger(op.at) ? Math.max(0, Math.min(pages.length, op.at)) : pages.length, 0, op.page)
+    if (list.length) next.pages[op.slideId] = list
+    else delete next.pages[op.slideId]
   } else {
     return ink
   }
@@ -224,9 +256,11 @@ export function strokePath(stroke, { last = true } = {}) {
 export function serializeInk(ink) {
   const slides = Object.entries(ink.slides ?? {}).filter(([, strokes]) => strokes.length)
   const body = slides.map(([id, strokes]) => `    ${JSON.stringify(id)}: [\n${strokes.map(stroke => '      ' + JSON.stringify(stroke)).join(',\n')}\n    ]`).join(',\n')
-  const sheets = Object.entries(ink.sheets ?? {})
-  const sheetsText = sheets.length ? `,\n  "sheets": {\n${sheets.map(([id, sheet]) => `    ${JSON.stringify(id)}: ${JSON.stringify(sheet)}`).join(',\n')}\n  }` : ''
-  return `{\n  "version": ${INK_VERSION},\n  "width": ${ink.width},\n  "height": ${ink.height},\n  "slides": {${body ? '\n' + body + '\n  ' : ''}}${sheetsText}\n}\n`
+  const extra = name => {
+    const entries = Object.entries(ink[name] ?? {})
+    return entries.length ? `,\n  "${name}": {\n${entries.map(([id, value]) => `    ${JSON.stringify(id)}: ${JSON.stringify(value)}`).join(',\n')}\n  }` : ''
+  }
+  return `{\n  "version": ${INK_VERSION},\n  "width": ${ink.width},\n  "height": ${ink.height},\n  "slides": {${body ? '\n' + body + '\n  ' : ''}}${extra('rooms')}${extra('pages')}\n}\n`
 }
 
 /** The CSS colour a stroke is drawn with: "accent" is the theme's accent. */

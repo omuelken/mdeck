@@ -2,30 +2,33 @@
 // built, plus changes made since. Components subscribe to one slide.
 import { useEffect, useState } from 'preact/hooks'
 import bundled from 'virtual:deck-ink'
-import { applyOp, baseSlideId } from '../../core/ink.js'
+import { applyOp, baseSlideId, hasRoomPage } from '../../core/ink.js'
 
 let ink = bundled
 const listeners = new Set()
 // Slides that got an id while the page was open: the rendered slides still
 // know their old id (slide-3), the ink uses the new one.
 const aliases = new Map()
-// A notes sheet's id (slide-3#sheet) follows its slide's.
+// A blank page's id (slide-3#p4k2) follows its slide's.
 export const resolveSlideId = slideId => {
   const base = baseSlideId(slideId)
   return base === slideId ? aliases.get(slideId) ?? slideId : (aliases.get(base) ?? base) + slideId.slice(base.length)
 }
 
+const NONE = []
 export const currentInk = () => ink
-export const slideStrokes = slideId => ink.slides[resolveSlideId(slideId)] ?? []
-/** The slide's notes sheet ({ size }), or null. */
-export const slideSheet = slideId => ink.sheets?.[resolveSlideId(slideId)] ?? null
+export const slideStrokes = slideId => ink.slides[resolveSlideId(slideId)] ?? NONE
+/** Whether the slide shows expanded, with room around it. */
+export const roomOpen = slideId => ink.rooms?.[resolveSlideId(slideId)]?.open === true
+/** The ids of the slide's blank pages, in their order. */
+export const slidePages = slideId => ink.pages?.[resolveSlideId(slideId)] ?? NONE
 
-// The reader's Drawings switch leaves the notes sheets out too: the slides
-// show no sheet, as a step or as a page, while it is off.
-let sheetsShown = true
-export function showSheets(on) {
-  if (sheetsShown === !!on) return
-  sheetsShown = !!on
+// The reader's Drawings switch leaves out the room to write too: no slide
+// shows expanded and none has pages while it is off.
+let extrasShown = true
+export function showExtras(on) {
+  if (extrasShown === !!on) return
+  extrasShown = !!on
   for (const listener of listeners) listener(ink)
 }
 
@@ -64,16 +67,21 @@ export function onInkChange(listener) {
   return () => listeners.delete(listener)
 }
 
-export function useSlideSheet(slideId) {
-  const [sheet, setSheet] = useState(() => sheetsShown ? slideSheet(slideId) : null)
+// What `read()` gives, again after every change of the ink.
+function useInk(read, slideId) {
+  const [value, setValue] = useState(read)
   useEffect(() => {
-    const listener = () => setSheet(sheetsShown ? slideSheet(slideId) : null)
+    const listener = () => setValue(read())
     listeners.add(listener)
     listener()
     return () => listeners.delete(listener)
   }, [slideId])
-  return sheet
+  return value
 }
+export const useSlidePages = slideId => useInk(() => extrasShown && slideId ? slidePages(slideId) : NONE, slideId)
+export const useRoomOpen = slideId => useInk(() => extrasShown && !!slideId && roomOpen(slideId), slideId)
+/** Whether the slide has a page for its room in print (hasRoomPage in core/ink.js). */
+export const useRoomPage = slideId => useInk(() => extrasShown && !!slideId && hasRoomPage(ink, resolveSlideId(slideId)), slideId)
 
 export function useSlideInk(slideId) {
   const [strokes, setStrokes] = useState(() => slideStrokes(slideId))
