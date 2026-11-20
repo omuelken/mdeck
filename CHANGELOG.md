@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The toolbar's plus asks what goes in after the slide: a blank page or a notes sheet.
+- The ink toolbar keeps its buttons in place: colours and sizes come first and stay there, dimmed, while the select tool, the laser or the eraser is in use (a tap on one goes back to the pen or highlighter), and the bin for a selection is always there, greyed out until something is selected.
 - `layout: sheet`, a notes sheet: put after a slide, it shows that slide at two thirds of its size in the top left corner, finished and with its drawings, and leaves the rest of the page to write on during the talk; `size: 1/2` shows it smaller. It has no page number, and the reader and PDFs show it after the slide.
 - `hidden: true` in a slide's settings leaves the slide out of the talk: the deck, the presenter view, the reader and PDFs skip it, and the page numbers count without it; it stays in the file and in the editor. The eye beside a slide in the editor's slide list hides it or shows it again.
 - Fixed: strokes moved with the lasso on a paired iPad stayed in their old place in the audience window, when the move was larger than the stage room takes in one request (one line of handwriting could be). Live ink now goes in requests of at most 60 KB, and a stage room takes up to 256 KB. The audience window also follows the saved drawings while `mdeck run` runs, so a change it missed live is put right with the next save.

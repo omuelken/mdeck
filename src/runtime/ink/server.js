@@ -90,7 +90,7 @@ export async function connectInkServer(controller, { headers = () => pairHeaders
   // on to the new page (goToBlankPage), before the reload can overtake the
   // answer. The presenter view around this frame reloads too, and opens its
   // new frame where it was kept (POSITION_KEY): at the new page as well.
-  async function insertBlank(slideId, index) {
+  async function insertBlank(slideId, index, layout = 'blank') {
     const kept = (() => { try { return sessionStorage.getItem(POSITION_KEY) } catch { return null } })()
     const remember = (blank, position) => {
       try {
@@ -103,13 +103,13 @@ export async function connectInkServer(controller, { headers = () => pairHeaders
     remember(String(index + 1), JSON.stringify({ index: index + 1, step: -1 }))
     let error
     try {
-      const reply = await fetch(`${BASE}/blank`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers() }, body: JSON.stringify({ deckHash, after: resolveSlideId(slideId) }) })
+      const reply = await fetch(`${BASE}/blank`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers() }, body: JSON.stringify({ deckHash, after: resolveSlideId(slideId), layout }) })
       const body = await reply.json().catch(() => ({}))
       if (reply.ok) return true
       error = body.error ?? reply.status
     } catch (failure) { error = failure.message }
     remember(null, kept)
-    notice(`No blank page: ${error}`)
+    notice(`No ${layout === 'sheet' ? 'notes sheet' : 'blank page'}: ${error}`)
     return false
   }
   controller.useServer(save, { blank: insertBlank })

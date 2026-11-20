@@ -4,11 +4,13 @@ import { Icon } from '../../components/Icon.jsx'
 import { inkPaint } from '../../core/ink.js'
 import './toolbar.css'
 
-// The floating ink toolbar: tools, colours and sizes of the pen and the
-// highlighter (each keeps its own; one pen colour is the theme's accent),
-// deleting a selection, undo/redo, clear slide, a blank page after this one
-// (where `mdeck run` can write the deck), hide saved ink, drawing with a
-// finger, and the drawings file. Swipes and the deck's own controls and keys
+// The floating ink toolbar: colours and sizes of the pen and the highlighter
+// (each keeps its own; one pen colour is the theme's accent), first, so the
+// tools after them stay in place; the tools; deleting a selection; undo/redo,
+// clear slide, a blank page or a notes sheet after this one (where `mdeck run`
+// can write the deck); hide saved ink, drawing with a finger, and the
+// drawings file. Every button is always there, so none moves when the tool
+// changes. Swipes and the deck's own controls and keys
 // turn the slides. It folds into one button in the bottom right corner,
 // showing the current tool, and drawing goes on while it is folded. It drives
 // a <deck-stage> (inkTool, inkFinger, data-ink-hidden), an ink controller and
@@ -31,10 +33,11 @@ const TOOLS = [
   ['eraser', 'Eraser'],
 ]
 
-// A small "are you sure" popover above the button that opened it. It does not
-// dim anything. While open it takes the keys, so the deck behind it does not
-// turn slides; Escape or a tap elsewhere cancels, and focus stays inside.
-function ConfirmPopover({ message, confirmLabel, onConfirm, onCancel }) {
+// A small popover above the button that opened it, with a question and its
+// answers. It does not dim anything. While open it takes the keys, so the
+// deck behind it does not turn slides; Escape or a tap elsewhere cancels, and
+// focus stays inside. `choices`: [{ label, onClick, danger }].
+function Popover({ message, choices, onCancel }) {
   const cancelRef = useRef(null)
   const popRef = useRef(null)
   useEffect(() => {
@@ -67,7 +70,7 @@ function ConfirmPopover({ message, confirmLabel, onConfirm, onCancel }) {
   return <div class="ink-pop" ref={popRef} role="alertdialog" aria-label={message}>
     <span class="ink-pop-text">{message}</span>
     <button type="button" class="ink-pop-btn" ref={cancelRef} onClick={onCancel}>Cancel</button>
-    <button type="button" class="ink-pop-btn is-danger" onClick={onConfirm}>{confirmLabel}</button>
+    {choices.map(({ label, onClick, danger }) => <button type="button" key={label} class={`ink-pop-btn${danger ? ' is-danger' : ''}`} onClick={onClick}>{label}</button>)}
   </div>
 }
 
@@ -79,6 +82,11 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   const [hidden, setHidden] = useState(stage.hasAttribute('data-ink-hidden'))
   const [finger, setFinger] = useState(!!stage.inkFinger)
   const [clearing, setClearing] = useState(null) // the slide id awaiting confirmation
+  const [adding, setAdding] = useState(null) // the slide a page goes in after, while choosing which
+  // The pen or the highlighter whose colours and sizes the bar shows: the
+  // one in use, or the last one used; a colour or size picks it again.
+  const [writer, setWriter] = useState(COLORS[tool] ? tool : 'pen')
+  useEffect(() => { if (COLORS[tool]) setWriter(tool) }, [tool])
   const [history, setHistory] = useState({ canUndo: false, canRedo: false, unsaved: false })
 
   useEffect(() => controller.subscribe(setHistory), [controller])
@@ -91,7 +99,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
     stage.setAttribute('data-ink-tool', tool)
     if (tool !== 'select') selection?.clear()
   }, [tool, style])
-  const setOwn = change => setStyle(all => ({ ...all, [tool]: { ...all[tool], ...change } }))
+  const setOwn = change => { setTool(writer); setStyle(all => ({ ...all, [writer]: { ...all[writer], ...change } })) }
   useEffect(() => { stage._inkCollapsed = collapsed }, [collapsed])
   useEffect(() => { stage.setInkHidden(hidden, 'toolbar') }, [hidden])
   useEffect(() => { stage.inkFinger = finger }, [finger])
@@ -125,31 +133,38 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
     </div>
   }
   return <div ref={barRef} class={`ink-toolbar${compact}`} role="toolbar" aria-label="Ink" data-ink-ui>
+    <div class={`ink-group${writing ? '' : ' is-idle'}`}>
+      {COLORS[writer].map(value => <button type="button" key={value} class={`ink-color${value === style[writer].color ? ' is-active' : ''}`} style={{ '--swatch': inkPaint(value) }} title={COLOR_NAMES[value] ?? value} aria-label={`Colour ${COLOR_NAMES[value] ?? value}`} aria-pressed={writing && value === style[writer].color} onClick={() => setOwn({ color: value })} />)}
+    </div>
+    <div class={`ink-group${writing ? '' : ' is-idle'}`}>
+      {[0, 1, 2].map(i => <button type="button" key={i} class={`ink-size${i === style[writer].sizeIndex ? ' is-active' : ''}`} title={['Thin', 'Medium', 'Thick'][i]} aria-label={['Thin', 'Medium', 'Thick'][i]} aria-pressed={writing && i === style[writer].sizeIndex} onClick={() => setOwn({ sizeIndex: i })}><span style={{ width: `${6 + i * 5}px`, height: `${6 + i * 5}px` }} /></button>)}
+    </div>
     <div class="ink-group">
       {TOOLS.map(([id, label]) => button(label, id, () => setTool(id), { active: tool === id }))}
+      {button('Delete selection (Delete)', 'trash', () => selection.remove(), { disabled: !selected })}
     </div>
-    {writing && <div class="ink-group">
-      {COLORS[tool].map(value => <button type="button" key={value} class={`ink-color${value === style[tool].color ? ' is-active' : ''}`} style={{ '--swatch': inkPaint(value) }} title={COLOR_NAMES[value] ?? value} aria-label={`Colour ${COLOR_NAMES[value] ?? value}`} aria-pressed={value === style[tool].color} onClick={() => setOwn({ color: value })} />)}
-    </div>}
-    {writing && <div class="ink-group">
-      {[0, 1, 2].map(i => <button type="button" key={i} class={`ink-size${i === style[tool].sizeIndex ? ' is-active' : ''}`} title={['Thin', 'Medium', 'Thick'][i]} aria-label={['Thin', 'Medium', 'Thick'][i]} aria-pressed={i === style[tool].sizeIndex} onClick={() => setOwn({ sizeIndex: i })}><span style={{ width: `${6 + i * 5}px`, height: `${6 + i * 5}px` }} /></button>)}
-    </div>}
-    {selected > 0 && <div class="ink-group">
-      {button('Delete selection (Delete)', 'trash', () => selection.remove())}
-    </div>}
     <div class="ink-group">
       {button('Undo', 'undo', () => controller.undo(), { disabled: !history.canUndo })}
       {button('Redo', 'redo', () => controller.redo(), { disabled: !history.canRedo })}
       <span class="ink-anchor">
         {button('Clear this slide', 'trash', () => { const id = slideId(); setClearing(open => open || !id ? null : id) })}
-        {clearing && <ConfirmPopover
+        {clearing && <Popover
           message="Clear this slide?"
-          confirmLabel="Clear"
+          choices={[{ label: 'Clear', danger: true, onClick: () => { controller.clearSlide(clearing); setClearing(null) } }]}
           onCancel={() => setClearing(null)}
-          onConfirm={() => { controller.clearSlide(clearing); setClearing(null) }}
         />}
       </span>
-      {history.canBlank && button('Blank page after this slide', 'blank-page', () => { const id = slideId(); if (id) controller.insertBlank(id, stage.index) })}
+      {history.canBlank && <span class="ink-anchor">
+        {button('Add a page after this slide', 'blank-page', () => { const id = slideId(); setAdding(open => open || !id ? null : { id, index: stage.index }) })}
+        {adding && <Popover
+          message="After this slide:"
+          choices={[
+            { label: 'Blank page', onClick: () => { controller.insertBlank(adding.id, adding.index, 'blank'); setAdding(null) } },
+            { label: 'Notes sheet', onClick: () => { controller.insertBlank(adding.id, adding.index, 'sheet'); setAdding(null) } },
+          ]}
+          onCancel={() => setAdding(null)}
+        />}
+      </span>}
     </div>
     <div class="ink-group">
       {button(hidden ? 'Show saved ink' : 'Hide saved ink', hidden ? 'eye-off' : 'eye', () => setHidden(!hidden), { active: hidden })}

@@ -370,11 +370,29 @@ The code block goes left. This heading and text go right.
 
 An empty page with the header and footer of a content slide but no page
 number; the slides after it count on as if it were not there. The drawing
-toolbar's **Blank page after this slide** adds one during the talk.
+toolbar's plus (**Add a page after this slide** → **Blank page**) adds one
+during the talk.
 
 ```markdown
 ---
 layout: blank
+---
+```
+
+---
+
+### `sheet` — The slide before, beside room to write
+
+The slide before at two thirds of its size in the top left corner (`size: 1/2`
+for half), finished, with its drawings and without its page number; the L
+around it is for writing during the talk. No page number of its own, like
+`blank`. The toolbar's plus (**Add a page after this slide** → **Notes
+sheet**) adds one during the talk.
+
+```markdown
+---
+layout: sheet
+size: 1/2
 ---
 ```
 
