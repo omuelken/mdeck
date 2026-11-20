@@ -726,7 +726,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   // outline of its own.
   _isPage() { return this.parentElement === document.body; }
 
-  _go(i, reason = 'api') {
+  _go(i, reason = 'api', step = -1) {
     if (!this._slides.length) return;
     if (this._frozenHere()) { this._thaw(reason); return; }
     const clamped = Math.max(0, Math.min(this._slides.length - 1, i));
@@ -735,7 +735,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
       return;
     }
     this._index = clamped;
-    this._applyIndex({ showOverlay: true, broadcast: true, reason });
+    this._applyIndex({ showOverlay: true, broadcast: true, reason, step });
   }
 
   // Step reveal helpers ---------------------------------------------------
@@ -859,7 +859,11 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
       this._flashOverlay();
       return;
     }
-    this._go(this._index - 1, reason);
+    // Back onto a slide with a notes sheet (runtime/ink/Sheet.jsx) shows the
+    // sheet, its last step: what was written there is one press away.
+    const before = this._slides[this._index - 1];
+    const sheet = before?.querySelector(':scope > .slide-sheet') ? this._getSteps(before).length - 1 : -1;
+    this._go(this._index - 1, reason, sheet);
   }
   /** Reset to first slide and clear all step state. */
   reset() {

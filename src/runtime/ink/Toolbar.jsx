@@ -35,8 +35,9 @@ const TOOLS = [
 // A small popover above the button that opened it, with a question and its
 // answers. It does not dim anything. While open it takes the keys, so the
 // deck behind it does not turn slides; Escape or a tap elsewhere cancels, and
-// focus stays inside. `choices`: [{ label, onClick, danger }].
-function Popover({ message, choices, onCancel }) {
+// focus stays inside. `choices`: [{ label, onClick, danger }]; `cancel`
+// false leaves out the Cancel button (the button that opened it closes it).
+function Popover({ message, choices, onCancel, cancel = true }) {
   const cancelRef = useRef(null)
   const popRef = useRef(null)
   useEffect(() => {
@@ -46,7 +47,8 @@ function Popover({ message, choices, onCancel }) {
     const shift = Math.max(8 - rect.left, Math.min(0, innerWidth - 8 - rect.right))
     pop.style.setProperty('--shift', `${Math.round(shift)}px`)
     const opener = document.activeElement
-    cancelRef.current?.focus()
+    const first = cancelRef.current ?? pop.querySelector('button')
+    first?.focus()
     const onKey = event => {
       event.stopPropagation()
       if (event.key === 'Escape') { event.preventDefault(); onCancel() }
@@ -68,7 +70,7 @@ function Popover({ message, choices, onCancel }) {
   }, [])
   return <div class="ink-pop" ref={popRef} role="alertdialog" aria-label={message}>
     <span class="ink-pop-text">{message}</span>
-    <button type="button" class="ink-pop-btn" ref={cancelRef} onClick={onCancel}>Cancel</button>
+    {cancel && <button type="button" class="ink-pop-btn" ref={cancelRef} onClick={onCancel}>Cancel</button>}
     {choices.map(({ label, onClick, danger }) => <button type="button" key={label} class={`ink-pop-btn${danger ? ' is-danger' : ''}`} onClick={onClick}>{label}</button>)}
   </div>
 }
@@ -178,6 +180,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
         {sheeting && <Popover
           message="After this slide:"
           choices={[{ label: 'Slide small, room to write', onClick: () => addSheet('2/3') }, { label: 'Blank page', onClick: () => addSheet('blank') }]}
+          cancel={false}
           onCancel={() => setSheeting(null)}
         />}
         {unsheeting && <Popover
