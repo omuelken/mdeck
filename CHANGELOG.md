@@ -1,8 +1,11 @@
 # Changelog
 
-## 3.18.2 — 2026-11-20
+## Unreleased
 
 - A notes sheet: the toolbar's **Notes sheet** gives the slide shown a sheet to write on, the slide small in the top left corner and room around it, or a blank page. It is the slide's last step, kept in the drawings file (`sheets`, with its strokes under `<slide id>#sheet`), and a page of its own after the slide in the reader and in PDFs.
+
+## 3.18.2 — 2026-11-20
+
 - The ink toolbar keeps its buttons in place: colours and sizes come first and stay there, dimmed, while the select tool, the laser or the eraser is in use (a tap on one goes back to the pen or highlighter), and the bin for a selection is always there, greyed out until something is selected.
 - The ink toolbar's button that clears the slide is a page with a cross; the bin is only for deleting a selection.
 
