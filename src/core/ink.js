@@ -11,7 +11,8 @@
 //
 // A notes sheet belongs to the ink too: a slide in `sheets` has a page of
 // its own after it, the slide small in its top left corner (`size` of it,
-// SHEET_SIZES) and room to write around it. The sheet's strokes are kept
+// SHEET_SIZES) and room to write around it; `blank` is the page without the
+// slide. The sheet's strokes are kept
 // under the slide's id with SHEET_LAYER after it (`intro#sheet`), so drawing,
 // erasing and moving work there as on any slide. `sheets` is left out of the
 // file while no slide has one.
@@ -31,13 +32,13 @@ export const inkFileFor = deckPath => String(deckPath).replace(/\.md$/i, '') + '
 export const oldInkFileFor = deckPath => String(deckPath).replace(/\.md$/i, '') + '.ink.json'
 
 export const SHEET_LAYER = '#sheet'
-export const SHEET_SIZES = ['2/3', '1/2']
+export const SHEET_SIZES = ['2/3', '1/2', 'blank']
 /** The ink id of a slide's notes sheet. */
 export const sheetLayer = slideId => slideId + SHEET_LAYER
 /** The slide an ink id belongs to: itself, or the slide of a notes sheet. */
 export const baseSlideId = id => typeof id === 'string' && id.endsWith(SHEET_LAYER) ? id.slice(0, -SHEET_LAYER.length) : id
 /** The scale of the slide on its notes sheet. */
-export const sheetScale = sheet => sheet?.size === '1/2' ? 1 / 2 : 2 / 3
+export const sheetScale = sheet => sheet?.size === 'blank' ? 0 : sheet?.size === '1/2' ? 1 / 2 : 2 / 3
 
 export function emptyInk({ width = 1920, height = 1080 } = {}) {
   return { version: INK_VERSION, width, height, slides: {}, sheets: {} }

@@ -228,5 +228,7 @@ test('a notes sheet is kept with the ink, moves with its slide and is left out o
   assert.equal(baseSlideId('start#sheet'), 'start')
   assert.equal(sheetScale({ size: '1/2' }), 0.5)
   assert.equal(sheetScale(null), 2 / 3)
+  assert.equal(sheetScale({ size: 'blank' }), 0)
+  assert.deepEqual(applyOp(emptyInk(), { type: 'sheet', slideId: 'a', size: 'blank' }).sheets, { a: { size: 'blank' } })
 })
 

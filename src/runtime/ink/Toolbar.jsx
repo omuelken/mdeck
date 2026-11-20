@@ -32,10 +32,11 @@ const TOOLS = [
   ['eraser', 'Eraser'],
 ]
 
-// A small "are you sure" popover above the button that opened it. It does not
-// dim anything. While open it takes the keys, so the deck behind it does not
-// turn slides; Escape or a tap elsewhere cancels, and focus stays inside.
-function ConfirmPopover({ message, confirmLabel, onConfirm, onCancel }) {
+// A small popover above the button that opened it, with a question and its
+// answers. It does not dim anything. While open it takes the keys, so the
+// deck behind it does not turn slides; Escape or a tap elsewhere cancels, and
+// focus stays inside. `choices`: [{ label, onClick, danger }].
+function Popover({ message, choices, onCancel }) {
   const cancelRef = useRef(null)
   const popRef = useRef(null)
   useEffect(() => {
@@ -68,7 +69,7 @@ function ConfirmPopover({ message, confirmLabel, onConfirm, onCancel }) {
   return <div class="ink-pop" ref={popRef} role="alertdialog" aria-label={message}>
     <span class="ink-pop-text">{message}</span>
     <button type="button" class="ink-pop-btn" ref={cancelRef} onClick={onCancel}>Cancel</button>
-    <button type="button" class="ink-pop-btn is-danger" onClick={onConfirm}>{confirmLabel}</button>
+    {choices.map(({ label, onClick, danger }) => <button type="button" key={label} class={`ink-pop-btn${danger ? ' is-danger' : ''}`} onClick={onClick}>{label}</button>)}
   </div>
 }
 
@@ -81,6 +82,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   const [finger, setFinger] = useState(!!stage.inkFinger)
   const [clearing, setClearing] = useState(null) // the slide id awaiting confirmation
   const [unsheeting, setUnsheeting] = useState(null) // the slide whose notes sheet awaits removal
+  const [sheeting, setSheeting] = useState(null) // the slide getting a sheet, while choosing which
   // The pen or the highlighter whose colours and sizes the bar shows: the
   // one in use, or the last one used; a colour or size picks it again.
   const [writer, setWriter] = useState(COLORS[tool] ? tool : 'pen')
@@ -111,15 +113,17 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
     if (!slide?.querySelector(':scope > .slide-sheet')) { if (tries > 0) setTimeout(() => showSheet(tries - 1), 20); return }
     for (let guard = 50; guard > 0 && !stage.sheetShown; guard--) stage.next('click')
   }
-  // Without a sheet: one is added and shown. With one: it is shown, and
-  // when it is shown already, the button asks to take it away.
+  // Without a sheet: the button asks which (the slide small beside room to
+  // write, or a blank page), adds it and shows it. With one: it is shown,
+  // and when it is shown already, the button asks to take it away.
   const sheetButton = () => {
     const id = stage.inkBaseSlideId?.()
     if (!id) return
-    if (stage.sheetShown) { setUnsheeting(open => open ? null : id); return }
-    if (!slideSheet(id)) controller.addSheet(id)
+    if (stage.sheetShown) { setSheeting(null); setUnsheeting(open => open ? null : id); return }
+    if (!slideSheet(id)) { setUnsheeting(null); setSheeting(open => open ? null : id); return }
     showSheet()
   }
+  const addSheet = size => { controller.addSheet(sheeting, size); setSheeting(null); showSheet() }
   const button = (label, icon, action, { active = false, disabled = false } = {}) =>
     <button type="button" class={`ink-btn${active ? ' is-active' : ''}`} title={label} aria-label={label} aria-pressed={active} disabled={disabled} onClick={action}><Icon name={icon} size={20} /></button>
 
@@ -163,20 +167,23 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
       {button('Redo', 'redo', () => controller.redo(), { disabled: !history.canRedo })}
       <span class="ink-anchor">
         {button('Clear this slide', 'clear', () => { const id = slideId(); setClearing(open => open || !id ? null : id) })}
-        {clearing && <ConfirmPopover
+        {clearing && <Popover
           message="Clear this slide?"
-          confirmLabel="Clear"
+          choices={[{ label: 'Clear', danger: true, onClick: () => { controller.clearSlide(clearing); setClearing(null) } }]}
           onCancel={() => setClearing(null)}
-          onConfirm={() => { controller.clearSlide(clearing); setClearing(null) }}
         />}
       </span>
       <span class="ink-anchor">
-        {button('Notes sheet: the slide small, with room to write', 'sheet', sheetButton)}
-        {unsheeting && <ConfirmPopover
+        {button('Notes sheet: room to write after this slide', 'sheet', sheetButton)}
+        {sheeting && <Popover
+          message="After this slide:"
+          choices={[{ label: 'Slide small, room to write', onClick: () => addSheet('2/3') }, { label: 'Blank page', onClick: () => addSheet('blank') }]}
+          onCancel={() => setSheeting(null)}
+        />}
+        {unsheeting && <Popover
           message="Remove this notes sheet and what is written on it?"
-          confirmLabel="Remove"
+          choices={[{ label: 'Remove', danger: true, onClick: () => { stage.prev('click'); controller.removeSheet(unsheeting); setUnsheeting(null) } }]}
           onCancel={() => setUnsheeting(null)}
-          onConfirm={() => { stage.prev('click'); controller.removeSheet(unsheeting); setUnsheeting(null) }}
         />}
       </span>
     </div>

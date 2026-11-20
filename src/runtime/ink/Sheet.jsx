@@ -6,16 +6,16 @@ import { InkLayer } from './InkLayer.jsx'
 
 // A notes sheet (core/ink.js): the slide small in the top left corner, as a
 // still copy with every step shown and its drawings, and room around it to
-// write on, with the sheet's own strokes. `copy` is the slide rendered once
+// write on, with the sheet's own strokes; a blank one is only the room. `copy` is the slide rendered once
 // more, without its sheet (renderSlide.jsx).
 function SheetContent({ id, sheet, copy, width, height }) {
   const scale = sheetScale(sheet)
   return <>
-    <div class="sheet-copy" style={{ width: `${width * scale}px`, height: `${height * scale}px` }}>
+    {scale > 0 && <div class="sheet-copy" style={{ width: `${width * scale}px`, height: `${height * scale}px` }}>
       <div class="sheet-scale" style={{ width: `${width}px`, height: `${height}px`, transform: `scale(${scale})` }}>
         <div class="slide-copy" data-slide-copy data-deck-static inert aria-hidden="true">{copy}</div>
       </div>
-    </div>
+    </div>}
     <InkLayer slideId={sheetLayer(id)} />
   </>
 }
