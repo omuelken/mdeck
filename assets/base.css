@@ -276,6 +276,15 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 }
 /* The overview (O) shows each slide whole, to find it by. */
 deck-stage[data-overview] [data-step] { opacity: 1; }
+/* A copy of another slide (layout: sheet) shows it finished. */
+[data-slide-copy] [data-step] { opacity: 1; transition: none; }
+
+/* ── A copy of another slide, at its design size; the layout scales it ──── */
+.slide-copy, .slide-copy > .slide { width: 100%; height: 100%; }
+.slide-copy { pointer-events: none; }
+/* Its page number is hidden, not left out: the slide keeps its exact layout,
+   so its drawings stay where they were drawn. */
+.slide-copy .slide-footer > span:last-child:not(:first-child) { visibility: hidden; }
 
 /* ── Print ───────────────────────────────────────────────────────────────── */
 @media print {

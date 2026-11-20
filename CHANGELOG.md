@@ -3,6 +3,8 @@
 ## Unreleased
 
 - The ink toolbar keeps its buttons in place: colours and sizes come first and stay there, dimmed, while the select tool, the laser or the eraser is in use (a tap on one goes back to the pen or highlighter), and the bin for a selection is always there, greyed out until something is selected.
+- A blank page after the slide shown, from the drawing toolbar's plus while `mdeck run` saves the drawings: `layout: blank` in the deck file, with no page number; the slides after it keep theirs. All windows reload and go to it.
+- `layout: sheet`, a notes sheet: put after a slide, it shows that slide at two thirds of its size in the top left corner, finished and with its drawings, and leaves the rest of the page to write on during the talk; `size: 1/2` shows it smaller. It has no page number, and the reader and PDFs show it after the slide.
 
 ## 3.18.1 — 2026-11-15
 

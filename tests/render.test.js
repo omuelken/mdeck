@@ -16,7 +16,7 @@ const server = await createServer({ configFile: false, plugins: [preact(), slide
 after(() => server.close())
 const { setCalloutLabels } = await server.ssrLoadModule('/src/runtime/markedSetup.js')
 const { setDeckLanguage } = await server.ssrLoadModule('/src/core/labels.js')
-const { SlideRenderer, manifests, pageNumbers } = await server.ssrLoadModule('/src/layouts/renderSlide.jsx')
+const { SlideRenderer, manifests, pageNumbers, slideProps } = await server.ssrLoadModule('/src/layouts/renderSlide.jsx')
 
 function htmlFragments(node) {
   if (!node || typeof node !== 'object') return ''
@@ -47,7 +47,7 @@ test('nested directives render correctly and preserve code delimiters', () => {
 })
 
 test('deck-local layouts load through the real plugin and share the frame', () => {
-  assert.equal(Object.keys(manifests).length, 9)
+  assert.equal(Object.keys(manifests).length, 10)
   assert.equal(manifests.comparison.title, 'Side-by-side comparison')
   const slide = parseSlides(':::meta\nlayout: comparison\nid: local\n:::\n# Shared\n:::slot left\nLeft[^a]\n:::\n:::slot right\nRight[^b]\n\n[^a]: First source\n[^b]: Second source\n:::').slides[0]
   const node = SlideRenderer({ ...slide, deckConfig: {}, index: 0 })
@@ -128,4 +128,20 @@ test('a blank page has no page number and the slides after it keep theirs', () =
   }
   assert.equal(pageShown(null), false)
   assert.equal(pageShown(2).props.children, '02')
+})
+
+test('a notes sheet shows the slide before as a still copy and has no page number', () => {
+  const deck = parseSlides('# One\n\nBefore the sheet\n\n---\n:::meta\nlayout: sheet\n:::\n\n---\n# Two\n')
+  const props = slideProps(deck.slides, {})
+  assert.deepEqual(props.map(p => p.page), [1, null, 2])
+  assert.equal(props[1].previous, props[0])
+  const html = htmlFragments(SlideRenderer(props[1]))
+  assert.ok(html.includes('Before the sheet'))
+  // The copy is marked, so its steps show and its controls stay still.
+  const find = (node, test) => !node || typeof node !== 'object' ? null : Array.isArray(node) ? node.map(n => find(n, test)).find(Boolean) ?? null
+    : test(node) ? node : find(typeof node.type === 'function' && !['HtmlContent', 'InkLayer'].includes(node.type.name) ? node.type(node.props) : node.props?.children, test)
+  const copy = find(SlideRenderer(props[1]), node => node.props?.['data-slide-copy'])
+  assert.ok(copy && copy.props['data-deck-static'])
+  // Other layouts leave the slide before out.
+  assert.ok(!htmlFragments(SlideRenderer(props[2])).includes('Before the sheet'))
 })

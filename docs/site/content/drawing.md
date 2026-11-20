@@ -22,6 +22,17 @@ On a touch screen such as an iPad, drawing is on as soon as the presenter view o
 
 **Blank page after this slide** (the page with a plus on the toolbar) puts an empty page after the slide shown, for an explanation that no longer fits on it, and goes there. It is a slide with `layout: blank` in your deck file: the header and section stay as on the slide before, the footer shows no page number, and the slides after it keep their numbers, in the audience window, the reader and the PDF. All windows reload to show it. Keep it after the talk with what you drew on it, or delete it in the file or the editor. The button is there while `mdeck run` saves the drawings.
 
+**A notes sheet beside the slide.** Where you know ahead that a slide needs room for an explanation, put a slide with `layout: sheet` right after it:
+
+```markdown
+---
+:::meta
+layout: sheet
+:::
+```
+
+It shows the slide before at two thirds of its size in the top left corner, with every step shown, without its page number, and with what was drawn on it, also what you draw there during the talk; the rest of the page, an L around it, is for writing. `size: 1/2` makes the slide smaller and the room larger. Like a blank page, it has no page number, the slides after it keep theirs, and the reader and PDFs show it after the slide with what you wrote on it. A sheet after a sheet shows the one before it, notes and all.
+
 The audience window, and any other deck window in the same browser, shows every stroke as you draw it.
 
 ## Where drawings are kept
