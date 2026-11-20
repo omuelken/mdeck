@@ -296,7 +296,12 @@ deck-stage > :has(+ section[data-sheet-page][hidden]:last-child) { break-after: 
 .slide-copy, .slide-copy > .slide { width: 100%; height: 100%; }
 .slide-copy { pointer-events: none; }
 [data-slide-copy] [data-step] { opacity: 1; transition: none; }
-.slide-copy .slide-footer > span:last-child:not(:first-child) { visibility: hidden; }
+.slide-copy .slide-footer > span:last-child:not(:first-child),
+.slide-copy .slide-footer > span:last-child:not(:first-child)::before,
+.slide-copy .slide-footer > span:last-child:not(:first-child)::after { visibility: hidden !important; }
+/* Neither the copy nor the sheet's page is a slide of its own: a deck that
+   numbers its slides with a CSS counter does not count them. */
+.slide-copy .slide, section[data-sheet-page] { counter-increment: none !important; }
 
 /* ── Print ───────────────────────────────────────────────────────────────── */
 @media print {
