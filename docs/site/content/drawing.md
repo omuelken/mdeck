@@ -20,18 +20,9 @@ On a touch screen such as an iPad, drawing is on as soon as the presenter view o
 
 **I** hides and shows what was drawn before, for example when a slide should look clean again. The toolbar has the same switch.
 
-**Add a page after this slide** (the page with a plus on the toolbar) asks which: **Blank page** puts an empty page after the slide shown, for an explanation that no longer fits on it, and goes there; **Notes sheet** puts a [notes sheet](#a-notes-sheet) there instead, with the slide small beside the room to write. It is a slide with `layout: blank` in your deck file: the header and section stay as on the slide before, the footer shows no page number, and the slides after it keep their numbers, in the audience window, the reader and the PDF. All windows reload to show it. Keep it after the talk with what you drew on it, or delete it in the file or the editor. The button is there while `mdeck run` saves the drawings.
+**Notes sheet** (the page with a small slide on the toolbar) gives the slide shown a sheet to write on, and asks which: **Slide small, room to write**, the slide in the top left corner, as it looks with every step shown and what was drawn on it, and room around it, all one surface; or a **Blank page**, only room. The sheet is the slide's last step: the button goes there, and from then on the next press after the slide's own steps shows it, and the press back shows the slide again. Going back from the slide after it lands on the sheet. What you write there belongs to the sheet; the slide itself stays as it was. On the sheet, the button asks to remove it, with what is written on it; undo brings both back. The sheet is kept in the drawings file, not in your slides, so a sheet can be prepared before the talk the same way. The reader and PDFs show it as a page of its own after the slide.
 
-<a id="a-notes-sheet"></a>**A notes sheet beside the slide.** Where you know ahead that a slide needs room for an explanation, put a slide with `layout: sheet` right after it (or, during the talk, choose **Notes sheet** under the plus):
-
-```markdown
----
-:::meta
-layout: sheet
-:::
-```
-
-It shows the slide before at two thirds of its size in the top left corner, with every step shown, without its page number, and with what was drawn on it, also what you draw there during the talk; the rest of the page, an L around it, is for writing. `size: 1/2` makes the slide smaller and the room larger. Like a blank page, it has no page number, the slides after it keep theirs, and the reader and PDFs show it after the slide with what you wrote on it. A sheet after a sheet shows the one before it, notes and all.
+A page you plan ahead can also be a slide with `layout: blank` in your deck file: the header and section stay as on the slide before, the footer shows no page number, and the slides after it keep their numbers, in the audience window, the reader and the PDF.
 
 The audience window, and any other deck window in the same browser, shows every stroke as you draw it.
 
@@ -47,7 +38,7 @@ Drawings live in a file next to your slides: `my-talk.drawings.json` for `my-tal
 - The first save of a session keeps a copy of the previous file in `.mdeck-backups`, next to your slides.
 - **Opened from a built folder or a single file**, the page has nowhere to save. Drawings are kept in that browser, and the toolbar's download button saves them as the drawings file, to put next to your slides. Safari may clear such browser data after a week without use, so download it after drawing.
 
-Builds and PDFs include the drawings. In the reader view, which a file from `mdeck send` opens in, a **Drawings** button hides and shows them, also for **Save as PDF**; the browser remembers the choice. To leave them out of a build altogether, add `--no-drawings`:
+Builds and PDFs include the drawings. In the reader view, which a file from `mdeck send` opens in, a **Drawings** button hides and shows them, notes sheets included, also for **Save as PDF**; the browser remembers the choice. To leave them out of a build altogether, add `--no-drawings`:
 
 ```sh
 mdeck pdf my-talk.md --no-drawings

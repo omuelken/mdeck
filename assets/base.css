@@ -276,15 +276,32 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 }
 /* The overview (O) shows each slide whole, to find it by. */
 deck-stage[data-overview] [data-step] { opacity: 1; }
-/* A copy of another slide (layout: sheet) shows it finished. */
-[data-slide-copy] [data-step] { opacity: 1; transition: none; }
 
-/* ── A copy of another slide, at its design size; the layout scales it ──── */
+/* ── Notes sheet (runtime/ink/Sheet.jsx): the slide small in the top left
+   corner and room to write around it, all one surface ───────────────────── */
+.slide-sheet { position: absolute; inset: 0; z-index: 60; background: var(--bg); }
+/* On the stage it is the slide's last step; in print it is a page of its own. */
+.slide-sheet:not([data-step-visible]) { visibility: hidden; pointer-events: none; }
+[data-deck-static] .slide-sheet { display: none; }
+section[data-sheet-page] { display: none; }
+deck-stage[data-deck-static] > section[data-sheet-page]:not([hidden]),
+.reader-page-sheet section[data-sheet-page] { display: flex; }
+/* A slide before a sheet page that does not show is the last page there is. */
+deck-stage > :has(+ section[data-sheet-page][hidden]:last-child) { break-after: auto; page-break-after: auto; }
+.sheet-copy { position: absolute; top: 0; inset-inline-start: 0; overflow: hidden; }
+.sheet-scale { transform-origin: 0 0; }
+[dir=rtl] .sheet-scale { transform-origin: 100% 0; }
+/* The copy of the slide: finished, still, and without its page number, which
+   is hidden rather than left out, so the slide's drawings stay in place. */
 .slide-copy, .slide-copy > .slide { width: 100%; height: 100%; }
 .slide-copy { pointer-events: none; }
-/* Its page number is hidden, not left out: the slide keeps its exact layout,
-   so its drawings stay where they were drawn. */
-.slide-copy .slide-footer > span:last-child:not(:first-child) { visibility: hidden; }
+[data-slide-copy] [data-step] { opacity: 1; transition: none; }
+.slide-copy .slide-footer > span:last-child:not(:first-child),
+.slide-copy .slide-footer > span:last-child:not(:first-child)::before,
+.slide-copy .slide-footer > span:last-child:not(:first-child)::after { visibility: hidden !important; }
+/* Neither the copy nor the sheet's page is a slide of its own: a deck that
+   numbers its slides with a CSS counter does not count them. */
+.slide-copy .slide, section[data-sheet-page] { counter-increment: none !important; }
 
 /* ── Print ───────────────────────────────────────────────────────────────── */
 @media print {

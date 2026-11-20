@@ -3,6 +3,7 @@ import { layouts } from 'virtual:mdeck-extensions'
 import { resolveLayoutProps } from './layoutProps'
 import { SlideFrame, prepareSlide } from './layoutApi'
 import { includeOf } from '../core/parseSlides.js'
+import { SheetStep, SheetPage } from '../runtime/ink/Sheet.jsx'
 
 // Every layout — built-in or deck-local — arrives through the same registry.
 export { layouts }
@@ -19,8 +20,7 @@ function includeCard(slide) {
 }
 
 // The page number each slide shows: a layout with `numbered = false` (a blank
-// page added during the talk) shows none, and the others count on as if it
-// were not there.
+// page) shows none, and the others count on as if it were not there.
 export function pageNumbers(slides) {
   let page = 0
   return slides.map(slide => {
@@ -29,19 +29,14 @@ export function pageNumbers(slides) {
   })
 }
 
-// What SlideRenderer takes for each slide of a deck. `previous` is the slide
-// before, for a layout that shows it (the notes sheet).
+// What SlideRenderer takes for each slide of a deck.
 export function slideProps(slides, deckConfig) {
   const pages = pageNumbers(slides)
-  const list = []
-  slides.forEach((slide, index) => list.push({ id: slide.id, regions: slide.regions, meta: slide.meta, content: slide.content, deckConfig, index, page: pages[index], total: slides.length, previous: list[index - 1] ?? null }))
-  return list
+  return slides.map((slide, index) => ({ id: slide.id, regions: slide.regions, meta: slide.meta, content: slide.content, deckConfig, index, page: pages[index], total: slides.length }))
 }
 
-// A layout's `previous`: the slide before, as a still copy with every step
-// shown, its drawings, and no controls (data-deck-static); base.css hides its
-// page number. It is drawn only by a layout that places it.
-const slideCopy = previous => previous && <div class="slide-copy" data-slide-copy data-deck-static inert aria-hidden="true"><SlideRenderer {...previous} /></div>
+// The slide once more, for its notes sheet: `copy` leaves the sheet out.
+const sheetParts = given => ({ id: given.id, copy: <SlideRenderer {...given} copy />, width: given.deckConfig?.width ?? 1920, height: given.deckConfig?.height ?? 1080 })
 
 export function SlideRenderer(given) {
   const slide = includeCard(given)
@@ -49,6 +44,13 @@ export function SlideRenderer(given) {
   const entry = Object.hasOwn(layouts, id) ? layouts[id] : layouts.generic
   const prepared = prepareSlide(slide)
   const props = resolveLayoutProps(entry.manifest, slide.meta)
-  const context = { ...prepared, previous: slideCopy(given.previous), props, manifest: entry.manifest }
+  // A notes sheet, if the slide's ink has one, is its last step (Sheet.jsx).
+  const sheet = given.copy || !given.id ? null : <SheetStep {...sheetParts(given)} />
+  const context = { ...prepared, props, manifest: entry.manifest, sheet }
   return <SlideFrame {...context}>{h(entry.render, context)}</SlideFrame>
+}
+
+/** The page of a slide's notes sheet, after the slide in print, PDFs and the reader's Read mode. */
+export function SlideSheetPage(given) {
+  return <SheetPage {...sheetParts(given)} />
 }

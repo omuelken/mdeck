@@ -16,13 +16,13 @@ const server = await createServer({ configFile: false, plugins: [preact(), slide
 after(() => server.close())
 const { setCalloutLabels } = await server.ssrLoadModule('/src/runtime/markedSetup.js')
 const { setDeckLanguage } = await server.ssrLoadModule('/src/core/labels.js')
-const { SlideRenderer, manifests, pageNumbers, slideProps } = await server.ssrLoadModule('/src/layouts/renderSlide.jsx')
+const { SlideRenderer, manifests, pageNumbers } = await server.ssrLoadModule('/src/layouts/renderSlide.jsx')
 
 function htmlFragments(node) {
   if (!node || typeof node !== 'object') return ''
   if (Array.isArray(node)) return node.map(htmlFragments).join('\n')
   // Components with hooks cannot be called outside a render; they add no slide HTML.
-  if (typeof node.type === 'function' && !['HtmlContent', 'InkLayer'].includes(node.type.name)) return htmlFragments(node.type(node.props))
+  if (typeof node.type === 'function' && !['HtmlContent', 'InkLayer', 'SheetStep', 'SheetPage'].includes(node.type.name)) return htmlFragments(node.type(node.props))
   return [node.props?.html, node.props?.dangerouslySetInnerHTML?.__html, htmlFragments(node.props?.children)].filter(Boolean).join('\n')
 }
 
@@ -47,7 +47,7 @@ test('nested directives render correctly and preserve code delimiters', () => {
 })
 
 test('deck-local layouts load through the real plugin and share the frame', () => {
-  assert.equal(Object.keys(manifests).length, 10)
+  assert.equal(Object.keys(manifests).length, 9)
   assert.equal(manifests.comparison.title, 'Side-by-side comparison')
   const slide = parseSlides(':::meta\nlayout: comparison\nid: local\n:::\n# Shared\n:::slot left\nLeft[^a]\n:::\n:::slot right\nRight[^b]\n\n[^a]: First source\n[^b]: Second source\n:::').slides[0]
   const node = SlideRenderer({ ...slide, deckConfig: {}, index: 0 })
@@ -70,7 +70,7 @@ test('lecture callouts are labelled in the deck language, and a written title wi
 test("a chapter slide's label is in the deck's language, and a regional code uses it too", () => {
   // The label is plain text in the layout's markup, not HTML from Markdown.
   const texts = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(texts).join(' ') : !node || typeof node !== 'object' ? ''
-    : typeof node.type === 'function' && !['HtmlContent', 'InkLayer'].includes(node.type.name) ? texts(node.type(node.props)) : texts(node.props?.children)
+    : typeof node.type === 'function' && !['HtmlContent', 'InkLayer', 'SheetStep', 'SheetPage'].includes(node.type.name) ? texts(node.type(node.props)) : texts(node.props?.children)
   const chapter = () => texts(SlideRenderer({ meta: { layout: 'chapter', number: 2 }, content: '# Methods', deckConfig: {}, index: 0 }))
   setDeckLanguage({ lang: 'de-CH' })
   setCalloutLabels({ lang: 'de-CH' })
@@ -123,25 +123,9 @@ test('a blank page has no page number and the slides after it keep theirs', () =
   assert.deepEqual(pageNumbers(deck.slides), [1, null, 2])
   const pageShown = page => {
     const node = SlideRenderer({ ...deck.slides[1], deckConfig: {}, index: 1, page })
-    const footer = node.type(node.props).props.children.at(-2)
+    const footer = node.type(node.props).props.children.find(child => child?.type?.name === 'SlideFooter')
     return footer.type(footer.props).props.children[1]
   }
   assert.equal(pageShown(null), false)
   assert.equal(pageShown(2).props.children, '02')
-})
-
-test('a notes sheet shows the slide before as a still copy and has no page number', () => {
-  const deck = parseSlides('# One\n\nBefore the sheet\n\n---\n:::meta\nlayout: sheet\n:::\n\n---\n# Two\n')
-  const props = slideProps(deck.slides, {})
-  assert.deepEqual(props.map(p => p.page), [1, null, 2])
-  assert.equal(props[1].previous, props[0])
-  const html = htmlFragments(SlideRenderer(props[1]))
-  assert.ok(html.includes('Before the sheet'))
-  // The copy is marked, so its steps show and its controls stay still.
-  const find = (node, test) => !node || typeof node !== 'object' ? null : Array.isArray(node) ? node.map(n => find(n, test)).find(Boolean) ?? null
-    : test(node) ? node : find(typeof node.type === 'function' && !['HtmlContent', 'InkLayer'].includes(node.type.name) ? node.type(node.props) : node.props?.children, test)
-  const copy = find(SlideRenderer(props[1]), node => node.props?.['data-slide-copy'])
-  assert.ok(copy && copy.props['data-deck-static'])
-  // Other layouts leave the slide before out.
-  assert.ok(!htmlFragments(SlideRenderer(props[2])).includes('Before the sheet'))
 })

@@ -4,7 +4,6 @@
 //
 //   GET  /__mdeck/ink        { ink, deckHash }
 //   POST /__mdeck/ink/ops    { deckHash, ops } → { deckHash, renamed }
-//   POST /__mdeck/ink/blank  { deckHash, after, layout } → { deckHash, index }
 //
 // A slide that gets ink but has no `id:` of its own gets one, written into
 // its settings, so the ink stays with it when slides are inserted. Ids by
@@ -13,21 +12,13 @@
 // own writes do not reload the open windows (ownWrites.js); instead it sends
 // `mdeck:ink`: with `ops` the pages apply just those changes, without them
 // (the file was replaced, a change was refused) they fetch the ink again.
-//
-// A blank page (layout: blank) or a notes sheet (layout: sheet, the slide
-// beside room to write) goes in after the slide shown, for what does not fit
-// on it any more. That write is a change to the deck like the
-// author's, so the windows reload and show it.
 import { existsSync, readFileSync, writeFileSync, renameSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs'
 import { resolve, dirname, basename } from 'node:path'
 import { parseSlides } from '../core/parseSlides.js'
-import { setSlideMeta, insertSlide } from '../core/editDeck.js'
+import { setSlideMeta } from '../core/editDeck.js'
 import { slideTitle } from '../core/outline.js'
 import { slug } from '../live/code.js'
-
-// The pages the toolbar may put in after a slide.
-const PAGE_LAYOUTS = ['blank', 'sheet']
-import { inkFileFor, normalizeInk, emptyInk, applyOp, serializeInk, isSlideId } from '../core/ink.js'
+import { inkFileFor, normalizeInk, emptyInk, applyOp, serializeInk, isSlideId, baseSlideId, sheetLayer, SHEET_SIZES } from '../core/ink.js'
 import { hashSource, isAllowedRequest, send, readJson, BACKUP_DIR } from './editorPlugin.js'
 import { markOwnWrite } from './ownWrites.js'
 import { expandDeck } from './include.js'
@@ -38,7 +29,7 @@ const BACKUPS_KEPT = 10
 const MAX_OPS = 1000
 const MAX_POINTS = 10000
 const MAX_IDS = 10000
-const OP_TYPES = ['add', 'remove', 'clear']
+const OP_TYPES = ['add', 'remove', 'clear', 'sheet']
 
 // Why a request's changes cannot be taken, or null when they are well formed.
 function badOps(ops) {
@@ -48,7 +39,8 @@ function badOps(ops) {
     if (!op || typeof op !== 'object' || !OP_TYPES.includes(op.type)) return 'Unknown change'
     if (!isSlideId(op.slideId)) return 'Not a slide id'
     if (op.type === 'add' && (!op.stroke || typeof op.stroke !== 'object' || !Array.isArray(op.stroke.points) || op.stroke.points.length > MAX_POINTS)) return `A stroke has at most ${MAX_POINTS} points`
-    if (op.type !== 'add' && (!Array.isArray(op.ids) || op.ids.length > MAX_IDS)) return `At most ${MAX_IDS} strokes per change`
+    if (op.type === 'sheet' && op.size != null && !SHEET_SIZES.includes(op.size)) return `A notes sheet's size is ${SHEET_SIZES.join(' or ')}`
+    if ((op.type === 'remove' || op.type === 'clear') && (!Array.isArray(op.ids) || op.ids.length > MAX_IDS)) return `At most ${MAX_IDS} strokes per change`
   }
   return null
 }
@@ -129,7 +121,7 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
     const moved = []
     ids.forEach((id, i) => {
       const from = before[i]
-      if (from !== id && !ids.includes(from) && !before.includes(id) && ink.slides[from]) {
+      if (from !== id && !ids.includes(from) && !before.includes(id) && (ink.slides[from] || ink.slides[sheetLayer(from)] || ink.sheets[from])) {
         ink = applyOp(ink, { type: 'rename', from, to: id })
         moved.push({ from, to: id })
       }
@@ -172,26 +164,30 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
         return fromIncludes.has(id)
       }
       for (const raw of ops) {
-        const op = { ...raw, slideId: alias.get(raw.slideId) ?? raw.slideId }
-        if (op.type === 'add') {
-          const index = deck.slides.findIndex(slide => slide.id === op.slideId)
-          if (index < 0 && !included(op.slideId)) return refuse(`No slide "${op.slideId}" in the deck any more`)
+        // A notes sheet's strokes (intro#sheet) belong to their slide.
+        const base = baseSlideId(raw.slideId)
+        const layer = raw.slideId.slice(base.length)
+        const op = { ...raw, slideId: (alias.get(base) ?? base) + layer }
+        if (op.type === 'add' || (op.type === 'sheet' && op.size != null)) {
+          const slideId = baseSlideId(op.slideId)
+          const index = deck.slides.findIndex(slide => slide.id === slideId)
+          if (index < 0 && !included(slideId)) return refuse(`No slide "${slideId}" in the deck any more`)
           const slide = deck.slides[index]
           if (slide && slide.meta.id == null) {
             // An id by position: only trusted for the deck the device saw.
             if (deckHash !== hash) return refuse('The deck changed; reload')
             const id = newSlideId(deck, slide, index)
-            renames.push({ from: op.slideId, to: id, before: hash })
-            source = setSlideMeta(deck, op.slideId, { id })
+            renames.push({ from: slideId, to: id, before: hash })
+            source = setSlideMeta(deck, slideId, { id })
             markOwnWrite(abs, source)
             writeAtomic(abs, source)
             deck = parseSlides(source)
             hash = hashSource(source)
             deckHash = hash
-            ink = applyOp(ink, { type: 'rename', from: op.slideId, to: id })
-            renamed.push({ from: op.slideId, to: id })
-            alias.set(op.slideId, id)
-            op.slideId = id
+            ink = applyOp(ink, { type: 'rename', from: slideId, to: id })
+            renamed.push({ from: slideId, to: id })
+            alias.set(slideId, id)
+            op.slideId = id + layer
           }
         }
         ink = applyOp(ink, op)
@@ -202,18 +198,6 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
       schedule()
       onChange({ renamed, ops: done, deckHash: hash })
       return { status: 200, deckHash: hash, renamed }
-    },
-    insertBlank(after, deckHash, layout = 'blank') {
-      if (!isSlideId(after)) return { status: 400, error: 'Not a slide id' }
-      if (!PAGE_LAYOUTS.includes(layout)) return { status: 400, error: `Not a page to put in: ${String(layout).slice(0, 40)}` }
-      const { deck, hash } = readDeck()
-      const index = deck.slides.findIndex(slide => slide.id === after)
-      if (index < 0) return { status: 409, error: `No slide "${after}" in the deck file`, deckHash: hash }
-      // An id by position: only trusted for the deck the device saw.
-      if (deck.slides[index].meta.id == null && deckHash !== hash) return { status: 409, error: 'The deck changed; reload', deckHash: hash }
-      const { source } = insertSlide(deck, index + 1, `:::meta\nlayout: ${layout}\n:::\n`)
-      writeAtomic(abs, source)
-      return { status: 200, deckHash: hashSource(source), index: index + 1 }
     },
     // Drops one slide's drawings, or all of them, from the launch page; the
     // open windows fetch the ink again. Like any write, it keeps the
@@ -237,18 +221,13 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
 export function inkMiddleware(file, { authorize = isAllowedRequest } = {}) {
   return async (request, response, next) => {
     const { pathname } = new URL(request.url, 'http://localhost')
-    if (pathname !== '/' && pathname !== '/ops' && pathname !== '/blank') return next()
+    if (pathname !== '/' && pathname !== '/ops') return next()
     if (!authorize(request)) return send(response, 403, { error: 'Only the presenter can change the ink' })
     try {
       if (pathname === '/' && request.method === 'GET') return send(response, 200, file.read())
       if (pathname === '/ops' && request.method === 'POST') {
         const { deckHash, ops } = await readJson(request)
         const result = file.apply(ops, deckHash)
-        return send(response, result.status, result)
-      }
-      if (pathname === '/blank' && request.method === 'POST') {
-        const { deckHash, after, layout } = await readJson(request)
-        const result = file.insertBlank(after, deckHash, layout)
         return send(response, result.status, result)
       }
       response.setHeader('Allow', pathname === '/' ? 'GET' : 'POST')

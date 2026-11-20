@@ -3,8 +3,8 @@
 // change on to the other windows (bus.js). Every change goes to
 // `save(op)` when a server keeps the ink file; otherwise it is kept in this
 // browser (localStorage) and the file can be downloaded.
-import { currentInk, changeInk, slideStrokes, resolveSlideId } from './store.js'
-import { hitTest, serializeInk } from '../../core/ink.js'
+import { currentInk, changeInk, slideStrokes, slideSheet, resolveSlideId } from './store.js'
+import { hitTest, serializeInk, sheetLayer, SHEET_SIZES } from '../../core/ink.js'
 import { inkFileName } from 'virtual:deck-ink'
 
 function deviceId() {
@@ -25,13 +25,12 @@ export function createInkController({ storageKey, save = null, publish = () => {
   const listeners = new Set()
   const notify = () => { for (const listener of listeners) listener(state()) }
   let saving = save
-  let insertBlank = null
 
   // Changes made in this browser without a server, from earlier visits too.
   let log = saving ? [] : readLog(storageKey)
   for (const op of log) changeInk(op)
 
-  const state = () => ({ canUndo: undoStack.length > 0, canRedo: redoStack.length > 0, unsaved: !saving && log.length > 0, saving: !!saving, canBlank: !!insertBlank })
+  const state = () => ({ canUndo: undoStack.length > 0, canRedo: redoStack.length > 0, unsaved: !saving && log.length > 0, saving: !!saving })
 
   function send(ops) {
     // Another window of this deck may have added to the log meanwhile.
@@ -71,13 +70,9 @@ export function createInkController({ storageKey, save = null, publish = () => {
     share(op) { publish(op) },
     /** Sends a change without adding it to the undo history. */
     replay(op) { send([op]) },
-    /**
-     * From here on, changes go to `save(op)` and the local copy is dropped;
-     * `blank(slideId, index, layout)` puts a blank page or a notes sheet after a slide (server.js).
-     */
-    useServer(saveOp, { blank = null } = {}) {
+    /** From here on, changes go to `save(op)` and the local copy is dropped. */
+    useServer(saveOp) {
       saving = saveOp
-      insertBlank = blank
       log = []
       try { localStorage.removeItem(storageKey) } catch {}
       notify()
@@ -114,6 +109,20 @@ export function createInkController({ storageKey, save = null, publish = () => {
       commit([{ type: 'clear', slideId, ids: strokes.map(stroke => stroke.id) }], strokes.map(stroke => ({ type: 'add', slideId, stroke })))
     },
 
+    /** Gives the slide a notes sheet (core/ink.js); undo takes it away. */
+    addSheet(slideId, size = SHEET_SIZES[0]) {
+      if (slideSheet(slideId)) return
+      commit([{ type: 'sheet', slideId, size }], [{ type: 'sheet', slideId, size: null }])
+    },
+    /** Takes the slide's notes sheet away, with what was written on it; undo brings both back. */
+    removeSheet(slideId) {
+      const sheet = slideSheet(slideId)
+      if (!sheet) return
+      const layer = sheetLayer(slideId)
+      const strokes = slideStrokes(layer)
+      commit([...strokes.length ? [{ type: 'clear', slideId: layer, ids: strokes.map(stroke => stroke.id) }] : [], { type: 'sheet', slideId, size: null }],
+        [{ type: 'sheet', slideId, size: sheet.size }, ...strokes.map(stroke => ({ type: 'add', slideId: layer, stroke }))])
+    },
     undo() {
       const entry = undoStack.pop()
       if (!entry) return
@@ -130,8 +139,6 @@ export function createInkController({ storageKey, save = null, publish = () => {
       notify()
     },
 
-    /** A blank page, or with layout 'sheet' a notes sheet, after the slide at `index`, in the deck file; resolves to whether it went in. */
-    async insertBlank(slideId, index, layout = 'blank') { return insertBlank ? insertBlank(slideId, index, layout) : false },
 
     /** Saves the ink as its file, for putting it next to the deck. */
     download() {

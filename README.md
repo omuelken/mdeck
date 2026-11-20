@@ -17,14 +17,14 @@
 > [!NOTE]
 > **This is the `unterricht` branch of [omuelken/mdeck](https://github.com/omuelken/mdeck)**, a fork of
 > [tilman-schieber/mdeck](https://github.com/tilman-schieber/mdeck) used for teaching
-> (Mechanik & Wärme, FHNW). It follows Tilman's `main` (now 3.18.1 and the steady ink toolbar, #38) and adds:
+> (Mechanik & Wärme, FHNW). It follows Tilman's `main` (now 3.18.2) and adds:
 >
 > | Change | Status |
 > |---|---|
 > | A countdown for the room, set in the presenter view, with a sound at the end (`<countdown />`, in [`contrib/countdown`](contrib/countdown/Countdown.jsx)) | only here |
 > | iPad tips: switch Scribble off ([drawing.md](docs/site/content/drawing.md)) | only here |
-> | A blank page after the slide shown, from the drawing toolbar (`layout: blank`: no page number, the others keep theirs) | draft PR [#39](https://github.com/tilman-schieber/mdeck/pull/39) |
-> | A notes sheet: the slide before, small, beside room to write (`layout: sheet`); the toolbar's plus asks for a blank page or a notes sheet ([drawing.md](docs/site/content/drawing.md)) | draft PR [#39](https://github.com/tilman-schieber/mdeck/pull/39) |
+> | `layout: blank`: a page planned in the deck file, with no page number; the others keep theirs | only here |
+> | Notes sheets as part of the ink: the toolbar's **Notes sheet** adds the slide small with room to write, or a blank page, as the slide's last step, kept in the drawings file ([drawing.md](docs/site/content/drawing.md)) | draft PR [#40](https://github.com/tilman-schieber/mdeck/pull/40) |
 >
 > To use it: clone, `git switch unterricht`, `npm install`, `npm link` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 > Everything below is Tilman's README.

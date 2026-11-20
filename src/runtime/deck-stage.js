@@ -356,7 +356,8 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     this._slides = assigned.filter((el) => {
       // Skip template/style/script nodes even if someone slots them.
       const tag = el.tagName;
-      return tag !== 'TEMPLATE' && tag !== 'SCRIPT' && tag !== 'STYLE';
+      // A notes sheet's own page shows only in print (runtime/ink/Sheet.jsx).
+      return tag !== 'TEMPLATE' && tag !== 'SCRIPT' && tag !== 'STYLE' && !el.hasAttribute('data-sheet-page');
     });
 
     this._slides.forEach((slide, i) => {
@@ -582,6 +583,9 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     if (index < 0 || index >= this._slides.length) { if (freezeChanged) this._broadcastState('sync'); return; }
     const max = this._getSteps(this._slides[index]).length - 1;
     const step = Math.max(-1, Math.min(max, target.step));
+    // A step that is not there yet (a notes sheet whose ink is still on its
+    // way) is shown once it comes (stepsChanged).
+    this._wanted = target.step > max ? { index, step: target.step } : null;
     // A position without `blank` (a follower paging on its own) leaves it.
     const blankChanged = typeof state.blank === 'boolean' && state.blank !== this._blank;
     if (blankChanged) this._applyBlank(state.blank);
@@ -605,6 +609,22 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
       this._index = index;
       this._applyIndex({ reason: 'sync', step });
     }
+  }
+
+  /**
+   * A slide's steps changed while it is shown: a notes sheet came or went
+   * (runtime/ink/Sheet.jsx). The step asked for before it was there is shown
+   * now; a step that is gone goes back to the last one there is.
+   */
+  stepsChanged() {
+    const index = this._index;
+    const max = this._getSteps(this._slides[index]).length - 1;
+    const wanted = this._wanted?.index === index ? Math.min(max, this._wanted.step) : null;
+    const step = this._stepMap.get(index) ?? -1;
+    if (wanted != null && wanted > step) { this._wanted = null; this._stepMap.set(index, wanted); }
+    else if (step > max) this._stepMap.set(index, max);
+    else { this._applySteps(index); return; }
+    this._applySteps(index);
   }
 
   _flashOverlay() {
@@ -706,7 +726,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   // outline of its own.
   _isPage() { return this.parentElement === document.body; }
 
-  _go(i, reason = 'api') {
+  _go(i, reason = 'api', step = -1) {
     if (!this._slides.length) return;
     if (this._frozenHere()) { this._thaw(reason); return; }
     const clamped = Math.max(0, Math.min(this._slides.length - 1, i));
@@ -715,7 +735,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
       return;
     }
     this._index = clamped;
-    this._applyIndex({ showOverlay: true, broadcast: true, reason });
+    this._applyIndex({ showOverlay: true, broadcast: true, reason, step });
   }
 
   // Step reveal helpers ---------------------------------------------------
@@ -839,7 +859,11 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
       this._flashOverlay();
       return;
     }
-    this._go(this._index - 1, reason);
+    // Back onto a slide with a notes sheet (runtime/ink/Sheet.jsx) shows the
+    // sheet, its last step: what was written there is one press away.
+    const before = this._slides[this._index - 1];
+    const sheet = before?.querySelector(':scope > .slide-sheet') ? this._getSteps(before).length - 1 : -1;
+    this._go(this._index - 1, reason, sheet);
   }
   /** Reset to first slide and clear all step state. */
   reset() {

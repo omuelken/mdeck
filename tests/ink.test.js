@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { inkFileFor, emptyInk, normalizeInk, validateInk, orphanIds, applyOp, isSlideId, hitTest, strokePath, inkOrder, translateStroke, insidePolygon, strokesInLasso, strokesBox, inkPaint, snapAngle, spacedPoints, INK_SPACING } from '../src/core/ink.js'
+import { inkFileFor, emptyInk, normalizeInk, validateInk, orphanIds, applyOp, isSlideId, hitTest, strokePath, inkOrder, translateStroke, insidePolygon, strokesInLasso, strokesBox, inkPaint, snapAngle, spacedPoints, INK_SPACING, serializeInk, baseSlideId, sheetScale } from '../src/core/ink.js'
 import { paletteTokens } from '../src/extensions/appearance.js'
 import { slidesPlugin } from '../src/build/slidesPlugin.js'
 import { checkDeck } from '../src/build/check.js'
@@ -210,3 +210,25 @@ test('built files leave out what is on hidden slides: its words, drawings and an
   assert.deepEqual(Object.keys(json(load('virtual:deck-results', { stripHidden: true })).rooms), ['shown'])
   assert.deepEqual(Object.keys(json(load('virtual:deck-ink', {})).slides), ['slide-2', 'slide-3'])
 })
+
+test('a notes sheet is kept with the ink, moves with its slide and is left out of the file while there is none', () => {
+  const stroke = { id: 'a:1', tool: 'pen', color: '#e11d48', size: 6, points: [[1, 2, 0.5]] }
+  let ink = applyOp(emptyInk(), { type: 'sheet', slideId: 'intro', size: '1/2' })
+  ink = applyOp(ink, { type: 'add', slideId: 'intro#sheet', stroke })
+  assert.equal(applyOp(ink, { type: 'sheet', slideId: 'intro#sheet', size: '2/3' }), ink, 'a sheet has no sheet')
+  const moved = applyOp(ink, { type: 'rename', from: 'intro', to: 'start' })
+  assert.deepEqual(moved.sheets, { start: { size: '1/2' } })
+  assert.deepEqual(Object.keys(moved.slides), ['start#sheet'])
+  const back = normalizeInk(JSON.parse(serializeInk(moved)))
+  assert.deepEqual(back.sheets, moved.sheets)
+  assert.deepEqual(orphanIds(moved, [{ id: 'other' }]), ['start'])
+  assert.deepEqual(orphanIds(moved, [{ id: 'start' }]), [])
+  assert.doesNotMatch(serializeInk(emptyInk()), /sheets/)
+  assert.deepEqual(applyOp(moved, { type: 'sheet', slideId: 'start', size: null }).sheets, {})
+  assert.equal(baseSlideId('start#sheet'), 'start')
+  assert.equal(sheetScale({ size: '1/2' }), 0.5)
+  assert.equal(sheetScale(null), 2 / 3)
+  assert.equal(sheetScale({ size: 'blank' }), 0)
+  assert.deepEqual(applyOp(emptyInk(), { type: 'sheet', slideId: 'a', size: 'blank' }).sheets, { a: { size: 'blank' } })
+})
+
