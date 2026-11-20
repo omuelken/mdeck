@@ -143,7 +143,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
       {button('Undo', 'undo', () => controller.undo(), { disabled: !history.canUndo })}
       {button('Redo', 'redo', () => controller.redo(), { disabled: !history.canRedo })}
       <span class="ink-anchor">
-        {button('Clear this slide', 'trash', () => { const id = slideId(); setClearing(open => open || !id ? null : id) })}
+        {button('Clear this slide', 'clear', () => { const id = slideId(); setClearing(open => open || !id ? null : id) })}
         {clearing && <ConfirmPopover
           message="Clear this slide?"
           confirmLabel="Clear"
