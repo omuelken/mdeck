@@ -73,7 +73,7 @@ export function createInkController({ storageKey, save = null, publish = () => {
     replay(op) { send([op]) },
     /**
      * From here on, changes go to `save(op)` and the local copy is dropped;
-     * `blank(slideId, index)` puts a blank page after a slide (server.js).
+     * `blank(slideId, index, layout)` puts a blank page or a notes sheet after a slide (server.js).
      */
     useServer(saveOp, { blank = null } = {}) {
       saving = saveOp
@@ -130,8 +130,8 @@ export function createInkController({ storageKey, save = null, publish = () => {
       notify()
     },
 
-    /** A blank page after the slide at `index`, in the deck file; resolves to whether it went in. */
-    async insertBlank(slideId, index) { return insertBlank ? insertBlank(slideId, index) : false },
+    /** A blank page, or with layout 'sheet' a notes sheet, after the slide at `index`, in the deck file; resolves to whether it went in. */
+    async insertBlank(slideId, index, layout = 'blank') { return insertBlank ? insertBlank(slideId, index, layout) : false },
 
     /** Saves the ink as its file, for putting it next to the deck. */
     download() {

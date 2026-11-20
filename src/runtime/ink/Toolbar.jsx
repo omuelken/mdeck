@@ -7,14 +7,13 @@ import './toolbar.css'
 // The floating ink toolbar: colours and sizes of the pen and the highlighter
 // (each keeps its own; one pen colour is the theme's accent), first, so the
 // tools after them stay in place; the tools; deleting a selection; undo/redo,
-// clear slide, a blank page after this one (where `mdeck run` can write the
-// deck); hide saved ink, drawing with a finger, and the drawings file. Every
-// button is always there, so none moves when the tool changes. Swipes and the
-// deck's own controls and keys
-// turn the slides. It folds into one button in the bottom right corner,
-// showing the current tool, and drawing goes on while it is folded. It drives
-// a <deck-stage> (inkTool, inkFinger, data-ink-hidden), an ink controller and
-// the selection.
+// clear slide, a blank page or a notes sheet after this one (where `mdeck run`
+// can write the deck); hide saved ink, drawing with a finger, and the drawings
+// file. Every button is always there, so none moves when the tool changes.
+// Swipes and the deck's own controls and keys turn the slides. It folds into
+// one button in the bottom right corner, showing the current tool, and drawing
+// goes on while it is folded. It drives a <deck-stage> (inkTool, inkFinger,
+// data-ink-hidden), an ink controller and the selection.
 
 // "accent" is stored as the word and drawn in the theme's --accent, so the
 // drawing follows the palette (inkPaint in core/ink.js).
@@ -33,10 +32,11 @@ const TOOLS = [
   ['eraser', 'Eraser'],
 ]
 
-// A small "are you sure" popover above the button that opened it. It does not
-// dim anything. While open it takes the keys, so the deck behind it does not
-// turn slides; Escape or a tap elsewhere cancels, and focus stays inside.
-function ConfirmPopover({ message, confirmLabel, onConfirm, onCancel }) {
+// A small popover above the button that opened it, with a question and its
+// answers. It does not dim anything. While open it takes the keys, so the
+// deck behind it does not turn slides; Escape or a tap elsewhere cancels, and
+// focus stays inside. `choices`: [{ label, onClick, danger }].
+function Popover({ message, choices, onCancel }) {
   const cancelRef = useRef(null)
   const popRef = useRef(null)
   useEffect(() => {
@@ -69,7 +69,7 @@ function ConfirmPopover({ message, confirmLabel, onConfirm, onCancel }) {
   return <div class="ink-pop" ref={popRef} role="alertdialog" aria-label={message}>
     <span class="ink-pop-text">{message}</span>
     <button type="button" class="ink-pop-btn" ref={cancelRef} onClick={onCancel}>Cancel</button>
-    <button type="button" class="ink-pop-btn is-danger" onClick={onConfirm}>{confirmLabel}</button>
+    {choices.map(({ label, onClick, danger }) => <button type="button" key={label} class={`ink-pop-btn${danger ? ' is-danger' : ''}`} onClick={onClick}>{label}</button>)}
   </div>
 }
 
@@ -81,6 +81,7 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
   const [hidden, setHidden] = useState(stage.hasAttribute('data-ink-hidden'))
   const [finger, setFinger] = useState(!!stage.inkFinger)
   const [clearing, setClearing] = useState(null) // the slide id awaiting confirmation
+  const [adding, setAdding] = useState(null) // the slide a page goes in after, while choosing which
   // The pen or the highlighter whose colours and sizes the bar shows: the
   // one in use, or the last one used; a colour or size picks it again.
   const [writer, setWriter] = useState(COLORS[tool] ? tool : 'pen')
@@ -146,14 +147,23 @@ export function InkToolbar({ stage, controller, selection, onDone }) {
       {button('Redo', 'redo', () => controller.redo(), { disabled: !history.canRedo })}
       <span class="ink-anchor">
         {button('Clear this slide', 'trash', () => { const id = slideId(); setClearing(open => open || !id ? null : id) })}
-        {clearing && <ConfirmPopover
+        {clearing && <Popover
           message="Clear this slide?"
-          confirmLabel="Clear"
+          choices={[{ label: 'Clear', danger: true, onClick: () => { controller.clearSlide(clearing); setClearing(null) } }]}
           onCancel={() => setClearing(null)}
-          onConfirm={() => { controller.clearSlide(clearing); setClearing(null) }}
         />}
       </span>
-      {history.canBlank && button('Blank page after this slide', 'blank-page', () => { const id = slideId(); if (id) controller.insertBlank(id, stage.index) })}
+      {history.canBlank && <span class="ink-anchor">
+        {button('Add a page after this slide', 'blank-page', () => { const id = slideId(); setAdding(open => open || !id ? null : { id, index: stage.index }) })}
+        {adding && <Popover
+          message="After this slide:"
+          choices={[
+            { label: 'Blank page', onClick: () => { controller.insertBlank(adding.id, adding.index, 'blank'); setAdding(null) } },
+            { label: 'Notes sheet', onClick: () => { controller.insertBlank(adding.id, adding.index, 'sheet'); setAdding(null) } },
+          ]}
+          onCancel={() => setAdding(null)}
+        />}
+      </span>}
     </div>
     <div class="ink-group">
       {button(hidden ? 'Show saved ink' : 'Hide saved ink', hidden ? 'eye-off' : 'eye', () => setHidden(!hidden), { active: hidden })}

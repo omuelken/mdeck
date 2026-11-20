@@ -4,7 +4,7 @@
 //
 //   GET  /__mdeck/ink        { ink, deckHash }
 //   POST /__mdeck/ink/ops    { deckHash, ops } → { deckHash, renamed }
-//   POST /__mdeck/ink/blank  { deckHash, after } → { deckHash, index }
+//   POST /__mdeck/ink/blank  { deckHash, after, layout } → { deckHash, index }
 //
 // A slide that gets ink but has no `id:` of its own gets one, written into
 // its settings, so the ink stays with it when slides are inserted. Ids by
@@ -13,8 +13,9 @@
 // own writes do not reload the open windows (ownWrites.js); instead it sends
 // `mdeck:ink`, and the pages fetch the ink again.
 //
-// A blank page (layout: blank) goes in after the slide shown, for what does
-// not fit on it any more. That write is a change to the deck like the
+// A blank page (layout: blank) or a notes sheet (layout: sheet, the slide
+// beside room to write) goes in after the slide shown, for what does not fit
+// on it any more. That write is a change to the deck like the
 // author's, so the windows reload and show it.
 import { existsSync, readFileSync, writeFileSync, renameSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs'
 import { resolve, dirname, basename } from 'node:path'
@@ -22,6 +23,9 @@ import { parseSlides } from '../core/parseSlides.js'
 import { setSlideMeta, insertSlide } from '../core/editDeck.js'
 import { slideTitle } from '../core/outline.js'
 import { slug } from '../live/code.js'
+
+// The pages the toolbar may put in after a slide.
+const PAGE_LAYOUTS = ['blank', 'sheet']
 import { inkFileFor, normalizeInk, emptyInk, applyOp, serializeInk, isSlideId } from '../core/ink.js'
 import { hashSource, isAllowedRequest, send, readJson, BACKUP_DIR } from './editorPlugin.js'
 import { markOwnWrite } from './ownWrites.js'
@@ -196,14 +200,15 @@ export function createInkFile(deckPath, { debounceMs = 300, onChange = () => {} 
       onChange({ renamed })
       return { status: 200, deckHash: hash, renamed }
     },
-    insertBlank(after, deckHash) {
+    insertBlank(after, deckHash, layout = 'blank') {
       if (!isSlideId(after)) return { status: 400, error: 'Not a slide id' }
+      if (!PAGE_LAYOUTS.includes(layout)) return { status: 400, error: `Not a page to put in: ${String(layout).slice(0, 40)}` }
       const { deck, hash } = readDeck()
       const index = deck.slides.findIndex(slide => slide.id === after)
       if (index < 0) return { status: 409, error: `No slide "${after}" in the deck file`, deckHash: hash }
       // An id by position: only trusted for the deck the device saw.
       if (deck.slides[index].meta.id == null && deckHash !== hash) return { status: 409, error: 'The deck changed; reload', deckHash: hash }
-      const { source } = insertSlide(deck, index + 1, ':::meta\nlayout: blank\n:::\n')
+      const { source } = insertSlide(deck, index + 1, `:::meta\nlayout: ${layout}\n:::\n`)
       writeAtomic(abs, source)
       return { status: 200, deckHash: hashSource(source), index: index + 1 }
     },
@@ -239,8 +244,8 @@ export function inkMiddleware(file, { authorize = isAllowedRequest } = {}) {
         return send(response, result.status, result)
       }
       if (pathname === '/blank' && request.method === 'POST') {
-        const { deckHash, after } = await readJson(request)
-        const result = file.insertBlank(after, deckHash)
+        const { deckHash, after, layout } = await readJson(request)
+        const result = file.insertBlank(after, deckHash, layout)
         return send(response, result.status, result)
       }
       response.setHeader('Allow', pathname === '/' ? 'GET' : 'POST')

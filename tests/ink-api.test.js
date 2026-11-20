@@ -152,6 +152,15 @@ test('a blank page goes in after the slide shown, as a change the windows reload
   assert.ok(!isOwnWrite(deck, source), 'not marked as mdeck\'s own write, so the windows reload')
 })
 
+test('a notes sheet goes in after the slide shown; other layouts are refused', () => {
+  const { deck, file } = deckWith(SOURCE)
+  const { deckHash } = file.read()
+  assert.equal(file.insertBlank('slide-1', deckHash, 'title').status, 400)
+  assert.equal(readFileSync(deck, 'utf8'), SOURCE)
+  assert.equal(file.insertBlank('slide-1', deckHash, 'sheet').status, 200)
+  assert.equal(readFileSync(deck, 'utf8'), SOURCE.replace('# Second', ':::meta\nlayout: sheet\n:::\n\n---\n# Second'))
+})
+
 test('a blank page after a slide known by position is refused when the deck changed', () => {
   const { deck, file } = deckWith(SOURCE)
   const changed = SOURCE.replace('# Second', '# Inserted\n\n---\n# Second')

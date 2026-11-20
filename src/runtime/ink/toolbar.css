@@ -48,7 +48,7 @@
 .ink-toolbar.is-compact .ink-btn, .ink-toolbar.is-compact .ink-color, .ink-toolbar.is-compact .ink-size { width: 36px; height: 36px; }
 .ink-toolbar.is-compact .ink-group { gap: 2px; padding: 0 3px; }
 .ink-toolbar.is-compact.is-collapsed { padding: 3px; }
-/* The small confirmation popover over the clear button. */
+/* The small popovers over the clear button and the add-a-page button. */
 .ink-anchor { position: relative; display: flex; }
 .ink-pop {
   position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(calc(-50% + var(--shift, 0px)));
