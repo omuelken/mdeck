@@ -4,7 +4,7 @@ You can draw on a slide while you present, or ahead of time: circle a number, un
 
 ## Start drawing
 
-Press **D** in standalone slides or in the presenter view, or use the pen button (**Draw** in the presenter view). A toolbar appears on the slide:
+Press **D** in standalone slides or in the presenter view, or use the pen button (**Draw** in the presenter view). A toolbar appears on the slide. Its colours and sizes come first, so the tools after them stay in place; while the select tool, the laser or the eraser is in use, they show those of the last pen or highlighter, dimmed, and a tap on one goes back to it:
 
 | Tool | What it does |
 |---|---|

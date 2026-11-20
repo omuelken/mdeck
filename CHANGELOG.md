@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The ink toolbar keeps its buttons in place: colours and sizes come first and stay there, dimmed, while the select tool, the laser or the eraser is in use (a tap on one goes back to the pen or highlighter), and the bin for a selection is always there, greyed out until something is selected.
+
 ## 3.18.1 — 2026-11-15
 
 - Fixed: `mdeck publish` published only one language of a deck in several languages (`talk.en.md` beside `talk.de.md`), as `/d/talk-en`. It now publishes them as one deck under the name the files share (`/d/talk`): the reader view opens in the language of the reader's browser when the deck has it, offers the others in its top bar and stays on the slide when the language changes; `?lang=de` in the link opens one of them. A picture several languages show is in the file once. `mdeck send` and `mdeck build` still make one language.
