@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.18.2 — 2026-11-20
 
 - The ink toolbar keeps its buttons in place: colours and sizes come first and stay there, dimmed, while the select tool, the laser or the eraser is in use (a tap on one goes back to the pen or highlighter), and the bin for a selection is always there, greyed out until something is selected.
 - The ink toolbar's button that clears the slide is a page with a cross; the bin is only for deleting a selection.
