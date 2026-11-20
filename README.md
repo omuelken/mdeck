@@ -17,7 +17,7 @@
 > [!NOTE]
 > **This is the `unterricht` branch of [omuelken/mdeck](https://github.com/omuelken/mdeck)**, a fork of
 > [tilman-schieber/mdeck](https://github.com/tilman-schieber/mdeck) used for teaching
-> (Mechanik & Wärme, FHNW). It follows Tilman's `main` (now 3.18.1) and adds:
+> (Mechanik & Wärme, FHNW). It follows Tilman's `main` (now 3.18.1 and the steady ink toolbar, #38) and adds:
 >
 > | Change | Status |
 > |---|---|
@@ -25,7 +25,6 @@
 > | iPad tips: switch Scribble off ([drawing.md](docs/site/content/drawing.md)) | only here |
 > | A blank page after the slide shown, from the drawing toolbar (`layout: blank`: no page number, the others keep theirs) | draft PR [#39](https://github.com/tilman-schieber/mdeck/pull/39) |
 > | A notes sheet: the slide before, small, beside room to write (`layout: sheet`); the toolbar's plus asks for a blank page or a notes sheet ([drawing.md](docs/site/content/drawing.md)) | draft PR [#39](https://github.com/tilman-schieber/mdeck/pull/39) |
-> | The ink toolbar's buttons stay put when the tool changes: colours and sizes first, the selection's bin always there | draft PR [#38](https://github.com/tilman-schieber/mdeck/pull/38) |
 >
 > To use it: clone, `git switch unterricht`, `npm install`, `npm link` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 > Everything below is Tilman's README.

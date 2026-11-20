@@ -8,13 +8,12 @@ import './toolbar.css'
 // (each keeps its own; one pen colour is the theme's accent), first, so the
 // tools after them stay in place; the tools; deleting a selection; undo/redo,
 // clear slide, a blank page or a notes sheet after this one (where `mdeck run`
-// can write the deck); hide saved ink, drawing with a finger, and the
-// drawings file. Every button is always there, so none moves when the tool
-// changes. Swipes and the deck's own controls and keys
-// turn the slides. It folds into one button in the bottom right corner,
-// showing the current tool, and drawing goes on while it is folded. It drives
-// a <deck-stage> (inkTool, inkFinger, data-ink-hidden), an ink controller and
-// the selection.
+// can write the deck); hide saved ink, drawing with a finger, and the drawings
+// file. Every button is always there, so none moves when the tool changes.
+// Swipes and the deck's own controls and keys turn the slides. It folds into
+// one button in the bottom right corner, showing the current tool, and drawing
+// goes on while it is folded. It drives a <deck-stage> (inkTool, inkFinger,
+// data-ink-hidden), an ink controller and the selection.
 
 // "accent" is stored as the word and drawn in the theme's --accent, so the
 // drawing follows the palette (inkPaint in core/ink.js).
