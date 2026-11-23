@@ -356,10 +356,10 @@ test('laser trails begun in quick succession are held and fade together', () => 
   clock += 200
   trail('local', 100)
   clock += 2000
-  assert.deepEqual(frame(), [{ alpha: 1, length: 3 }, { alpha: 1, length: 3 }], 'the first is held again while the second is drawn, and they stay two lines')
+  assert.deepEqual(frame(), [{ alpha: 1, length: 6 }], 'the first is held again while the second is drawn, in one path')
   stage.laserRelease('local')
   clock += 900
-  assert.deepEqual(frame(), [{ alpha: 0.5, length: 3 }, { alpha: 0.5, length: 3 }], 'they fade together')
+  assert.deepEqual(frame(), [{ alpha: 0.5, length: 6 }], 'they fade together')
 
   // Another window sends each trail under its own key: they join too.
   clock += 1000
@@ -368,10 +368,10 @@ test('laser trails begun in quick succession are held and fade together', () => 
   clock += 100
   trail('ipad:2', 100)
   clock += 1000
-  assert.deepEqual(frame().map(t => t.alpha), [1, 1], 'a remote trail is held with the next one')
+  assert.deepEqual(frame(), [{ alpha: 1, length: 6 }], 'a remote trail is held with the next one, and drawn with it')
   stage.laserRelease('ipad:2')
   clock += 900
-  assert.deepEqual(frame().map(t => t.alpha), [0.5, 0.5])
+  assert.deepEqual(frame(), [{ alpha: 0.5, length: 6 }])
 })
 
 test('drawing starts with the pen on a computer and with the laser on a touch screen', () => {
