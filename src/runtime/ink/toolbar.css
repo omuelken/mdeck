@@ -2,7 +2,7 @@
    above the stage and its ink layers, and the stage leaves its input alone. */
 .ink-toolbar {
   /* A button's size (see "One line" below). */
-  --ink-pref: 40px; --ink-fit: 44px; --ink-b: min(var(--ink-pref), var(--ink-fit));
+  --ink-pref: 40px; --ink-b: min(var(--ink-pref), var(--ink-fit));
   position: fixed; left: 0; right: 0; bottom: max(16px, env(safe-area-inset-bottom)); margin: 0 auto; width: fit-content;
   z-index: 2147483000;
   display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
@@ -41,15 +41,16 @@
 .ink-group.is-idle { opacity: 0.45; }
 /* One line: a toolbar on two lines covers the slide's lower part. A button
    is as large as the input wants (--ink-pref: a mouse 40px, fingers 44px,
-   the iPad's presenter view 36px), but no larger than lets all of them
-   (about 23) fit on one line in the window's width (--ink-fit), down to
-   26px, which the pencil still hits; narrower windows wrap. */
+   the iPad's presenter view 36px), but no larger than lets all of them fit
+   on one line in the window's width (--ink-fit): the width, less the gaps,
+   padding and a small margin, shared among the 24 buttons a toolbar has at
+   most (a built deck's has one to download the drawings). The gaps get
+   smaller twice on the way; at 26px, which the pencil still hits, the
+   buttons stop shrinking, and windows narrower than about 725px wrap. */
+.ink-toolbar { --ink-fit: max(26px, calc((100vw - 198px) / 24)); }
 @media (pointer: coarse) { .ink-toolbar { --ink-pref: 44px; } }
-@media (max-width: 1210px) { .ink-toolbar { --ink-fit: 40px; } }
-@media (max-width: 1060px) { .ink-toolbar { --ink-fit: 36px; gap: 4px; padding: 5px; } .ink-group { gap: 2px; padding: 0 3px; } }
-@media (max-width: 940px) { .ink-toolbar { --ink-fit: 32px; } }
-@media (max-width: 860px) { .ink-toolbar { --ink-fit: 30px; } }
-@media (max-width: 780px) { .ink-toolbar { --ink-fit: 26px; gap: 3px; } .ink-group { gap: 1px; padding: 0 2px; } }
+@media (max-width: 1160px) { .ink-toolbar { --ink-fit: max(26px, calc((100vw - 136px) / 24)); gap: 4px; padding: 5px; } .ink-group { gap: 2px; padding: 0 3px; } }
+@media (max-width: 780px) { .ink-toolbar { --ink-fit: max(26px, calc((100vw - 99px) / 24)); gap: 3px; } .ink-group { gap: 1px; padding: 0 2px; } }
 /* The iPad's presenter view, where the toolbar has its own strip below the
    slide: smaller, so the slide stays large. */
 .ink-toolbar.is-compact { --ink-pref: 36px; bottom: max(6px, env(safe-area-inset-bottom)); gap: 4px; padding: 4px; }
