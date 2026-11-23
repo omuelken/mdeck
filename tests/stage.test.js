@@ -310,6 +310,70 @@ test('closing the overview places the hotspot badges again, for a window resized
   assert.equal(queued, before + 1)
 })
 
+test('a lifted laser trail fades as a whole, and each trail on its own', () => {
+  let clock = 1000
+  const { stage } = stageFixture({ requestAnimationFrame: () => 1, clearTimeout() {}, performance: { now: () => clock } })
+  const drawn = []
+  let line
+  const ctx = { setTransform() {}, clearRect() {}, beginPath() { line = [] }, moveTo(x) { line.push(x) }, lineTo(x) { line.push(x) }, stroke() { if (this.lineWidth === 3) drawn.push({ alpha: this.globalAlpha, line }) }, arc() {}, fill() {} }
+  stage._inkLaser = { clientWidth: 100, clientHeight: 100, width: 100, height: 100, getContext: () => ctx }
+  stage._canvas = { getBoundingClientRect: () => ({ left: 0, top: 0, width: stage.designWidth, height: stage.designHeight }) }
+  const frame = () => { drawn.length = 0; stage._laserFrame(); return drawn.map(({ alpha, line }) => ({ alpha, length: line.length })) }
+  const trail = x => stage.laserTrail('local', null, [[x, 0], [x + 10, 0], [x + 20, 0]], { start: true })
+
+  trail(0)
+  assert.deepEqual(frame(), [{ alpha: 1, length: 3 }], 'full strength while the pen is down')
+  clock += 5000
+  assert.deepEqual(frame(), [{ alpha: 1, length: 3 }], 'and however long it stays down')
+
+  stage.laserRelease('local')
+  clock += 300
+  assert.deepEqual(frame(), [{ alpha: 1, length: 3 }], 'lifted, it waits a moment at full strength')
+  clock += 600
+  assert.deepEqual(frame(), [{ alpha: 0.5, length: 3 }], 'half way: every point is left, at half strength')
+
+  trail(100)
+  assert.deepEqual(frame(), [{ alpha: 0.5, length: 3 }, { alpha: 1, length: 3 }], 'a new trail does not take on the fading of the last')
+
+  clock += 600
+  assert.deepEqual(frame(), [{ alpha: 1, length: 3 }], 'the first is gone at once, not point by point')
+})
+
+test('laser trails begun in quick succession are held and fade together', () => {
+  let clock = 1000
+  const { stage } = stageFixture({ requestAnimationFrame: () => 1, clearTimeout() {}, setTimeout() {}, performance: { now: () => clock } })
+  const drawn = []
+  let line
+  const ctx = { setTransform() {}, clearRect() {}, beginPath() { line = [] }, moveTo(x) { line.push(x) }, lineTo(x) { line.push(x) }, stroke() { if (this.lineWidth === 3) drawn.push({ alpha: this.globalAlpha, line }) }, arc() {}, fill() {} }
+  stage._inkLaser = { clientWidth: 100, clientHeight: 100, width: 100, height: 100, getContext: () => ctx }
+  stage._canvas = { getBoundingClientRect: () => ({ left: 0, top: 0, width: stage.designWidth, height: stage.designHeight }) }
+  const frame = () => { drawn.length = 0; stage._laserFrame(); return drawn.map(({ alpha, line }) => ({ alpha, length: line.length })) }
+  const trail = (key, x) => stage.laserTrail(key, null, [[x, 0], [x + 10, 0], [x + 20, 0]], { start: true })
+
+  // An arrow: the shaft, a short break, the head.
+  trail('local', 0)
+  stage.laserRelease('local')
+  clock += 200
+  trail('local', 100)
+  clock += 2000
+  assert.deepEqual(frame(), [{ alpha: 1, length: 6 }], 'the first is held again while the second is drawn, in one path')
+  stage.laserRelease('local')
+  clock += 900
+  assert.deepEqual(frame(), [{ alpha: 0.5, length: 6 }], 'they fade together')
+
+  // Another window sends each trail under its own key: they join too.
+  clock += 1000
+  trail('ipad:1', 0)
+  stage.laserRelease('ipad:1')
+  clock += 100
+  trail('ipad:2', 100)
+  clock += 1000
+  assert.deepEqual(frame(), [{ alpha: 1, length: 6 }], 'a remote trail is held with the next one, and drawn with it')
+  stage.laserRelease('ipad:2')
+  clock += 900
+  assert.deepEqual(frame(), [{ alpha: 0.5, length: 6 }])
+})
+
 test('drawing starts with the pen on a computer and with the laser on a touch screen', () => {
   assert.equal(stageFixture().stage.inkTool.tool, 'pen')
   assert.equal(stageFixture({ matchMedia: query => ({ matches: query === '(pointer: coarse)' }) }).stage.inkTool.tool, 'laser')
