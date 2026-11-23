@@ -2,8 +2,6 @@
 
 ## Unreleased
 
-- Laser trails drawn in quick succession are one: a trail begun within 0.3 s of lifting the pen keeps the last one shown, and they fade together once the pen is lifted for longer, also on the projector. An arrow drawn in two strokes shows and goes as one.
-- Laser trails that fade together are drawn as one path: on an iPad, Safari faded only the first of them, and the others vanished at the end.
 - The ink toolbar stays on one line in narrower windows, such as an iPad held upright: its buttons get smaller with the window's width, down to 26 pixels, instead of wrapping onto a second line over the slide.
 - A lifted laser trail fades away as a whole instead of retracting from its tail, and trails drawn in quick succession are one: a trail begun within 0.3 s of lifting the pen keeps the last one shown, and they fade together once the pen is lifted for longer, also on the projector. An arrow drawn in two strokes shows and goes as one. Trails that fade together are drawn as one path; on an iPad, Safari faded only the first of several.
 
