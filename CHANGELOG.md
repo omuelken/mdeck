@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Laser trails drawn in quick succession are one: a trail begun within 0.3 s of lifting the pen keeps the last one shown, and they fade together once the pen is lifted for longer, also on the projector. An arrow drawn in two strokes shows and goes as one.
+- A lifted laser trail fades away as a whole instead of retracting from its tail, and trails drawn in quick succession are one: a trail begun within 0.3 s of lifting the pen keeps the last one shown, and they fade together once the pen is lifted for longer, also on the projector. An arrow drawn in two strokes shows and goes as one. Trails that fade together are drawn as one path; on an iPad, Safari faded only the first of several.
 
 ## 3.18.3 — 2026-11-23
 

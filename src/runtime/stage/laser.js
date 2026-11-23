@@ -105,6 +105,12 @@ export const Laser = (Base) => class extends Base {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.shadowColor = LASER_GLOW;
+    // Trails with the same time (held, or lifted together) are one path,
+    // drawn at once, also when they come from different keys: Safari on the
+    // iPad drew only the first of several glowing strokes while they faded.
+    // Each time fades on its own: a new trail can start while the last fades.
+    const groups = new Map();
+    const dots = [];
     for (const [key, entry] of this._lasers) {
       entry.points = entry.points.filter(p => now - p[2] < LASER_JOIN_MS + LASER_MS);
       if (!entry.points.length && !entry.dot) { this._lasers.delete(key); continue; }
@@ -112,39 +118,41 @@ export const Laser = (Base) => class extends Base {
       // must move it while the pen stays still.
       if (entry.points.length) running = true;
       if (entry.slideId && slideId && entry.slideId !== slideId) continue;
-      // Each trail fades by its own time: a new one can start while the last
-      // still fades; joined trails have the same time and fade together.
-      const trails = [];
       entry.points.forEach((p, i, all) => {
-        if (i === 0 || p[3] || p[2] !== all[i - 1][2]) trails.push([]);
-        trails[trails.length - 1].push(p);
+        if (i === 0 || p[3] || p[2] !== all[i - 1][2]) {
+          if (!groups.has(p[2])) groups.set(p[2], []);
+          groups.get(p[2]).push([]);
+        }
+        const group = groups.get(p[2]);
+        group[group.length - 1].push(p);
       });
-      for (const trail of trails) {
-        ctx.globalAlpha = Math.min(1, 1 - Math.max(0, now - trail[0][2] - LASER_JOIN_MS) / LASER_MS);
-        // A red glow with a white core, the core drawn second.
-        for (const [color, lineWidth, blur] of [[LASER_GLOW, 8, 14], [LASER_CORE, 3, 0]]) {
-          ctx.strokeStyle = color;
-          ctx.lineWidth = lineWidth;
-          ctx.shadowBlur = blur;
-          ctx.beginPath();
-          trail.forEach((p, i) => {
-            const [x, y] = at(p);
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          });
-          ctx.stroke();
-        }
+      if (entry.dot) dots.push(entry.dot);
+    }
+    for (const [time, trails] of groups) {
+      ctx.globalAlpha = Math.min(1, 1 - Math.max(0, now - time - LASER_JOIN_MS) / LASER_MS);
+      // A red glow with a white core, the core drawn second.
+      for (const [color, lineWidth, blur] of [[LASER_GLOW, 8, 14], [LASER_CORE, 3, 0]]) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.shadowBlur = blur;
+        ctx.beginPath();
+        for (const trail of trails) trail.forEach((p, i) => {
+          const [x, y] = at(p);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
       }
-      ctx.globalAlpha = 1;
-      if (entry.dot) {
-        const [x, y] = at(entry.dot);
-        for (const [color, radius, blur] of [[LASER_GLOW, 8, 20], [LASER_CORE, 4, 0]]) {
-          ctx.fillStyle = color;
-          ctx.shadowBlur = blur;
-          ctx.beginPath();
-          ctx.arc(x, y, radius, 0, Math.PI * 2);
-          ctx.fill();
-        }
+    }
+    ctx.globalAlpha = 1;
+    for (const dot of dots) {
+      const [x, y] = at(dot);
+      for (const [color, radius, blur] of [[LASER_GLOW, 8, 20], [LASER_CORE, 4, 0]]) {
+        ctx.fillStyle = color;
+        ctx.shadowBlur = blur;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
     ctx.shadowBlur = 0;
