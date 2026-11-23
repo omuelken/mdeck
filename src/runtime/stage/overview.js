@@ -3,7 +3,9 @@
 // O shows every slide in a grid, in this window only: the presenter
 // view opens it in its own slide frame, so the audience never sees it.
 // Arrows move the cursor, Enter or a click goes to that slide, O or
-// Escape go back to the slide shown. The slides show every step.
+// Escape go back to the slide shown. The slides show every step. Room to
+// write (ink/Room.jsx) shows as in print: an expanded slide small, with
+// what is written around it, and each blank page in a cell after its slide.
 // `overviewchange` ({ open }) says when it opens or closes.
 export const Overview = (Base) => class extends Base {
   constructor() {
@@ -22,12 +24,15 @@ export const Overview = (Base) => class extends Base {
       this._stopZoomFlight();
       this._hotspot = null;
       if (this._zoom) this.setZoom(null, 'overview', { announce: false });
-      this._ovCursor = this._index;
     }
     this._overview = on;
     this.toggleAttribute('data-overview', on);
-    if (on) this._buildOverview();
-    else {
+    if (on) {
+      this._buildOverview();
+      this._ovCursor = this._ovCurrent();
+    } else {
+      this._clearOverviewMarks();
+      this._ovList = null;
       this._ovCells?.replaceChildren();
       if (this._canvas) { this._canvas.style.width = this.designWidth + 'px'; this._canvas.style.height = this.designHeight + 'px'; }
     }
@@ -66,27 +71,80 @@ export const Overview = (Base) => class extends Base {
     return { ...best, gap, label, pad };
   }
 
+  // What the grid has a cell for: every slide and, after it, each of its
+  // blank pages. `el` is what shows there: the slide, the page that shows it
+  // expanded (which then hides the slide, `hides`), or the blank page.
+  _overviewEntries() {
+    if (this._ovList) return this._ovList;
+    const list = [];
+    this._slides.forEach((slide, i) => {
+      const extras = this._extras?.get(slide);
+      const room = extras?.room?.hasAttribute('data-room-open') ? extras.room : null;
+      list.push({ slide: i, page: null, el: room ?? slide, hides: room ? slide : null });
+      (extras?.pages ?? []).forEach((el, n) => list.push({ slide: i, page: el.dataset.page, n: n + 1, el, hides: null }));
+    });
+    return (this._ovList = list);
+  }
+
+  // The cell of what is on the screen: the slide, or its blank page.
+  _ovCurrent() {
+    const entries = this._overviewEntries();
+    const page = this.pageShown ?? null;
+    const at = entries.findIndex(entry => entry.slide === this._index && entry.page === page);
+    return at >= 0 ? at : Math.max(0, entries.findIndex(entry => entry.slide === this._index));
+  }
+
+  _markOverview() {
+    const cells = this._ovCells?.children ?? [];
+    const current = this._ovCurrent();
+    for (let i = 0; i < cells.length; i++) cells[i].toggleAttribute('data-current', i === current);
+  }
+
+  _clearOverviewMarks() {
+    for (const el of this._ovMarked ?? []) { el.removeAttribute('data-ov-shown'); el.removeAttribute('data-ov-hidden'); }
+    this._ovMarked = [];
+  }
+
+  /** A slide was expanded or closed (ink/Room.jsx): the overview shows it so. */
+  extrasChanged() {
+    if (!this._overview) return;
+    this._buildOverview();
+    this._fit();
+    this._showCursor();
+  }
+
   _buildOverview() {
-    const cells = this._slides.map((slide, i) => {
+    this._clearOverviewMarks();
+    this._ovList = null;
+    const entries = this._overviewEntries();
+    const current = this._ovCurrent();
+    const cells = entries.map((entry, i) => {
+      const slide = this._slides[entry.slide];
       const cell = document.createElement('button');
       cell.type = 'button';
       cell.className = 'ov-cell';
       cell.dataset.i = String(i);
-      // The slide's heading; the label names only its layout.
-      const heading = slide.querySelector('h1, h2, h3');
+      // The slide's heading; the label names only its layout. A blank page
+      // has the slide's number and its own: 3.1 follows slide 3.
+      const heading = entry.page ? null : slide.querySelector('h1, h2, h3');
       const title = (heading?.textContent || '').replace(/\s+/g, ' ').trim();
-      cell.setAttribute('aria-label', `${i + 1}${title ? ` ${title}` : ''}`);
+      const number = entry.page ? `${entry.slide + 1}.${entry.n}` : `${entry.slide + 1}`;
+      cell.setAttribute('aria-label', `${number}${title ? ` ${title}` : ''}`);
       const caption = document.createElement('span');
-      caption.textContent = `${i + 1}  ${title}`;
+      caption.textContent = `${number}  ${title}`;
       cell.appendChild(caption);
-      if (i === this._index) cell.setAttribute('data-current', '');
+      if (i === current) cell.setAttribute('data-current', '');
+      if (entry.el !== slide) { entry.el.setAttribute('data-ov-shown', ''); this._ovMarked.push(entry.el); }
+      if (entry.hides) { entry.hides.setAttribute('data-ov-hidden', ''); this._ovMarked.push(entry.hides); }
       return cell;
     });
     this._ovCells?.replaceChildren(...cells);
+    this._ovCursor = Math.max(0, Math.min(entries.length - 1, this._ovCursor));
   }
 
   _fitOverview(vw, vh) {
-    const { cols, rows, k, gap, label, pad } = this.overviewLayout(this._slides.length, vw, vh);
+    const entries = this._overviewEntries();
+    const { cols, rows, k, gap, label, pad } = this.overviewLayout(entries.length, vw, vh);
     const W = this.designWidth, H = this.designHeight;
     const width = cols * W + (cols - 1) * gap;
     const height = rows * (H + label) + (rows - 1) * gap;
@@ -100,10 +158,10 @@ export const Overview = (Base) => class extends Base {
     this._canvas.style.setProperty('--ov-k', String(1 / k));
     if (this._ovSizer) { this._ovSizer.style.width = '1px'; this._ovSizer.style.height = `${Math.ceil(top * 2 + height * k)}px`; }
     const cells = this._ovCells?.children ?? [];
-    this._slides.forEach((slide, i) => {
+    entries.forEach(({ el }, i) => {
       const x = (i % cols) * (W + gap), y = Math.floor(i / cols) * (H + label + gap);
-      slide.style.setProperty('--ov-x', x + 'px');
-      slide.style.setProperty('--ov-y', y + 'px');
+      el.style.setProperty('--ov-x', x + 'px');
+      el.style.setProperty('--ov-y', y + 'px');
       const cell = cells[i];
       if (cell) Object.assign(cell.style, { left: x + 'px', top: y + 'px', width: W + 'px', height: H + 'px' });
     });
@@ -116,15 +174,29 @@ export const Overview = (Base) => class extends Base {
     cells[this._ovCursor]?.scrollIntoView?.({ block: 'nearest' });
   }
 
+  // Goes to what cell `i` shows: a slide, or one of its blank pages.
   _overviewGo(i, reason = 'keyboard') {
+    const entry = this._overviewEntries()[i];
     this.overview = false;
-    if (i !== this._index) this._go(i, reason);
+    if (!entry) return;
+    const pageStep = page => this._getSteps(this._slides[entry.slide])
+      .findIndex(elements => elements.some(el => el.classList?.contains('slide-page') && (!page || el.dataset.page === page)));
+    if (entry.page) {
+      if (entry.slide !== this._index) this._go(entry.slide, reason, pageStep(entry.page));
+      else this.showPage(entry.page, reason);
+    } else if (entry.slide !== this._index) this._go(entry.slide, reason);
+    else if (this.pageShown) {
+      // From one of its pages back to the slide itself, with all it has shown.
+      this._stepMap.set(this._index, pageStep(null) - 1);
+      this._applySteps(this._index);
+      this._broadcastState(reason);
+    }
   }
 
   /** A key typed while the overview is open; says whether it did something. */
   overviewKey(key) {
     if (!this._overview) return false;
-    const count = this._slides.length;
+    const count = this._overviewEntries().length;
     const cols = this._ovLayout?.cols ?? 1;
     const move = to => { this._ovCursor = Math.max(0, Math.min(count - 1, to)); this._showCursor(); };
     if (key === 'ArrowRight' || key === 'PageDown') move(this._ovCursor + 1);
