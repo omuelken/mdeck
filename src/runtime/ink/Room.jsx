@@ -75,14 +75,23 @@ export function StageRoom() {
  * In print, PDFs and the reader's Read mode, what does not fit on the slide
  * follows it as pages of their own: the expanded slide with what was written
  * around it, then its blank pages. On the stage they are no slides
- * (deck-stage leaves out [data-extra-page]). `copy` is the slide rendered
- * once more; `wrap` puts each page into the reader's frame.
+ * (deck-stage leaves out [data-extra-page]), but its overview shows them:
+ * an expanded slide as it looks expanded, also one with nothing written
+ * around it yet (data-stage-only: no page in print), and each blank page in
+ * a cell of its own. `copy` is the slide rendered once more; `wrap` puts
+ * each page into the reader's frame.
  */
-export function ExtraPages({ id, copy, width, height, wrap = page => page }) {
+export function ExtraPages({ id, copy, width, height, wrap }) {
   const room = useRoomPage(id)
+  const open = useRoomOpen(id)
   const pages = useSlidePages(id)
+  const onStage = !wrap
+  wrap ??= page => page
+  // The overview is told when a slide it shows is expanded or closed.
+  const roomPage = useRef()
+  useEffect(() => { roomPage.current?.closest('deck-stage')?.extrasChanged?.() }, [open])
   return <>
-    {room && wrap(<section key="room" class="slide extra-page" data-extra-page data-room-page>
+    {(room || (open && onStage)) && wrap(<section key="room" ref={roomPage} class="slide extra-page" data-extra-page data-room-page data-room-open={open ? '' : undefined} data-stage-only={room ? undefined : ''}>
       <div class="room-copy" style={{ width: `${width * ROOM_SCALE}px`, height: `${height * ROOM_SCALE}px` }}>
         <div class="room-scale" style={{ width: `${width}px`, height: `${height}px`, transform: `scale(${ROOM_SCALE})` }}>
           <div class="slide-copy" data-slide-copy data-deck-static inert aria-hidden="true">{copy}</div>
@@ -90,6 +99,6 @@ export function ExtraPages({ id, copy, width, height, wrap = page => page }) {
       </div>
       <InkLayer slideId={id} room />
     </section>, 'room')}
-    {pages.map(page => wrap(<section key={page} class="slide extra-page" data-extra-page><InkLayer slideId={pageLayer(id, page)} /></section>, page))}
+    {pages.map(page => wrap(<section key={page} class="slide extra-page" data-extra-page data-page={page}><InkLayer slideId={pageLayer(id, page)} /></section>, page))}
   </>
 }

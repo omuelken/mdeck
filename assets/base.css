@@ -274,8 +274,10 @@ deck-stage[data-ink-hidden] .slide-ink { display: none; }
 [data-step][data-step-visible] {
   opacity: 1;
 }
-/* The overview (O) shows each slide whole, to find it by. */
+/* The overview (O) shows each slide whole, to find it by: its blank pages,
+   which are steps too, have cells of their own there (below). */
 deck-stage[data-overview] [data-step] { opacity: 1; }
+deck-stage[data-overview] .slide-page { display: none; }
 
 /* ── Room to write (runtime/ink/Room.jsx) ─────────────────────────────────
    An expanded slide shows small in the top left corner of the stage, on the
@@ -288,9 +290,12 @@ deck-stage[data-ink-hidden] > .deck-room-ink { visibility: hidden; }
 .slide-page { position: absolute; inset: 0; z-index: 60; background: var(--bg); }
 .slide-page:not([data-step-visible]) { visibility: hidden; pointer-events: none; }
 [data-deck-static] .slide-page { display: none; }
-/* In print and the reader's Read mode both follow the slide as pages. */
+/* In print and the reader's Read mode both follow the slide as pages. The
+   overview shows those the stage picks (stage/overview.js): an expanded
+   slide in its slide's place, each blank page in a cell after it. */
 section[data-extra-page] { display: none; }
-deck-stage[data-deck-static] > section[data-extra-page],
+deck-stage[data-deck-static] > section[data-extra-page]:not([data-stage-only]),
+deck-stage[data-overview] > section[data-extra-page][data-ov-shown],
 .reader-page-extra section[data-extra-page] { display: flex; }
 .room-copy { position: absolute; top: 0; inset-inline-start: 0; overflow: hidden; }
 .room-scale { transform-origin: 0 0; }

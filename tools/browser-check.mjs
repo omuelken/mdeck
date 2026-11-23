@@ -128,6 +128,15 @@ try {
   await until(inked, "document.querySelector('deck-stage').expanded && document.querySelectorAll('.deck-room-ink path').length === 1")
   // It moves there; then the slide is at two thirds of its size.
   await until(inked, "(() => { const s = document.querySelector('deck-stage'), c = s._canvas.getBoundingClientRect(), r = s.getBoundingClientRect(); return Math.round(c.width / Math.min(r.width, r.height * 16 / 9) * 100) === 67 })()")
+  // The overview shows the slide as it is on the stage: small, with its room.
+  const ov = "document.querySelector('deck-stage')"
+  const drawAgain = async () => { await inked.evaluate(`${ov}.inking = true`); await until(inked, "!!document.querySelector('.ink-toolbar')") }
+  await inked.evaluate(`${ov}.overview = true`)
+  await until(inked, `${ov}.shadowRoot.querySelectorAll('.ov-cell').length === 2 && !!document.querySelector('section[data-room-page][data-ov-shown]')`)
+  assert.equal(await inked.evaluate("(() => { const page = document.querySelector('section[data-room-page]'), copy = page.querySelector('.room-copy'), slide = document.querySelector('section[data-slide-id=marked]'); return [getComputedStyle(slide).visibility, Math.round(copy.getBoundingClientRect().width / page.getBoundingClientRect().width * 100), page.querySelectorAll(':scope > .slide-ink path').length].join() })()"), 'hidden,67,1')
+  await inked.evaluate(`${ov}.overview = false`)
+  await until(inked, "!document.querySelector('[data-ov-shown], [data-ov-hidden]')")
+  await drawAgain()
   await inked.evaluate(inkButton('Show the slide whole'))
   await until(inked, "!document.querySelector('deck-stage').expanded && !document.querySelector('deck-stage').hasAttribute('data-room')")
   // A blank page follows the slide as its last step and has ink of its own; undo takes it away.
@@ -135,6 +144,21 @@ try {
   await until(inked, "!!document.querySelector('deck-stage').pageShown")
   assert.match(await inked.evaluate("document.querySelector('deck-stage')._inkSlideId()"), /^marked#p[a-z0-9]+$/)
   assert.equal(await inked.evaluate("document.querySelector('deck-stage').index"), 0, 'a blank page belongs to its slide')
+  // In the overview the page has a cell of its own after its slide, which
+  // shows itself; a click on either goes there.
+  await inked.evaluate(`${ov}.overview = true`)
+  await until(inked, `${ov}.shadowRoot.querySelectorAll('.ov-cell').length === 3`)
+  assert.equal(await inked.evaluate(`[...${ov}.shadowRoot.querySelectorAll('.ov-cell')].map(c => c.textContent.trim() + (c.hasAttribute('data-current') ? '*' : '')).join('|')`), '1  Marked up|1.1*|2  Second')
+  assert.equal(await inked.evaluate("(() => { const cover = document.querySelector('[data-slide-id=marked] > .slide-page'), page = document.querySelector('section[data-extra-page][data-page]'), slide = document.querySelector('section[data-slide-id=marked]'); return [getComputedStyle(cover).display, getComputedStyle(page).display, page.getBoundingClientRect().left > slide.getBoundingClientRect().right].join() })()"), 'none,flex,true')
+  await inked.evaluate(`${ov}.shadowRoot.querySelectorAll('.ov-cell')[0].click()`)
+  await until(inked, `!${ov}.overview && !${ov}.pageShown && ${ov}.index === 0`)
+  await inked.evaluate(`${ov}.goTo(1)`)
+  await inked.evaluate(`${ov}.overview = true`)
+  await until(inked, `${ov}.shadowRoot.querySelectorAll('.ov-cell').length === 3`)
+  await inked.evaluate(`${ov}.shadowRoot.querySelectorAll('.ov-cell')[1].click()`)
+  await until(inked, `!${ov}.overview && !!${ov}.pageShown && ${ov}.index === 0`)
+  await drawAgain()
+  await until(inked, "document.querySelector('.ink-btn[title=Undo]')?.disabled === false")
   await inked.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
   await until(inked, "!document.querySelector('deck-stage').pageShown && !document.querySelector('[data-deck-active] > .slide-page')")
   const inkRead = await open('ink.html?view=reader')
@@ -1031,7 +1055,7 @@ try {
   assert.equal(await flow.evaluate(`${flowStage}.state.step`), 1, 'two presses show the whole drawing')
   await flow.close()
 
-  console.log('Browser checks passed: custom layout rendering, data from a CSV file as a chart that builds up and a table, slide times and a rehearsal, the phone clicker with the slide\'s controls and the join code over the slide, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen, a frozen audience window and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, a tap on a picture, results kept beside the deck and shown in a build, saved ink, drawing, room to write (expanding a slide, a blank page), drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down, never joined to the next trail), zoom, saving ink in dev, following on another device, a second device through the stage room (also the join code and freezing the projector), video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
+  console.log('Browser checks passed: custom layout rendering, data from a CSV file as a chart that builds up and a table, slide times and a rehearsal, the phone clicker with the slide\'s controls and the join code over the slide, shared state of deck components, reveal/undo/reset synchronization, jumping to a slide by its number, a black screen, a frozen audience window and the overview of all slides, session isolation, launch page, poll relay, scale, open questions, word cloud and join code, several answers with keys, closing and the right answer on the phones, options as a list, numbers, a tap on a picture, results kept beside the deck and shown in a build, saved ink, drawing, room to write (expanding a slide, a blank page, both in the overview), drawing in the presenter view, touch (fingers swipe through slides), straight lines (snapping to 15° steps) and their end points, select and move, laser (kept while the pen is down, never joined to the next trail), zoom, saving ink in dev, following on another device, a second device through the stage room (also the join code and freezing the projector), video played on the iPad playing on the projector, a deck in three languages (the switch, the audience and a follower, right to left), and in one browser without a server (also with a standalone server for the polls), hotspots (keys on the presenter slide, flights the audience follows, leaving them), the keys that work now (?), and a drawing that builds up in numbered steps with parts to zoom to, with ids of its own on each slide.')
 } finally {
   await browser?.close()
   await tablet2?.close()

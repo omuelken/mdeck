@@ -25,7 +25,7 @@ When a slide has no room left, the toolbar gives you more in two ways:
 - **Expand** (the small slide in the corner of a larger frame) moves the slide into the top left corner, at two thirds of its size, and leaves the room around it to write on. It is the same slide seen from further away: what you draw on it stays on it, and what you write around it belongs to it too. The button again shows the slide whole; what was written around it is kept and comes back with the next expand. The audience sees the same. Forward and back turn the slides as usual.
 - **Blank page** (the page with a plus) puts an empty page after the slide and goes there. On a blank page the button adds another one after it. Forward and back turn these pages like slides, and going back from the next slide lands on the last of them. On a page, the clear button also offers to remove it; undo brings it back with what was written on it.
 
-Both are kept in the drawings file, not in your slides, so they can be prepared before the talk the same way. The reader and PDFs show the expanded slide with what was written around it as a page of its own after the slide, and then its blank pages.
+Both are kept in the drawings file, not in your slides, so they can be prepared before the talk the same way. The reader and PDFs show the expanded slide with what was written around it as a page of its own after the slide, and then its blank pages. The overview of all slides (**O**) shows them too: an expanded slide small, with what is written around it, and each blank page in a cell of its own after its slide (3.1 is the first page after slide 3). A click there goes to that page.
 
 The audience window, and any other deck window in the same browser, shows every stroke as you draw it.
 

@@ -356,7 +356,11 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     // slides are the same, and so is the position.
     const before = this._slides;
     this._collectSlides();
-    if (before.length && before.length === this._slides.length && before.every((slide, i) => slide === this._slides[i])) return;
+    if (before.length && before.length === this._slides.length && before.every((slide, i) => slide === this._slides[i])) {
+      // The overview shows those pages.
+      if (this._overview) { this._buildOverview(); this._fit(); this._showCursor(); }
+      return;
+    }
     this._restoreIndex();
     if (this._overview) this._buildOverview();
     this._applyIndex({ showOverlay: false, broadcast: true, reason: 'init' });
@@ -365,11 +369,22 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
 
   _collectSlides() {
     const assigned = this._slot.assignedElements({ flatten: true });
+    // What follows a slide as pages (ink/Room.jsx) is no slide: it shows in
+    // print and, for the slide before it, in the overview.
+    this._extras = new Map();
+    let last = null;
     this._slides = assigned.filter((el) => {
       // Skip template/style/script nodes even if someone slots them.
       const tag = el.tagName;
-      // What follows a slide as pages shows only in print (ink/Room.jsx).
-      return tag !== 'TEMPLATE' && tag !== 'SCRIPT' && tag !== 'STYLE' && !el.hasAttribute('data-extra-page');
+      if (tag === 'TEMPLATE' || tag === 'SCRIPT' || tag === 'STYLE') return false;
+      if (!el.hasAttribute('data-extra-page')) { last = el; return true; }
+      if (last) {
+        const extras = this._extras.get(last) ?? { room: null, pages: [] };
+        if (el.hasAttribute('data-room-page')) extras.room = el;
+        else extras.pages.push(el);
+        this._extras.set(last, extras);
+      }
+      return false;
     });
 
     this._slides.forEach((slide, i) => {
@@ -455,10 +470,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     if (curr !== prev) this._clearLive();
     if (this._countEl) this._countEl.textContent = String(curr + 1);
     // The overview marks the slide shown, wherever the change came from.
-    if (this._overview) {
-      const cells = this._ovCells?.children ?? [];
-      for (let i = 0; i < cells.length; i++) cells[i].toggleAttribute('data-current', i === curr);
-    }
+    if (this._overview) this._markOverview();
 
     if (broadcast) {
       // (1) Legacy: postMessage bridge for presenter/speaker-note renderers.

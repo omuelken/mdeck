@@ -137,6 +137,8 @@ export const stylesheet = `
     visibility: visible;
     pointer-events: none;
   }
+  /* An expanded slide shows as its page with the room around it instead. */
+  :host([data-overview]) slot:not([name])::slotted([data-ov-hidden]) { visibility: hidden; }
   :host([data-overview]) .ink-live, :host([data-overview]) .hotspots, :host([data-overview]) .zoom-reset, :host([data-overview]) .overlay { display: none; }
   :host([data-overview]) .ov-cells { display: block; position: absolute; inset: 0; z-index: 3; }
   .ov-cell {
