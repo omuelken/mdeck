@@ -233,7 +233,8 @@ try {
   await until(tablet, `${tabletStage}.index === 0`)
   assert.equal(await tablet.evaluate(`${tabletStage}.inking`), true, 'swiping through slides keeps drawing on')
   const width = await tablet.evaluate('innerWidth')
-  await finger('touchStart', width - 40, 420); await finger('touchEnd'); await delay(200)
+  // On the slide's right third, above the toolbar.
+  await finger('touchStart', width - 40, 300); await finger('touchEnd'); await delay(200)
   assert.equal(await tablet.evaluate(`${tabletStage}.index`), 0, 'a tap while drawing does not change slides')
   await tablet.evaluate(`${tabletStage}.inkFinger = true`)
   await fingerStroke()
@@ -277,10 +278,11 @@ try {
   for (const [x, y] of lasso.slice(1)) await tabletPen('mouseMoved', x, y)
   await tabletPen('mouseReleased', ...lasso.at(-1))
   await until(tablet, "!!document.querySelector('.ink-btn[title^=\"Delete selection\"]:not(:disabled)')")
+  // Up, away from the toolbar at the bottom of the window.
   await tabletPen('mousePressed', 400, 330)
-  for (let i = 1; i <= 5; i++) await tabletPen('mouseMoved', 400, 330 + i * 20)
-  await tabletPen('mouseReleased', 400, 430)
-  await until(tablet, `(${pathBox})[1] >= ${before[1] + 90}`)
+  for (let i = 1; i <= 5; i++) await tabletPen('mouseMoved', 400, 330 - i * 20)
+  await tabletPen('mouseReleased', 400, 230)
+  await until(tablet, `(${pathBox})[1] <= ${before[1] - 90}`)
   await tablet.evaluate("document.querySelector('.ink-btn[title=Undo]').click()")
   await until(tablet, `(${pathBox})[1] === ${before[1]}`)
   // Beside the selection a button deletes it (here a straight line's: off its middle).
