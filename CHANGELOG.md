@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.18.3 — 2026-11-23
 
 - Room to write, from the drawing toolbar (after an idea and a first version by @omuelken, #39 and #40). **Expand** shows the slide at two thirds of its size in the top left corner with room around it: the same slide from further away, so its drawings stay on it and what is written around it is its own ink. **Blank page** adds an empty page after the slide, and another after that; forward and back turn them like slides. Both are kept in the drawings file (`rooms`, and `pages` with a page's strokes under `<slide id>#<page id>`), all windows follow, and the reader and PDFs show them as pages after the slide. The overview of all slides (O) shows an expanded slide as it is on the stage and each blank page in a cell of its own after its slide; a click goes there (found and proposed by @omuelken).
 
