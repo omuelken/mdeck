@@ -24,7 +24,8 @@
 > | A countdown for the room, set in the presenter view, with a sound at the end (`<countdown />`, in [`contrib/countdown`](contrib/countdown/Countdown.jsx)) | only here |
 > | iPad tips: switch Scribble off ([drawing.md](docs/site/content/drawing.md)) | only here |
 > | `layout: blank`: a page planned in the deck file, with no page number; the others keep theirs | only here |
-> | Laser: a lifted trail fades as a whole; trails drawn in quick succession are held and fade together, drawn as one path (Safari on the iPad) ([drawing.md](docs/site/content/drawing.md)) | only here |
+> | Laser: a lifted trail fades as a whole; trails drawn in quick succession are held and fade together, drawn as one path (Safari on the iPad) ([drawing.md](docs/site/content/drawing.md)) | PR [#43](https://github.com/tilman-schieber/mdeck/pull/43) |
+> | The ink toolbar stays on one line in narrower windows (an iPad held upright): its buttons get smaller with the window, down to 26 px | PR [#42](https://github.com/tilman-schieber/mdeck/pull/42) |
 >
 > To use it: clone, `git switch unterricht`, `npm install`, `npm link` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 > Everything below is Tilman's README.
