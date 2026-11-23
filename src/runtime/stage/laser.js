@@ -1,8 +1,12 @@
 // Laser: a red glow with a white core. The trail stays while the pen is
-// down; lifted, it fades away as a whole within LASER_MS.
+// down; lifted, it waits LASER_JOIN_MS and then fades away as a whole
+// within LASER_MS. A trail begun while the last one still waits joins it:
+// both stay until the pen is lifted again and then fade together, so a
+// shape drawn in a few strokes (an arrow) shows as one.
 const LASER_GLOW = '#ff2a2a';
 const LASER_CORE = '#ffffff';
 const LASER_MS = 1200;
+const LASER_JOIN_MS = 300;
 // A trail whose end never arrives (the other window closed) goes after this.
 const LASER_HELD_MS = 30000;
 const LASER_STEP = 4;  // design px between the points of a held trail
@@ -10,15 +14,19 @@ const LASER_STEP = 4;  // design px between the points of a held trail
 // Laser -------------------------------------------------------------------
 //
 // Trails and dots by key ('local' for this window, others from the ink
-// bus), in design pixels. While the pen is down a trail's points stay
-// (time Infinity); lifted, they are all stamped with that moment, and the
-// trail fades evenly until they expire together after LASER_MS. Frames run
-// only while some trail is shown or fading.
+// bus; another window sends each of its trails under a key of its own), in
+// design pixels. While a pen is down a trail's points stay (time Infinity);
+// when the last pen is lifted, every held point is stamped with that moment,
+// and after LASER_JOIN_MS the trails fade evenly until they expire together
+// LASER_MS later. A trail that begins before then holds the waiting points
+// again. Frames run only while some trail is shown or fading.
 export const Laser = (Base) => class extends Base {
   constructor() {
     super();
     this._laserFrame = this._laserFrame.bind(this);
     this._lasers = new Map();
+    // Keys whose pen is down.
+    this._laserHeld = new Set();
   }
 
   _laserEntry(key, slideId) {
@@ -32,6 +40,12 @@ export const Laser = (Base) => class extends Base {
   laserTrail(key, slideId, points, { start = false } = {}) {
     if (!points?.length) return;
     const entry = this._laserEntry(key, slideId);
+    if (start) {
+      // Begun while the last trails wait: they are held with this one.
+      const now = performance.now();
+      for (const other of this._lasers.values()) for (const p of other.points) if (p[2] !== Infinity && now - p[2] < LASER_JOIN_MS) p[2] = Infinity;
+    }
+    this._laserHeld.add(key);
     points.forEach(([x, y], i) => {
       // A held trail grows as long as the pen is down: skip points that
       // add nothing visible, so a long trail stays cheap to draw.
@@ -45,14 +59,15 @@ export const Laser = (Base) => class extends Base {
     this._kickLaser();
   }
 
-  /** The pen is lifted: the held trail starts to fade. */
+  /** The pen is lifted: once no pen is down, the held trails wait and then fade together. */
   laserRelease(key) {
     const entry = this._lasers.get(key);
+    this._laserHeld.delete(key);
     if (!entry) return;
-    const held = entry.points.filter(p => p[2] === Infinity);
-    const now = performance.now();
-    held.forEach(p => { p[2] = now; });
     clearTimeout(entry.heldTimer);
+    if (this._laserHeld.size) return;
+    const now = performance.now();
+    for (const other of this._lasers.values()) for (const p of other.points) if (p[2] === Infinity) p[2] = now;
     this._kickLaser();
   }
 
@@ -91,20 +106,21 @@ export const Laser = (Base) => class extends Base {
     ctx.lineJoin = 'round';
     ctx.shadowColor = LASER_GLOW;
     for (const [key, entry] of this._lasers) {
-      entry.points = entry.points.filter(p => now - p[2] < LASER_MS);
+      entry.points = entry.points.filter(p => now - p[2] < LASER_JOIN_MS + LASER_MS);
       if (!entry.points.length && !entry.dot) { this._lasers.delete(key); continue; }
       // A held trail needs frames too: a zoom, a new size or another slide
       // must move it while the pen stays still.
       if (entry.points.length) running = true;
       if (entry.slideId && slideId && entry.slideId !== slideId) continue;
-      // Each trail fades on its own: a new one can start while the last still shows.
+      // Each trail fades by its own time: a new one can start while the last
+      // still fades; joined trails have the same time and fade together.
       const trails = [];
       entry.points.forEach((p, i, all) => {
         if (i === 0 || p[3] || p[2] !== all[i - 1][2]) trails.push([]);
         trails[trails.length - 1].push(p);
       });
       for (const trail of trails) {
-        ctx.globalAlpha = Math.min(1, 1 - (now - trail[0][2]) / LASER_MS);
+        ctx.globalAlpha = Math.min(1, 1 - Math.max(0, now - trail[0][2] - LASER_JOIN_MS) / LASER_MS);
         // A red glow with a white core, the core drawn second.
         for (const [color, lineWidth, blur] of [[LASER_GLOW, 8, 14], [LASER_CORE, 3, 0]]) {
           ctx.strokeStyle = color;

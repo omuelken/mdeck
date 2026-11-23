@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Laser trails drawn in quick succession are one: a trail begun within 0.3 s of lifting the pen keeps the last one shown, and they fade together once the pen is lifted for longer, also on the projector. An arrow drawn in two strokes shows and goes as one.
 - A notes sheet: the toolbar's **Notes sheet** gives the slide shown a sheet to write on, the slide small in the top left corner and room around it, or a blank page. It is the slide's last step, kept in the drawings file (`sheets`, with its strokes under `<slide id>#sheet`), and a page of its own after the slide in the reader and in PDFs.
 
 ## 3.18.2 — 2026-11-20
