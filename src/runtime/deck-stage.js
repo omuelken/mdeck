@@ -195,9 +195,17 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     canvas.style.setProperty('--deck-design-w', this.designWidth + 'px');
     canvas.style.setProperty('--deck-design-h', this.designHeight + 'px');
 
+    // The room around an expanded slide, behind the slides, and its ink
+    // above them (ink/Room.jsx puts them there; stage/zoom.js shows them).
+    const room = document.createElement('slot');
+    room.name = 'room';
+    canvas.appendChild(room);
     const slot = document.createElement('slot');
     slot.addEventListener('slotchange', this._onSlotChange);
     canvas.appendChild(slot);
+    const roomInk = document.createElement('slot');
+    roomInk.name = 'room-ink';
+    canvas.appendChild(roomInk);
     const inkLive = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     inkLive.setAttribute('class', 'ink-live');
     inkLive.setAttribute('viewBox', `0 0 ${this.designWidth} ${this.designHeight}`);
@@ -344,7 +352,15 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   }
 
   _onSlotChange() {
+    // A page that follows a slide in print (ink/Room.jsx) came or went: the
+    // slides are the same, and so is the position.
+    const before = this._slides;
     this._collectSlides();
+    if (before.length && before.length === this._slides.length && before.every((slide, i) => slide === this._slides[i])) {
+      // The overview shows those pages.
+      if (this._overview) { this._buildOverview(); this._fit(); this._showCursor(); }
+      return;
+    }
     this._restoreIndex();
     if (this._overview) this._buildOverview();
     this._applyIndex({ showOverlay: false, broadcast: true, reason: 'init' });
@@ -353,11 +369,22 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
 
   _collectSlides() {
     const assigned = this._slot.assignedElements({ flatten: true });
+    // What follows a slide as pages (ink/Room.jsx) is no slide: it shows in
+    // print and, for the slide before it, in the overview.
+    this._extras = new Map();
+    let last = null;
     this._slides = assigned.filter((el) => {
       // Skip template/style/script nodes even if someone slots them.
       const tag = el.tagName;
-      // A notes sheet's own page shows only in print (runtime/ink/Sheet.jsx).
-      return tag !== 'TEMPLATE' && tag !== 'SCRIPT' && tag !== 'STYLE' && !el.hasAttribute('data-sheet-page');
+      if (tag === 'TEMPLATE' || tag === 'SCRIPT' || tag === 'STYLE') return false;
+      if (!el.hasAttribute('data-extra-page')) { last = el; return true; }
+      if (last) {
+        const extras = this._extras.get(last) ?? { room: null, pages: [] };
+        if (el.hasAttribute('data-room-page')) extras.room = el;
+        else extras.pages.push(el);
+        this._extras.set(last, extras);
+      }
+      return false;
     });
 
     this._slides.forEach((slide, i) => {
@@ -443,10 +470,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     if (curr !== prev) this._clearLive();
     if (this._countEl) this._countEl.textContent = String(curr + 1);
     // The overview marks the slide shown, wherever the change came from.
-    if (this._overview) {
-      const cells = this._ovCells?.children ?? [];
-      for (let i = 0; i < cells.length; i++) cells[i].toggleAttribute('data-current', i === curr);
-    }
+    if (this._overview) this._markOverview();
 
     if (broadcast) {
       // (1) Legacy: postMessage bridge for presenter/speaker-note renderers.
@@ -583,7 +607,7 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     if (index < 0 || index >= this._slides.length) { if (freezeChanged) this._broadcastState('sync'); return; }
     const max = this._getSteps(this._slides[index]).length - 1;
     const step = Math.max(-1, Math.min(max, target.step));
-    // A step that is not there yet (a notes sheet whose ink is still on its
+    // A step that is not there yet (a blank page whose ink is still on its
     // way) is shown once it comes (stepsChanged).
     this._wanted = target.step > max ? { index, step: target.step } : null;
     // A position without `blank` (a follower paging on its own) leaves it.
@@ -612,9 +636,9 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
   }
 
   /**
-   * A slide's steps changed while it is shown: a notes sheet came or went
-   * (runtime/ink/Sheet.jsx). The step asked for before it was there is shown
-   * now; a step that is gone goes back to the last one there is.
+   * A slide's steps changed while it is shown: a blank page came or went
+   * (ink/Room.jsx). The step asked for before it was there is shown now; a
+   * step that is gone goes back to the last one there is.
    */
   stepsChanged() {
     const index = this._index;
@@ -623,8 +647,8 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     const step = this._stepMap.get(index) ?? -1;
     if (wanted != null && wanted > step) { this._wanted = null; this._stepMap.set(index, wanted); }
     else if (step > max) this._stepMap.set(index, max);
-    else { this._applySteps(index); return; }
     this._applySteps(index);
+    this.dispatchEvent(new CustomEvent('stepschange'));
   }
 
   _flashOverlay() {
@@ -654,7 +678,8 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
     const s = Math.min(vw / this.designWidth, vh / this.designHeight);
     this._fitScale = s;
     this._hotspotLayer?.style.setProperty('--hotspot-k', String(1 / s));
-    const zoom = this._zoom;
+    // An expanded slide is the whole view from further away (stage/zoom.js).
+    const zoom = this._zoom ?? (this.expanded ? this._wholeZoom() : null);
     if (!zoom) { this._canvas.style.transform = `scale(${s})`; this._placeSelectionDelete(); return; }
     const tx = (this.designWidth / 2 - zoom.x) * s * zoom.scale;
     const ty = (this.designHeight / 2 - zoom.y) * s * zoom.scale;
@@ -859,11 +884,11 @@ class DeckStage extends features.reduce((base, feature) => feature(base), HTMLEl
       this._flashOverlay();
       return;
     }
-    // Back onto a slide with a notes sheet (runtime/ink/Sheet.jsx) shows the
-    // sheet, its last step: what was written there is one press away.
+    // Back onto a slide with blank pages (ink/Room.jsx) shows the last of
+    // them, as turning back through pages does.
     const before = this._slides[this._index - 1];
-    const sheet = before?.querySelector(':scope > .slide-sheet') ? this._getSteps(before).length - 1 : -1;
-    this._go(this._index - 1, reason, sheet);
+    const page = before?.querySelector(':scope > .slide-page') ? this._getSteps(before).length - 1 : -1;
+    this._go(this._index - 1, reason, page);
   }
   /** Reset to first slide and clear all step state. */
   reset() {

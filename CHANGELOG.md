@@ -3,7 +3,11 @@
 ## Unreleased
 
 - Laser trails drawn in quick succession are one: a trail begun within 0.3 s of lifting the pen keeps the last one shown, and they fade together once the pen is lifted for longer, also on the projector. An arrow drawn in two strokes shows and goes as one.
-- A notes sheet: the toolbar's **Notes sheet** gives the slide shown a sheet to write on, the slide small in the top left corner and room around it, or a blank page. It is the slide's last step, kept in the drawings file (`sheets`, with its strokes under `<slide id>#sheet`), and a page of its own after the slide in the reader and in PDFs.
+- Laser trails that fade together are drawn as one path: on an iPad, Safari faded only the first of them, and the others vanished at the end.
+
+## 3.18.3 — 2026-11-23
+
+- Room to write, from the drawing toolbar (after an idea and a first version by @omuelken, #39 and #40). **Expand** shows the slide at two thirds of its size in the top left corner with room around it: the same slide from further away, so its drawings stay on it and what is written around it is its own ink. **Blank page** adds an empty page after the slide, and another after that; forward and back turn them like slides. Both are kept in the drawings file (`rooms`, and `pages` with a page's strokes under `<slide id>#<page id>`), all windows follow, and the reader and PDFs show them as pages after the slide. The overview of all slides (O) shows an expanded slide as it is on the stage and each blank page in a cell of its own after its slide; a click goes there (found and proposed by @omuelken).
 
 ## 3.18.2 — 2026-11-20
 

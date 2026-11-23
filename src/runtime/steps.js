@@ -11,7 +11,7 @@ export function slideSteps(slide) {
   if (!slide) return []
   const order = []
   const drawings = new Map()
-  // A copy of a slide (on its notes sheet) shows all of it at once.
+  // A copy of a slide (beside its room in print) shows all of it at once.
   for (const element of slide.querySelectorAll('[data-step]:not([data-slide-copy] [data-step])')) {
     const drawing = element.closest('svg')
     const number = numbered(element.getAttribute('data-step'))
