@@ -422,10 +422,12 @@ const STYLES = `
   color: #fff; background: rgba(0, 0, 0, 0.74); border-radius: 0.22em; padding: 0.12em 0.32em;
   box-shadow: 0 0.06em 0.3em rgba(0, 0, 0, 0.35);
 }
-.countdown-clock--top-right { top: 2.5vh; right: 2vw; }
-.countdown-clock--top-left { top: 2.5vh; left: 2vw; }
-.countdown-clock--bottom-right { bottom: 2.5vh; right: 2vw; }
-.countdown-clock--bottom-left { bottom: 2.5vh; left: 2vw; }
+/* Well inside the corners: a projector or TV may crop a few percent of each
+   edge (overscan), and a screen may round its corners. */
+.countdown-clock--top-right { top: 5vh; right: 4vw; }
+.countdown-clock--top-left { top: 5vh; left: 4vw; }
+.countdown-clock--bottom-right { bottom: 5vh; right: 4vw; }
+.countdown-clock--bottom-left { bottom: 5vh; left: 4vw; }
 .countdown-clock--center { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: clamp(90px, 34vh, 520px); background: rgba(0, 0, 0, 0.8); }
 .countdown-clock[data-ending], .countdown-toggle[data-ending], .countdown-panel-time[data-ending] { color: #f5a524; }
 .countdown-clock[data-done], .countdown-toggle[data-done], .countdown-panel-time[data-done] { color: #f28b82; }
