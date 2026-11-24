@@ -1096,7 +1096,7 @@ clicks the button on the slide.
 
 A component that belongs to the whole talk rather than one slide, such as a
 countdown for the room, can put its own button in the presenter view's bar,
-beside the timer, with a panel it opens: `PresenterTool` from
+beside the pen (on the phone clicker, beside the black screen), with a panel it opens: `PresenterTool` from
 `mdeck/component`. It shows in the presenter view on the computer, on a paired
 iPad and on the phone clicker, whichever slide is shown, and renders nothing
 in the other windows.

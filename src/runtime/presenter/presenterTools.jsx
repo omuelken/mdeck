@@ -1,4 +1,4 @@
-// A deck component's own tool in the presenter view's bar, beside the timer:
+// A deck component's own tool in the presenter view's bar, beside the pen:
 // a button and the panel it opens (`<PresenterTool>`, from `mdeck/component`).
 //
 // The component runs in the presenter's slide frame, the bar in the page
@@ -15,8 +15,12 @@ import { currentView } from '../shared.js'
 const SLOT = 'mdeckPresenterTools'
 const CHANGED = 'mdeck-presenter-tools'
 
-/** The place in the bar. It renders once; the tools are not Preact's here.
- * A tool's panel lines up with the bar's end, so the bar is positioned. */
+/**
+ * The place in the bar. It renders once; the tools are not Preact's here.
+ * Where a tool's panel opens, as Popover takes it: `above` the bar at the
+ * bottom, lined up with the button's start or `end`, or with the bar's end
+ * (`inBar`, for a bar that is positioned).
+ */
 export class PresenterToolSlot extends Component {
   shouldComponentUpdate() { return false }
   componentDidMount() { window[SLOT] = this.base; window.dispatchEvent(new Event(CHANGED)) }
@@ -25,7 +29,9 @@ export class PresenterToolSlot extends Component {
     window[SLOT] = null
     window.dispatchEvent(new Event(CHANGED))
   }
-  render() { return <span class="presenter-tools" style={{ display: 'contents' }} /> }
+  render({ above = false, align = 'end', inBar = false }) {
+    return <span class="presenter-tools" data-above={above ? '' : undefined} data-align={align} data-in-bar={inBar ? '' : undefined} style={{ display: 'contents' }} />
+  }
 }
 
 // The bar's place, seen from the presenter's slide frame; null anywhere else.
@@ -44,7 +50,7 @@ function useSlot() {
 }
 
 /**
- * A button in the presenter view's bar, beside the timer, that opens a panel
+ * A button in the presenter view's bar, beside the pen, that opens a panel
  * (`children`). `label` names it; `button` is what the button shows (an icon,
  * a short text). `css` styles both: they stand in the presenter view's page,
  * not in the slide, so the component's own styles do not reach them. Only the
@@ -68,7 +74,9 @@ export function PresenterTool({ label, button, css, children }) {
     return () => { window.removeEventListener('pagehide', leave); leave() }
   }, [slot, css])
   useEffect(() => {
-    if (host.current) render(<Popover class="presenter-tool" label={label} trigger={button} inBar>{children}</Popover>, host.current)
+    if (!host.current) return
+    const place = { above: 'above' in slot.dataset, align: slot.dataset.align, inBar: 'inBar' in slot.dataset }
+    render(<Popover class="presenter-tool" label={label} trigger={button} {...place}>{children}</Popover>, host.current)
   })
   return null
 }

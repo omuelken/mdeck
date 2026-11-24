@@ -9,7 +9,7 @@
 // The tag shows nothing where it stands. It hangs the countdown over the
 // whole page instead, in every window of the talk:
 // - the presenter view (on the laptop, a paired iPad and the phone clicker)
-//   gets a timer button in its bar, beside its own timer, with the controls
+//   gets a timer button in its bar, beside the pen, with the controls
 //   (`PresenterTool` from `mdeck/component`),
 // - the audience window and a full deck window show the countdown when the
 //   presenter shows it, in a corner or big in the middle; at the end it

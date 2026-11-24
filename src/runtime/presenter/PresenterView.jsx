@@ -452,8 +452,8 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     <Icon name={timer.running ? 'pause' : 'play'} size={14} style={{ display: 'block' }} />{clock}
     {timed && !remoteLayout && <span class="presenter-slide-time" style={{ color: slideColor, fontSize: '12px' }}>{slideText}</span>}
   </button>
-  // A deck component's own tools, such as a countdown (presenterTools.jsx).
-  const tools = <PresenterToolSlot />
+  // A deck component's own tools, such as a countdown, beside the pen
+  // (presenterTools.jsx); the phone clicker has no pen.
   const finishButton = timer.rehearsing && <button class="presenter-rehearsing" style={{ ...tool, color: '#f28b82' }} title="Finish the rehearsal" onClick={finishRehearsal}>● Finish</button>
   const nav = <>
     <ToolButton icon="prev" label="Previous (←)" onClick={() => navCommand('prev')} />
@@ -518,7 +518,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <div class="presenter-remote-bar" style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ color: '#888', whiteSpace: 'nowrap' }} />
           <span style={{ flex: 1 }} />
-          {finishButton}{timerChip}{tools}{joinButton}{blankButton}{connections}{settings}
+          {finishButton}{timerChip}{joinButton}{blankButton}<PresenterToolSlot inBar />{connections}{settings}
         </div>
         <div style={{ position: 'relative', flexShrink: 0, width: '100%', maxHeight: '32dvh', aspectRatio: '16/9', margin: '0 auto', borderRadius: '8px', overflow: 'hidden', border: '1px solid #2a2a2a', background: '#000' }}>
           <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ width: '100%', height: '100%', border: '0', display: 'block' }} />
@@ -545,10 +545,10 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     borderLeft: '1px solid #2a2a2a', background: '#111', overflow: 'hidden', minHeight: 0,
     ...(slideLayout ? { position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(400px, 92vw)', zIndex: 19, paddingTop: '68px', boxShadow: '-12px 0 32px rgba(0,0,0,0.5)' } : {}),
   }}>
-    {!slideLayout && <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+    {!slideLayout && <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
       <SlideJump index={index} total={slides.length} pad={2} onJump={i => navCommand('goTo', i)} style={{ color: '#888', fontVariantNumeric: 'tabular-nums' }} />
       <span style={{ flex: 1 }} />
-      {finishButton}{timerChip}{tools}{audienceButton}{connections}{settings}
+      {finishButton}{timerChip}{audienceButton}{connections}{settings}
     </div>}
     {slideLayout && <span style={{ display: 'none' }}><SlideJump index={index} total={slides.length} pad={2} onJump={i => navCommand('goTo', i)} /></span>}
     {schedule}
@@ -573,9 +573,9 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
       <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ position: 'absolute', top: `${slideTop}px`, left: 0, width: '100%', height: `calc(100% - ${slideTop}px)`, border: '0', display: 'block' }} />
       <div ref={pillRef} class="presenter-pill" role="toolbar" aria-label="Presenter" style={{ ...font, position: 'absolute', top: 'max(6px, env(safe-area-inset-top))', right: 'max(10px, env(safe-area-inset-right))', zIndex: 20, display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 'calc(100vw - 20px)', padding: '4px', borderRadius: '14px', background: 'rgba(17,17,17,0.9)', border: '1px solid #2a2a2a', fontVariantNumeric: 'tabular-nums' }}>
         <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ padding: '0 4px', color: '#888' }} />
-        {finishButton}{timerChip}{tools}
+        {finishButton}{timerChip}
         {separator}{nav}
-        {separator}{drawButton}{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}
+        {separator}{drawButton}<PresenterToolSlot />{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}
         {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}{slideBar(false)}</>}
         {separator}
         <ToolButton class="presenter-notes" icon="file-text" label="Notes and the next slide (N)" pressed={drawerOpen} onClick={() => setDrawerOpen(open => !open)} />
@@ -593,7 +593,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ flex: 1, minHeight: 0, width: '100%', border: '0', display: 'block' }} />
         <div class="presenter-toolbar" role="toolbar" aria-label="Presenter" style={{ ...font, display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', padding: '8px 12px', borderTop: '1px solid #2a2a2a', background: '#111' }}>
           {nav}
-          {separator}{drawButton}{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}{fullscreenButton}
+          {separator}{drawButton}<PresenterToolSlot above align="start" />{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}{fullscreenButton}
           {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}<span style={{ ...S.label, marginBottom: 0, marginInlineEnd: '4px' }}>This slide</span>{slideBar(false)}</>}
           <span style={{ flex: 1 }} />
           {helpButton}
