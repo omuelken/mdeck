@@ -67,6 +67,7 @@ const SLIM_PILL = `
 const SLIM_REMOTE_BAR = `
   .presenter-remote-bar { gap: 4px !important; }
   .presenter-remote-bar > button, .presenter-remote-bar > span > [class$="-toggle"] { min-width: 36px !important; padding: 0 7px !important; }
+  .presenter-remote-under .presenter-tool-toggle { height: 32px !important; min-width: 36px !important; padding: 0 8px !important; font-size: 14px !important; }
 `
 // A slide's first heading, as plain words, for the phone's "Next:" line.
 function slideTitleOf(slide) {
@@ -518,14 +519,17 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <div class="presenter-remote-bar" style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ color: '#888', whiteSpace: 'nowrap' }} />
           <span style={{ flex: 1 }} />
-          {finishButton}{timerChip}{joinButton}{blankButton}<PresenterToolSlot inBar />{connections}{settings}
+          {finishButton}{timerChip}{joinButton}{blankButton}{connections}{settings}
         </div>
         <div style={{ position: 'relative', flexShrink: 0, width: '100%', maxHeight: '32dvh', aspectRatio: '16/9', margin: '0 auto', borderRadius: '8px', overflow: 'hidden', border: '1px solid #2a2a2a', background: '#000' }}>
           <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ width: '100%', height: '100%', border: '0', display: 'block' }} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexShrink: 0, fontSize: '13px', color: '#888', fontVariantNumeric: 'tabular-nums' }}>
-          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextTitle}</span>
+        {/* A deck component's tools here, not in the bar above: with them, a
+            phone's bar ran onto a second line (presenterTools.jsx). */}
+        <div class="presenter-remote-under" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, fontSize: '13px', color: '#888', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextTitle}</span>
           {timed && <span style={{ flexShrink: 0 }}><span class="presenter-slide-time" style={{ color: slideColor }}>{slideText}</span> · <span class="presenter-delta" style={{ color: deltaColor }}>{deltaText}</span></span>}
+          <PresenterToolSlot inBar />
         </div>
         {savedNote && <div role="status" style={{ flexShrink: 0, color: '#81c995' }}>{savedNote}</div>}
         {slideBar(true)}

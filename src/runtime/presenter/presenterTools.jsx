@@ -1,4 +1,5 @@
-// A deck component's own tool in the presenter view's bar, beside the pen:
+// A deck component's own tool in the presenter view's bar, beside the pen
+// (on the phone clicker, below the slide, beside the next slide's title):
 // a button and the panel it opens (`<PresenterTool>`, from `mdeck/component`).
 //
 // The component runs in the presenter's slide frame, the bar in the page
