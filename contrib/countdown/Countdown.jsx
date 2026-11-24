@@ -32,7 +32,7 @@ const WINDOW = Math.random().toString(36).slice(2)
 const MINUTE = 60000
 const PRESETS = [1, 3, 5, 10, 15, 30]
 const POSITIONS = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center']
-const PLACES = { 'top-left': ['↖', 'Top left'], 'top-right': ['↗', 'Top right'], 'bottom-left': ['↙', 'Bottom left'], 'bottom-right': ['↘', 'Bottom right'], center: ['◉', 'Big, in the middle'] }
+const PLACES = { 'top-left': 'Top left', 'top-right': 'Top right', 'bottom-left': 'Bottom left', 'bottom-right': 'Bottom right', center: 'Big, in the middle' }
 // A window that opens or reloads learns the countdown within this time.
 const REPEAT_MS = 3000
 // A repetition that differs from what a window shows only by its travel
@@ -48,13 +48,22 @@ const SOUNDS = Object.entries(import.meta.glob('./sounds/*.{mp3,m4a,aac,wav,ogg,
   .sort((a, b) => a.name.localeCompare(b.name))
 const soundSrc = name => SOUNDS.find(sound => sound.name === name)?.src ?? null
 
-// The button's icon, drawn like mdeck's own (src/core/icons.js): Lucide
-// `timer` on the 24px grid with the same stroke, so it sits beside the
-// folded ink toolbar as one of its kind. Copied, so the folder needs nothing
-// from mdeck's sources.
-const TimerIcon = () => <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <line x1="10" x2="14" y1="2" y2="2" /><line x1="12" x2="15" y1="14" y2="11" /><circle cx="12" cy="14" r="8" />
-</svg>
+// The icons, drawn like mdeck's own (src/core/icons.js): Lucide on the 24px
+// grid with the same stroke, so the button sits beside the folded ink toolbar
+// as one of its kind and the panel's buttons look like mdeck's. Copied, so
+// the folder needs nothing from mdeck's sources.
+const ICONS = {
+  timer: '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>', // timer
+  play: '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>', // play
+  pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>', // pause
+  reset: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>', // rotate-ccw
+  'top-left': '<path d="M7 17V7h10"/><path d="M17 17 7 7"/>', // arrow-up-left
+  'top-right': '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>', // arrow-up-right
+  'bottom-left': '<path d="M17 7 7 17"/><path d="M17 17H7V7"/>', // arrow-down-left
+  'bottom-right': '<path d="m7 7 10 10"/><path d="M17 7v10H7"/>', // arrow-down-right
+  center: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="1"/>', // circle-dot
+}
+const Icon = ({ name, size = 18 }) => <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display: block" dangerouslySetInnerHTML={{ __html: ICONS[name] }} />
 
 // --- Which window this is -------------------------------------------------
 
@@ -294,9 +303,9 @@ function Panel({ timer, change }) {
     <div class="countdown-row">
       <span class="countdown-panel-time" data-ending={left > 0 && left <= MINUTE ? '' : undefined} data-done={left === 0 ? '' : undefined}>{formatTime(left)}</span>
       <span class="countdown-row">
-        <button title={timer.running ? 'Pause' : 'Start'} onClick={() => change(t => t.running ? pause(t) : start(t))}>{timer.running ? '❚❚' : '▶'}</button>
+        <button title={timer.running ? 'Pause' : 'Start'} onClick={() => change(t => t.running ? pause(t) : start(t))}><Icon name={timer.running ? 'pause' : 'play'} /></button>
         <button title="One more minute" onClick={() => change(t => addTime(t, 1))}>+1′</button>
-        <button title="Back to the full length" onClick={() => change(reset)}>↺</button>
+        <button title="Back to the full length" onClick={() => change(reset)}><Icon name="reset" /></button>
         <button class={on(timer.visible)} title={timer.visible ? 'Hide from the room' : 'Show to the room'} onClick={() => change(t => ({ ...t, visible: !t.visible }))}>{timer.visible ? 'Hide' : 'Show'}</button>
       </span>
     </div>
@@ -308,12 +317,12 @@ function Panel({ timer, change }) {
         onBlur={event => useCustom(event.currentTarget.value)} />
     </div>
     <div class="countdown-row" role="group" aria-label="Where the room sees it">
-      {['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center'].map(place => <button class={on(timer.position === place)} title={PLACES[place][1]} aria-pressed={timer.position === place} onClick={() => change(t => ({ ...t, position: place }))}>{PLACES[place][0]}</button>)}
+      {['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center'].map(place => <button class={on(timer.position === place)} title={PLACES[place]} aria-label={PLACES[place]} aria-pressed={timer.position === place} onClick={() => change(t => ({ ...t, position: place }))}><Icon name={place} /></button>)}
     </div>
     {SOUNDS.length > 0 && <div class="countdown-row" role="group" aria-label="Sound at the end">
       <select aria-label="Sound at the end" value={timer.sound ?? ''} onChange={event => { const sound = event.currentTarget.value || null; change(t => ({ ...t, sound })) }}>
         <option value="">No sound</option>
-        {SOUNDS.map(({ name }) => <option value={name}>♪ {name}</option>)}
+        {SOUNDS.map(({ name }) => <option value={name}>{name}</option>)}
       </select>
       <input type="range" min="0" max="1" step="0.05" aria-label="Volume" title="Volume" value={timer.volume ?? 0.8} onChange={event => { const volume = Number(event.currentTarget.value); change(t => ({ ...t, volume })) }} />
       <button title="Play the sound once where the room hears it" disabled={!timer.sound} onClick={() => change(t => ({ ...t, test: (t.test || 0) + 1, quiet: false }))}>Try</button>
@@ -354,7 +363,7 @@ function Countdown({ role }) {
       <div class="countdown-fab">
         <button class={`countdown-toggle${open ? ' is-on' : ''}${timer.visible ? ' is-shown' : ''}${showing ? ' is-time' : ''}`} title="Countdown for the room" aria-label="Countdown for the room" aria-expanded={open} onClick={() => setOpen(o => !o)}
           data-ending={showing && left > 0 && left <= MINUTE ? '' : undefined} data-done={showing && left === 0 ? '' : undefined}>
-          {showing ? formatTime(left) : <TimerIcon />}
+          {showing ? formatTime(left) : <Icon name="timer" size={20} />}
         </button>
       </div>
     </div>}
@@ -374,8 +383,8 @@ const STYLES = `
 .countdown-clock--bottom-right { bottom: 2.5vh; right: 2vw; }
 .countdown-clock--bottom-left { bottom: 2.5vh; left: 2vw; }
 .countdown-clock--center { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: clamp(90px, 34vh, 520px); background: rgba(0, 0, 0, 0.8); }
-.countdown-clock[data-ending], .countdown-toggle[data-ending], .countdown-panel-time[data-ending] { color: #ffcc4d; }
-.countdown-clock[data-done], .countdown-toggle[data-done], .countdown-panel-time[data-done] { color: #ff6b6b; }
+.countdown-clock[data-ending], .countdown-toggle[data-ending], .countdown-panel-time[data-ending] { color: #f5a524; }
+.countdown-clock[data-done], .countdown-toggle[data-done], .countdown-panel-time[data-done] { color: #f28b82; }
 .countdown-clock[data-done] { animation: countdown-done 0.9s ease-in-out 4; }
 @keyframes countdown-done { 50% { opacity: 0.25; } }
 @media (prefers-reduced-motion: reduce) { .countdown-clock[data-done] { animation: none; } }
@@ -388,13 +397,25 @@ const STYLES = `
   position: fixed; z-index: 2147481002; left: max(16px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom));
   display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
   font: 13px/1.2 ui-sans-serif, system-ui, -apple-system, sans-serif; color: #ccc;
+  /* Taps only, as on the ink toolbar: a pinch or a long press here must not
+     zoom the page or select the labels. The minutes field stays a field. */
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
+.countdown-fab, .countdown-panel button { touch-action: none; }
+.countdown-controls input[type=text] { -webkit-user-select: text; user-select: text; }
+/* The panel's buttons and fields as mdeck's own (src/runtime/chrome.jsx, S.btn
+   and S.select), a selected one as the ink toolbar's. */
 .countdown-controls button, .countdown-controls select, .countdown-controls input[type=text] {
-  font: inherit; color: #ddd; background: #1d1d1d; border: 1px solid #333; border-radius: 8px;
-  padding: 6px 9px; min-width: 36px; min-height: 34px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  font: inherit; color: #e0e0e0; background: #222; border: 1px solid #3a3a3a; border-radius: 8px;
+  padding: 6px 9px; min-width: 36px; min-height: 34px; cursor: pointer; box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
+.countdown-controls button:hover:not(:disabled) { background: #2a2a2a; }
 .countdown-controls button:disabled { opacity: 0.4; cursor: default; }
-.countdown-controls .is-on { background: #2d3b4a; border-color: #4a6a8a; color: #fff; }
+.countdown-controls .is-on, .countdown-controls .is-on:hover:not(:disabled) { background: #27436a; border-color: #3d6094; color: #fff; }
+.countdown-controls :is(button, select, input):focus { outline: none; }
+.countdown-controls :is(button, select, input):focus-visible { outline: 2px solid #6ea0e8; outline-offset: 1px; }
 /* The button, as the folded ink toolbar in the opposite corner: a round dark
    frame around one 40px button with a line icon. While the time shows, it
    widens to a pill. A yellow dot, where the ink button shows its colour,
@@ -410,12 +431,12 @@ const STYLES = `
 }
 .countdown-controls .countdown-toggle.is-time { padding: 0 14px; }
 .countdown-controls .countdown-toggle:hover { background: #262626; }
-.countdown-controls .countdown-toggle.is-on { background: #27436a; border-color: #3d6094; color: #fff; }
-.countdown-controls .countdown-toggle[data-ending] { color: #ffcc4d; }
-.countdown-controls .countdown-toggle[data-done] { color: #ff6b6b; }
+.countdown-controls .countdown-toggle.is-on, .countdown-controls .countdown-toggle.is-on:hover { background: #27436a; border-color: #3d6094; color: #fff; }
+.countdown-controls .countdown-toggle[data-ending] { color: #f5a524; }
+.countdown-controls .countdown-toggle[data-done] { color: #f28b82; }
 .countdown-toggle.is-shown::after {
   content: ''; position: absolute; right: 5px; bottom: 5px; width: 10px; height: 10px; border-radius: 50%;
-  background: #ffcc4d; box-shadow: 0 0 0 1.5px rgba(22, 22, 22, 0.94);
+  background: #f5a524; box-shadow: 0 0 0 1.5px rgba(22, 22, 22, 0.94);
 }
 .countdown-toggle.is-time.is-shown::after { right: 3px; bottom: 3px; width: 8px; height: 8px; }
 @media (max-width: 1000px) { .countdown-controls .countdown-toggle { min-width: 34px; height: 34px; } }
@@ -428,16 +449,17 @@ const STYLES = `
 :root:has(deck-stage[data-ink-reserve]) .countdown-controls .countdown-toggle { min-width: 36px; height: 36px; font-size: 14px; }
 :root:has(deck-stage[data-ink-reserve]) .countdown-controls .countdown-toggle.is-time { padding: 0 11px; }
 .countdown-panel {
-  display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px;
-  background: rgba(17, 17, 17, 0.95); border: 1px solid #2a2a2a; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
-  max-width: min(420px, calc(100vw - 24px));
+  /* As the presenter view's panels (src/runtime/presenter/PresenterChrome.jsx). */
+  display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 12px; box-sizing: border-box;
+  background: #161616; border: 1px solid #2e2e2e; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  max-width: min(340px, calc(100vw - 24px));
 }
 .countdown-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .countdown-panel > .countdown-row:first-child { justify-content: space-between; gap: 10px; }
 .countdown-panel-time { font-size: 26px; font-variant-numeric: tabular-nums; color: #f0f0f0; }
 .countdown-controls input[type=text] { width: 56px; cursor: text; }
 .countdown-controls select { flex: 1; min-width: 0; }
-.countdown-controls input[type=range] { width: 80px; }
+.countdown-controls input[type=range] { width: 80px; accent-color: #6ea0e8; }
 /* The phone clicker's slide: smaller, and the panel scrolls within the frame.
    Its rows turn round, so the time with Start sits just above the button,
    where the scrolling begins. */
@@ -450,6 +472,8 @@ const STYLES = `
   max-height: calc(100vh - 56px); max-width: calc(100vw - 12px); box-sizing: border-box;
   overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
 }
+/* On the phone the panel scrolls, also when the finger starts on a button. */
+.countdown-controls--small .countdown-panel button { touch-action: pan-y; }
 .countdown-controls--small button, .countdown-controls--small select, .countdown-controls--small input[type=text] { padding: 4px 7px; min-width: 30px; min-height: 30px; }
 .countdown-controls--small .countdown-panel-time { font-size: 18px; }
 @media print { .countdown-host { display: none !important; } }
