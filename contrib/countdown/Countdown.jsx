@@ -74,6 +74,9 @@ const ROLES = new Set(['presenter', 'audience', 'deck'])
 
 // An iPad says it is a Mac, but has a touch screen.
 const onIpad = () => /iPad/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
+// A phone or an Android tablet, such as one used as the clicker, or the
+// phone clicker's slide (`remote=1`), whatever the device.
+const onPhone = () => /iPhone|iPod|Android/.test(navigator.userAgent) || new URLSearchParams(location.search).get('remote') === '1'
 
 // --- The countdown --------------------------------------------------------
 // { running, endsAt, remaining, duration, visible, position, sound, volume,
@@ -335,8 +338,8 @@ function Countdown({ role }) {
   useTick(timer)
   // Where the room hears it: the audience window first, a deck window or the
   // laptop's presenter frame if none of its browser plays it. A paired iPad
-  // leaves the sound to the laptop.
-  const plays = role === 'audience' || role === 'deck' || (role === 'presenter' && !onIpad())
+  // and the phone clicker leave the sound to the laptop, and ask for no click.
+  const plays = role === 'audience' || role === 'deck' || (role === 'presenter' && !onIpad() && !onPhone())
   const sound = useEndSound(timer, { plays, first: role === 'audience', lock: `mdeck-countdown:${location.pathname}` })
   const [, activated] = useState(0)
   useEffect(() => {
@@ -379,8 +382,10 @@ const STYLES = `
 .countdown-clock[data-done] { animation: countdown-done 0.9s ease-in-out 4; }
 @keyframes countdown-done { 50% { opacity: 0.25; } }
 @media (prefers-reduced-motion: reduce) { .countdown-clock[data-done] { animation: none; } }
+/* At the top in the middle, where neither the ink toolbar nor the slide's
+   footer is; a countdown in a corner stays clear of it. */
 .countdown-sound {
-  position: fixed; z-index: 2147481001; left: 50%; bottom: 2.5vh; transform: translateX(-50%);
+  position: fixed; z-index: 2147481001; left: 50%; top: max(2.5vh, env(safe-area-inset-top)); transform: translateX(-50%);
   font: 600 15px/1 ui-sans-serif, system-ui, sans-serif; padding: 10px 16px; border-radius: 999px; border: 0;
   color: #fff; background: rgba(0, 0, 0, 0.74); cursor: pointer;
 }
