@@ -8,9 +8,8 @@
 //
 // The tag shows nothing where it stands. It hangs the countdown over the
 // whole page instead, in every window of the talk:
-// - the presenter view (on the laptop, a paired iPad and the phone clicker)
-//   gets a timer button in its bar, beside the pen, with the controls
-//   (`PresenterTool` from `mdeck/component`),
+// - the presenter view's slide frame (on the laptop and on a paired iPad)
+//   gets a timer button in its lower left corner with the controls,
 // - the audience window and a full deck window show the countdown when the
 //   presenter shows it, in a corner or big in the middle; at the end it
 //   moves big into the middle and plays the chosen sound.
@@ -25,7 +24,7 @@
 // repeats it every few seconds, so the others stay in step.
 import { h, render } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { useShared, useView, PresenterTool } from 'mdeck/component'
+import { useShared, useView } from 'mdeck/component'
 
 const SHARED = 'countdown'
 // Tells this window's own changes from the others' when they come back.
@@ -74,9 +73,12 @@ const ROLES = new Set(['presenter', 'audience', 'deck'])
 
 // An iPad says it is a Mac, but has a touch screen.
 const onIpad = () => /iPad/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
-// A phone or an Android tablet, such as one used as the clicker, or the
-// phone clicker's slide (`remote=1`), whatever the device.
-const onPhone = () => /iPhone|iPod|Android/.test(navigator.userAgent) || new URLSearchParams(location.search).get('remote') === '1'
+// A phone or an Android tablet, such as one used as the clicker.
+const onPhone = () => /iPhone|iPod|Android/.test(navigator.userAgent)
+
+// The phone clicker's slide: a frame a third of the phone high, too low for
+// the whole panel.
+const inPhoneFrame = () => new URLSearchParams(location.search).get('remote') === '1'
 
 // --- The countdown --------------------------------------------------------
 // { running, endsAt, remaining, duration, visible, position, sound, volume,
@@ -137,6 +139,46 @@ function formatTime(ms) {
 }
 
 /** Re-renders when the shown second changes, right at the change. */
+// The open ink toolbar sits at the bottom, in the middle, and in a narrow
+// window reaches the lower left corner, where the button is; it is above the
+// button and would hide it. While it is open and reaches that far, the button
+// (and its panel) stand just above it. The toolbar lives in mdeck's
+// `.ink-toolbar-host` (src/runtime/ink/attach.js), which may come later.
+const INK_GAP = 8
+function useAboveInk(enabled, fab) {
+  const [bottom, setBottom] = useState(null)
+  useEffect(() => {
+    if (!enabled) return
+    let frame = 0
+    const measure = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const bar = document.querySelector('.ink-toolbar-host .ink-toolbar:not(.is-collapsed)')
+        const button = fab.current?.getBoundingClientRect()
+        const ink = bar?.getBoundingClientRect()
+        setBottom(ink && button && ink.left < button.right + INK_GAP ? Math.ceil(window.innerHeight - ink.top) + INK_GAP : null)
+      })
+    }
+    const toolbar = new MutationObserver(measure)
+    let host = null
+    const findHost = () => {
+      const found = document.querySelector('.ink-toolbar-host')
+      if (found === host) return
+      toolbar.disconnect()
+      host = found
+      if (host) toolbar.observe(host, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] })
+      measure()
+    }
+    const body = new MutationObserver(findHost)
+    body.observe(document.body, { childList: true })
+    window.addEventListener('resize', measure)
+    findHost()
+    measure()
+    return () => { cancelAnimationFrame(frame); toolbar.disconnect(); body.disconnect(); window.removeEventListener('resize', measure) }
+  }, [enabled])
+  return bottom
+}
+
 function useTick(timer) {
   const [, tick] = useState(0)
   useEffect(() => {
@@ -335,11 +377,14 @@ function Panel({ timer, change }) {
 function Countdown({ role }) {
   const controls = role === 'presenter'
   const [timer, change] = useSharedTimer(controls)
+  const [open, setOpen] = useState(false)
+  const fab = useRef()
+  const aboveInk = useAboveInk(controls, fab)
   useTick(timer)
   // Where the room hears it: the audience window first, a deck window or the
   // laptop's presenter frame if none of its browser plays it. A paired iPad
   // and the phone clicker leave the sound to the laptop, and ask for no click.
-  const plays = role === 'audience' || role === 'deck' || (role === 'presenter' && !onIpad() && !onPhone())
+  const plays = role === 'audience' || role === 'deck' || (role === 'presenter' && !onIpad() && !onPhone() && !inPhoneFrame())
   const sound = useEndSound(timer, { plays, first: role === 'audience', lock: `mdeck-countdown:${location.pathname}` })
   const [, activated] = useState(0)
   useEffect(() => {
@@ -351,16 +396,21 @@ function Countdown({ role }) {
   const left = timeLeft(timer)
   // The button shows the time while it counts, and the end until it is stopped.
   const showing = timer && (timer.visible || (timer.running && !timer.quiet))
+  // Taps on the controls must not reach the slides (which would turn the page).
+  const keep = event => event.stopPropagation()
   return <>
     {timer?.visible && role !== 'presenter' && <div class={`countdown-clock countdown-clock--${left === 0 ? 'center' : timer.position}`} role="timer" aria-live="off"
       data-ending={left > 0 && left <= MINUTE ? '' : undefined} data-done={left === 0 ? '' : undefined}>{formatTime(left)}</div>}
     {sound.blocked && <button type="button" class="countdown-sound" onClick={() => { sound.allow(); activated(n => n + 1) }}>Click for sound</button>}
-    {controls && <PresenterTool label="Countdown for the room" css={TOOL_STYLES}
-      button={<span class={`countdown-toggle${timer.visible ? ' is-shown' : ''}`} data-ending={showing && left > 0 && left <= MINUTE ? '' : undefined} data-done={showing && left === 0 ? '' : undefined}>
-        {showing ? formatTime(left) : <Icon name="timer" />}
-      </span>}>
-      <Panel timer={timer} change={change} />
-    </PresenterTool>}
+    {controls && <div class={`countdown-controls${inPhoneFrame() ? ' countdown-controls--small' : ''}`} style={aboveInk != null ? { bottom: `${aboveInk}px` } : undefined} onPointerDown={keep} onClick={keep} onKeyDown={keep} onTouchStart={keep}>
+      {open && <Panel timer={timer} change={change} />}
+      <div class="countdown-fab" ref={fab}>
+        <button class={`countdown-toggle${open ? ' is-on' : ''}${timer.visible ? ' is-shown' : ''}${showing ? ' is-time' : ''}`} title="Countdown for the room" aria-label="Countdown for the room" aria-expanded={open} onClick={() => setOpen(o => !o)}
+          data-ending={showing && left > 0 && left <= MINUTE ? '' : undefined} data-done={showing && left === 0 ? '' : undefined}>
+          {showing ? formatTime(left) : <Icon name="timer" size={20} />}
+        </button>
+      </div>
+    </div>}
   </>
 }
 
@@ -379,8 +429,8 @@ const STYLES = `
 .countdown-clock--bottom-right { bottom: 5vh; right: 4vw; }
 .countdown-clock--bottom-left { bottom: 5vh; left: 4vw; }
 .countdown-clock--center { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: clamp(90px, 34vh, 520px); background: rgba(0, 0, 0, 0.8); }
-.countdown-clock[data-ending] { color: #f5a524; }
-.countdown-clock[data-done] { color: #f28b82; }
+.countdown-clock[data-ending], .countdown-toggle[data-ending], .countdown-panel-time[data-ending] { color: #f5a524; }
+.countdown-clock[data-done], .countdown-toggle[data-done], .countdown-panel-time[data-done] { color: #f28b82; }
 .countdown-clock[data-done] { animation: countdown-done 0.9s ease-in-out 4; }
 @keyframes countdown-done { 50% { opacity: 0.25; } }
 @media (prefers-reduced-motion: reduce) { .countdown-clock[data-done] { animation: none; } }
@@ -391,45 +441,90 @@ const STYLES = `
   font: 600 15px/1 ui-sans-serif, system-ui, sans-serif; padding: 10px 16px; border-radius: 999px; border: 0;
   color: #fff; background: rgba(0, 0, 0, 0.74); cursor: pointer;
 }
-@media print { .countdown-host { display: none !important; } }
-`
-
-// The button and its panel, in the presenter view's page (PresenterTool):
-// the panel's frame and the button's are mdeck's own; inside, the buttons and
-// fields as mdeck's (src/runtime/chrome.jsx, S.btn and S.select), a selected
-// one as the ink toolbar's.
-const TOOL_STYLES = `
-.countdown-toggle { position: static; display: inline-flex; align-items: center; font-variant-numeric: tabular-nums; }
-.countdown-toggle[data-ending], .countdown-panel-time[data-ending] { color: #f5a524; }
-.countdown-toggle[data-done], .countdown-panel-time[data-done] { color: #f28b82; }
-/* The room sees the countdown: a yellow dot, where the ink button shows its colour. */
-.countdown-toggle.is-shown::after {
-  content: ''; position: absolute; right: 4px; bottom: 4px; width: 8px; height: 8px; border-radius: 50%;
-  background: #f5a524; box-shadow: 0 0 0 1.5px #222;
-}
-.countdown-panel {
-  display: flex; flex-direction: column; gap: 8px;
+.countdown-controls {
+  position: fixed; z-index: 2147481002; left: max(16px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  font: 13px/1.2 ui-sans-serif, system-ui, -apple-system, sans-serif; color: #ccc;
+  /* Taps only, as on the ink toolbar: a pinch or a long press here must not
+     zoom the page or select the labels. The minutes field stays a field. */
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
-.countdown-panel button { touch-action: manipulation; }
-.countdown-panel input[type=text] { -webkit-user-select: text; user-select: text; }
-.countdown-panel button, .countdown-panel select, .countdown-panel input[type=text] {
+.countdown-fab, .countdown-panel button { touch-action: none; }
+.countdown-controls input[type=text] { -webkit-user-select: text; user-select: text; }
+/* The panel's buttons and fields as mdeck's own (src/runtime/chrome.jsx, S.btn
+   and S.select), a selected one as the ink toolbar's. */
+.countdown-controls button, .countdown-controls select, .countdown-controls input[type=text] {
   display: inline-flex; align-items: center; justify-content: center; gap: 5px;
   font: inherit; color: #e0e0e0; background: #222; border: 1px solid #3a3a3a; border-radius: 8px;
   padding: 6px 9px; min-width: 36px; min-height: 34px; cursor: pointer; box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
-.countdown-panel button:hover:not(:disabled) { background: #2a2a2a; }
-.countdown-panel button:disabled { opacity: 0.4; cursor: default; }
-.countdown-panel .is-on, .countdown-panel .is-on:hover:not(:disabled) { background: #27436a; border-color: #3d6094; color: #fff; }
-.countdown-panel :is(button, select, input):focus { outline: none; }
-.countdown-panel :is(button, select, input):focus-visible { outline: 2px solid #6ea0e8; outline-offset: 1px; }
+.countdown-controls button:hover:not(:disabled) { background: #2a2a2a; }
+.countdown-controls button:disabled { opacity: 0.4; cursor: default; }
+.countdown-controls .is-on, .countdown-controls .is-on:hover:not(:disabled) { background: #27436a; border-color: #3d6094; color: #fff; }
+.countdown-controls :is(button, select, input):focus { outline: none; }
+.countdown-controls :is(button, select, input):focus-visible { outline: 2px solid #6ea0e8; outline-offset: 1px; }
+/* The button, as the folded ink toolbar in the opposite corner: a round dark
+   frame around one 40px button with a line icon. While the time shows, it
+   widens to a pill. A yellow dot, where the ink button shows its colour,
+   says the room sees the countdown. */
+.countdown-fab {
+  display: flex; padding: 4px; border: 1px solid #3a3a3a; border-radius: 999px;
+  background: rgba(22, 22, 22, 0.94); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+.countdown-controls .countdown-toggle {
+  position: relative; display: grid; place-items: center; min-width: 40px; height: 40px; min-height: 0; padding: 0;
+  border: 1px solid transparent; border-radius: 999px; background: none; color: #e6e6e6;
+  font-size: 16px; font-variant-numeric: tabular-nums; -webkit-tap-highlight-color: transparent;
+}
+.countdown-controls .countdown-toggle.is-time { padding: 0 14px; }
+.countdown-controls .countdown-toggle:hover { background: #262626; }
+.countdown-controls .countdown-toggle.is-on, .countdown-controls .countdown-toggle.is-on:hover { background: #27436a; border-color: #3d6094; color: #fff; }
+.countdown-controls .countdown-toggle[data-ending] { color: #f5a524; }
+.countdown-controls .countdown-toggle[data-done] { color: #f28b82; }
+.countdown-toggle.is-shown::after {
+  content: ''; position: absolute; right: 5px; bottom: 5px; width: 10px; height: 10px; border-radius: 50%;
+  background: #f5a524; box-shadow: 0 0 0 1.5px rgba(22, 22, 22, 0.94);
+}
+.countdown-toggle.is-time.is-shown::after { right: 3px; bottom: 3px; width: 8px; height: 8px; }
+@media (max-width: 1000px) { .countdown-controls .countdown-toggle { min-width: 34px; height: 34px; } }
+@media (pointer: coarse) { .countdown-controls .countdown-toggle { min-width: 44px; height: 44px; } }
+/* The iPad's presenter view, where the folded ink toolbar is smaller too and
+   the open one has a strip below the slide (data-ink-reserve): as small,
+   so the button sits in that strip. */
+:root:has(deck-stage[data-ink-reserve]) .countdown-controls { left: max(10px, env(safe-area-inset-left)); bottom: max(6px, env(safe-area-inset-bottom)); }
+:root:has(deck-stage[data-ink-reserve]) .countdown-fab { padding: 3px; }
+:root:has(deck-stage[data-ink-reserve]) .countdown-controls .countdown-toggle { min-width: 36px; height: 36px; font-size: 14px; }
+:root:has(deck-stage[data-ink-reserve]) .countdown-controls .countdown-toggle.is-time { padding: 0 11px; }
+.countdown-panel {
+  /* As the presenter view's panels (src/runtime/presenter/PresenterChrome.jsx). */
+  display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 12px; box-sizing: border-box;
+  background: #161616; border: 1px solid #2e2e2e; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  max-width: min(340px, calc(100vw - 24px));
+}
 .countdown-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .countdown-panel > .countdown-row:first-child { justify-content: space-between; gap: 10px; }
 .countdown-panel-time { font-size: 26px; font-variant-numeric: tabular-nums; color: #f0f0f0; }
-.countdown-panel input[type=text] { width: 56px; cursor: text; }
-.countdown-panel select { flex: 1; min-width: 0; }
-.countdown-panel input[type=range] { width: 80px; accent-color: #6ea0e8; }
+.countdown-controls input[type=text] { width: 56px; cursor: text; }
+.countdown-controls select { flex: 1; min-width: 0; }
+.countdown-controls input[type=range] { width: 80px; accent-color: #6ea0e8; }
+/* The phone clicker's slide: smaller, and the panel scrolls within the frame.
+   Its rows turn round, so the time with Start sits just above the button,
+   where the scrolling begins. */
+.countdown-controls--small { left: 6px; bottom: 6px; gap: 6px; font-size: 12px; }
+.countdown-controls--small .countdown-fab { padding: 3px; }
+.countdown-controls.countdown-controls--small .countdown-toggle { min-width: 32px; height: 32px; font-size: 13px; }
+.countdown-controls.countdown-controls--small .countdown-toggle.is-time { padding: 0 10px; }
+.countdown-controls--small .countdown-panel {
+  flex-direction: column-reverse; gap: 5px; padding: 6px; border-radius: 10px;
+  max-height: calc(100vh - 56px); max-width: calc(100vw - 12px); box-sizing: border-box;
+  overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
+}
+/* On the phone the panel scrolls, also when the finger starts on a button. */
+.countdown-controls--small .countdown-panel button { touch-action: pan-y; }
+.countdown-controls--small button, .countdown-controls--small select, .countdown-controls--small input[type=text] { padding: 4px 7px; min-width: 30px; min-height: 30px; }
+.countdown-controls--small .countdown-panel-time { font-size: 18px; }
+@media print { .countdown-host { display: none !important; } }
 `
 
 let mounted = false

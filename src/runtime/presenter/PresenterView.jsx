@@ -25,7 +25,6 @@ import { slidesContent, deckLang, LANGUAGES, chooseLanguage, withFileLanguage } 
 import { hasActivities, announceSlide } from '../phones.js'
 import { controlUrl, DECK_CHANNEL, POSITION_KEY, sendTo } from '../deckChannel.js'
 import { ToolButton, SlideControls, Connections, tool } from './PresenterChrome.jsx'
-import { PresenterToolSlot } from './presenterTools.jsx'
 import { RehearsalSummary } from './RehearsalSummary.jsx'
 import { useTalkTimer } from './useTalkTimer.js'
 import { SlideJump } from './SlideJump.jsx'
@@ -67,7 +66,6 @@ const SLIM_PILL = `
 const SLIM_REMOTE_BAR = `
   .presenter-remote-bar { gap: 4px !important; }
   .presenter-remote-bar > button, .presenter-remote-bar > span > [class$="-toggle"] { min-width: 36px !important; padding: 0 7px !important; }
-  .presenter-remote-under .presenter-tool-toggle { height: 32px !important; min-width: 36px !important; padding: 0 8px !important; font-size: 14px !important; }
 `
 // A slide's first heading, as plain words, for the phone's "Next:" line.
 function slideTitleOf(slide) {
@@ -522,12 +520,9 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <div style={{ position: 'relative', flexShrink: 0, width: '100%', maxHeight: '32dvh', aspectRatio: '16/9', margin: '0 auto', borderRadius: '8px', overflow: 'hidden', border: '1px solid #2a2a2a', background: '#000' }}>
           <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ width: '100%', height: '100%', border: '0', display: 'block' }} />
         </div>
-        {/* A deck component's tools here, not in the bar above: with them, a
-            phone's bar ran onto a second line (presenterTools.jsx). */}
-        <div class="presenter-remote-under" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, fontSize: '13px', color: '#888', fontVariantNumeric: 'tabular-nums' }}>
-          <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextTitle}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', flexShrink: 0, fontSize: '13px', color: '#888', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextTitle}</span>
           {timed && <span style={{ flexShrink: 0 }}><span class="presenter-slide-time" style={{ color: slideColor }}>{slideText}</span> · <span class="presenter-delta" style={{ color: deltaColor }}>{deltaText}</span></span>}
-          <PresenterToolSlot inBar />
         </div>
         {savedNote && <div role="status" style={{ flexShrink: 0, color: '#81c995' }}>{savedNote}</div>}
         {slideBar(true)}
@@ -577,7 +572,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ padding: '0 4px', color: '#888' }} />
         {finishButton}{timerChip}
         {separator}{nav}
-        {separator}{drawButton}<PresenterToolSlot />{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}
+        {separator}{drawButton}{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}
         {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}{slideBar(false)}</>}
         {separator}
         <ToolButton class="presenter-notes" icon="file-text" label="Notes and the next slide (N)" pressed={drawerOpen} onClick={() => setDrawerOpen(open => !open)} />
@@ -595,7 +590,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
         <iframe ref={iframeRef} title="Presenter deck" src={iframeSrc} style={{ flex: 1, minHeight: 0, width: '100%', border: '0', display: 'block' }} />
         <div class="presenter-toolbar" role="toolbar" aria-label="Presenter" style={{ ...font, display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', padding: '8px 12px', borderTop: '1px solid #2a2a2a', background: '#111' }}>
           {nav}
-          {separator}{drawButton}<PresenterToolSlot above align="start" />{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}{fullscreenButton}
+          {separator}{drawButton}{blankButton}{freezeButton}{joinButton}{overviewButton}{hotspotsButton}{fullscreenButton}
           {(slideControls.items.length > 0 || slideControls.hotspots > 0) && <>{separator}<span style={{ ...S.label, marginBottom: 0, marginInlineEnd: '4px' }}>This slide</span>{slideBar(false)}</>}
           <span style={{ flex: 1 }} />
           {helpButton}
