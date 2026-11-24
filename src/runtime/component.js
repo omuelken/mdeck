@@ -6,6 +6,9 @@
 import { useEffect, useState } from 'preact/hooks'
 import { getShared, setShared, subscribeShared, currentView } from './shared.js'
 
+/** A button with a panel in the presenter view's bar (presenter/presenterTools.jsx). */
+export { PresenterTool } from './presenter/presenterTools.jsx'
+
 /**
  * A value shared by every slide and every window of this talk, under `name`.
  * Returns [value, setValue]; `initial` stands in until someone sets one.

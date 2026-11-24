@@ -1094,6 +1094,34 @@ clicks the button on the slide.
   aria-pressed={running} onClick={toggle}>…</button>
 ```
 
+A component that belongs to the whole talk rather than one slide, such as a
+countdown for the room, can put its own button in the presenter view's bar,
+beside the timer, with a panel it opens: `PresenterTool` from
+`mdeck/component`. It shows in the presenter view on the computer, on a paired
+iPad and on the phone clicker, whichever slide is shown, and renders nothing
+in the other windows.
+
+```jsx
+import { h } from 'preact'
+import { useShared, PresenterTool } from 'mdeck/component'
+
+const CSS = `.round-panel button { font: inherit; }`
+
+export default function Round() {
+  const [round, setRound] = useShared('quiz:round', 1)
+  return <PresenterTool label="Quiz round" button={<span>R{round}</span>} css={CSS}>
+    <div class="round-panel"><button onClick={() => setRound(n => n + 1)}>Next round</button></div>
+  </PresenterTool>
+}
+```
+
+- `label` names the button (its tooltip); `button` is what it shows, such as
+  a short text or an icon; the children are the panel. The panel's frame is
+  the one of mdeck's own panels.
+- The button and the panel stand in the presenter view's page, not in the
+  slide, so the component's own styles do not reach them: give their styles
+  as `css`. They keep the component's state and hooks.
+
 `mdeck/component` and these attributes are the part of mdeck that components
 may rely on; they are kept stable across versions. A component renders inside its slide. Anything
 else it reaches, such as the page outside its slide, the `<deck-stage>`, mdeck's

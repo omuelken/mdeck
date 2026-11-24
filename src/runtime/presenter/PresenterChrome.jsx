@@ -26,20 +26,25 @@ export function ToolButton({ icon, label, pressed, onClick, class: className, st
 
 /**
  * A button that opens a panel below (or above) it. The panel stays in the
- * page while closed, hidden, so its controls keep their state.
+ * page while closed, hidden, so its controls keep their state. `inBar`: the
+ * panel lines up with the bar's end instead of the button's, for a button
+ * further in, whose panel would reach past the column.
  */
-export function Popover({ class: className, label, trigger, alert = false, above = false, align = 'end', children }) {
+export function Popover({ class: className, label, trigger, alert = false, above = false, align = 'end', inBar = false, children }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
     if (!open) return
+    // The page it stands in: a deck component's tool (presenterTools.jsx) is
+    // rendered from the slide frame into the presenter view's page.
+    const page = ref.current?.ownerDocument ?? document
     const outside = event => { if (!ref.current?.contains(event.target)) setOpen(false) }
     const escape = event => { if (event.key === 'Escape') setOpen(false) }
-    document.addEventListener('pointerdown', outside)
-    window.addEventListener('keydown', escape)
-    return () => { document.removeEventListener('pointerdown', outside); window.removeEventListener('keydown', escape) }
+    page.addEventListener('pointerdown', outside)
+    page.defaultView.addEventListener('keydown', escape)
+    return () => { page.removeEventListener('pointerdown', outside); page.defaultView.removeEventListener('keydown', escape) }
   }, [open])
-  return <span ref={ref} class={className} style={{ position: 'relative', display: 'inline-flex' }}>
+  return <span ref={ref} class={className} style={{ position: inBar ? 'static' : 'relative', display: 'inline-flex' }}>
     <button type="button" class={`${className}-toggle`} title={label} aria-label={label} aria-expanded={open} onClick={() => setOpen(now => !now)}
       style={{ ...tool, position: 'relative', gap: '8px', ...(open ? { background: '#2a2a2a', color: '#fff' } : {}) }}>
       {trigger}
