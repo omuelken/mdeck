@@ -137,6 +137,46 @@ function formatTime(ms) {
 }
 
 /** Re-renders when the shown second changes, right at the change. */
+// The open ink toolbar sits at the bottom, in the middle, and in a narrow
+// window reaches the lower left corner, where the button is; it is above the
+// button and would hide it. While it is open and reaches that far, the button
+// (and its panel) stand just above it. The toolbar lives in mdeck's
+// `.ink-toolbar-host` (src/runtime/ink/attach.js), which may come later.
+const INK_GAP = 8
+function useAboveInk(enabled, fab) {
+  const [bottom, setBottom] = useState(null)
+  useEffect(() => {
+    if (!enabled) return
+    let frame = 0
+    const measure = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const bar = document.querySelector('.ink-toolbar-host .ink-toolbar:not(.is-collapsed)')
+        const button = fab.current?.getBoundingClientRect()
+        const ink = bar?.getBoundingClientRect()
+        setBottom(ink && button && ink.left < button.right + INK_GAP ? Math.ceil(window.innerHeight - ink.top) + INK_GAP : null)
+      })
+    }
+    const toolbar = new MutationObserver(measure)
+    let host = null
+    const findHost = () => {
+      const found = document.querySelector('.ink-toolbar-host')
+      if (found === host) return
+      toolbar.disconnect()
+      host = found
+      if (host) toolbar.observe(host, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] })
+      measure()
+    }
+    const body = new MutationObserver(findHost)
+    body.observe(document.body, { childList: true })
+    window.addEventListener('resize', measure)
+    findHost()
+    measure()
+    return () => { cancelAnimationFrame(frame); toolbar.disconnect(); body.disconnect(); window.removeEventListener('resize', measure) }
+  }, [enabled])
+  return bottom
+}
+
 function useTick(timer) {
   const [, tick] = useState(0)
   useEffect(() => {
@@ -336,6 +376,8 @@ function Countdown({ role }) {
   const controls = role === 'presenter'
   const [timer, change] = useSharedTimer(controls)
   const [open, setOpen] = useState(false)
+  const fab = useRef()
+  const aboveInk = useAboveInk(controls, fab)
   useTick(timer)
   // Where the room hears it: the audience window first, a deck window or the
   // laptop's presenter frame if none of its browser plays it. A paired iPad
@@ -358,9 +400,9 @@ function Countdown({ role }) {
     {timer?.visible && role !== 'presenter' && <div class={`countdown-clock countdown-clock--${left === 0 ? 'center' : timer.position}`} role="timer" aria-live="off"
       data-ending={left > 0 && left <= MINUTE ? '' : undefined} data-done={left === 0 ? '' : undefined}>{formatTime(left)}</div>}
     {sound.blocked && <button type="button" class="countdown-sound" onClick={() => { sound.allow(); activated(n => n + 1) }}>Click for sound</button>}
-    {controls && <div class={`countdown-controls${inPhoneFrame() ? ' countdown-controls--small' : ''}`} onPointerDown={keep} onClick={keep} onKeyDown={keep} onTouchStart={keep}>
+    {controls && <div class={`countdown-controls${inPhoneFrame() ? ' countdown-controls--small' : ''}`} style={aboveInk != null ? { bottom: `${aboveInk}px` } : undefined} onPointerDown={keep} onClick={keep} onKeyDown={keep} onTouchStart={keep}>
       {open && <Panel timer={timer} change={change} />}
-      <div class="countdown-fab">
+      <div class="countdown-fab" ref={fab}>
         <button class={`countdown-toggle${open ? ' is-on' : ''}${timer.visible ? ' is-shown' : ''}${showing ? ' is-time' : ''}`} title="Countdown for the room" aria-label="Countdown for the room" aria-expanded={open} onClick={() => setOpen(o => !o)}
           data-ending={showing && left > 0 && left <= MINUTE ? '' : undefined} data-done={showing && left === 0 ? '' : undefined}>
           {showing ? formatTime(left) : <Icon name="timer" size={20} />}
