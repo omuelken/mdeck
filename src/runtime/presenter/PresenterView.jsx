@@ -453,8 +453,6 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     <Icon name={timer.running ? 'pause' : 'play'} size={14} style={{ display: 'block' }} />{clock}
     {timed && !remoteLayout && <span class="presenter-slide-time" style={{ color: slideColor, fontSize: '12px' }}>{slideText}</span>}
   </button>
-  // A deck component's own tools, such as a countdown, beside the pen
-  // (presenterTools.jsx); the phone clicker has no pen.
   const finishButton = timer.rehearsing && <button class="presenter-rehearsing" style={{ ...tool, color: '#f28b82' }} title="Finish the rehearsal" onClick={finishRehearsal}>● Finish</button>
   const nav = <>
     <ToolButton icon="prev" label="Previous (←)" onClick={() => navCommand('prev')} />
@@ -516,7 +514,7 @@ function PresenterView({ deckConfig: firstConfig, slides: firstSlides }) {
     return (
       <div class="presenter presenter--remote" style={{ ...font, fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '10px', height: '100dvh', boxSizing: 'border-box', padding: 'max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left))', background: '#111', overflow: 'hidden', touchAction: 'manipulation' }}>
         <style>{SLIM_REMOTE_BAR}</style>
-        <div class="presenter-remote-bar" style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+        <div class="presenter-remote-bar" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
           <SlideJump index={index} total={slides.length} onJump={i => navCommand('goTo', i)} style={{ color: '#888', whiteSpace: 'nowrap' }} />
           <span style={{ flex: 1 }} />
           {finishButton}{timerChip}{joinButton}{blankButton}{connections}{settings}
